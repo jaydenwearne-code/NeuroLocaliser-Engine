@@ -3,7 +3,7 @@
 // cause CATEGORIES correlate with site attributes + tempo. causesFor(site,{onset}) merges a curated per-site
 // map (bootstrapped from the phonebook ddx) with a derived category fallback, filtered by onset.
 // Run: node test/causes.test.js
-import { CATEGORIES, TEMPO, LIKELIHOOD, CAUSES, causesFor } from "../src/data/causes.js";
+import { CATEGORIES, TEMPO, LIKELIHOOD, CAUSES, causesFor, regionOf } from "../src/data/causes.js";
 import { BY_SITE } from "../src/data/syndromes.js";
 import { SITES } from "../src/model/sites.js";
 import * as sitesMod from "../src/model/sites.js";
@@ -113,6 +113,40 @@ const wallenberg = { id: "left_medulla_lateral", level: "medulla", part: "latera
   const r = causesFor(wallenberg);
   ok("a red-flag cause is marked (dissection)", r.all.some(c => c.red === true));
 }
+
+// --- sieve completion (Sub-project C) ---
+const icSite = SITES.find(s => s.id === "right_subcortex_internal_capsule");
+const icRes = causesFor(icSite, {});
+const icSpecificCats = new Set(icRes.byCategory.map(g => g.cat));
+const icCompCats = new Set(icRes.completion.map(g => g.cat));
+ok("internal capsule specifics are vascular-only", icSpecificCats.size === 1 && icSpecificCats.has("vascular"));
+ok("internal capsule completion adds inflammatory", icCompCats.has("inflammatory"));
+ok("internal capsule completion adds neoplastic", icCompCats.has("neoplastic"));
+ok("internal capsule completion adds infective", icCompCats.has("infective"));
+ok("internal capsule completion does NOT repeat vascular", !icCompCats.has("vascular"));
+ok("every completion cause is flagged generic", icRes.completion.every(g => g.causes.every(x => x.generic === true)));
+
+// regionOf classification (constructed sites avoid part-specific gotchas like optic_aion)
+ok("regionOf: nerve → peripheral", regionOf({ level: "nerve", part: "median" }) === "peripheral");
+ok("regionOf: skull_base → skull_base", regionOf({ level: "skull_base", part: "iam" }) === "skull_base");
+ok("regionOf: cortex → parenchyma", regionOf({ level: "cortex", part: "mca" }) === "parenchyma");
+ok("regionOf: visual_pathway → optic", regionOf({ level: "visual_pathway", part: "chiasm" }) === "optic");
+ok("regionOf: an optic-named part overrides to optic", regionOf({ level: "skull_base", part: "optic_aion" }) === "optic");
+
+// gap-fill invariant: completion categories are disjoint from specific categories, for every candidate site
+const allSites = [...SITES];
+for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") { try { allSites.push(...sitesMod[k]()); } catch {} }
+let disjointHolds = true, offender = null;
+for (const s of allSites) {
+  const r = causesFor(s, {});
+  const spec = new Set(r.byCategory.map(g => g.cat));
+  if (r.completion.some(g => spec.has(g.cat))) { disjointHolds = false; offender = s.id; break; }
+}
+ok("gap-fill invariant: completion never repeats a present category (all sites)", disjointHolds, offender);
+
+// tempo filter applies to the completion
+const icHyper = causesFor(icSite, { onset: "hyperacute" }).completion.flatMap(g => g.causes);
+ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes("hyperacute")));
 
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));

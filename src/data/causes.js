@@ -263,6 +263,46 @@ function derive(site) {
   return out;
 }
 
+// ---- sieve completion: region-tuned generic causes for the plausible-but-missing categories ----
+export function regionOf(site) {
+  const L = site.level, part = site.part || "";
+  if (L === "visual_pathway" || /optic/.test(part)) return "optic";
+  if (["nerve", "plexus", "root", "polyneuropathy"].includes(L)) return "peripheral";
+  if (L === "skull_base") return "skull_base";
+  if (L === "motor_unit") return "motor_unit";
+  return "parenchyma";
+}
+const SIEVE_GENERICS = {
+  parenchyma: [
+    c("Demyelination (e.g. MS plaque)", "inflammatory", ["subacute"], "uncommon"),
+    c("Tumour / metastasis", "neoplastic", ["chronic"], "uncommon"),
+    c("Abscess / focal infection", "infective", ["acute", "subacute"], "rare"),
+    c("Ischaemic or haemorrhagic stroke", "vascular", ["hyperacute", "acute"], "uncommon"),
+  ],
+  peripheral: [
+    c("Compression / entrapment", "traumatic", ["subacute", "chronic"], "uncommon"),
+    c("Vasculitic / inflammatory neuropathy", "inflammatory", ["subacute"], "uncommon"),
+    c("Diabetic / metabolic", "metabolic", ["subacute", "chronic"], "uncommon"),
+    c("Nerve-sheath tumour", "neoplastic", ["chronic"], "rare"),
+  ],
+  skull_base: [
+    c("Compressive mass (schwannoma / meningioma / metastasis)", "neoplastic", ["chronic"], "uncommon"),
+    c("Skull-base infection (osteomyelitis / fungal)", "infective", ["subacute"], "rare", true),
+    c("Granulomatous / inflammatory (sarcoid / Tolosa-Hunt)", "inflammatory", ["subacute"], "rare"),
+  ],
+  motor_unit: [
+    c("Autoimmune (myasthenia / myositis)", "inflammatory", ["subacute", "chronic"], "uncommon"),
+    c("Toxic / drug-induced", "metabolic", ["subacute"], "uncommon"),
+    c("Degenerative / hereditary", "degenerative", ["chronic"], "uncommon"),
+  ],
+  optic: [
+    c("Optic neuritis / demyelination", "inflammatory", ["subacute"], "uncommon"),
+    c("Compressive (pituitary / meningioma)", "neoplastic", ["chronic"], "uncommon"),
+    c("Ischaemic (AION)", "vascular", ["acute"], "uncommon"),
+  ],
+};
+export function sieveGenerics(site) { return SIEVE_GENERICS[regionOf(site)] || SIEVE_GENERICS.parenchyma; }
+
 // ---- public API ----
 // Three sources, in priority: (1) hand-curated CAUSES (best); (2) the phonebook ddx, categorised live so all
 // ~185 named sites get structured causes from one source of truth; (3) attribute-derived fallback so a site
@@ -283,5 +323,15 @@ export function causesFor(site, { onset } = {}) {
   const byCategory = CATEGORIES
     .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: filtered.filter(x => x.cat === cat.id) }))
     .filter(g => g.causes.length);
-  return { byCategory, all: filtered, onset: onset || null, derived, source };
+  // sieve completion — region generics for the plausible categories not already present, tempo-filtered.
+  // presentCats uses the UNfiltered list so a tempo-hidden specific category is not re-added generically.
+  const presentCats = new Set(list.map(x => x.cat));
+  const compAll = sieveGenerics(site)
+    .filter(g => !presentCats.has(g.cat))
+    .filter(g => !onset || g.tempo.includes(onset))
+    .map(x => ({ ...x, generic: true }));
+  const completion = CATEGORIES
+    .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: compAll.filter(x => x.cat === cat.id) }))
+    .filter(g => g.causes.length);
+  return { byCategory, all: filtered, onset: onset || null, derived, source, completion };
 }
