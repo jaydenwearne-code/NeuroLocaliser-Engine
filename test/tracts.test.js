@@ -40,6 +40,17 @@ ok("Brown-Séquard implicates corticospinal", ids.has("corticospinal"));
 ok("Brown-Séquard implicates dorsal_column", ids.has("dorsal_column"));
 ok("Brown-Séquard implicates spinothalamic", ids.has("spinothalamic"));
 
+// ---- corticobulbar (fast-follow): the UMN discriminator forehead_spared implicates it ----
+const cb = tractsFor(new Set(["facial_weakness@left", "forehead_spared@left"]), opts);
+const cbTract = cb.find(t => t.tract.id === "corticobulbar");
+ok("forehead_spared implicates the corticobulbar tract", !!cbTract);
+ok("corticobulbar keys on forehead_spared (UMN), not shared facial_weakness",
+   cbTract && cbTract.tract.findings.includes("forehead_spared") && !cbTract.tract.findings.includes("facial_weakness"));
+ok("corticobulbar course tops out at the pons (no medulla/cord)",
+   cbTract && cbTract.tract.course.every(wp => ["cortex", "subcortex", "midbrain", "pons"].includes(wp.level)));
+ok("plain arm+leg weakness does NOT implicate corticobulbar",
+   !tractsFor(new Set(["weak_arm@left", "weak_leg@left"]), opts).some(t => t.tract.id === "corticobulbar"));
+
 // ---- non-tract input → empty (fallback) ----
 ok("a non-tract finding implicates no tract", tractsFor(new Set(["dysarthria@none"]), opts).length === 0);
 

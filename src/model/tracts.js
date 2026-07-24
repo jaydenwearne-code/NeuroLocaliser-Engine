@@ -55,4 +55,19 @@ export const TRACTS = [
     decussation: { between: ["medulla", "cord"], label: "sensory (internal arcuate) decussation" },
     crossingNote: "contralateral above the medullary sensory decussation, ipsilateral in the cord below it",
   },
+  {
+    id: "corticobulbar", label: "corticobulbar tract (to the facial nucleus)",
+    // Keyed on forehead_spared — the UMN discriminator. facial_weakness is deliberately excluded (it is
+    // shared LMN/UMN and non-localising; keying on it would wrongly pull in peripheral facial-nerve sites).
+    findings: ["forehead_spared"],
+    together: "the upper-motor-neurone fibres to the facial nucleus",
+    course: [
+      { level: "cortex",   label: "motor cortex (face)" },
+      { level: "subcortex", label: "genu of the internal capsule" },
+      { level: "midbrain", label: "cerebral peduncle" },
+      { level: "pons",     label: "facial nucleus" },
+    ],
+    decussation: { between: ["midbrain", "pons"], label: "corticobulbar decussation (to the facial nucleus)" },
+    crossingNote: "contralateral to the lower-face weakness; the forehead is spared because the upper face is bilaterally innervated",
+  },
 ];
