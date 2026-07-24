@@ -1,20 +1,15 @@
 // app.js — NeuroLocaliser prototype UI. Pure consumer of the engine + causes layer (no model changes).
-import { solve } from "../src/engine/inverse.js";
+import { solve, candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
-import { SITES } from "../src/model/sites.js";
-import * as sitesMod from "../src/model/sites.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { causesFor, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag } from "../src/engine/patterns.js";
 import { nextStepsFor } from "../src/data/nextSteps.js";
 import { EXAM_FLOW, PRESETS } from "./exam-map.js";
 
-// ---- all candidate sites (buildSites + every composer) ----
-const CANDIDATES = [...SITES];
-for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") {
-  try { CANDIDATES.push(...sitesMod[k]()); } catch {}
-}
+// ---- all candidate sites (one enumeration, owned by the engine) ----
+const CANDIDATES = candidateSites();
 // which body-sides can each finding appear on? (data-driven side controls)
 const SIDES = {};
 for (const site of CANDIDATES) {
@@ -116,30 +111,13 @@ function renderChips() {
   el.onclick = e => { const t = e.target.dataset.t; if (t) toggleToken(t); };
 }
 
-// build the NARROWING DIFFERENTIAL: every candidate site COMPATIBLE with the findings so far, i.e. whose
-// predicted findings include the ones entered. One finding → many sites; each added finding intersects the
-// set → it narrows. (This is deliberately NOT the best-fit score, which penalises over-prediction and so
-// under-returns on sparse input — the wrong tool for a differential that should start broad.)
-function differential() {
-  const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
-  const observed = [...S.tokens];
-  const cands = [];
-  for (const site of CANDIDATES) {
-    let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
-    const explained = observed.filter(t => exp.has(t));
-    if (!explained.length) continue;
-    cands.push({ site, exp, explained, over: [...exp].filter(t => !S.tokens.has(t)).length, n: explained.length });
-  }
-  cands.sort((a, b) => b.n - a.n || a.over - b.over || siteName(a.site).localeCompare(siteName(b.site)));
-  return cands;
-}
-
 function renderResults() {
   const el = document.getElementById("results");
   if (!S.tokens.size) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`; return; }
   try {
   const total = S.tokens.size;
-  const cands = differential();
+  const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
+  const cands = r.differential;
   if (!cands.length) {
     const fnd = functionalFlag(S.tokens);
     const fmsg = fnd.functional
@@ -148,12 +126,11 @@ function renderResults() {
     el.innerHTML = `<h3>Possible lesions</h3>${fmsg}<div class="empty">No site produces any of these findings on the sides given — re-check a side${fnd.functional?", or this is likely non-organic (see above)":", or this may be non-organic"}.</div>`;
     return;
   }
-  const explainAll = cands.filter(c => c.n === total);
-  const list = explainAll.length ? explainAll : cands;
-  let sel = list.find(c => c.site.id === S.selected) || list[0];
+  const list = r.display;
+  // S.selected is the user's click-override; persist it while still shown, else the engine's default.
+  let sel = list.find(c => c.site.id === S.selected) || list.find(c => c.site.id === r.defaultSite) || list[0];
   S.selected = sel.site.id;
-  const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
-  el.innerHTML = diffBlock(list, cands, total, explainAll.length, r) + whyBlock(sel, total) + whatBlock(sel.site);
+  el.innerHTML = diffBlock(list, cands, total, r.explainAll.length, r) + whyBlock(sel, total) + whatBlock(sel.site);
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty" style="text-align:left;color:var(--contra)">render error: ${esc(String(err))}<br><small>${esc((err.stack||"").split("\n").slice(0,4).join(" | "))}</small></div>`; return; }
   const dl = document.getElementById("difflist");
   if (dl) dl.onclick = e => { const row = e.target.closest(".drow"); if (!row) return; S.selected = row.dataset.k; renderResults(); };
