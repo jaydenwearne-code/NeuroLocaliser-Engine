@@ -1,0 +1,404 @@
+<title>NeuroLocaliser — How the Engine Works</title>
+<style>
+  :root{
+    --paper:#eef1f4; --sheet:#ffffff; --ink:#171e28; --muted:#586574; --faint:#8a95a2;
+    --line:#e0e6ec; --line-soft:#eaeef2; --band:#f4f6f9;
+    --red:#9e2b34; --red-ink:#7f232b; --red-wash:#f6ecec; --red-line:#eccfd0;
+    --steel:#245e6e; --steel-wash:#e8f0f2; --steel-line:#cadfe3;
+    --ok:#3c7d5f;
+    --serif:Georgia,"Times New Roman",ui-serif,serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(23,30,40,.05),0 10px 30px rgba(23,30,40,.06);
+    --r:13px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0e131a; --sheet:#151c25; --ink:#e3e9f0; --muted:#97a4b2; --faint:#647180;
+      --line:#242e3a; --line-soft:#1d2733; --band:#111823;
+      --red:#e5787f; --red-ink:#ef8b91; --red-wash:#241a1c; --red-line:#3c282b;
+      --steel:#66b0c0; --steel-wash:#122028; --steel-line:#233a42;
+      --ok:#67b78f;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#eef1f4; --sheet:#ffffff; --ink:#171e28; --muted:#586574; --faint:#8a95a2;
+    --line:#e0e6ec; --line-soft:#eaeef2; --band:#f4f6f9;
+    --red:#9e2b34; --red-ink:#7f232b; --red-wash:#f6ecec; --red-line:#eccfd0;
+    --steel:#245e6e; --steel-wash:#e8f0f2; --steel-line:#cadfe3; --ok:#3c7d5f;
+    --shadow:0 1px 2px rgba(23,30,40,.05),0 10px 30px rgba(23,30,40,.06);
+  }
+  :root[data-theme="dark"]{
+    --paper:#0e131a; --sheet:#151c25; --ink:#e3e9f0; --muted:#97a4b2; --faint:#647180;
+    --line:#242e3a; --line-soft:#1d2733; --band:#111823;
+    --red:#e5787f; --red-ink:#ef8b91; --red-wash:#241a1c; --red-line:#3c282b;
+    --steel:#66b0c0; --steel-wash:#122028; --steel-line:#233a42; --ok:#67b78f;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;font-size:15px;}
+  .wrap{max-width:960px;margin:0 auto;padding:40px 22px 60px;}
+  .sheet{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);overflow:hidden;}
+  .pad{padding:34px 40px;}
+  @media(max-width:640px){.pad{padding:24px 20px;}}
+  code,.mono{font-family:var(--mono);font-size:.85em;}
+  b{font-weight:650;}
+  .eyebrow{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--red);
+    letter-spacing:.01em;margin:0 0 6px;}
+  h2{font-family:var(--serif);font-weight:600;font-size:23px;line-height:1.2;margin:0 0 6px;
+    letter-spacing:-.01em;text-wrap:balance;}
+  .sectlead{color:var(--muted);margin:0 0 20px;max-width:68ch;}
+  .rule{height:1px;background:var(--line);border:0;margin:0;}
+
+  /* ---------- header ---------- */
+  header{padding:34px 40px 26px;background:
+      radial-gradient(120% 140% at 100% 0,var(--red-wash) 0,transparent 46%),
+      radial-gradient(120% 140% at 0 0,var(--steel-wash) 0,transparent 42%);
+    border-bottom:1px solid var(--line);}
+  @media(max-width:640px){header{padding:24px 20px;}}
+  .wordmark{font-size:26px;letter-spacing:.14em;margin:0;font-weight:700;}
+  .wordmark .neuro{color:var(--steel);} .wordmark .loc{color:var(--red);}
+  .tagline{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--ink);
+    margin:12px 0 0;max-width:60ch;}
+  .metabar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:16px;
+    font-size:12.5px;color:var(--muted);}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:var(--band);
+    border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:600;
+    color:var(--ink);letter-spacing:.02em;}
+  .pill .n{font-variant-numeric:tabular-nums;color:var(--steel);}
+  .pill.acc{background:var(--red-wash);border-color:var(--red-line);color:var(--red-ink);}
+
+  /* ---------- thesis ---------- */
+  .thesis{display:grid;grid-template-columns:1fr;gap:0;background:var(--band);
+    border:1px solid var(--line);border-radius:var(--r);overflow:hidden;}
+  .thesis .claim{padding:22px 26px;}
+  .thesis .big{font-family:var(--serif);font-size:20px;line-height:1.35;margin:0;text-wrap:balance;}
+  .thesis .big .em{color:var(--red);font-style:italic;}
+  .thesis .sub{color:var(--muted);margin:10px 0 0;font-size:14px;}
+  .flowline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 26px;
+    border-top:1px dashed var(--line);font-size:13px;}
+  .node{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:7px 12px;
+    font-weight:600;}
+  .node.io{border-color:var(--steel-line);background:var(--steel-wash);color:var(--steel);}
+  .node.out{border-color:var(--red-line);background:var(--red-wash);color:var(--red-ink);}
+  .to{color:var(--faint);font-family:var(--mono);font-size:12px;}
+
+  /* ---------- data-model ladder ---------- */
+  .ladder{display:flex;flex-direction:column;gap:0;position:relative;margin-top:6px;}
+  .rung{display:grid;grid-template-columns:132px 1fr;gap:20px;padding:20px 0;
+    border-top:1px solid var(--line-soft);position:relative;}
+  .rung:first-child{border-top:0;}
+  @media(max-width:640px){.rung{grid-template-columns:1fr;gap:10px;}}
+  .rung .lhs{display:flex;flex-direction:column;gap:6px;}
+  .rung .step{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:15px;}
+  .rung .dot{width:11px;height:11px;border-radius:50%;background:var(--steel);flex:none;
+    box-shadow:0 0 0 4px var(--steel-wash);}
+  .rung.emerge .dot{background:var(--red);box-shadow:0 0 0 4px var(--red-wash);}
+  .rung .file{font-family:var(--mono);font-size:11.5px;color:var(--faint);}
+  .rung .def{margin:0;color:var(--muted);font-size:14px;}
+  .rung .def b{color:var(--ink);}
+  .ex{margin-top:12px;background:var(--band);border:1px solid var(--line);border-left:3px solid var(--steel);
+    border-radius:9px;padding:11px 14px;font-size:13px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
+  .ex .tag{font-family:var(--serif);font-style:italic;color:var(--steel);font-size:12.5px;flex:none;}
+  .rung.emerge .ex{border-left-color:var(--red);}
+  .rung.emerge .ex .tag{color:var(--red);}
+  .chip{font-family:var(--mono);font-size:12px;background:var(--sheet);border:1px solid var(--line);
+    border-radius:6px;padding:2px 7px;white-space:nowrap;}
+  .chip.side{color:var(--steel);}
+  .arrowdown{color:var(--faint);font-family:var(--mono);font-size:11px;margin:0 2px;}
+
+  /* ---------- pipeline ---------- */
+  .pipe{display:grid;grid-template-columns:1fr;gap:12px;}
+  .stage{display:grid;grid-template-columns:34px 1fr;gap:16px;background:var(--band);
+    border:1px solid var(--line);border-radius:11px;padding:15px 17px;align-items:start;}
+  .stage .num{width:34px;height:34px;border-radius:9px;background:var(--sheet);border:1px solid var(--line);
+    display:grid;place-items:center;font-family:var(--serif);font-weight:700;font-size:16px;color:var(--steel);}
+  .stage .t{margin:0 0 3px;font-weight:650;font-size:15px;}
+  .stage .fn{font-family:var(--mono);font-size:11.5px;color:var(--steel);}
+  .stage .d{margin:7px 0 0;color:var(--muted);font-size:13.5px;}
+  .stage .d code{color:var(--ink);}
+  .stage.win .num{background:var(--red-wash);border-color:var(--red-line);color:var(--red);}
+  .axes{margin-top:14px;border:1px dashed var(--steel-line);background:var(--steel-wash);
+    border-radius:11px;padding:14px 17px;}
+  .axes h3{margin:0 0 4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--steel);}
+  .axes p{margin:0;color:var(--muted);font-size:13.5px;}
+  .axes p b{color:var(--ink);}
+
+  /* ---------- worked case ledger ---------- */
+  .case{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;}
+  .crow{display:grid;grid-template-columns:104px 1fr;gap:0;border-top:1px solid var(--line-soft);}
+  .crow:first-child{border-top:0;}
+  .crow .cl{background:var(--band);padding:13px 16px;font-family:var(--serif);font-style:italic;
+    font-size:13px;color:var(--muted);border-right:1px solid var(--line-soft);}
+  .crow .cv{padding:13px 16px;font-size:13.5px;}
+  .crow .cv .chip{margin:2px 4px 2px 0;display:inline-block;}
+  .crow.res .cl{color:var(--red);} .crow.res .cv b{color:var(--red);}
+  .win-badge{display:inline-block;background:var(--red-wash);border:1px solid var(--red-line);
+    color:var(--red-ink);border-radius:6px;padding:2px 8px;font-weight:700;font-family:var(--mono);font-size:12px;}
+
+  /* ---------- layers ---------- */
+  .layers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:720px){.layers{grid-template-columns:1fr;}}
+  .layer{border:1px solid var(--line);border-radius:11px;padding:15px 16px;background:var(--band);}
+  .layer h3{margin:0 0 3px;font-family:var(--mono);font-size:12.5px;color:var(--steel);letter-spacing:.02em;}
+  .layer .role{color:var(--faint);font-size:12px;margin:0 0 10px;font-style:italic;font-family:var(--serif);}
+  .layer ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;}
+  .layer li{font-size:13px;color:var(--muted);}
+  .layer li b{font-family:var(--mono);font-size:12px;color:var(--ink);font-weight:500;}
+  .layer.eng h3,.layer.eng li b{color:var(--ink);} .layer.eng h3{color:var(--red-ink);}
+
+  /* ---------- coverage ---------- */
+  .cov h2{margin-bottom:4px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .cv{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;background:var(--band);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--ink);}
+  .cv .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none;}
+  .cv.next{border-style:dashed;color:var(--muted);} .cv.next .dot{background:var(--faint);}
+  .cv .st{font-variant-numeric:tabular-nums;color:var(--steel);font-weight:700;
+    background:var(--sheet);border:1px solid var(--line);border-radius:5px;padding:0 6px;font-size:11.5px;}
+  .covsum{margin-top:14px;font-size:13px;color:var(--muted);}
+  .covsum b{color:var(--ink);font-variant-numeric:tabular-nums;}
+
+  footer{padding:22px 40px 30px;border-top:1px solid var(--line);color:var(--faint);font-size:12px;
+    display:flex;flex-direction:column;gap:5px;}
+  @media(max-width:640px){footer{padding:20px;}}
+  footer .rule2{color:var(--red);font-weight:700;font-family:var(--serif);font-style:italic;}
+  .sec+.sec{border-top:1px solid var(--line);}
+</style>
+
+<div class="wrap">
+  <div class="sheet">
+
+    <!-- ======= HEADER ======= -->
+    <header>
+      <h1 class="wordmark"><span class="neuro">NEURO</span><span class="loc">LOCALISER</span></h1>
+      <p class="tagline">A lesion-localisation engine that <b>derives</b> neurological syndromes from anatomy — it never stores them.</p>
+      <div class="metabar">
+        <span class="pill">findings in <span class="to">→</span> localisation out</span>
+        <span class="pill acc">derive · don't store</span>
+        <span class="pill"><code>solve()</code> · <span class="n">761</span> tests green · <span class="n">17</span> regions</span>
+      </div>
+    </header>
+
+    <!-- ======= THE ONE IDEA ======= -->
+    <section class="sec pad">
+      <p class="eyebrow">the one idea</p>
+      <h2>Model the anatomy. The syndrome falls out.</h2>
+      <p class="sectlead">Weber, Wallenberg, Brown-Séquard — none of these are written down anywhere in the engine. They emerge from which anatomical structures share a lesion site, and are only <em>named</em> afterward by a lookup. Delete the name table and the engine still localises; it just returns anatomy instead of an eponym.</p>
+      <div class="thesis">
+        <div class="claim">
+          <p class="big">The engine only ever knows <span class="em">anatomy</span> and <span class="em">arithmetic</span>: which structure produces which sign on which side, and how well a candidate lesion's predicted signs match the ones the patient actually has.</p>
+          <p class="sub">No rule ever says <code>if (hasX &amp;&amp; hasY) return "Weber"</code>. That would be storing a brain. Instead X and Y are structures that happen to share one blood supply — so they fail together, and the pattern is derived for every possible lesion, every time.</p>
+        </div>
+        <div class="flowline">
+          <span class="node io">observed findings</span>
+          <span class="to">→</span>
+          <span class="node">score every candidate lesion</span>
+          <span class="to">→</span>
+          <span class="node out">ranked localisation + why</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= THE DATA MODEL ======= -->
+    <section class="sec pad">
+      <p class="eyebrow">the data model — how the pieces relate</p>
+      <h2>Four nouns, and a syndrome for free</h2>
+      <p class="sectlead">The whole model is four kinds of thing. Follow one sign — <code>spinothalamic</code> loss — down the ladder and watch a named syndrome assemble itself from parts that were never told about each other.</p>
+
+      <div class="ladder">
+        <div class="rung">
+          <div class="lhs">
+            <span class="step"><span class="dot"></span>Finding</span>
+            <span class="file">findings.js</span>
+          </div>
+          <div>
+            <p class="def">One thing you can <b>observe at the bedside</b> — a symptom or sign. It carries a <b>default crossing</b> (does its pathway cross the midline?) and is later marked with the body side it appears on.</p>
+            <div class="ex"><span class="tag">e.g.</span><span class="chip">spinothalamic</span> pain &amp; temperature loss · <span class="chip side">crosses = true</span></div>
+          </div>
+        </div>
+
+        <div class="rung">
+          <div class="lhs">
+            <span class="step"><span class="dot"></span>Structure</span>
+            <span class="file">structures.js</span>
+          </div>
+          <div>
+            <p class="def">One tract or nucleus. It produces <b>exactly one</b> finding, sits at a <b>(level, part)</b> — its place in the neuraxis and its vascular/anatomical zone — and may <b>override the crossing</b> where the same pathway crosses differently.</p>
+            <div class="ex"><span class="tag">e.g.</span><span class="chip">stt_cord</span> → <span class="chip">spinothalamic</span> at <span class="chip">cord · anterior</span> · <span class="chip side">crosses in the cord → contralateral</span></div>
+          </div>
+        </div>
+
+        <div class="rung">
+          <div class="lhs">
+            <span class="step"><span class="dot"></span>Site</span>
+            <span class="file">sites.js</span>
+          </div>
+          <div>
+            <p class="def">A lesion — <b>one zone on one side</b>. It is <b>derived, never hand-listed</b>: it simply gathers every structure that shares its <b>(level, part, side)</b>. Bigger lesions come from <b>composers</b> that union parts (a hemicord, a bilateral cord, a foramen, a plexus trunk).</p>
+            <div class="ex"><span class="tag">e.g.</span><span class="chip">left_cord_hemi</span> = anterior ∪ posterior on the left → gathers <span class="chip">cst_cord</span> <span class="chip">stt_cord</span> <span class="chip">dc_cord</span> …</div>
+          </div>
+        </div>
+
+        <div class="rung emerge">
+          <div class="lhs">
+            <span class="step"><span class="dot"></span>Syndrome</span>
+            <span class="file">emergent · syndromes.js only names it</span>
+          </div>
+          <div>
+            <p class="def">Not a thing you store — a thing that <b>happens</b>. When the structures at a site fire together, their signs co-occur in a pattern. A thin <b>phonebook</b> keyed by the emergent site attaches the eponym, differentials and red flags.</p>
+            <div class="ex"><span class="tag">emerges →</span>ipsilateral weakness + contralateral pain/temp + ipsilateral vibration = <b>Brown-Séquard</b> — because those three tracts share the hemicord</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= THE PIPELINE ======= -->
+    <section class="sec pad">
+      <p class="eyebrow">how solve() works — the inverse problem</p>
+      <h2>Try every lesion. Keep the one that fits.</h2>
+      <p class="sectlead">Localisation is the model run <em>backwards</em>: the patient's findings are given, the lesion is unknown. So the engine simulates every candidate lesion forwards, then scores which one best reproduces what the patient has.</p>
+
+      <div class="pipe">
+        <div class="stage">
+          <div class="num">1</div>
+          <div>
+            <p class="t">Generate every candidate lesion</p>
+            <span class="fn">candidateSites() · sites.js</span>
+            <p class="d">Every primitive site plus every composite (hemi, bilateral, midline, foramen-union, plexus, vascular territory). All derived from the structure tables — a few hundred candidates.</p>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="num">2</div>
+          <div>
+            <p class="t">Simulate each one — forwards</p>
+            <span class="fn">expectedFindings(site) · forward.js</span>
+            <p class="d">Predict the signs a lesion there would cause, each tagged with a body side. Crossing decides ipsi vs contra; a midline lesion emits both sides; a sensory level can <b>gate</b> a sign on or off; cortical dominance gates the language-side signs.</p>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="num">3</div>
+          <div>
+            <p class="t">Score the fit against the patient</p>
+            <span class="fn">scoreSite() · score.js</span>
+            <p class="d">Reward matches — <b>localising</b> signs count triple. Penalise findings the site can't explain, and penalise <b>over-prediction</b> (signs it predicts but the patient lacks). Parsimony is the whole game: the tightest, most complete fit wins.</p>
+          </div>
+        </div>
+        <div class="stage win">
+          <div class="num">4</div>
+          <div>
+            <p class="t">Rank — or, if needed, a minimal set</p>
+            <span class="fn">rankSingle() · minimalSet() · inverse.js</span>
+            <p class="d">Sort for the single best explanation. If <em>no one</em> lesion covers all the localising signs, find the <b>smallest set of lesions</b> that does — the multifocal hypothesis, derived rather than dropped in as a fallback.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="axes">
+        <h3>Orthogonal axes — they annotate, they never decide</h3>
+        <p>Two coordinates run <em>across</em> the cross-sectional pattern and only refine the winner. The <b>sensory level</b> (<code>levels.js</code>, C2–S5) says <em>where along the cord</em>; the <b>axon-length axis</b> (<code>nerveLength.js</code>) says <em>how far</em> a length-dependent neuropathy has climbed. The cross-section says <em>which</em> syndrome; these say <em>where</em>.</p>
+      </div>
+    </section>
+
+    <!-- ======= WORKED CASE ======= -->
+    <section class="sec pad">
+      <p class="eyebrow">a worked case — end to end</p>
+      <h2>A hemicord, traced</h2>
+      <p class="sectlead">Three signs go in. No diagnosis, no anatomy — just what the examiner saw.</p>
+      <div class="case">
+        <div class="crow">
+          <div class="cl">in</div>
+          <div class="cv"><span class="chip">hemiparesis@left</span><span class="chip">dorsal_sensory@left</span><span class="chip">spinothalamic@right</span></div>
+        </div>
+        <div class="crow">
+          <div class="cl">simulate</div>
+          <div class="cv">every candidate scored. <span class="chip">left_cord_hemi</span> predicts weakness &amp; vibration loss on the left (tracts already crossed → ipsilateral) and pain/temp loss on the right (crosses in the cord → contralateral) — exactly the three observed.</div>
+        </div>
+        <div class="crow res">
+          <div class="cl">best</div>
+          <div class="cv"><span class="win-badge">left_cord_hemi</span> &nbsp;explains all three, predicts nothing extra → top score. <b>Level: undetermined</b> (no sensory level supplied).</div>
+        </div>
+        <div class="crow">
+          <div class="cl">named</div>
+          <div class="cv"><b>Brown-Séquard syndrome</b> · ddx: cord compression · MS · infarct · <span class="chip">syndromes.js</span> phonebook lookup on the emergent site</div>
+        </div>
+        <div class="crow">
+          <div class="cl">explained</div>
+          <div class="cv">ipsi weakness — <span class="chip">cst_cord</span> (already crossed at the pyramids) · contra pain/temp — <span class="chip">stt_cord</span> (crosses in the cord) · ipsi vibration — <span class="chip">dc_cord</span>. The reasoning is the output, not a black box.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= LAYERS ======= -->
+    <section class="sec pad">
+      <p class="eyebrow">the code, in three layers</p>
+      <h2>Where each thing lives</h2>
+      <p class="sectlead">Data flows one way — model → engine → data. You add coverage by editing the <b>model</b> tables; the <b>engine</b> almost never changes.</p>
+      <div class="layers">
+        <div class="layer">
+          <h3>src/model/</h3>
+          <p class="role">the anatomy — edit these to add coverage</p>
+          <ul>
+            <li><b>findings.js</b> — the vocabulary + crossing defaults</li>
+            <li><b>structures.js</b> — one tract → one finding, placed &amp; crossed</li>
+            <li><b>sites.js</b> — sites derived from structures; the composers</li>
+            <li><b>levels.js · nerveLength.js</b> — the two orthogonal axes</li>
+          </ul>
+        </div>
+        <div class="layer eng">
+          <h3>src/engine/</h3>
+          <p class="role">the generic solver — rarely touched</p>
+          <ul>
+            <li><b>forward.js</b> — site → expected signed findings</li>
+            <li><b>score.js</b> — reward matches, penalise the rest</li>
+            <li><b>inverse.js</b> — rank, minimal-set, attach the level</li>
+          </ul>
+        </div>
+        <div class="layer">
+          <h3>src/data/</h3>
+          <p class="role">description only — remove it, still localises</p>
+          <ul>
+            <li><b>syndromes.js</b> — a phonebook keyed by the emergent site → eponym, differentials, red flags</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= COVERAGE ======= -->
+    <section class="sec pad cov">
+      <p class="eyebrow">coverage today</p>
+      <h2>What the model can localise</h2>
+      <div class="chips">
+        <span class="cv"><i class="dot"></i> Brainstem <span class="st">8</span></span>
+        <span class="cv"><i class="dot"></i> Cord — core four <span class="st">5</span></span>
+        <span class="cv"><i class="dot"></i> Sensory level <span class="st">22</span></span>
+        <span class="cv"><i class="dot"></i> Central cord / syrinx <span class="st">8</span></span>
+        <span class="cv"><i class="dot"></i> Cauda equina / conus <span class="st">8</span></span>
+        <span class="cv"><i class="dot"></i> Cortex — lobar, dominance, Anton/Balint <span class="st">116</span></span>
+        <span class="cv"><i class="dot"></i> Subcortex — capsule/thalamus/STN, lacunes <span class="st">62</span></span>
+        <span class="cv"><i class="dot"></i> Cranial nerves — foramina as sites <span class="st">65</span></span>
+        <span class="cv"><i class="dot"></i> Motor unit — horn / NMJ / muscle <span class="st">50</span></span>
+        <span class="cv"><i class="dot"></i> Nerve roots &amp; polyneuropathy <span class="st">91</span></span>
+        <span class="cv"><i class="dot"></i> Plexus &amp; named nerves <span class="st">103</span></span>
+        <span class="cv"><i class="dot"></i> Reflexes — Babinski/sacral/frontal <span class="st">31</span></span>
+        <span class="cv"><i class="dot"></i> Tone &amp; wasting — UMN vs LMN <span class="st">34</span></span>
+        <span class="cv"><i class="dot"></i> Nerve segments — the ulnar paradox <span class="st">62</span></span>
+        <span class="cv"><i class="dot"></i> Visual pathway + RAPD <span class="st">34</span></span>
+        <span class="cv"><i class="dot"></i> Pupillary efferent — Adie / Argyll Robertson <span class="st">29</span></span>
+        <span class="cv"><i class="dot"></i> Horner 3-order axis + Pancoast <span class="st">33</span></span>
+        <span class="cv next"><i class="dot"></i> Pathology (ALS) · non-organic (FND) · UI <span class="st">next</span></span>
+      </div>
+      <p class="covsum">Every region is added the same way — new findings, new structures, tests first — and the engine underneath is unchanged. <b>17</b> suites · <b>761</b> assertions green.</p>
+    </section>
+
+    <footer>
+      <span><span class="rule2">Not a medical device.</span> Supports clinician reasoning; it always shows how the localisation was derived.</span>
+      <span>The anatomy tables (structures.js, sites.js) still need neuroanatomist / neurologist review — that is the real validation step.</span>
+    </footer>
+
+  </div>
+</div>

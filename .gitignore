@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Node (this is a zero-dependency project, but future-proof)
+node_modules/
+npm-debug.log*
+
+# Editor / OS cruft
+*.log
+.vscode/
+.idea/

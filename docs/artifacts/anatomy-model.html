@@ -1,0 +1,954 @@
+<title>NeuroLocaliser — Anatomy Model</title>
+<style>
+  :root{
+    --cream:#fdfdfc;--paper:#ffffff;--navy:#1d314d;--navy-2:#2b4468;--terra:#d36d52;
+    --ink:#1d314d;--muted:#5a6b82;--faint:#8595ab;--line:#e2e6ee;--line-2:#eef1f6;--band:#f4f6fa;
+    --ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;
+    --shadow:0 1px 2px rgba(29,49,77,.05),0 6px 20px rgba(29,49,77,.06);--radius:12px;
+    --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --cream:#10192a;--paper:#17233a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;
+      --ink:#e7edf6;--muted:#9aabc4;--faint:#6f819c;--line:#2a3b57;--line-2:#22314a;--band:#17233a;
+      --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e79075;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --cream:#fdfdfc;--paper:#ffffff;--navy:#1d314d;--navy-2:#2b4468;--terra:#d36d52;
+    --ink:#1d314d;--muted:#5a6b82;--faint:#8595ab;--line:#e2e6ee;--line-2:#eef1f6;--band:#f4f6fa;
+    --ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;
+    --shadow:0 1px 2px rgba(29,49,77,.05),0 6px 20px rgba(29,49,77,.06);
+  }
+  :root[data-theme="dark"]{
+    --cream:#10192a;--paper:#17233a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;
+    --ink:#e7edf6;--muted:#9aabc4;--faint:#6f819c;--line:#2a3b57;--line-2:#22314a;--band:#17233a;
+    --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e79075;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;} body{margin:0;}
+  .wrap{font-family:var(--sans);color:var(--ink);line-height:1.5;
+    background:radial-gradient(1100px 560px at 100% -10%,color-mix(in srgb,var(--terra) 6%,transparent),transparent 60%),var(--cream);
+    min-height:100vh;padding:clamp(20px,4vw,52px);}
+  .sheet{max-width:1000px;margin:0 auto;}
+
+  header{margin-bottom:18px;}
+  .wordmark{font-weight:800;letter-spacing:.14em;font-size:clamp(19px,3vw,28px);margin:0;}
+  .wordmark .neuro{color:var(--navy);} .wordmark .loc{color:var(--terra);}
+  .subtitle{font-size:clamp(15px,2vw,18px);color:var(--muted);margin:6px 0 0;font-weight:500;}
+  .intro{margin-top:12px;font-size:13px;color:var(--muted);max-width:70ch;}
+  .intro b{color:var(--ink);}
+
+  .key{display:flex;flex-wrap:wrap;gap:8px 14px;margin:16px 0 6px;align-items:center;font-size:12.5px;color:var(--muted);}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;}
+  .bi{color:var(--ipsi);background:var(--ipsi-bg);} .bc{color:var(--contra);background:var(--contra-bg);} .bb{color:var(--bilat);background:var(--bilat-bg);}
+  .bm{color:var(--muted);background:var(--band);border:1px solid var(--line);}
+  .bnone{color:var(--none);background:var(--none-bg);}
+  .key .expl{color:var(--faint);}
+  /* dominance gate chip — a hemisphere axis, orthogonal to the side badges */
+  .gate{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.02em;
+    padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:1px;color:var(--muted);background:var(--band);border:1px solid var(--line);}
+  .gate.dom{color:var(--gold);background:var(--gold-bg);border-color:transparent;}
+  .gate.nondom{color:var(--none);background:var(--none-bg);border-color:transparent;}
+
+  .region-title{display:flex;align-items:center;gap:12px;margin:26px 0 12px;}
+  .region-title h2{margin:0;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);}
+  .region-title .rule{flex:1;height:1px;background:var(--line);}
+  .region-title .note{font-size:12px;color:var(--faint);}
+
+  .level{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:14px;}
+  .level-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .level-head svg{flex:none;}
+  .level-head .ln{font-size:14px;font-weight:700;color:var(--ink);}
+  .level-head .orient{font-size:11.5px;color:var(--faint);}
+
+  .cols{display:grid;gap:12px;}
+  .cols.two{grid-template-columns:1fr 1fr;} .cols.three{grid-template-columns:1fr 1fr 1fr;}
+  .cols.flow{grid-template-columns:repeat(auto-fit,minmax(215px,1fr));}
+  @media(max-width:680px){.cols.two,.cols.three{grid-template-columns:1fr;}}
+
+  .col{border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:var(--cream);}
+  .col-h{margin-bottom:8px;}
+  .col-h .p{font-size:12px;font-weight:700;color:var(--ink);text-transform:capitalize;}
+  .col-h .terr{font-size:11px;color:var(--terra);font-family:var(--mono);margin-top:2px;}
+  .rows{display:flex;flex-direction:column;gap:7px;}
+  .row{display:grid;grid-template-columns:58px 1fr;gap:8px;align-items:start;font-size:12px;}
+  .row .badge{justify-self:start;margin-top:1px;}
+  .row .m{min-width:0;}
+  .row .id{font-family:var(--mono);font-size:11px;color:var(--navy-2);font-weight:600;}
+  .row .fn{color:var(--muted);font-size:11.5px;}
+
+  .compose{background:color-mix(in srgb,var(--band) 60%,var(--paper));border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-top:8px;}
+  .compose h3{margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--navy);}
+  .compose p{margin:0 0 10px;font-size:12.5px;color:var(--muted);}
+  .compose .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px;}
+  .cmp{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--paper);font-size:12px;}
+  .cmp .cid{font-family:var(--mono);font-size:11px;color:var(--terra);font-weight:600;}
+  .cmp .cd{color:var(--muted);margin-top:2px;}
+
+  footer{margin-top:24px;font-size:12px;color:var(--faint);display:flex;flex-wrap:wrap;gap:6px 14px;}
+  footer .disc{border-left:3px solid var(--terra);padding-left:10px;}
+  footer .rule2{font-weight:600;color:var(--muted);}
+
+  /* schematic fills — var() must live in CSS, not SVG presentation attributes */
+  .sch-fill-ipsi{fill:var(--ipsi-bg);} .sch-fill-contra{fill:var(--contra-bg);}
+  .sch-fill-bilat{fill:var(--bilat-bg);} .sch-fill-paper{fill:var(--paper);}
+  .sch-stroke{stroke:var(--line);} .sch-lbl{fill:var(--faint);font-family:var(--mono);}
+  /* muted vascular-territory tints — an annotation overlay, deliberately low-saturation */
+  .sch-terr-aca{fill:color-mix(in srgb,var(--navy-2) 20%,var(--paper));}
+  .sch-terr-mca{fill:color-mix(in srgb,var(--terra) 16%,var(--paper));}
+  .sch-terr-pca{fill:color-mix(in srgb,var(--bilat) 20%,var(--paper));}
+</style>
+
+<div class="wrap">
+  <div class="sheet">
+    <header>
+      <h1 class="wordmark"><span class="neuro">NEURO</span><span class="loc">LOCALISER</span></h1>
+      <p class="subtitle">The anatomy model — the substrate every localisation is derived from</p>
+      <p class="intro">A visual of <b>structures.js</b> + <b>sites.js</b>. Each structure maps to <b>one</b> examinable finding and sits at a level + part; a lesion <b>site</b> is one vascular territory on one side, and the structures sharing it fail together — that is how a named syndrome emerges, with no syndrome stored anywhere. <b>Laterality is the crux:</b> each finding is marked by the side it appears on relative to the lesion, set by whether its pathway has crossed at or below that level. In the <b>cortex</b> two further axes appear: a <b>hemisphere gate</b> (dominant vs non-dominant, resolved from the stated dominant side, default left) and <b>vascular territory as a separate annotation</b> — the anatomy is stated by subregion, and ACA/MCA/PCA stroke syndromes are composed from it, never baked in. This table is meant to be checked line-by-line by a neuroanatomist / neurologist.</p>
+      <div class="key">
+        <span class="expl">Side of the deficit vs the lesion:</span>
+        <span class="badge bi">IPSI</span><span class="expl">same side</span>
+        <span class="badge bc">CONTRA</span><span class="expl">opposite side (pathway has crossed)</span>
+        <span class="badge bb">BILAT</span><span class="expl">both sides (midline / commissural)</span>
+        <span class="badge bm">MIDLINE</span><span class="expl">no side (roots / sacral / sphincter)</span>
+        <span class="badge bnone">NONE</span><span class="expl">non-lateralised (higher-cortical / behavioural)</span>
+      </div>
+      <div class="key">
+        <span class="expl">Cortex only — hemisphere gate:</span>
+        <span class="gate dom">DOM</span><span class="expl">dominant hemisphere only (default left)</span>
+        <span class="gate nondom">NON-DOM</span><span class="expl">non-dominant only — the mirror sign</span>
+        <span class="expl">· vascular territory (ACA/MCA/PCA) is a separate annotation, not the anatomy</span>
+      </div>
+    </header>
+
+    <!-- ============ BRAINSTEM ============ -->
+    <div class="region-title"><h2>Brainstem</h2><span class="rule"></span><span class="note">medial = paramedian · lateral = tegmentum</span></div>
+
+    <!-- MIDBRAIN -->
+    <div class="level">
+      <div class="level-head">
+        <svg width="76" height="52" viewBox="0 0 76 52" aria-hidden="true">
+          <ellipse cx="38" cy="26" rx="35" ry="23" class="sch-fill-ipsi sch-stroke"/>
+          <rect x="28" y="4" width="20" height="44" rx="8" class="sch-fill-contra sch-stroke"/>
+          <text x="38" y="29" font-size="8" text-anchor="middle" class="sch-lbl">med</text>
+          <text x="12" y="29" font-size="8" text-anchor="middle" class="sch-lbl">lat</text>
+        </svg>
+        <div><div class="ln">Midbrain</div><div class="orient">CN III &amp; IV level · cerebral peduncles</div></div>
+      </div>
+      <div class="cols two">
+        <div class="col">
+          <div class="col-h"><div class="p">medial</div><div class="terr">PCA perforators (paramedian)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cn3_fascicle</div><div class="fn">CN III palsy</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">cst_midbrain</div><div class="fn">limb weakness (corticospinal)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">cbt_midbrain</div><div class="fn">facial weakness, forehead spared (UMN)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">red_nucleus</div><div class="fn">tremor / involuntary movements</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">scp_midbrain</div><div class="fn">limb ataxia (sup. cerebellar peduncle)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">lateral</div><div class="terr">PCA/SCA circumferential</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ml_midbrain</div><div class="fn">vibration / proprioception loss</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">stt_midbrain</div><div class="fn">body pain / temperature loss</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PONS -->
+    <div class="level">
+      <div class="level-head">
+        <svg width="76" height="52" viewBox="0 0 76 52" aria-hidden="true">
+          <ellipse cx="38" cy="26" rx="35" ry="23" class="sch-fill-ipsi sch-stroke"/>
+          <rect x="28" y="4" width="20" height="44" rx="8" class="sch-fill-contra sch-stroke"/>
+          <text x="38" y="29" font-size="8" text-anchor="middle" class="sch-lbl">med</text>
+          <text x="12" y="29" font-size="8" text-anchor="middle" class="sch-lbl">lat</text>
+        </svg>
+        <div><div class="ln">Pons</div><div class="orient">CN VI &amp; VII · gaze centre · MLF</div></div>
+      </div>
+      <div class="cols two">
+        <div class="col">
+          <div class="col-h"><div class="p">medial</div><div class="terr">basilar perforators (paramedian)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cn6_nucleus</div><div class="fn">CN VI palsy (abduction fails)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cn7_fascicle</div><div class="fn">CN VII LMN (whole hemiface)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">pprf</div><div class="fn">horizontal gaze palsy</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">mlf_pons</div><div class="fn">internuclear ophthalmoplegia</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">cst_pons</div><div class="fn">limb weakness</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ml_pons</div><div class="fn">vibration / proprioception loss</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">lateral</div><div class="terr">AICA</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">stt_pons</div><div class="fn">body pain / temperature loss</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">mcp_pons</div><div class="fn">limb ataxia (mid. cerebellar peduncle)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cn8_pons</div><div class="fn">vertigo / vestibular nystagmus</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDULLA -->
+    <div class="level">
+      <div class="level-head">
+        <svg width="76" height="52" viewBox="0 0 76 52" aria-hidden="true">
+          <ellipse cx="38" cy="26" rx="35" ry="23" class="sch-fill-ipsi sch-stroke"/>
+          <rect x="28" y="4" width="20" height="44" rx="8" class="sch-fill-contra sch-stroke"/>
+          <text x="38" y="29" font-size="8" text-anchor="middle" class="sch-lbl">med</text>
+          <text x="12" y="29" font-size="8" text-anchor="middle" class="sch-lbl">lat</text>
+        </svg>
+        <div><div class="ln">Medulla</div><div class="orient">CN IX–XII · pyramids · PICA wedge</div></div>
+      </div>
+      <div class="cols two">
+        <div class="col">
+          <div class="col-h"><div class="p">medial</div><div class="terr">anterior spinal / vertebral</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cn12_nucleus</div><div class="fn">CN XII palsy (tongue)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">pyramid</div><div class="fn">limb weakness (above decussation)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ml_medulla</div><div class="fn">vibration / proprioception loss</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">lateral</div><div class="terr">PICA / vertebral (Wallenberg)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">nuc_ambiguus</div><div class="fn">bulbar palsy (IX/X)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">spinal_trig</div><div class="fn">face pain / temperature loss</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">stt_medulla</div><div class="fn">body pain / temperature loss</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sympathetic</div><div class="fn">Horner's syndrome</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">icp_vestib</div><div class="fn">vertigo / vestibular nystagmus</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">icp_medulla</div><div class="fn">limb ataxia (inf. cerebellar peduncle)</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SPINAL CORD ============ -->
+    <div class="region-title"><h2>Spinal cord</h2><span class="rule"></span><span class="note">one generic level · sensory level sets where</span></div>
+
+    <div class="level">
+      <div class="level-head">
+        <svg width="60" height="52" viewBox="0 0 60 52" aria-hidden="true">
+          <circle cx="30" cy="26" r="23" class="sch-fill-paper sch-stroke"/>
+          <path d="M30 10 q10 6 0 16 q-10 -10 0 -16Z" class="sch-fill-bilat sch-stroke"/>
+          <rect x="16" y="6" width="28" height="7" rx="3" class="sch-fill-ipsi"/>
+          <rect x="16" y="39" width="28" height="7" rx="3" class="sch-fill-contra"/>
+          <text x="30" y="5" font-size="7" text-anchor="middle" class="sch-lbl">post</text>
+          <text x="30" y="51" font-size="7" text-anchor="middle" class="sch-lbl">ant</text>
+        </svg>
+        <div><div class="ln">Cord (cross-section)</div><div class="orient">crossing is the <b>opposite</b> of the brainstem — corticospinal &amp; dorsal columns have already crossed, so they are IPSI here</div></div>
+      </div>
+      <div class="cols three">
+        <div class="col">
+          <div class="col-h"><div class="p">anterior</div><div class="terr">ant. spinal artery (ant. ⅔)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cst_cord</div><div class="fn">limb weakness (already crossed)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">stt_cord</div><div class="fn">body pain / temperature (crosses in cord)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">posterior</div><div class="terr">post. spinal arteries</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">dc_cord</div><div class="fn">vibration / proprioception (uncrossed)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">central</div><div class="terr">periependymal (syrinx)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">commissural_stt</div><div class="fn">suspended dissociated pain/temp (cape, sacral sparing)</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ BELOW THE CORD ============ -->
+    <div class="region-title"><h2>Below the cord</h2><span class="rule"></span><span class="note">nerve roots &amp; sacral tip · findings are midline</span></div>
+
+    <div class="level">
+      <div class="level-head">
+        <div><div class="ln">Cauda equina &amp; conus medullaris</div><div class="orient">crossing is moot — these are <b>midline</b> sites (findings emitted @midline). CES = pure LMN (+ radicular pain); conus = UMN signs present — that split is the discriminator.</div></div>
+      </div>
+      <div class="cols two">
+        <div class="col">
+          <div class="col-h"><div class="p">cauda equina</div><div class="terr">lumbosacral nerve roots (thecal sac)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">ls_roots_motor</div><div class="fn">flaccid, areflexic (LMN) weakness</div></div></div>
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">sacral_roots_sensory</div><div class="fn">saddle anaesthesia (S2–S5)</div></div></div>
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">sacral_roots_autonom</div><div class="fn">bladder / bowel / sphincter dysfunction</div></div></div>
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">ls_roots_pain</div><div class="fn">radicular pain (sciatica), asymmetric</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">conus medullaris</div><div class="terr">distal cord tip (S2–S5)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">conus_cst</div><div class="fn">UMN signs (hyperreflexia, extensor plantar)</div></div></div>
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">conus_sacral_sensory</div><div class="fn">early symmetric saddle anaesthesia</div></div></div>
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">conus_sacral_autonom</div><div class="fn">early symmetric bladder / bowel dysfunction</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CEREBRAL CORTEX ============ -->
+    <div class="region-title"><h2>Cerebral cortex</h2><span class="rule"></span><span class="note">subregion = the anatomy · territory = a stroke annotation · dominance = a hemisphere gate</span></div>
+
+    <div class="level">
+      <div class="level-head">
+        <svg width="150" height="90" viewBox="0 0 260 150" aria-hidden="true">
+          <defs><clipPath id="ctxBrain"><ellipse cx="130" cy="80" rx="120" ry="60"/></clipPath></defs>
+          <g clip-path="url(#ctxBrain)">
+            <rect x="0" y="0" width="260" height="150" class="sch-terr-mca"/>
+            <rect x="0" y="20" width="260" height="30" class="sch-terr-aca"/>
+            <path d="M196 0 H260 V150 H150 Q186 82 196 0 Z" class="sch-terr-pca"/>
+          </g>
+          <ellipse cx="130" cy="80" rx="120" ry="60" fill="none" class="sch-stroke"/>
+          <line x1="34" y1="94" x2="204" y2="94" class="sch-stroke" stroke-dasharray="3 3"/>
+          <text x="118" y="41" font-size="9" text-anchor="middle" class="sch-lbl">ACA</text>
+          <text x="108" y="88" font-size="10" text-anchor="middle" class="sch-lbl">MCA</text>
+          <text x="224" y="84" font-size="9" text-anchor="middle" class="sch-lbl">PCA</text>
+        </svg>
+        <div><div class="ln">Lateral hemisphere — territory is an overlay</div><div class="orient">Every cortical finding is <b>contralateral</b> (above all decussations) except gaze deviation (ipsi — eyes toward the lesion). Higher-cortical signs are <b>NONE</b> (no body side); the <b>DOM / NON-DOM</b> mirror is set by the dominant side (default left). ACA / MCA / PCA are <b>composed</b> from the subregions they supply — they are not the anatomy, so any pathology (mass, seizure, demyelination) localises the same way.</div></div>
+      </div>
+    </div>
+
+    <!-- FRONTAL -->
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Frontal lobe</div><div class="orient">motor strip (somatotopy) · language / prosody · gaze · behaviour</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">motor_leg</div><div class="terr">ACA</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_motor_leg</div><div class="fn">leg weakness</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">motor_facearm</div><div class="terr">MCA · superior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_motor_face</div><div class="fn">facial weakness (UMN, forehead spared)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_motor_arm</div><div class="fn">arm weakness</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">operculum</div><div class="terr">MCA · superior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_broca</div><div class="fn">Broca's aphasia <span class="gate dom">DOM</span></div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_motor_prosody</div><div class="fn">motor dysprosody <span class="gate nondom">NON-DOM</span></div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">frontal_eye_field</div><div class="terr">MCA · superior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">ctx_fef</div><div class="fn">gaze deviation (toward the lesion)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">dlpfc</div><div class="terr">MCA · superior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_dlpfc</div><div class="fn">executive dysfunction</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">medial_pfc</div><div class="terr">ACA</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_medial_pfc</div><div class="fn">apathy / abulia</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">orbitofrontal</div><div class="terr">ACA</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_orbitofrontal</div><div class="fn">disinhibition, personality change</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARIETAL -->
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Parietal lobe</div><div class="orient">cortical sensory (somatotopy) · the dominant ↔ non-dominant association mirror · inferior optic radiation</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">sensory_facearm</div><div class="terr">MCA · superior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_sensory_arm</div><div class="fn">cortical sensory loss — arm (astereognosis)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">sensory_leg</div><div class="terr">ACA</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_sensory_leg</div><div class="fn">cortical sensory loss — leg</div></div></div>
+          </div>
+        </div>
+        <div class="col" style="grid-column:1 / -1;">
+          <div class="col-h"><div class="p">parietal — inferior parietal lobule</div><div class="terr">MCA · inferior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_gerstmann</div><div class="fn">Gerstmann — agraphia, acalculia, finger agnosia, L–R disorientation <span class="gate dom">DOM</span></div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_neglect</div><div class="fn">hemispatial neglect (contralesional) <span class="gate nondom">NON-DOM</span></div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_anosognosia</div><div class="fn">anosognosia <span class="gate nondom">NON-DOM</span></div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_constructional</div><div class="fn">constructional apraxia <span class="gate nondom">NON-DOM</span></div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_prosopagnosia</div><div class="fn">prosopagnosia <span class="gate nondom">NON-DOM</span></div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_inf_quadrant</div><div class="fn">inferior quadrantanopia (“pie on the floor”)</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">ctx_balint</div><div class="fn">Balint's syndrome <span class="gate">bilateral-only</span></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPORAL -->
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Temporal lobe</div><div class="orient">Wernicke / prosody · material-specific memory · limbic phenomena · Meyer's loop</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">temporoparietal</div><div class="terr">MCA · inferior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_wernicke</div><div class="fn">Wernicke's aphasia <span class="gate dom">DOM</span></div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_sensory_prosody</div><div class="fn">sensory dysprosody <span class="gate nondom">NON-DOM</span></div></div></div>
+          </div>
+        </div>
+        <div class="col" style="grid-column:1 / -1;">
+          <div class="col-h"><div class="p">temporal</div><div class="terr">MCA · inferior</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_verbal_memory</div><div class="fn">verbal memory impairment <span class="gate dom">DOM</span></div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_nonverbal_memory</div><div class="fn">non-verbal memory impairment <span class="gate nondom">NON-DOM</span></div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_hallucinations</div><div class="fn">hallucinations / episodic fear (either side)</div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">ctx_mood</div><div class="fn">episodic mood change (either side)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_sup_quadrant</div><div class="fn">superior quadrantanopia (“pie in the sky”)</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OCCIPITAL -->
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Occipital lobe</div><div class="orient">primary visual cortex · PCA territory · bilateral → Anton's</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">occipital</div><div class="terr">PCA</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_visual_cortex</div><div class="fn">homonymous hemianopia (± macular sparing)</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">ctx_anton</div><div class="fn">cortical blindness — Anton's <span class="gate">bilateral-only</span></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SUBCORTEX ============ -->
+    <div class="region-title"><h2>Subcortex</h2><span class="rule"></span><span class="note">deep grey &amp; white · all contralateral · no cortical signs · no new mechanism</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Deep structures</div><div class="orient">long-tract &amp; deep-grey signs with the cortical signs absent — the cortical-vs-subcortical distinction, emergent by parsimony</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">internal_capsule</div><div class="terr">lenticulostriate</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ic_cst_arm</div><div class="fn">arm weakness (corticospinal)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ic_cst_leg</div><div class="fn">leg weakness (corticospinal)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ic_cbt_face</div><div class="fn">facial weakness, forehead spared (UMN)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">thalamus</div><div class="terr">thalamoperforators (PCA)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">thal_dc</div><div class="fn">vibration / proprioception loss (VPL)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">thal_stt</div><div class="fn">body pain / temperature loss (VPL)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">thal_pain</div><div class="fn">central post-stroke pain — Déjerine–Roussy</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">optic_radiation</div><div class="terr">anterior choroidal</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">optic_rad</div><div class="fn">homonymous hemianopia — no cortical signs</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ BASAL GANGLIA ============ -->
+    <div class="region-title"><h2>Basal ganglia</h2><span class="rule"></span><span class="note">extrapyramidal movement nuclei · all contralateral · focal = hemi-syndrome, bilateral = disease · no new mechanism</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Movement nuclei</div><div class="orient">a focal/structural lesion gives the contralateral HEMI-syndrome; the bilateral degenerative disease (PD, Huntington's) is the bilateral composite, named by the phonebook — the anatomy stays pure. `rigidity` completes the tone axis (spasticity=UMN / hypotonia=LMN / rigidity=extrapyramidal)</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">substantia_nigra</div><div class="terr">nigrostriatal</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">snc_park</div><div class="fn">parkinsonism (bradykinesia / rest tremor)</div></div></div>
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">snc_rigid</div><div class="fn">rigidity — extrapyramidal tone (non-localising)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">striatum</div><div class="terr">lenticulostriate (caudate / putamen)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">striatum_chorea</div><div class="fn">chorea / choreoathetosis</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">globus_pallidus</div><div class="terr">lenticulostriate / ant. choroidal</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">gp_dystonia</div><div class="fn">dystonia — sustained posturing</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">subthalamic</div><div class="terr">posterior perforators</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">stn</div><div class="fn">hemiballismus (violent flinging)</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CEREBELLUM ============ -->
+    <div class="region-title"><h2>Cerebellum</h2><span class="rule"></span><span class="note">the organ, distinct from its brainstem peduncles · appendicular = ipsilateral hemisphere · axial = midline vermis / flocculonodular (no side) · no new mechanism</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Cerebellar subdivisions</div><div class="orient">A hemisphere lesion gives IPSILATERAL appendicular (limb) signs; the vermis gives midline AXIAL (truncal / gait) signs and the flocculonodular lobe vestibulocerebellar signs — both non-lateralised (NONE). A diffuse pancerebellar composite unions the lot. Discriminates from the brainstem peduncles (which also emit limb_ataxia) by COMPANY — pure cerebellar signs vs Wallenberg/brainstem neighbours.</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">hemisphere</div><div class="terr">SCA / PICA</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cb_hemi_ataxia</div><div class="fn">limb ataxia</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cb_hemi_dysmetria</div><div class="fn">dysmetria (past-pointing)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cb_hemi_ddk</div><div class="fn">dysdiadochokinesis</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cb_hemi_tremor</div><div class="fn">intention tremor</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">vermis</div><div class="terr">superior/inferior vermis</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">cb_vermis_truncal</div><div class="fn">truncal / gait ataxia (axial)</div></div></div>
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">cb_vermis_dysarthria</div><div class="fn">ataxic / scanning dysarthria</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">flocculonodular</div><div class="terr">vestibulocerebellum</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">cb_flocc_gaze</div><div class="fn">gaze-evoked nystagmus (central)</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ NYSTAGMUS / VESTIBULAR ============ -->
+    <div class="region-title"><h2>Nystagmus &amp; vestibular</h2><span class="rule"></span><span class="note">nystagmus TYPE localises · peripheral (inner ear) vs central (cerebellum / brainstem) · gaze-evoked is shared by the flocculonodular lobe AND the brainstem vestibular nuclei (lateral pons/medulla) · no new mechanism</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Multi-source nystagmus</div><div class="orient">The nystagmus TYPE is the localiser: peripheral (unidirectional, fixation-suppressed) → labyrinth; gaze-evoked / direction-changing (central) → cerebellum flocculonodular AND the vestibular nuclei (shared, by company); downbeat → craniocervical junction (Chiari); upbeat → pontomesencephalic tegmentum; INO (dissociated) → MLF (in the brainstem region). All types are non-lateralised (NONE); cn8_vertigo is ipsilateral.</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">labyrinth</div><div class="terr">inner ear (labyrinthine a.)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">vest_periph_nyst</div><div class="fn">peripheral nystagmus (unidirectional, fixation-suppressed)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">vest_periph_vertigo</div><div class="fn">vertigo (neuritis / labyrinthitis / Ménière)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">foramen_magnum</div><div class="terr">craniocervical junction</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">cvj_downbeat</div><div class="fn">downbeat nystagmus (Chiari)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">tegmentum</div><div class="terr">pontomesencephalic</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">ponto_upbeat</div><div class="fn">upbeat nystagmus</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">vestibular nuclei</div><div class="terr">lateral pons / medulla (shared)</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bnone">NONE</span><div class="m"><div class="id">cn8_pons_nyst · icp_vestib_nyst</div><div class="fn">gaze-evoked nystagmus — rides the AICA / Wallenberg clusters</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SKULL BASE ============ -->
+    <div class="region-title"><h2>Cranial nerves / skull base</h2><span class="rule"></span><span class="note">foramina as sites · all ipsilateral · nested syndromes derive by union · no new mechanism</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Bony foramina &amp; compartments</div><div class="orient">nerves threading one canal fail together — the peripheral analogue of a shared vascular territory; V2 and optic neuropathy are what separate the SOF, cavernous sinus and orbital apex</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">sup_orbital_fissure</div><div class="terr">SOF</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sof_cn3</div><div class="fn">CN III palsy</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sof_cn4</div><div class="fn">CN IV palsy (vertical diplopia)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sof_cn6</div><div class="fn">CN VI palsy (abduction fails)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sof_v1</div><div class="fn">V1 sensory / corneal reflex</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sof_symp</div><div class="fn">Horner's (orbital sympathetic)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">foramen_rotundum</div><div class="terr">V2</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">rot_v2</div><div class="fn">V2 sensory (cheek) — cavernous discriminator</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">optic_canal</div><div class="terr">CN II</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">opt_cn2</div><div class="fn">optic neuropathy — orbital-apex discriminator</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">jugular_foramen</div><div class="terr">IX/X/XI</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">jug_ixx</div><div class="fn">bulbar palsy (IX/X)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">jug_cn11</div><div class="fn">CN XI — trapezius / SCM weakness</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">hypoglossal_canal</div><div class="terr">XII</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">hyp_cn12</div><div class="fn">CN XII palsy (tongue)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">carotid_space</div><div class="terr">sympathetic</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">car_symp</div><div class="fn">Horner's (cervical sympathetic)</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">cpa</div><div class="terr">VII/VIII/V</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cpa_cn7</div><div class="fn">CN VII LMN (whole hemiface)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cpa_cn8</div><div class="fn">sensorineural hearing loss (VIII)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cpa_v1</div><div class="fn">reduced corneal reflex (V)</div></div></div>
+            <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cpa_ataxia</div><div class="fn">ipsilateral ataxia (large mass)</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="compose" style="margin-top:14px">
+        <h3>Derived compartments — nested syndromes by UNION</h3>
+        <p>A compartment is <b>not</b> a primitive foramen — it is the <b>union</b> of the foramina it spans, gathered by <code>composeSkullBaseSites()</code>. The structure the union <em>adds</em> IS the discriminator, so no compartment is ever hand-listed.</p>
+        <div class="grid">
+          <div class="cmp"><div class="cid">cavernous_sinus = SOF ∪ rotundum</div><div class="cd">III · IV · VI · V1 · <b>V2</b> · sympathetic (postganglionic Horner — no anhidrosis). V2 is exactly what separates it from the SOF.</div></div>
+          <div class="cmp"><div class="cid">orbital_apex = SOF ∪ optic_canal</div><div class="cd">SOF contents + <b>optic neuropathy</b> — monocular visual loss is the discriminator from the cavernous sinus.</div></div>
+          <div class="cmp"><div class="cid">collet_sicard = jugular ∪ hypoglossal</div><div class="cd">IX–XII together — the lower-cranial-nerve staircase beyond Vernet (the jugular-foramen primitive).</div></div>
+          <div class="cmp"><div class="cid">villaret = collet_sicard + carotid_space</div><div class="cd">IX–XII + sympathetic (Horner) — the most caudal / retropharyngeal step of the staircase.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MOTOR UNIT ============ -->
+    <div class="region-title"><h2>Motor unit — pure-motor endings</h2><span class="rule"></span><span class="note">anterior horn · NMJ · muscle · generalized &amp; symmetric → bilateral sites · localiser is the pattern, no sensory</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Anterior horn → NMJ → muscle</div><div class="orient">the anterior horn is modelled as PURE lower motor neurone (no UMN) — ALS is a UMN+LMN pathology for the future pathology layer, not a site; fasciculations is a general LMN sign (non-localising)</div></div></div>
+      <div class="cols flow">
+        <div class="col">
+          <div class="col-h"><div class="p">anterior_horn</div><div class="terr">LMN</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">ah_lmn</div><div class="fn">flaccid areflexic (LMN) weakness</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">ah_fascic</div><div class="fn">fasciculations — general LMN sign (not localising)</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">ah_bulbar</div><div class="fn">bulbar (LMN) — dysphagia/dysarthria</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">nmj_postsynaptic</div><div class="terr">MG</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">mg_fatig</div><div class="fn">fatigable weakness (worse with effort)</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">mg_ocular</div><div class="fn">fatigable ptosis / diplopia</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">mg_bulbar</div><div class="fn">fatigable bulbar</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">mg_prox</div><div class="fn">proximal weakness</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">nmj_presynaptic</div><div class="terr">LEMS</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">lems_facil</div><div class="fn">facilitating weakness (better with exercise)</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">lems_auto</div><div class="fn">autonomic features (dry mouth)</div></div></div>
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">lems_prox</div><div class="fn">proximal weakness</div></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-h"><div class="p">muscle</div><div class="terr">myopathy</div></div>
+          <div class="rows">
+            <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">myo_prox</div><div class="fn">proximal weakness (bare → myopathy by parsimony)</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PNS: NERVE ROOTS ============ -->
+    <div class="region-title"><h2>Nerve roots — radiculopathy</h2><span class="rule"></span><span class="note">per-segment sites · ipsilateral · the SEGMENT emerges from dermatome + myotome + reflex (a mismatch → multifocal) · every root also carries radicular pain</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">C5 – T1 · L2 – S1</div><div class="orient">unlike the cord sensory level (identical tracts every segment), each root has DISTINCT findings, so the segment is finding-driven — like cortical subregions</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">c5</div><div class="terr">C5</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c5_derm</div><div class="fn">lateral upper arm</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c5_abd</div><div class="fn">shoulder abduction</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c5_reflex</div><div class="fn">biceps jerk</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">c6</div><div class="terr">C6</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c6_derm</div><div class="fn">thumb / lateral forearm</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c6_elbflex</div><div class="fn">elbow flexion / wrist ext</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c6_reflex</div><div class="fn">brachioradialis jerk</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">c7</div><div class="terr">C7</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c7_derm</div><div class="fn">middle finger</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c7_elbext</div><div class="fn">elbow extension (triceps)</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c7_reflex</div><div class="fn">triceps jerk</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">c8</div><div class="terr">C8</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c8_derm</div><div class="fn">little finger</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_c8_fingflex</div><div class="fn">finger flexion</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">t1</div><div class="terr">T1</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_t1_derm</div><div class="fn">medial arm / axilla</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_t1_fingabd</div><div class="fn">finger abduction (intrinsics)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">l2</div><div class="terr">L2</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l2_derm</div><div class="fn">anterior thigh</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l2_hipflex</div><div class="fn">hip flexion</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">l3</div><div class="terr">L3</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l3_derm</div><div class="fn">lower thigh / knee</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l3_kneeext</div><div class="fn">knee extension</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l3_reflex</div><div class="fn">knee jerk</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">l4</div><div class="terr">L4</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l4_derm</div><div class="fn">medial shin</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l4_df</div><div class="fn">ankle dorsiflexion</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l4_reflex</div><div class="fn">knee jerk</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">l5</div><div class="terr">L5</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l5_derm</div><div class="fn">dorsum foot / great toe</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_l5_gte</div><div class="fn">great-toe extension</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">s1</div><div class="terr">S1</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_s1_derm</div><div class="fn">lateral foot / sole</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_s1_pf</div><div class="fn">ankle plantarflexion</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">root_s1_reflex</div><div class="fn">ankle jerk</div></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ============ PNS: POLYNEUROPATHY ============ -->
+    <div class="region-title"><h2>Length-dependent polyneuropathy</h2><span class="rule"></span><span class="note">one bilateral site · the extent is the orthogonal nerveLength.js axis · stocking-glove EMERGES (fingertips share an axon-length rank with the knees)</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Peripheral nerves, diffusely</div><div class="orient">longest axons fail first → feet before hands; when the ascending deficit reaches the knees, the fingertips (same axon length) are recruited and the glove appears — derived, not stored</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">length_dependent</div><div class="terr">distal, symmetric</div></div><div class="rows">
+          <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">poly_sensory</div><div class="fn">distal sensory loss (stocking-glove)</div></div></div>
+          <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">poly_motor</div><div class="fn">distal symmetric weakness</div></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ============ NAMED PERIPHERAL NERVES ============ -->
+    <div class="region-title"><h2>Named peripheral nerves — complete innervation &amp; level segments</h2><span class="rule"></span><span class="note">territory sites · ipsilateral · radial/median/ulnar/peroneal split into LEVEL segments (a proximal segment ⊃ a distal one) → the elbow-vs-wrist lesion emerges from which muscle/branch is SPARED</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Upper limb — with level segments</div><div class="orient">radial: axilla (triceps) ⊃ spiral-groove (triceps spared) ⊃ PIN (pure motor, wrist ext + sensory spared) · median: proximal ⊃ AIN (pure motor) / carpal-tunnel (palmar sparing) · ulnar: elbow vs wrist/Guyon — <b>the paradox: the DISTAL lesion claws worse</b> (intact FDP 4/5)</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">axillary</div><div class="terr">C5-6</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">axil_sens</div><div class="fn">regimental-badge sensory</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">axil_abd</div><div class="fn">shoulder abduction (deltoid)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">musculocutaneous</div><div class="terr">C5-6</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">mcut_sens</div><div class="fn">lateral forearm sensory</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">mcut_flex</div><div class="fn">elbow flexion (biceps)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">suprascapular</div><div class="terr">C5-6 · motor</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">supra_er</div><div class="fn">external rotation (infraspinatus)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">long_thoracic</div><div class="terr">C5-7 · motor</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">lthor_wing</div><div class="fn">scapular winging (serratus)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">radial_axilla</div><div class="terr">crutch palsy</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">rad_ax_tri</div><div class="fn">triceps (elbow ext) + lost jerk</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">rad_ax_wr</div><div class="fn">wrist + finger drop · dorsal-web sensory</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">radial_spiral_groove</div><div class="terr">Saturday-night</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">rad_sg_wr</div><div class="fn">wrist + finger drop · <b>triceps SPARED</b></div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">rad_sg_sens</div><div class="fn">dorsal-web sensory</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">radial_pin</div><div class="terr">post. interosseous · pure motor</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">rad_pin_fg</div><div class="fn">finger drop · <b>wrist ext + sensory SPARED</b></div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">median_proximal</div><div class="terr">pronator / supracondylar</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">med_px_pron</div><div class="fn">pronation + wrist/finger flexion + APB</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">med_px_palm</div><div class="fn">digital + palmar-cutaneous sensory</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">median_ain</div><div class="terr">ant. interosseous · pure motor</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">med_ain_ff</div><div class="fn">FPL/FDP — failed 'OK' sign · no sensory</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">median_carpal_tunnel</div><div class="terr">CTS</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">med_ct_apb</div><div class="fn">thumb abduction (APB) · thenar wasting</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">med_ct_sens</div><div class="fn">digital sensory · <b>PALM spared</b></div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">ulnar_elbow</div><div class="terr">cubital tunnel</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">uln_el_ff</div><div class="fn">interossei + Froment + FDP4/5 + FCU</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">uln_el_dsens</div><div class="fn">palmar + dorsal-hand sensory</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">ulnar_wrist</div><div class="terr">Guyon · the paradox</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">uln_wr_claw</div><div class="fn"><b>WORSE claw</b> (FDP4/5 intact) · dorsal SPARED</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">uln_wr_fab</div><div class="fn">interossei + Froment</div></div></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Lower limb</div><div class="orient">flagship: L5 vs common peroneal — both foot drop, but the peroneal nerve SPARES inversion + hip abduction</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">femoral</div><div class="terr">L2-4</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">fem_sens</div><div class="fn">anterior thigh / saphenous</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">fem_kneeext</div><div class="fn">knee extension (quadriceps)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">obturator</div><div class="terr">L2-4</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">obt_sens</div><div class="fn">medial thigh</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">obt_add</div><div class="fn">hip adduction</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">lat_fem_cutaneous</div><div class="terr">L2-3 · sensory</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">lfc_sens</div><div class="fn">lateral thigh (meralgia)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">superior_gluteal</div><div class="terr">L4-S1 · motor</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">supglut_abd</div><div class="fn">hip abduction (Trendelenburg)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">sciatic</div><div class="terr">L4-S3</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sci_sens</div><div class="fn">below knee (spares medial)</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sci_kneeflex</div><div class="fn">knee flexion + below-knee</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">peroneal_common</div><div class="terr">fibular neck</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cper_cm_df</div><div class="fn">foot drop + eversion · dorsum sensory</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">peroneal_deep</div><div class="terr">deep branch</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cper_dp_df</div><div class="fn">dorsiflexion + great-toe · first-web sensory · <b>eversion SPARED</b></div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">peroneal_superficial</div><div class="terr">superficial branch</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cper_sf_ev</div><div class="fn">eversion · dorsum sensory · <b>dorsiflexion SPARED</b></div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">tibial</div><div class="terr">L4-S3</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">tib_sens</div><div class="fn">sole</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">tib_inv</div><div class="fn">plantarflexion + inversion</div></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ============ TONE, WASTING & NON-MUSCLE REFLEXES ============ -->
+    <div class="region-title"><h2>Tone, wasting &amp; non-muscle reflexes — the UMN-vs-LMN companions</h2><span class="rule"></span><span class="note">anatomy-layer signs on EXISTING sites (no new site) · they confirm the UMN/LMN quality; the level is pinned by the company they keep</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Cross-cutting motor signs</div><div class="orient">UMN signs ride the whole corticospinal tract (non-localising, following the site's crossing — CONTRA in brainstem, IPSI in cord) · LMN signs ride the lower motor neurone · tone is the classic UMN-vs-LMN discriminator; wasting is broad LMN but hypotonia only where flaccidity is real</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">UMN companions</div><div class="terr">corticospinal · non-localising</div></div><div class="rows">
+          <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">spasticity (cst)</div><div class="fn">increased tone (clasp-knife) · IPSI in cord/conus</div></div></div>
+          <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">babinski / hoffmann</div><div class="fn">extensor plantar (leg) · Hoffmann (arm)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">LMN companions</div><div class="terr">anterior horn / root / nerve</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">wasting</div><div class="fn">atrophy — broad LMN (horn, cauda, poly, roots, motor nerves; NOT NMJ/muscle/pure-sensory)</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">hypotonia</div><div class="fn">flaccidity — generalised-flaccid only (horn, cauda, polyneuropathy)</div></div></div>
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">fasciculations</div><div class="fn">general LMN irritability (anterior horn)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">sacral · frontal reflexes</div><div class="terr">S2-4 arc · frontal release</div></div><div class="rows">
+          <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">anal_wink / bulbocavernosus</div><div class="fn">S2-4 arc — conus + cauda (localising)</div></div></div>
+          <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">grasp / palmomental</div><div class="fn">frontal release (medial_pfc / orbitofrontal)</div></div></div>
+        </div></div>
+      </div>
+      <div class="level-head" style="margin-top:10px"><div><div class="orient"><b>ALS precursor (structural invariant):</b> no single site produces both <code>spasticity</code> and <code>wasting</code> → a mixed UMN+LMN picture must span ≥2 sites — the pattern the future pathology layer will name.</div></div></div>
+    </div>
+
+    <!-- ============ VISUAL PATHWAY ============ -->
+    <div class="region-title"><h2>Visual pathway</h2><span class="rule"></span><span class="note">the field-defect GEOMETRY localises · the afferent RAPD leaves at the optic tract, so it separates PRE- from POST-geniculate · new <code>visual_pathway</code> level (chiasm is midline)</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Retina → chiasm → tract → LGN → radiation → occipital</div><div class="orient">monocular loss + <b>ipsi RAPD</b> → optic nerve · <b>bitemporal</b> → chiasm · homonymous + <b>contra RAPD</b> → optic tract · + <b>macular sparing</b> → occipital · bare homonymous (no RAPD) → retrochiasmal-unspecified (LGN / radiation)</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">optic nerve <span class="terr">(= skull-base optic canal)</span></div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">opt_cn2 / opt_rapd</div><div class="fn">monocular visual loss + afferent RAPD</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">chiasm</div><div class="terr">parasellar / pituitary</div></div><div class="rows">
+          <div class="row"><span class="badge bm">MIDLINE</span><div class="m"><div class="id">chiasm_bitemp</div><div class="fn">bitemporal hemianopia</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">optic_tract</div><div class="terr">pre-geniculate</div></div><div class="rows">
+          <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ot_hh / ot_rapd</div><div class="fn">homonymous hemianopia + RAPD (pupil fibres still present)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">lgn</div><div class="terr">thalamus</div></div><div class="rows">
+          <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">lgn_hh</div><div class="fn">homonymous hemianopia · NO RAPD</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">occipital <span class="terr">(= cortex)</span></div></div><div class="rows">
+          <div class="row"><span class="badge bc">CONTRA</span><div class="m"><div class="id">ctx_macular</div><div class="fn">macular sparing — the PCA-occipital hallmark</div></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ============ PUPIL & AUTONOMIC ============ -->
+    <div class="region-title"><h2>Pupil &amp; autonomic pathways</h2><span class="rule"></span><span class="note">parasympathetic fibres run on the SURFACE of CN III (pupil-involving vs sparing) · the sympathetic Horner localises by the ANHIDROSIS distribution along its 3 neurons</span></div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Pupillary efferent — parasympathetic (light reflex)</div><div class="orient">CN III + fixed dilated pupil → compressive (aneurysm, emergency) · CN III alone → ischaemic (pupil-sparing) · fixed dilated + light-near dissociation, unilateral → Adie · light-near dissociation, bilateral → Argyll Robertson</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">cn3_compressive</div><div class="terr">PCOM aneurysm / uncal</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cmp_cn3 / cmp_pupil</div><div class="fn">CN III palsy + FIXED DILATED pupil (emergency)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">cn3_ischaemic</div><div class="terr">microvascular / diabetic</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">isch_cn3</div><div class="fn">CN III palsy — pupil-SPARING</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">ciliary_ganglion</div><div class="terr">postganglionic para · Adie</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">cg_pupil / cg_lnd</div><div class="fn">tonic dilated pupil + light-near dissociation</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">pretectum</div><div class="terr">dorsal midbrain · Argyll Robertson</div></div><div class="rows">
+          <div class="row"><span class="badge bb">BILAT</span><div class="m"><div class="id">ar_lnd</div><div class="fn">small bilateral pupils, light-near dissociation</div></div></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="level">
+      <div class="level-head"><div><div class="ln">Sympathetic — Horner's 3-order axis (the anhidrosis distribution)</div><div class="orient">hemibody anhidrosis → central (medulla, or — with a cervical sensory level — the lateral cord) · facial anhidrosis, body spared → preganglionic (stellate) · no anhidrosis → postganglionic (carotid). The cord sympathetic is <b>level-gated</b> (Horner only ≥ ~T1) — the first time the sensory level GATES emission, so a cervical Brown-Séquard gets a Horner and a thoracic one does not. Pancoast = preganglionic ∪ lower trunk.</div></div></div>
+      <div class="cols flow">
+        <div class="col"><div class="col-h"><div class="p">central — medulla / cord_lateral</div><div class="terr">1st-order · Wallenberg / syrinx</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">sym_med/cord_anh*</div><div class="fn">Horner + face + <b>hemibody</b> anhidrosis (cord gated ≥T1)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">preganglionic</div><div class="terr">2nd-order · stellate / apex</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">preg_horner / preg_anhface</div><div class="fn">Horner + <b>facial</b> anhidrosis (body spared)</div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">postganglionic — carotid_space</div><div class="terr">3rd-order · ICA dissection</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">car_symp</div><div class="fn">isolated, painful Horner · <b>NO anhidrosis</b></div></div></div>
+        </div></div>
+        <div class="col"><div class="col-h"><div class="p">pancoast (composite)</div><div class="terr">preganglionic ∪ C8/T1</div></div><div class="rows">
+          <div class="row"><span class="badge bi">IPSI</span><div class="m"><div class="id">*_sympathetic_pancoast</div><div class="fn">preganglionic Horner + hand wasting + T1 sensory + arm pain</div></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ============ HOW SITES COMPOSE ============ -->
+    <div class="compose">
+      <h3>How sites compose into syndromes</h3>
+      <p>A site is derived, not hand-listed. Primitives are one part on one side; composites join parts. The named syndrome is a lookup on the emergent site — remove the phonebook and the engine still localises. In the cortex the primitive is a <b>subregion</b> and the vascular composites are just one lesion-shape family — the anatomy is pathology-agnostic.</p>
+      <div class="grid">
+        <div class="cmp"><div class="cid">left/right · medial | lateral</div><div class="cd">Brainstem primitive — one territory, one side (Weber, Wallenberg…)</div></div>
+        <div class="cmp"><div class="cid">*_hemi (medial + lateral)</div><div class="cd">One whole half-level — hemimedullary syndrome</div></div>
+        <div class="cmp"><div class="cid">*_cord_hemi (ant + post, one side)</div><div class="cd">Hemicord → Brown-Séquard</div></div>
+        <div class="cmp"><div class="cid">bilateral_cord_anterior</div><div class="cd">Both anterior columns → anterior cord / ASA</div></div>
+        <div class="cmp"><div class="cid">bilateral_cord_posterior</div><div class="cd">Both dorsal columns → posterior column / SCD</div></div>
+        <div class="cmp"><div class="cid">bilateral_cord_central</div><div class="cd">Commissural fibres → central cord / syrinx</div></div>
+        <div class="cmp"><div class="cid">bilateral_cord_transverse</div><div class="cd">All below-level tracts → transverse myelopathy</div></div>
+        <div class="cmp"><div class="cid">cauda_equina (midline)</div><div class="cd">Lumbosacral roots → cauda equina syndrome</div></div>
+        <div class="cmp"><div class="cid">conus_medullaris (midline)</div><div class="cd">Sacral cord tip → conus medullaris syndrome</div></div>
+        <div class="cmp"><div class="cid">left/right · subregion</div><div class="cd">Focal cortical lesion → Gerstmann, neglect, abulia, Wernicke… (any pathology, not just stroke)</div></div>
+        <div class="cmp"><div class="cid">cortex_aca · mca_superior · mca_inferior · mca · pca</div><div class="cd">Vascular composites — subregions grouped by the territory annotation (the stroke ddx)</div></div>
+        <div class="cmp"><div class="cid">bilateral_occipital · bilateral_parietal</div><div class="cd">Both-hemispheres sites → Anton's · Balint's (the bilateral-only syndromes)</div></div>
+        <div class="cmp"><div class="cid">left/right · subcortex primitive</div><div class="cd">Deep lacune → pure motor (capsule) · pure sensory / Déjerine–Roussy (thalamus) — no cortical signs</div></div>
+        <div class="cmp"><div class="cid">left/right · basal_ganglia primitive</div><div class="cd">Focal nucleus → hemiparkinsonism (nigra) · hemichorea (striatum) · dystonia (pallidum) · hemiballismus (STN) — the structural hemi-syndromes</div></div>
+        <div class="cmp"><div class="cid">basal_ganglia_* (bilateral)</div><div class="cd">Bilateral nucleus → Parkinson's disease (nigra) · Huntington's / chorea (striatum) · generalised dystonia (pallidum) — the degenerative diseases</div></div>
+        <div class="cmp"><div class="cid">left/right · cerebellum_hemisphere</div><div class="cd">Focal hemisphere → ipsilateral appendicular ataxia (limb ataxia · dysmetria · dysdiadochokinesis · intention tremor)</div></div>
+        <div class="cmp"><div class="cid">cerebellum_vermis · flocculonodular (midline)</div><div class="cd">Midline cerebellum → truncal / gait ataxia · ataxic dysarthria · gaze-evoked nystagmus (axial, no side)</div></div>
+        <div class="cmp"><div class="cid">left/right · peripheral_vestibular_labyrinth</div><div class="cd">Inner ear → peripheral nystagmus + vertigo (vestibular neuritis / labyrinthitis / Ménière)</div></div>
+        <div class="cmp"><div class="cid">craniocervical_junction · pontomesencephalic (midline)</div><div class="cd">Central directional nystagmus → downbeat (CVJ / Chiari) · upbeat (pontomesencephalic tegmentum)</div></div>
+        <div class="cmp"><div class="cid">cerebellum_pancerebellar (bilateral)</div><div class="cd">Whole cerebellum → bilateral limb ataxia + truncal + nystagmus (paraneoplastic / toxic / SCA)</div></div>
+        <div class="cmp"><div class="cid">subcortex_sensorimotor · anterior_choroidal</div><div class="cd">Deep-vascular composites — capsule + thalamus (± optic radiation) → sensorimotor lacune · anterior choroidal triad</div></div>
+        <div class="cmp"><div class="cid">skull_base primitive (one foramen)</div><div class="cd">SOF · jugular foramen (Vernet) · hypoglossal canal · CPA — nerves sharing one canal</div></div>
+        <div class="cmp"><div class="cid">cavernous_sinus = SOF ∪ rotundum</div><div class="cd">Adds V2 → cavernous sinus syndrome (V2 is the discriminator from the SOF)</div></div>
+        <div class="cmp"><div class="cid">orbital_apex = SOF ∪ optic_canal</div><div class="cd">Adds optic neuropathy → orbital apex (monocular visual loss is the discriminator)</div></div>
+        <div class="cmp"><div class="cid">collet_sicard · villaret</div><div class="cd">Jugular + hypoglossal (+ sympathetic) → the lower-CN staircase beyond Vernet</div></div>
+        <div class="cmp"><div class="cid">motor_unit_* (bilateral)</div><div class="cd">Generalized symmetric sites → anterior horn (LMN) · myasthenia · Lambert-Eaton · myopathy — localiser is the pattern, no sensory</div></div>
+        <div class="cmp"><div class="cid">root_* (per segment, ipsilateral)</div><div class="cd">Radiculopathy → the segment emerges from dermatome + myotome + reflex; a mismatch → multifocal (two roots)</div></div>
+        <div class="cmp"><div class="cid">polyneuropathy_length_dependent (bilateral)</div><div class="cd">One diffuse site + the nerveLength.js axis — stocking-glove emerges when the reach hits the knees</div></div>
+        <div class="cmp"><div class="cid">plexus_upper_trunk · lower_trunk (root composites)</div><div class="cd">Erb = C5∪C6 · Klumpke = C8∪T1 (+ lumbar/sacral) — a two-adjacent-root pattern beats two roots by parsimony</div></div>
+        <div class="cmp"><div class="cid">nerve_* — territory sites + LEVEL segments</div><div class="cd">Named nerves with complete innervation; radial/median/ulnar/peroneal split into segments (axilla⊃spiral-groove⊃PIN; proximal⊃AIN/carpal-tunnel; elbow vs Guyon; common⊃deep/superficial) — the elbow-vs-wrist lesion emerges from the spared muscle/branch (incl. the ulnar-claw paradox)</div></div>
+        <div class="cmp"><div class="cid">tone / wasting + non-muscle reflexes (signs on existing sites)</div><div class="cd">Spasticity/Babinski/Hoffmann across the corticospinal tract (non-localising UMN, follow the site's crossing) · wasting (broad LMN) + hypotonia (generalised-flaccid) + fasciculations · anal wink + bulbocavernosus at conus/cauda · grasp/palmomental frontal. No site holds both spasticity + wasting → ALS spans ≥2 sites (pathology layer). FND deferred.</div></div>
+        <div class="cmp"><div class="cid">visual_pathway_chiasm (midline) · optic_tract · lgn</div><div class="cd">Field-defect geometry: bitemporal → chiasm · homonymous + RAPD → optic tract (pre-geniculate) · macular sparing → occipital. RAPD separates pre- from post-geniculate</div></div>
+        <div class="cmp"><div class="cid">pupil_* · pupil_pretectum (bilateral)</div><div class="cd">CN III ± fixed dilated pupil → compressive vs ischaemic · Adie (ciliary ganglion) · Argyll Robertson (pretectum, bilateral light-near dissociation)</div></div>
+        <div class="cmp"><div class="cid">sympathetic axis · cord_lateral (level-gated) · sympathetic_pancoast (= preganglionic ∪ C8/T1)</div><div class="cd">Horner localises by anhidrosis: hemibody → central (medulla / cord, cord gated ≥T1 so a cervical Brown-Séquard gets a Horner) · face → preganglionic · none → postganglionic (carotid) · Pancoast = the apical composite</div></div>
+      </div>
+    </div>
+
+    <footer>
+      <span class="disc"><span class="rule2">Not a medical device.</span> A model of the anatomy, deliberately simplified; coverage is bounded by the structures listed here.</span>
+      <span>Needs neuroanatomist / neurologist review — that is the real validation step.</span>
+    </footer>
+  </div>
+</div>
