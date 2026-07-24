@@ -170,10 +170,18 @@ function diffBlock(list, cands, total, nAll, r) {
     const fit = c.n===total ? `<span class="dall">✓ all</span>` : `<span class="dfrac">${c.n}/${total}</span>`;
     return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteLoc(c.site))}${c.site.territory?` · ${esc(c.site.territory)}`:""}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div></div>`;
   }).join("");
+  const ruled = (r.ruledOut && r.ruledOut.length)
+    ? `<details class="ruledout" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Ruled out by a normal finding <span class="c">${r.ruledOut.length}</span></summary>
+        <div class="why-list" style="margin-top:4px">${r.ruledOut.map(x => {
+          const side = x.contradictedBy.split("@")[1];
+          return `<div class="why-item"><span class="k no">✗</span><span class="t">${esc(siteName(x.site))}</span><span class="d">would also cause ${esc(desc(fid(x.contradictedBy)))} on the ${esc(side)} — which is normal here</span></div>`;
+        }).join("")}</div></details>`
+    : "";
   return `<h3>Possible lesions <span style="color:var(--faint);font-weight:600">(${list.length})</span></h3>
     <p class="narrow">${narrow}</p>
     ${near}${multi}${funcFlag}${umnlmn}${annot}
     <div class="difflist" id="difflist">${rows}</div>
+    ${ruled}
     <p style="font-size:11px;color:var(--faint);margin:6px 0 0">Click a lesion to see its reasoning & causes below.</p>`;
 }
 
