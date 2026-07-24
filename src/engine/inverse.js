@@ -9,37 +9,23 @@
 // "Localising findings" are the ones a lesion must account for; long-tract signs can attach to
 // many sites, so coverage is judged on the localising set to avoid trivial explanations.
 
-import { SITES, composeHemiLevelSites, composeBilateralCordSites, composeCaudaConusSites,
-         composeVascularCortexSites, composeBilateralCortexSites, composeDeepVascularSites,
-         composeSkullBaseSites, composeMotorUnitSites, composePolyneuropathySites,
-         composePlexusSites, composeBrachialCordSites, composeVisualPathwaySites, composePupilPretectumSites,
-         composePancoastSites, composeBasalGangliaBilateralSites,
-         composeCerebellumMidlineSites, composeCerebellumPancerebellarSites,
-         composeCentralNystagmusSites, composeDorsalMidbrainSites,
-         composeConsciousnessSites, composeLateralPontineTrigeminalSites,
-         composeTrochlearNucleusSites, composeGuillainMollaretSites,
-         composeAphasiaSites, composeHypothalamusSites,
-         composeCorpusCallosumSites, composePseudobulbarSites,
-         composeCombinedDegenerationSites } from "../model/sites.js";
+import * as sitesMod from "../model/sites.js";
+const { SITES } = sitesMod;
 import { scoreSite, LOCALISING, findingIdOf } from "./score.js";
 import { expectedFindings } from "./forward.js";
 import { normaliseLevel, regionOf, landmarkOf } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 
-function candidateSites() {
-  return [...SITES, ...composeHemiLevelSites(), ...composeBilateralCordSites(),
-          ...composeCaudaConusSites(), ...composeVascularCortexSites(), ...composeBilateralCortexSites(),
-          ...composeDeepVascularSites(), ...composeSkullBaseSites(), ...composeMotorUnitSites(),
-          ...composePolyneuropathySites(), ...composePlexusSites(), ...composeBrachialCordSites(), ...composeVisualPathwaySites(),
-          ...composePupilPretectumSites(), ...composePancoastSites(),
-          ...composeBasalGangliaBilateralSites(),
-          ...composeCerebellumMidlineSites(), ...composeCerebellumPancerebellarSites(),
-          ...composeCentralNystagmusSites(), ...composeDorsalMidbrainSites(),
-          ...composeConsciousnessSites(), ...composeLateralPontineTrigeminalSites(),
-          ...composeTrochlearNucleusSites(), ...composeGuillainMollaretSites(),
-          ...composeAphasiaSites(), ...composeHypothalamusSites(),
-          ...composeCorpusCallosumSites(), ...composePseudobulbarSites(),
-          ...composeCombinedDegenerationSites()];
+// One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
+// the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
+export function candidateSites() {
+  const out = [...SITES];
+  for (const k of Object.keys(sitesMod)) {
+    if (k.startsWith("compose") && typeof sitesMod[k] === "function") {
+      try { out.push(...sitesMod[k]()); } catch { /* skip a composer that throws on empty input */ }
+    }
+  }
+  return out;
 }
 
 function localisingObserved(observedSet) {
