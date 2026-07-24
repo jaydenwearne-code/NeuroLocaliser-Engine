@@ -93,6 +93,7 @@ node test/raw-observations.test.js # raw-observations refactor acceptance (clust
 node test/patterns.test.js       # cross-cutting synthesis — UMN vs LMN (mixed → MND) + functional (FND) flag
 node test/relaxation.test.js     # drop-1 (non-localising) near-fit before declaring multifocal
 node test/next-steps.test.js     # educational next-steps — investigations + urgency + referral
+node test/differential.test.js   # narrowing differential + explainAll/display/defaultSite (engine-owned)
 ```
 
 ## Status

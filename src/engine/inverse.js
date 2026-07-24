@@ -40,6 +40,25 @@ export function rankSingle(observedSet, opts = {}) {
     .sort((a, b) => b.score - a.score);
 }
 
+// ---- NARROWING DIFFERENTIAL (count / superset) ----
+// Every candidate site COMPATIBLE with the findings so far — i.e. whose predicted findings include at least
+// one observed token. One finding → many sites; each added finding intersects the set → it narrows. This is
+// deliberately NOT the best-fit score (which penalises over-prediction and under-returns on sparse input) —
+// it is the broad differential the app shows and narrows. Tie-break on site.id keeps the engine independent
+// of the phonebook (the golden rule).
+export function differential(observedSet, opts = {}) {
+  const observed = [...observedSet];
+  const cands = [];
+  for (const site of candidateSites()) {
+    let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
+    const explained = observed.filter(t => exp.has(t));
+    if (!explained.length) continue;
+    cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length, n: explained.length });
+  }
+  cands.sort((a, b) => b.n - a.n || a.over - b.over || a.site.id.localeCompare(b.site.id));
+  return cands;
+}
+
 // Does a single site explain every localising finding?
 function coversAllLocalising(result, observedSet) {
   const need = new Set(localisingObserved(observedSet));
@@ -192,5 +211,11 @@ export function solve(observedSet, options = {}) {
   const nf = nearFit(observedSet, opts);
   const level = describeLevel(best, options.sensoryLevel);
   const length = describeLength(best, options.distalReach);
-  return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide };
+  const diff = differential(observedSet, opts);
+  const total = observedSet.size;
+  const explainAll = diff.filter(c => c.n === total);
+  const display = explainAll.length ? explainAll : diff;
+  const defaultSite = display[0]?.site.id ?? null;
+  return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,
+           differential: diff, explainAll, display, defaultSite };
 }
