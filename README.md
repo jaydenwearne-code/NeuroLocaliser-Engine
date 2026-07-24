@@ -94,6 +94,7 @@ node test/patterns.test.js       # cross-cutting synthesis — UMN vs LMN (mixed
 node test/relaxation.test.js     # drop-1 (non-localising) near-fit before declaring multifocal
 node test/next-steps.test.js     # educational next-steps — investigations + urgency + referral
 node test/differential.test.js   # narrowing differential + explainAll/display/defaultSite (engine-owned)
+node test/ranking-realism.test.js # Sub-project A — known-negative exclusion + prevalence tiebreak
 ```
 
 ## Status

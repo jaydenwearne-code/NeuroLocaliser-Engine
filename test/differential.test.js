@@ -50,11 +50,12 @@ let ordered = true;
 for (let i = 1; i < d.length; i++) {
   const a = d[i - 1], b = d[i];
   const bad = a.n < b.n
-    || (a.n === b.n && a.over > b.over)
-    || (a.n === b.n && a.over === b.over && a.site.id.localeCompare(b.site.id) > 0);
+    || (a.n === b.n && a.prevalence < b.prevalence)
+    || (a.n === b.n && a.prevalence === b.prevalence && a.over > b.over)
+    || (a.n === b.n && a.prevalence === b.prevalence && a.over === b.over && a.site.id.localeCompare(b.site.id) > 0);
   if (bad) { ordered = false; break; }
 }
-ok("differential is sorted by n desc, over asc, then site.id asc", ordered);
+ok("differential is sorted by n desc, prevalence desc, over asc, then site.id asc", ordered);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

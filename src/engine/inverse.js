@@ -15,6 +15,7 @@ import { scoreSite, LOCALISING, findingIdOf } from "./score.js";
 import { expectedFindings } from "./forward.js";
 import { normaliseLevel, regionOf, landmarkOf } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
+import { prevalenceOf } from "../model/prevalence.js";
 
 // One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
 // the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
@@ -46,16 +47,38 @@ export function rankSingle(observedSet, opts = {}) {
 // deliberately NOT the best-fit score (which penalises over-prediction and under-returns on sparse input) —
 // it is the broad differential the app shows and narrows. Tie-break on site.id keeps the engine independent
 // of the phonebook (the golden rule).
+// A lateralised finding entered on one side implies its opposite side was examined and found normal —
+// a KNOWN NEGATIVE. Any site that predicts a known-negative would produce a sign the patient demonstrably
+// lacks, so it is not a candidate. Only left↔right have a homolog; midline / bilateral / none are skipped.
+const OPPOSITE_SIDE = { left: "right", right: "left" };
+export function knownNegatives(observedSet) {
+  const neg = new Set();
+  for (const tok of observedSet) {
+    const [f, side] = tok.split("@");
+    const other = OPPOSITE_SIDE[side];
+    if (!other) continue;
+    const homolog = `${f}@${other}`;
+    if (!observedSet.has(homolog)) neg.add(homolog);
+  }
+  return neg;
+}
+
 export function differential(observedSet, opts = {}) {
   const observed = [...observedSet];
+  const negatives = knownNegatives(observedSet);
   const cands = [];
   for (const site of candidateSites()) {
     let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
+    let contradicted = false;
+    for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
+    if (contradicted) continue;
     const explained = observed.filter(t => exp.has(t));
     if (!explained.length) continue;
-    cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length, n: explained.length });
+    cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
+                 n: explained.length, prevalence: prevalenceOf(site) });
   }
-  cands.sort((a, b) => b.n - a.n || a.over - b.over || a.site.id.localeCompare(b.site.id));
+  // coverage first (localisation), then prevalence (commoner lesion), then tightness, then deterministic id.
+  cands.sort((a, b) => b.n - a.n || b.prevalence - a.prevalence || a.over - b.over || a.site.id.localeCompare(b.site.id));
   return cands;
 }
 
