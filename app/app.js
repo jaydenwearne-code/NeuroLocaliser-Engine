@@ -6,6 +6,8 @@ import { nameForSite } from "../src/data/syndromes.js";
 import { causesFor, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag } from "../src/engine/patterns.js";
 import { nextStepsFor } from "../src/data/nextSteps.js";
+import { tractsFor } from "../src/engine/tracts.js";
+import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_FLOW, PRESETS } from "./exam-map.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
@@ -130,7 +132,12 @@ function renderResults() {
   // S.selected is the user's click-override; persist it while still shown, else the engine's default.
   let sel = list.find(c => c.site.id === S.selected) || list.find(c => c.site.id === r.defaultSite) || list[0];
   S.selected = sel.site.id;
-  el.innerHTML = diffBlock(list, cands, total, r.explainAll.length, r) + whyBlock(sel, total) + whatBlock(sel.site);
+  const tf = tractsFor(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
+  el.innerHTML = diffBlock(list, cands, total, r.explainAll.length, r)
+    + synthesisHTML(tf) + neuraxisBlock(tf, sel.site.id)
+    + whyBlock(sel, total, tf.length > 0) + whatBlock(sel.site);
+  const nx = el.querySelector(".neuraxis");
+  if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty" style="text-align:left;color:var(--contra)">render error: ${esc(String(err))}<br><small>${esc((err.stack||"").split("\n").slice(0,4).join(" | "))}</small></div>`; return; }
   const dl = document.getElementById("difflist");
   if (dl) dl.onclick = e => { const row = e.target.closest(".drow"); if (!row) return; S.selected = row.dataset.k; renderResults(); };
@@ -185,16 +192,42 @@ function diffBlock(list, cands, total, nAll, r) {
     <p style="font-size:11px;color:var(--faint);margin:6px 0 0">Click a lesion to see its reasoning & causes below.</p>`;
 }
 
-function whyBlock(c, total) {
+const sideName = s => s === "left" ? "left" : s === "right" ? "right" : s === "bilateral" ? "both sides" : "the affected side";
+
+// Tract-level SYNTHESIS composed from the derived facts (no stored paragraphs). Leads the "why".
+function synthesisHTML(tf) {
+  if (!tf.length) return "";
+  const clauses = tf.map(t => {
+    const labels = t.sites.map(s => siteName(s.site));
+    const shown = labels.slice(0, 6).map(esc).join(" · ");
+    const more = labels.length > 6 ? ` … (+${labels.length - 6})` : "";
+    return `<p class="synth"><b>${esc(t.tract.label)}</b> — ${esc(t.tract.together)}. A lesion can lie anywhere along its course: ${shown}${more}. <span class="cross">${esc(t.tract.crossingNote)}.</span></p>`;
+  }).join("");
+  const converge = tf.length > 1
+    ? `<p class="synth converge">These tracts cross at <b>different</b> points, so their combination pins the level and side: ${tf.map(t => esc(t.tract.label)).join(" + ")}.</p>`
+    : "";
+  return `<h3 style="margin-top:14px">Why — synthesis</h3>${clauses}${converge}`;
+}
+
+function neuraxisBlock(tf, selectedId) {
+  if (!tf.length) return "";
+  const svg = neuraxisSVG(tf, { selectedId, labelFor: s => siteName(s) });
+  return `<div class="neuraxis-wrap"><div class="nx-cap">Neuraxis — click a site to select it</div>${svg}</div>`;
+}
+
+function whyBlock(c, total, collapsed = false) {
   const observed = [...S.tokens];
   const explained = new Set(c.explained);
   const ok = c.explained.map(t=>`<div class="why-item"><span class="k ok">✓</span><span class="t">${esc(t)}</span><span class="d">${esc(desc(fid(t)))}</span></div>`).join("");
   const no = observed.filter(t=>!explained.has(t)).map(t=>`<div class="why-item"><span class="k no">✗</span><span class="t">${esc(t)}</span><span class="d">not explained by this site</span></div>`).join("");
   const missed = [...c.exp].filter(t=>!S.tokens.has(t));
   const warn = missed.map(t=>`<div class="why-item"><span class="k warn">⚠</span><span class="t">${esc(t)}</span><span class="d">predicted here but not reported</span></div>`).join("");
-  return `<h3 style="margin-top:14px">Why — <span style="color:var(--terra)">${esc(siteName(c.site))}</span> explains ${c.n}/${total}</h3>
-    <div class="why-list">${ok}${no}</div>
+  const body = `<div class="why-list">${ok}${no}</div>
     ${warn?`<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Predicted here but not reported <span class="c">${missed.length}</span></summary><div class="why-list" style="margin-top:4px">${warn}</div></details>`:""}`;
+  const head = `<span style="color:var(--terra)">${esc(siteName(c.site))}</span> explains ${c.n}/${total}`;
+  return collapsed
+    ? `<details class="why-site" style="margin-top:10px"><summary style="font-weight:700">Why this specific site — ${head}</summary><div style="margin-top:6px">${body}</div></details>`
+    : `<h3 style="margin-top:14px">Why — ${head}</h3>${body}`;
 }
 
 function whatBlock(site) {
