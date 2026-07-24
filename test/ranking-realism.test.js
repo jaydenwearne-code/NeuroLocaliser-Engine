@@ -36,5 +36,15 @@ ok("internal capsule (common) outranks medial medulla (uncommon) on the tie",
    rank("right_subcortex_internal_capsule") > -1 && rank("right_medulla_medial") > -1
    && rank("right_subcortex_internal_capsule") < rank("right_medulla_medial"));
 
+// ---- ruledOut teaching footnote ----
+const r = solve(new Set(["weak_arm@left", "weak_leg@left"]), { dominantSide: "left" });
+ok("solve() returns a ruledOut array", Array.isArray(r.ruledOut));
+const li = r.ruledOut.find(x => x.site.id === "locked_in");
+ok("locked-in is listed in ruledOut", !!li);
+ok("locked-in was contradicted by a right-sided weakness known-negative",
+   !!li && (li.contradictedBy === "weak_arm@right" || li.contradictedBy === "weak_leg@right"));
+const rNone = solve(new Set(["weak_arm@left", "weak_arm@right"]), { dominantSide: "left" });
+ok("ruledOut is empty when no finding has a known-negative", rNone.ruledOut.length === 0);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -82,6 +82,25 @@ export function differential(observedSet, opts = {}) {
   return cands;
 }
 
+// The sites the known-negative filter removed — but only those that WOULD have explained something (so the
+// footnote lists relevant near-misses like locked-in, not every unrelated bilateral site). Each is paired
+// with the first known-negative token that contradicted it, for a teaching note.
+export function ruledOutSites(observedSet, opts = {}) {
+  const negatives = knownNegatives(observedSet);
+  if (!negatives.size) return [];
+  const out = [];
+  for (const site of candidateSites()) {
+    let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
+    let explainsSomething = false;
+    for (const t of observedSet) if (exp.has(t)) { explainsSomething = true; break; }
+    if (!explainsSomething) continue;
+    let contradictedBy = null;
+    for (const neg of negatives) if (exp.has(neg)) { contradictedBy = neg; break; }
+    if (contradictedBy) out.push({ site, contradictedBy });
+  }
+  return out;
+}
+
 // Does a single site explain every localising finding?
 function coversAllLocalising(result, observedSet) {
   const need = new Set(localisingObserved(observedSet));
@@ -239,6 +258,7 @@ export function solve(observedSet, options = {}) {
   const explainAll = diff.filter(c => c.n === total);
   const display = explainAll.length ? explainAll : diff;
   const defaultSite = display[0]?.site.id ?? null;
+  const ruledOut = ruledOutSites(observedSet, opts);
   return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,
-           differential: diff, explainAll, display, defaultSite };
+           differential: diff, explainAll, display, defaultSite, ruledOut };
 }
