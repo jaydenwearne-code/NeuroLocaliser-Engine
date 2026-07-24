@@ -238,6 +238,15 @@ function whatBlock(site) {
     <div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>
       ${g.causes.map(c=>`<div class="cause"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${c.likelihood}</span>${c.red?`<span class="rf">RED</span>`:""}</div>`).join("")}
     </div>`).join("");
+  const compN = (res.completion || []).reduce((n, g) => n + g.causes.length, 0);
+  const sieve = compN ? `
+    <details class="sieve" style="margin-top:8px"><summary>Complete the surgical sieve <span class="c">+${compN}</span></summary>
+      <p class="derived" style="margin:4px 0 6px">Derived from site type — the other sieve categories a lesion here could fall into (not vetted per site).</p>
+      ${res.completion.map(g => `
+        <div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>
+          ${g.causes.map(c=>`<div class="cause generic"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${c.likelihood}</span>${c.red?`<span class="rf">RED</span>`:""}</div>`).join("")}
+        </div>`).join("")}
+    </details>` : "";
   const nx = nextStepsFor(site);
   const urgTint = nx.urgency === "emergency" ? "--red" : nx.urgency === "urgent" ? "--gold" : "--faint";
   const urgLabel = nx.urgency === "emergency" ? "EMERGENCY" : nx.urgency === "urgent" ? "URGENT" : "routine";
@@ -248,6 +257,7 @@ function whatBlock(site) {
   return `<h3 style="margin-top:14px">What — causes${S.onset?` · <span style="color:var(--terra)">${esc(S.onset)}</span> onset`:""}${res.derived?` <span class="derived">(derived from site type — not yet individually curated)</span>`:""}</h3>
     ${red}
     ${groups || `<div class="empty">No causes for this onset — try a different tempo.</div>`}
+    ${sieve}
     ${next}`;
 }
 
