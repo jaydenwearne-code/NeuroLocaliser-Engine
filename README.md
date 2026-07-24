@@ -96,6 +96,7 @@ node test/next-steps.test.js     # educational next-steps — investigations + u
 node test/differential.test.js   # narrowing differential + explainAll/display/defaultSite (engine-owned)
 node test/ranking-realism.test.js # Sub-project A — known-negative exclusion + prevalence tiebreak
 node test/tracts.test.js         # Sub-project B — long-tract taxonomy + tractsFor derivation
+node test/neuraxis-diagram.test.js # Sub-project B — derived neuraxis SVG builder
 ```
 
 ## Status
