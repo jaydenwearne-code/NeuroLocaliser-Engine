@@ -235,18 +235,29 @@ const TERRITORY = {
   "sympathetic|preganglionic": "preganglionic oculosympathetic (stellate ganglion / lung apex)"
 };
 
+// COMPOSITE-ONLY cord parts. A one-sided isolated anterior/posterior/central cord lesion is not a clinical
+// entity — the real cord sites are Brown-Séquard (hemicord, composeHemiLevelSites) and the BILATERAL
+// ASA/PSA/central/transverse composites (composeBilateralCordSites). These per-side primitives must still be
+// BUILT (the hemicord composer unions them from SITES), but are flagged `buildingBlock` so the engine's
+// candidateSites() does not offer them as standalone candidates. (`cord|central` is already never built here
+// — it is not in PARTS — so the flag is a no-op for it; kept for documentation. `cord|lateral` is a real
+// standalone site (preganglionic cord Horner) and is deliberately absent from this set.)
+const BUILDING_BLOCK_PARTS = new Set(["cord|anterior", "cord|posterior", "cord|central"]);
+
 function buildSites() {
   const sites = [];
   for (const level of LEVELS) {
     for (const part of PARTS) {
       const structures = STRUCTURES.filter(s => s.level === level && s.part === part).map(s => s.id);
       if (structures.length === 0) continue;
+      const buildingBlock = BUILDING_BLOCK_PARTS.has(`${level}|${part}`);
       for (const side of SIDES) {
         sites.push({
           id: `${side}_${level}_${part}`,
           side, level, part,
           territory: TERRITORY[`${level}|${part}`],
-          structures // structure ids present at this site, derived not hand-listed
+          structures, // structure ids present at this site, derived not hand-listed
+          ...(buildingBlock ? { buildingBlock: true } : {})
         });
       }
     }

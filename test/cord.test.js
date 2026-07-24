@@ -10,7 +10,7 @@
 //   - anterior/posterior/transverse lesions are BILATERAL (findings on both body sides)
 // Run: node test/cord.test.js
 
-import { solve } from "../src/engine/inverse.js";
+import { solve, candidateSites } from "../src/engine/inverse.js";
 import { nameForSite } from "../src/data/syndromes.js";
 
 let pass = 0, fail = 0;
@@ -73,6 +73,22 @@ check("Transverse myelopathy (all tracts, both sides)",
    "dorsal_sensory@left", "dorsal_sensory@right",
    "spinothalamic@left", "spinothalamic@right"],
   "bilateral_cord_transverse", { expectName: "transverse" });
+
+// ============ CORD PER-PART PRIMITIVES ARE COMPOSITE-ONLY ============
+// A one-sided isolated anterior/posterior/central cord lesion is not a clinical entity: the real cord sites
+// are Brown-Séquard (hemicord) + the BILATERAL ASA/PSA/central/transverse composites. The per-side primitives
+// still exist as building blocks for those composites, but must NOT be offered as standalone candidate sites.
+// `cord|lateral` IS a real standalone site (preganglionic cord Horner) and stays a candidate.
+{
+  const ids = new Set(candidateSites().map(s => s.id));
+  const assert = (label, cond) => { cond ? pass++ : fail++; console.log(`${cond ? "PASS" : "FAIL"}  ${label}`); };
+  console.log("\n-- cord per-part primitives are composite-only --");
+  for (const id of ["left_cord_anterior", "right_cord_anterior", "left_cord_posterior",
+                    "right_cord_posterior", "left_cord_central", "right_cord_central"])
+    assert(`${id} is NOT a standalone candidate`, !ids.has(id));
+  for (const id of ["bilateral_cord_anterior", "left_cord_hemi", "left_cord_lateral"])
+    assert(`${id} IS a candidate`, ids.has(id));
+}
 
 // ---- report ----
 console.log("\nNeuroLocaliser anatomical engine — SPINAL CORD emergence tests\n" + "=".repeat(52));

@@ -20,7 +20,10 @@ import { prevalenceOf } from "../model/prevalence.js";
 // One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
 // the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
 export function candidateSites() {
-  const out = [...SITES];
+  // `buildingBlock` sites (e.g. one-sided cord anterior/posterior primitives) exist only to feed the
+  // composers (hemicord / bilateral cord) — they are not clinically standalone lesions, so they are not
+  // offered as candidates. The composers read the raw SITES export directly, so they still see them.
+  const out = [...SITES.filter(s => !s.buildingBlock)];
   for (const k of Object.keys(sitesMod)) {
     if (k.startsWith("compose") && typeof sitesMod[k] === "function") {
       try { out.push(...sitesMod[k]()); } catch { /* skip a composer that throws on empty input */ }
