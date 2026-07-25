@@ -26,35 +26,62 @@ no linter). There is nothing to install.
 tempo-aware causes layer (**why**) and an educational next-steps layer (**what next**), plus a zero-build
 teaching web app in `app/`.
 
-**Status (current):** the full neuraxis engine is essentially complete and the app is aligned to its UX
-goals. **44 test suites / 1570 assertions green** — always run `npm test` first to confirm before building on
-it. Milestones, newest last, with the design/plan docs that record every decision:
+**Status (current):** the full neuraxis engine is complete and the app has been reworked into a
+clinician-grade teaching tool (localise → *where · why · what*). **48 test suites / 1664 assertions green** —
+always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+docs (in `docs/superpowers/`) that record every decision:
 
-- **Raw-observations refactor (done)** — every finding is now a *raw bedside observation*; clusters (CN III/IV/VI
-  palsies, bulbar, facial UMN/LMN, Horner, parkinsonism, Gerstmann, Balint, and `hemiparesis`→`weak_arm`+
-  `weak_leg`) were retired and now *emerge* from co-occurring primitives. `syndromes.js` `BY_SITE` is keyed by
-  **site id**, so decomposition never broke the phonebook. Plan: `docs/superpowers/plans/2026-07-21-raw-observations-refactor.md`.
-- **App UX-goals alignment (done)** — 4 workstreams: input grouped by lobe + a Brainstem step + a Fatiguability
-  step with clinician-friendly labels (`app/exam-map.js`, `app/app.js`); a **UMN/LMN** synthesis readout; a
-  **drop-1 (non-localising) near-fit** relaxation + a **functional (FND)** flag that is *suppressed whenever any
-  un-fakeable objective finding is present* (safety: never mask a serious sign as functional); and an
-  **educational next-steps** panel. Plan: `docs/superpowers/plans/2026-07-21-app-ux-goals-alignment.md`.
+- **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
+  co-occurring primitives. `syndromes.js` `BY_SITE` keyed by **site id**. Plan: `plans/2026-07-21-raw-observations-refactor.md`.
+- **App UX-goals alignment (done)** — exam-flow input, UMN/LMN synthesis, drop-1 near-fit, functional (FND)
+  flag (suppressed by any objective sign), educational next-steps. Plan: `plans/2026-07-21-app-ux-goals-alignment.md`.
+- **Unify the two localiser engines (done)** — `solve()` is the single source of truth. The app's old
+  count/superset `differential()` moved into `src/engine/inverse.js`; `solve()` now returns
+  `differential`/`explainAll`/`display`/`defaultSite` alongside the scored `single`/`best`/`nearFit`/`multi`.
+  `candidateSites()` is reflection-based (auto-includes every `compose*`) and exported. Plan: `plans/2026-07-24-unify-localiser-engines.md`.
+- **Ranking realism (done)** — (1) **known-negative exclusion**: the un-entered opposite side of a lateralised
+  finding is treated as confirmed-normal, so bilateral lesions (locked-in, transverse/anterior cord) drop out
+  of unilateral pictures; excluded near-misses surface as a `ruledOut` teaching footnote. (2) **prevalence
+  tiebreak** (`src/model/prevalence.js`): a coarse per-site tier orders tied sites by how common a lesion there
+  is (cortical/subcortical + roots/nerves common; thalamic/brainstem/cord uncommon; bilateral/composite rare).
+  Plan: `plans/2026-07-24-ranking-realism.md`. **Also:** cord `anterior/posterior/central` are now
+  `buildingBlock` sites (composite-only; excluded from `candidateSites()`), fixing the spurious unilateral
+  anterior-cord candidate.
+- **Why-synthesis + neuraxis diagram (done)** — a long-tract taxonomy (`src/model/tracts.js`: corticospinal,
+  spinothalamic, dorsal-column, corticobulbar; findings + course + decussation + per-waypoint detail/supply +
+  direction), `src/engine/tracts.js` derivations (`tractsFor`, `tractNarrative`, `whyNotOthers`), and a
+  derived clickable SVG (`app/neuraxis-diagram.js`). Plans: `plans/2026-07-24-why-synthesis-neuraxis-diagram.md`,
+  `plans/2026-07-26-richer-why.md`. The Why panel now teaches: a composed **Course** narrative (anatomy +
+  blood supply), a **Why-this-site** parsimony line, and a derived **Why-not-elsewhere** (per neuraxis-level
+  bucket, the discriminating signs each alternative would add — "examine to exclude").
+- **Causes breadth (done)** — `causesFor()` returns a derived `completion` (region-tuned generics for the
+  surgical-sieve categories a site's curated causes don't cover), shown behind a "complete the surgical sieve"
+  toggle. `regionOf`/`sieveGenerics` in `src/data/causes.js`. Plan: `plans/2026-07-25-causes-breadth.md`.
+- **UI restructure (done)** — the flat exam accordion became a nested `EXAM_TREE` (higher-function→lobe→finding;
+  cranial-nerves→nerve→finding; motor→pattern; sensation→pattern→modality; Tone/Reflexes/Wasting are their own
+  top-level leaves), rendered recursively with generalised search; **presets removed**. `app/exam-map.js`
+  (`EXAM_TREE` + `flattenFindings`). Plan: `plans/2026-07-25-ui-restructure.md`.
+- **Output cards (done)** — the results pane is a compact header + three labelled cards (**Where / Why /
+  What**) with progressive disclosure (ruled-out, sieve, per-site "why" collapsed). Plan: `plans/2026-07-26-output-cards.md`.
 
 **Where the detail lives:** dated design specs in `docs/superpowers/specs/` and executable plans in
 `docs/superpowers/plans/` (each plan's top line says whether it's implemented). `CONTRIBUTING.md` has the
-long-form roadmap + "Next". *On the original Mac only,* there is also a persistent `~/.claude` memory
-(`app-ux-goals-alignment-done`, `raw-observations-refactor-done`, `neurolocaliser-engine-state`) — that does
-**not** travel with the repo, so this file + the plan docs are the source of truth on any other machine.
+long-form roadmap + "Next". *On the original Mac only,* there is a persistent `~/.claude` memory
+(`neurolocaliser-engine-state` et al.) that does **not** travel with the repo — this file + the plan docs are
+the source of truth on any other machine.
 
 **Run the app:** `node app/serve.mjs` → http://localhost:8137/app/ (local static server; nothing is hosted
-externally). **Git:** tracked on GitHub (`origin/main`).
+externally). **Git:** tracked on GitHub (`origin/main`). As of 2026-07-26 local `main` is **~25 commits ahead
+of `origin/main` and NOT pushed** (the owner is holding it local); an early `unify-localiser-engines` branch
+was pushed and its PR is fully superseded by local `main`.
 
 **Parked follow-ups (not yet done):**
-1. **Multi-location DDx synthesis** — causes / next-steps are shown for the *one* selected lesion only; when
-   the picture is genuinely multifocal there is no combined view across the plausible sites.
-2. **Unify the two localiser engines** — the app's differential list uses strict superset (`app.js`
-   `differential()`) while the multifocal / near-fit path uses the scored `solve()` (`inverse.js`); they
-   coexist and express "confidence" slightly differently.
+1. **Multi-location DDx synthesis** — causes / next-steps / why are shown for the *one* selected lesion only;
+   a genuinely multifocal picture has no combined cross-site view.
+2. **Corticobulbar & further tracts** — the 4 core tracts are modelled; other tracts (spinocerebellar, etc.)
+   and non-tract "why" enrichment are fast-follows.
+3. **Pathology layer (optional)** — `umnLmnPattern()` already flags mixed UMN+LMN → MND; a fuller declarative
+   cross-site pathology layer (ALS/MND, SCD, etc.) was scoped in `CONTRIBUTING.md` but is not built.
 
 ## Commands
 
@@ -85,22 +112,35 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
   structures.js  each structure produces exactly ONE finding at a (level, part); optional per-
                  structure `crosses` override when a pathway crosses differently here
   sites.js       SITES derived from structures by (level, part, side); plus composers (hemi,
-                 bilateral cord, cauda/conus midline) for lesions spanning parts
+                 bilateral cord, cauda/conus midline). `buildingBlock` flags composite-only parts
+                 (cord anterior/posterior/central) so they feed composers but aren't standalone candidates
   levels.js      ordered dermatome coordinate C2..S5 — an axis ORTHOGONAL to localisation
+  prevalence.js  prevalenceOf(site) -> 2|1|0 (common/uncommon/rare) coarse per-site prior; TIEBREAK only
+  tracts.js      the long tracts (corticospinal/spinothalamic/dorsal-column/corticobulbar): findings,
+                 rostro-caudal course (level + detail + supply), decussation, direction; + NEURAXIS ordering
 src/engine/    generic solver code (rarely changes when adding a region)
   forward.js     site -> expected signed findings; emits `${finding}@${side}` tokens
   score.js       scoreSite(): reward matches (LOCALISING findings weigh 3x), penalise unexplained
-                 + over-prediction
-  inverse.js     solve(): rank single sites, else minimal-set cover (the multifocal hypothesis);
-                 nearFit() = drop-1 (non-localising) relaxation; describeLevel() attaches the sensory level
-  patterns.js    cross-cutting SYNTHESIS over the finding set (NOT localisation): umnLmnPattern() (UMN /
-                 LMN / mixed→MND) and functionalFlag() (positive FND signs; suppressed by any objective sign)
+                 + over-prediction. Exports LOCALISING
+  inverse.js     THE single localiser. candidateSites() (reflection over compose*, drops buildingBlock);
+                 differential() = the broad count/superset narrowing list (known-negative exclusion +
+                 prevalence tiebreak); solve() returns {differential,explainAll,display,defaultSite,ruledOut}
+                 AND the scored single/best/nearFit/multi/level/length; knownNegatives(); ruledOutSites()
+  tracts.js      tractsFor() (which tracts a finding-set implicates + candidate sites along each);
+                 tractNarrative() (composed Course prose); whyNotOthers() (derived per-level discrimination)
+  patterns.js    cross-cutting SYNTHESIS (NOT localisation): umnLmnPattern() and functionalFlag()
 src/data/
   syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags
-  causes.js      tempo-aware surgical-sieve DDx: causesFor(site,{onset}) (curated → phonebook → derived)
+  causes.js      tempo-aware surgical-sieve DDx: causesFor(site,{onset}) -> {byCategory, completion, …}
+                 (curated → phonebook → derived; `completion` = region-tuned sieve gap-fill). regionOf/sieveGenerics
   nextSteps.js   educational nextStepsFor(site) -> investigations + urgency + referral (teaching, not advice)
 app/             zero-build teaching web app (pure consumer of the engine; no model changes)
-  index.html · app.js · exam-map.js (exam-flow finding groups + presets) · serve.mjs (static server, port 8137)
+  index.html     markup + all CSS
+  app.js         renders the nested exam tree + the where/why/what output cards; pure consumer of solve()/
+                 tractsFor()/causesFor()/nextStepsFor()
+  exam-map.js    EXAM_TREE (nested category→subcategory→finding) + flattenFindings() (no presets)
+  neuraxis-diagram.js  neuraxisSVG(): derived, clickable neuraxis SVG from the tract taxonomy + candidates
+  serve.mjs      static server, port 8137
 ```
 
 ### Concepts that require reading several files together

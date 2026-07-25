@@ -387,7 +387,17 @@ easiest mechanism-fit first. Per-region designs + plans live in `docs/superpower
   Atlas operculum → Broca's + findings + causes). The **where/why** run on the engine; the **what** on the
   causes layer (sub-project A).
 
-### Next: pathology layer (ALS) · non-organic (FND) · UI
+> **STATUS UPDATE (2026-07-26): most of the roadmap below is now DONE — read `CLAUDE.md` for the
+> authoritative current state, not this section.** Completed since this roadmap was written: the visual
+> pathway, pupillary/Horner axis, tone/wasting, complete nerve innervation (all "REQUIRED refinements"
+> below), the **non-organic (FND) layer** (`patterns.js` `functionalFlag()`), the **whole UI** (nested
+> `EXAM_TREE` input + where/why/what output cards), the localiser unification, ranking realism
+> (known-negative exclusion + prevalence), the **long-tract "why" layer** (`tracts.js` + composed Course
+> narrative + derived why-not-others + neuraxis diagram), and causes breadth (sieve completion). **Still
+> genuinely open:** a fuller declarative **pathology layer** (ALS/MND beyond the `umnLmnPattern` flag) and
+> **multi-location DDx synthesis** (combined view when the picture is multifocal). 48 suites / 1664 green.
+
+### Next: pathology layer (ALS) · non-organic (FND) · UI  *(historical — see status update above)*
 The neuraxis regions are essentially complete (brainstem → cord → cortex → subcortex → skull base → motor
 unit → roots/polyneuropathy → plexus/nerves → non-muscle reflexes). What remains: the REQUIRED visual
 pathway and pathology layer (below), the **non-organic (FND) layer** (Hoover's, give-way, entrainment —
