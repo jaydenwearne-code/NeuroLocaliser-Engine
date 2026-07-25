@@ -6,6 +6,8 @@
 // MCA) map correctly even though the cord/anterior primitive is a buildingBlock.
 import { TRACTS, neuraxisIndex } from "../model/tracts.js";
 import { differential } from "./inverse.js";
+import { expectedFindings } from "./forward.js";
+import { LOCALISING } from "./score.js";
 
 const idOf = tok => tok.split("@")[0];
 const sideOf = tok => tok.split("@")[1];
@@ -26,4 +28,62 @@ export function tractsFor(observedSet, opts = {}) {
     out.push({ tract, findingsMatched: matched, sides, sites, decussation: tract.decussation });
   }
   return out;
+}
+
+// Compose the tract's anatomical journey from the structured waypoint fields (detail + supply), the
+// decussation, and the crossing note. Physiological order: descending tracts read cortex→cord, ascending
+// tracts read cord→thalamus. Prose is intentionally template-composed (tuned by eye).
+function capFirst(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+function joinAnd(xs) { return xs.length > 1 ? xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1] : (xs[0] || ""); }
+export function tractNarrative(tract) {
+  const asc = tract.direction === "ascending";
+  const path = asc ? [...tract.course].reverse() : tract.course; // origin → termination
+  const withSupply = w => w.supply ? `${w.detail} (${w.supply})` : w.detail;
+  const origin = path[0];
+  const rest = path.slice(1);
+  const term = rest.length ? rest[rest.length - 1] : origin;
+  const middle = rest.slice(0, -1);
+  const middlePhrases = middle.map((w, i) => i === 0 ? withSupply(w) : w.detail); // supply on the first convergence level only
+  let s = `The ${tract.label} ${asc ? "begins in the" : "arises in the"} ${withSupply(origin)}`;
+  if (middle.length) s += `, ${asc ? "ascending" : "descending"} through the ${joinAnd(middlePhrases)}`;
+  if (tract.decussation.label) s += `, ${asc ? "having decussated" : "decussating"} at the ${tract.decussation.label}`;
+  s += `, to reach the ${term.detail}. ${capFirst(tract.crossingNote)}.`;
+  return s;
+}
+
+// Level buckets for the "why not the other sites" reasoning.
+const BUCKET = {
+  cortex: "cortical", subcortex: "deep subcortical", aphasia_subcortical: "deep subcortical", thalamus: "deep subcortical",
+  midbrain: "brainstem", pons: "brainstem", medulla: "brainstem", cord: "spinal cord",
+};
+const BUCKET_ORDER = ["cortical", "deep subcortical", "brainstem", "spinal cord"];
+const bucketOf = level => BUCKET[level] || "other";
+
+// For the SELECTED lesion, derive what each OTHER candidate on its tract(s) would additionally produce (and
+// which is absent) — grouped by neuraxis-level bucket, with the bucket's blood supply. This is the "why this
+// site and not the others" reasoning: the discriminating signs to examine for and exclude.
+export function whyNotOthers(observedSet, selectedSite, opts = {}) {
+  const tf = tractsFor(observedSet, opts);
+  const relevant = tf.filter(t => t.sites.some(s => s.site.id === selectedSite.id));
+  let selExp; try { selExp = expectedFindings(selectedSite, opts); } catch { selExp = new Set(); }
+  const bucketSupply = {};
+  for (const t of relevant) for (const w of t.tract.course) {
+    const b = bucketOf(w.level); if (w.supply && !bucketSupply[b]) bucketSupply[b] = w.supply;
+  }
+  const byBucket = {}; const seen = new Set();
+  for (const t of relevant) for (const s of t.sites) {
+    if (s.site.id === selectedSite.id || seen.has(s.site.id)) continue; seen.add(s.site.id);
+    let exp; try { exp = expectedFindings(s.site, opts); } catch { continue; }
+    const b = bucketOf(s.site.level);
+    for (const tok of exp) {
+      if (selExp.has(tok) || observedSet.has(tok)) continue;
+      const id = tok.split("@")[0];
+      (byBucket[b] ??= new Map()).set(id, (byBucket[b].get(id) || 0) + (LOCALISING.has(id) ? 2 : 1));
+    }
+  }
+  const buckets = BUCKET_ORDER.filter(b => byBucket[b]).map(b => ({
+    bucket: b, label: b, supply: bucketSupply[b] || "",
+    findings: [...byBucket[b].entries()].sort((a, c) => c[1] - a[1]).slice(0, 4).map(([id]) => id),
+  }));
+  return { selectedBucket: bucketOf(selectedSite.level), buckets };
 }

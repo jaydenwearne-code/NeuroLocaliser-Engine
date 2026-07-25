@@ -1,6 +1,7 @@
 // tracts.test.js — Sub-project B: long-tract taxonomy + tractsFor derivation.
 import { TRACTS, NEURAXIS, neuraxisIndex } from "../src/model/tracts.js";
-import { tractsFor } from "../src/engine/tracts.js";
+import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
+import { candidateSites } from "../src/engine/inverse.js";
 import { STRUCTURES } from "../src/model/structures.js";
 
 let pass = 0, fail = 0;
@@ -13,6 +14,12 @@ for (const t of TRACTS) {
     const has = STRUCTURES.some(s => s.level === wp.level && t.findings.includes(s.produces));
     ok(`${t.id}: course level ${wp.level} has a producing structure`, has);
   }
+}
+
+// ---- richer-why: direction + per-waypoint detail/supply ----
+for (const t of TRACTS) {
+  ok(`${t.id}: has a direction`, t.direction === "descending" || t.direction === "ascending");
+  for (const wp of t.course) ok(`${t.id}/${wp.level}: has detail + supply`, !!wp.detail && !!wp.supply);
 }
 
 // ---- corticospinal implicated by arm+leg weakness, and no other core tract ----
@@ -53,6 +60,24 @@ ok("plain arm+leg weakness does NOT implicate corticobulbar",
 
 // ---- non-tract input → empty (fallback) ----
 ok("a non-tract finding implicates no tract", tractsFor(new Set(["dysarthria@none"]), opts).length === 0);
+
+// ---- composed anatomy narrative (richer-why) ----
+const cstTract = TRACTS.find(t => t.id === "corticospinal");
+const narr = tractNarrative(cstTract);
+for (const sub of ["primary motor cortex", "MCA", "ACA", "internal capsule", "pyramidal decussation"])
+  ok(`corticospinal narrative mentions "${sub}"`, narr.includes(sub));
+
+// ---- derived "why not the others" ----
+const icSite = candidateSites().find(s => s.id === "right_subcortex_internal_capsule");
+const wn = whyNotOthers(new Set(["weak_arm@left", "weak_leg@left"]), icSite, { dominantSide: "left" });
+const bucket = name => wn.buckets.find(b => b.bucket === name);
+ok("whyNotOthers has a cortical bucket with a cortical sign",
+   !!bucket("cortical") && bucket("cortical").findings.some(f => ["neglect","gaze_deviation","motor_dysprosody","abulia","cortical_sensory_arm","cortical_sensory_leg","executive_dysfunction","anosognosia","grasp_reflex"].includes(f)));
+ok("whyNotOthers has a brainstem bucket with a brainstem sign",
+   !!bucket("brainstem") && bucket("brainstem").findings.some(f => ["weak_adduction","weak_elevation","weak_depression","limb_ataxia","gaze_palsy","facial_weakness","cn12_palsy","ino"].includes(f)));
+ok("whyNotOthers has a spinal cord bucket with a crossed/dorsal sensory sign",
+   !!bucket("spinal cord") && bucket("spinal cord").findings.some(f => ["spinothalamic","sensory_ataxia","dorsal_sensory"].includes(f)));
+ok("each why-not bucket carries a blood supply", wn.buckets.every(b => !!b.supply));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
