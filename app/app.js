@@ -8,7 +8,7 @@ import { umnLmnPattern, functionalFlag } from "../src/engine/patterns.js";
 import { nextStepsFor } from "../src/data/nextSteps.js";
 import { tractsFor } from "../src/engine/tracts.js";
 import { neuraxisSVG } from "./neuraxis-diagram.js";
-import { EXAM_FLOW, PRESETS } from "./exam-map.js";
+import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -51,7 +51,6 @@ function renderLocalise() {
     <div class="pane">
       <h3>Examination findings</h3>
       <input class="search" id="search" placeholder="Search findings… (e.g. Horner, ataxia, gaze)">
-      <div class="presets" id="presets">${PRESETS.map((p,i)=>`<button data-p="${i}">${esc(p.label)}</button>`).join("")}</div>
       <div class="chips" id="chips"></div>
       <div class="accordion" id="acc">${examAccordion()}</div>
     </div>
@@ -63,14 +62,24 @@ function renderLocalise() {
   renderChips(); renderResults();
 }
 
+function countFindings(node) {
+  if (node.findings) return node.findings.filter(f => FINDINGS[f]).length;
+  return (node.groups || []).reduce((n, g) => n + countFindings(g), 0);
+}
+function renderNode(node, depth) {
+  const cnt = countFindings(node);
+  if (node.findings) {
+    const rows = node.findings.filter(f => FINDINGS[f]).map(f => frow(f)).join("");
+    return `<details data-step="${esc(node.id)}" class="nx-lvl nx-lvl${depth}"><summary>${esc(node.label)}<span class="c">${cnt}</span></summary>${rows}</details>`;
+  }
+  const kids = (node.groups || []).map(g => renderNode(g, depth + 1)).join("");
+  return `<details data-gid="${esc(node.id)}" class="nx-lvl nx-lvl${depth}"><summary>${esc(node.label)}<span class="c">${cnt}</span></summary><div class="nx-children">${kids}</div></details>`;
+}
 function examAccordion() {
-  const used = new Set(EXAM_FLOW.flatMap(s => s.findings));
+  const used = new Set(flattenFindings(EXAM_TREE));
   const other = Object.keys(FINDINGS).filter(f => !used.has(f));
-  const steps = other.length ? [...EXAM_FLOW, { id:"other", label:"Other findings", findings:other }] : EXAM_FLOW;
-  return steps.map(step => `
-    <details data-step="${step.id}"><summary>${esc(step.label)}<span class="c">${step.findings.filter(f=>FINDINGS[f]).length}</span></summary>
-      ${step.findings.filter(f=>FINDINGS[f]).map(f=>frow(f)).join("")}
-    </details>`).join("");
+  const tree = other.length ? [...EXAM_TREE, { id: "other", label: "Other findings", findings: other }] : EXAM_TREE;
+  return tree.map(n => renderNode(n, 0)).join("");
 }
 function frow(f) {
   const sides = sidesOf(f);
@@ -86,8 +95,6 @@ function wireLocalise() {
   document.getElementById("slevel").oninput = e => { S.sensoryLevel = e.target.value.trim(); renderResults(); };
   document.getElementById("reach").oninput = e => { S.distalReach = e.target.value.trim(); renderResults(); };
   document.getElementById("search").oninput = e => filterFindings(e.target.value.toLowerCase());
-  document.getElementById("presets").onclick = e => { const i = e.target.dataset.p; if (i==null) return;
-    S.tokens = new Set(PRESETS[+i].tokens); renderChips(); renderResults(); markSides(); };
   document.getElementById("acc").onclick = e => { const b = e.target.closest("button[data-f]"); if (!b) return;
     toggleToken(`${b.dataset.f}@${b.dataset.s}`); };
   markSides();
@@ -97,8 +104,9 @@ function filterFindings(q) {
   acc.querySelectorAll(".frow").forEach(r => {
     const f = r.dataset.fid; const hit = !q || f.includes(q) || desc(f).toLowerCase().includes(q);
     r.style.display = hit ? "" : "none";
+    if (hit && q) { let el = r.parentElement; while (el && el !== acc) { if (el.tagName === "DETAILS") el.open = true; el = el.parentElement; } }
   });
-  acc.querySelectorAll("details").forEach(d => { if (q) d.open = true; });
+  if (!q) acc.querySelectorAll("details").forEach(d => { d.open = false; });
 }
 function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); markSides(); }
 function markSides() {
