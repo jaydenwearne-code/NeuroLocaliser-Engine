@@ -6,7 +6,8 @@ import { nameForSite } from "../src/data/syndromes.js";
 import { causesFor, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag } from "../src/engine/patterns.js";
 import { nextStepsFor } from "../src/data/nextSteps.js";
-import { tractsFor } from "../src/engine/tracts.js";
+import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
+import { prevalenceOf } from "../src/model/prevalence.js";
 import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 
@@ -242,18 +243,33 @@ function whyBlock(c, total, collapsed = false) {
     : `<h3 style="margin-top:14px">Why — ${head}</h3>${body}`;
 }
 
-// ② Why — synthesis + UMN/LMN + (collapsed) diagram + (collapsed) per-site why
+// ② Why — composed Course narrative + Why-this (parsimony) + Why-not (derived, level-grouped) + diagram
 function whyCard(tf, sel, total) {
   const pat = umnLmnPattern(S.tokens);
   const umnlmn = pat.verdict
     ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
     : "";
   if (!tf.length) {
-    // non-tract findings: no tract synthesis/diagram — lead with the per-site explanation, expanded.
+    // non-tract findings: no tract narrative/diagram — lead with the per-site explanation, expanded.
     return card("Why", `${umnlmn}${whyBlock(sel, total, false)}`);
   }
-  const diagram = `<details class="nx-toggle" style="margin-top:6px"><summary>Show neuraxis diagram</summary>${neuraxisBlock(tf, sel.site.id)}</details>`;
-  return card("Why", `${synthesisHTML(tf)}${umnlmn}${diagram}${whyBlock(sel, total, true)}`);
+  const course = tf.map(t => `<p class="synth"><b>Course.</b> ${esc(tractNarrative(t.tract))}</p>`).join("");
+  const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
+  const wn = whyNotOthers(S.tokens, sel.site, opts);
+  const common = prevalenceOf(sel.site) === 2;
+  const tractLabels = tf.map(t => esc(t.tract.label)).join(" and ");
+  const whyThis = `<p class="synth"><b>Why this site.</b> The deficit is confined to ${tractLabels} fibres with no accompanying signs, so the lesion lies where the tract runs in relative isolation — a small, deep lesion such as ${esc(siteName(sel.site))}.${common ? " Lesions here are also common." : ""}</p>`;
+  const lines = wn.buckets.map(b => {
+    const signs = b.findings.map(id => esc(desc(id))).join(", ");
+    const lead = b.bucket === wn.selectedBucket ? `A neighbouring ${esc(b.bucket)} lesion` : `If ${esc(b.bucket)}`;
+    const terr = b.supply ? ` <span class="wn-terr">(${esc(b.supply)})</span>` : "";
+    return `<li>${lead}${terr} — you'd also expect ${signs}.</li>`;
+  }).join("");
+  const whyNot = lines
+    ? `<div class="whynot"><b>Why not elsewhere.</b><ul class="whynot-list">${lines}</ul><p class="derived">None reported — examine specifically to exclude.</p></div>`
+    : "";
+  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>Neuraxis diagram</summary>${neuraxisBlock(tf, sel.site.id)}</details>`;
+  return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`);
 }
 
 // ③ What — causes + sieve + next steps (whatBlock body, wrapped in the card shell)
