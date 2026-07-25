@@ -141,9 +141,10 @@ function renderResults() {
   let sel = list.find(c => c.site.id === S.selected) || list.find(c => c.site.id === r.defaultSite) || list[0];
   S.selected = sel.site.id;
   const tf = tractsFor(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
-  el.innerHTML = diffBlock(list, cands, total, r.explainAll.length, r)
-    + synthesisHTML(tf) + neuraxisBlock(tf, sel.site.id)
-    + whyBlock(sel, total, tf.length > 0) + whatBlock(sel.site);
+  el.innerHTML = resultHeader(sel, list, total, r)
+    + whereCard(list, cands, total, r)
+    + whyCard(tf, sel, total)
+    + whatCard(sel.site);
   const nx = el.querySelector(".neuraxis");
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty" style="text-align:left;color:var(--contra)">render error: ${esc(String(err))}<br><small>${esc((err.stack||"").split("\n").slice(0,4).join(" | "))}</small></div>`; return; }
@@ -154,31 +155,38 @@ function renderResults() {
 function siteName(site){ const e = nameForSite(site); return e.name; }
 function siteLoc(site){ return `${site.side} · ${site.level} · ${site.part}`; }
 
-function diffBlock(list, cands, total, nAll, r) {
-  const narrow = nAll
-    ? `<b>${nAll}</b> lesion${nAll>1?"s":""} explain${nAll>1?"":"s"} all ${total} finding${total>1?"s":""}${nAll>1?` — add findings to narrow`:""}.`
-    : `<b>No single lesion</b> explains all ${total} findings — ranked by how many each explains (best ${cands[0].n}/${total}).`;
-  // near-fit (drop-1, non-localising) — surfaced BEFORE the multifocal hypothesis
-  let near = "";
-  if (!nAll && r.nearFit) near = `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but <code>${esc(r.nearFit.missing)}</code> — re-check that finding, or consider a second lesion.</div>`;
-  let multi = "";
-  if (!nAll && r.multi) multi = `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s.site))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>`;
-  // functional (non-organic) positive signs — independent of localisation. Suppressed (shown only as a muted
-  // note, never the alarming banner) whenever an un-fakeable objective finding is present, so a serious sign
-  // is never masked as functional.
+// cap is trusted HTML (literal labels we control, e.g. "Why" or `Where <span…>(N)</span>`) — not user input.
+function card(capHTML, body) {
+  return `<section class="out-card"><div class="out-cap">${capHTML}</div>${body}</section>`;
+}
+
+// compact header: the leading/selected lesion + status + functional flag (safety — kept prominent)
+function resultHeader(sel, list, total, r) {
+  const nAll = r.explainAll.length;
+  const status = nAll
+    ? `<b>${nAll}</b> lesion${nAll>1?"s":""} explain${nAll>1?"":"s"} all ${total} finding${total>1?"s":""}${nAll>1?" — click one to narrow":""}.`
+    : `<b>No single lesion</b> explains all ${total} findings — best explains ${list[0].n}/${total}.`;
   const fnd = functionalFlag(S.tokens);
   const funcFlag = fnd.functional
     ? `<div class="multi" style="border-color:var(--gold);background:var(--gold-bg,transparent)"><b>⚠ Consider functional.</b> ${esc(fnd.note)}</div>`
     : fnd.suppressed
     ? `<div class="annot"><b>Functional sign noted:</b> ${esc(fnd.note)}</div>`
     : "";
+  return `<div class="out-head">
+    <div class="oh-lead"><b>${esc(siteName(sel.site))}</b><span class="oh-loc">${esc(siteLoc(sel.site))}${sel.site.territory?` · ${esc(sel.site.territory)}`:""}</span></div>
+    <p class="oh-status">${status}</p>${funcFlag}</div>`;
+}
+
+// ① Where — the differential list + localisation annotations + (collapsed) ruled-out
+function whereCard(list, cands, total, r) {
+  const nAll = r.explainAll.length;
+  const near = (!nAll && r.nearFit)
+    ? `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but <code>${esc(r.nearFit.missing)}</code> — re-check that finding, or consider a second lesion.</div>` : "";
+  const multi = (!nAll && r.multi)
+    ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s.site))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
   let annot = "";
   if (r.level && r.level.applies) annot += `<div class="annot"><b>Sensory level:</b> ${esc(r.level.note || (r.level.landmark||r.level.segment||""))}</div>`;
   if (r.length && r.length.applies) annot += `<div class="annot"><b>Length:</b> ${esc(r.length.note||"")}${r.length.glove?" · stocking-glove":""}</div>`;
-  const pat = umnLmnPattern(S.tokens);
-  const umnlmn = pat.verdict
-    ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
-    : "";
   const rows = list.map(c => {
     const on = c.site.id === S.selected ? " on" : "";
     const w = Math.round((c.n/total)*54);
@@ -192,12 +200,8 @@ function diffBlock(list, cands, total, nAll, r) {
           return `<div class="why-item"><span class="k no">✗</span><span class="t">${esc(siteName(x.site))}</span><span class="d">would also cause ${esc(desc(fid(x.contradictedBy)))} on the ${esc(side)} — which is normal here</span></div>`;
         }).join("")}</div></details>`
     : "";
-  return `<h3>Possible lesions <span style="color:var(--faint);font-weight:600">(${list.length})</span></h3>
-    <p class="narrow">${narrow}</p>
-    ${near}${multi}${funcFlag}${umnlmn}${annot}
-    <div class="difflist" id="difflist">${rows}</div>
-    ${ruled}
-    <p style="font-size:11px;color:var(--faint);margin:6px 0 0">Click a lesion to see its reasoning & causes below.</p>`;
+  const cap = `Where <span class="oc-n">(${list.length})</span>`;
+  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`);
 }
 
 const sideName = s => s === "left" ? "left" : s === "right" ? "right" : s === "bilateral" ? "both sides" : "the affected side";
@@ -214,7 +218,7 @@ function synthesisHTML(tf) {
   const converge = tf.length > 1
     ? `<p class="synth converge">These tracts cross at <b>different</b> points, so their combination pins the level and side: ${tf.map(t => esc(t.tract.label)).join(" + ")}.</p>`
     : "";
-  return `<h3 style="margin-top:14px">Why — synthesis</h3>${clauses}${converge}`;
+  return `${clauses}${converge}`;
 }
 
 function neuraxisBlock(tf, selectedId) {
@@ -236,6 +240,25 @@ function whyBlock(c, total, collapsed = false) {
   return collapsed
     ? `<details class="why-site" style="margin-top:10px"><summary style="font-weight:700">Why this specific site — ${head}</summary><div style="margin-top:6px">${body}</div></details>`
     : `<h3 style="margin-top:14px">Why — ${head}</h3>${body}`;
+}
+
+// ② Why — synthesis + UMN/LMN + (collapsed) diagram + (collapsed) per-site why
+function whyCard(tf, sel, total) {
+  const pat = umnLmnPattern(S.tokens);
+  const umnlmn = pat.verdict
+    ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
+    : "";
+  if (!tf.length) {
+    // non-tract findings: no tract synthesis/diagram — lead with the per-site explanation, expanded.
+    return card("Why", `${umnlmn}${whyBlock(sel, total, false)}`);
+  }
+  const diagram = `<details class="nx-toggle" style="margin-top:6px"><summary>Show neuraxis diagram</summary>${neuraxisBlock(tf, sel.site.id)}</details>`;
+  return card("Why", `${synthesisHTML(tf)}${umnlmn}${diagram}${whyBlock(sel, total, true)}`);
+}
+
+// ③ What — causes + sieve + next steps (whatBlock body, wrapped in the card shell)
+function whatCard(site) {
+  return card("What", whatBlock(site));
 }
 
 function whatBlock(site) {
@@ -262,7 +285,7 @@ function whatBlock(site) {
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
     <ul class="nextlist">${nx.investigations.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
     ${nx.curated ? "" : `<p class="derived">Investigations derived from site type — not individually curated.</p>`}`;
-  return `<h3 style="margin-top:14px">What — causes${S.onset?` · <span style="color:var(--terra)">${esc(S.onset)}</span> onset`:""}${res.derived?` <span class="derived">(derived from site type — not yet individually curated)</span>`:""}</h3>
+  return `${S.onset || res.derived ? `<p class="what-cap">${S.onset?`<span style="color:var(--terra)">${esc(S.onset)}</span> onset`:""}${res.derived?` <span class="derived">(derived from site type — not yet individually curated)</span>`:""}</p>` : ""}
     ${red}
     ${groups || `<div class="empty">No causes for this onset — try a different tempo.</div>`}
     ${sieve}
