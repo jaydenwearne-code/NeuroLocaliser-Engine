@@ -138,6 +138,40 @@
   /* error boundary */
   .err-panel{border:1px solid var(--red);background:var(--red-bg);border-radius:10px;padding:14px 15px;}
   .err-panel b{color:var(--ink);} .err-panel p{font-size:12.5px;color:var(--muted);margin:6px 0 10px;}
+  /* ===== refined-clinical aesthetic layer (overrides earlier rules) ===== */
+  :root{--radius:14px;--shadow:0 1px 2px rgba(29,49,77,.04),0 8px 30px rgba(29,49,77,.07);
+    --shadow-lift:0 2px 6px rgba(29,49,77,.06),0 16px 44px rgba(29,49,77,.10);}
+  @media (prefers-color-scheme:dark){:root{--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 34px rgba(0,0,0,.42);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4),0 20px 52px rgba(0,0,0,.5);}}
+  body{line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .wrap{max-width:1180px;padding:clamp(16px,3.2vw,40px);}
+  header{padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:6px;}
+  .wordmark{letter-spacing:.16em;}
+  .subtitle{font-size:12.5px;letter-spacing:.01em;}
+  .pane{border-radius:var(--radius);padding:18px 18px;transition:box-shadow .2s ease;}
+  .pane h3{font-size:10.5px;letter-spacing:.09em;color:var(--faint);}
+  /* the result focal moment */
+  .out-head{border:1px solid var(--line);border-radius:var(--radius);background:
+    linear-gradient(180deg,color-mix(in srgb,var(--terra) 7%,var(--paper)),var(--paper));
+    box-shadow:var(--shadow-lift);padding:16px 16px 14px;margin-bottom:4px;}
+  .oh-lead-txt b{font-size:17px;letter-spacing:-.01em;}
+  .oh-loc{display:block;font-family:var(--mono);font-size:11px;color:var(--terra);margin-top:3px;}
+  .oh-status{font-size:12.5px;color:var(--muted);margin:8px 0 0;}
+  .out-card{border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow);}
+  .out-card>.out-cap{font-size:10px;letter-spacing:.1em;}
+  /* differential rows: calmer, with a smooth active state */
+  .difflist{border-radius:11px;}
+  .drow{padding:8px 11px;transition:background .12s ease;}
+  .drow.on{box-shadow:inset 3px 0 0 var(--terra);}
+  .drow .dn b{letter-spacing:-.005em;}
+  /* restrained motion: results/cards ease in; disclosures feel intentional */
+  @media (prefers-reduced-motion:no-preference){
+    .out-head,.out-card{animation:nlrise .28s ease both;}
+    .out-card:nth-child(2){animation-delay:.03s;} .out-card:nth-child(3){animation-delay:.06s;}
+    @keyframes nlrise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  }
+  /* mono for technical/anatomical tokens, sans for prose (consistency) */
+  .why-item .t,.dloc,.oh-loc,.chip .sd{font-family:var(--mono);}
 </style>
 </head>
 <body>
