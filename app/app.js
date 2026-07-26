@@ -11,6 +11,7 @@ import { prevalenceOf } from "../src/model/prevalence.js";
 import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
+import { encodeCase, decodeCase } from "./case-url.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -39,6 +40,26 @@ const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
 const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", sensoryLevel:"", distalReach:"", atlas:null };
 const app = document.getElementById("app");
+
+// ---- shareable case URLs: hydrate S from the URL hash on boot, keep the hash live on every change ----
+const VALID_FINDINGS = new Set(Object.keys(FINDINGS));
+const VALID_SITES = new Set(CANDIDATES.map(s => s.id));
+
+function restoreFromURL() {
+  const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES });
+  if (st.tokens) S.tokens = st.tokens;
+  if (st.onset) S.onset = st.onset;
+  if (st.mode) S.mode = st.mode;
+  if (st.selected) S.selected = st.selected;
+  if (st.dominant) S.dominant = st.dominant;
+  if (st.sensoryLevel) S.sensoryLevel = st.sensoryLevel;
+  if (st.distalReach) S.distalReach = st.distalReach;
+}
+
+function syncURL() {
+  const hash = encodeCase(S);
+  history.replaceState(null, "", hash ? "#" + hash : location.pathname + location.search);
+}
 
 // ================= LOCALISE =================
 function renderLocalise() {
@@ -142,6 +163,7 @@ function renderResults() {
   // S.selected is the user's click-override; persist it while still shown, else the engine's default.
   let sel = list.find(c => c.site.id === S.selected) || list.find(c => c.site.id === r.defaultSite) || list[0];
   S.selected = sel.site.id;
+  syncURL();
   const tf = tractsFor(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
   el.innerHTML = resultHeader(sel, list, total, r)
     + whereCard(list, cands, total, r)
@@ -341,10 +363,11 @@ function renderAtlasDetail() {
 
 // ================= modes + bootstrap =================
 function boot() {
+  restoreFromURL();
   document.getElementById("modes").onclick = e => { const m = e.target.dataset.mode; if (!m || m===S.mode) return;
     S.mode = m; document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on", b.dataset.mode===m));
-    S.mode==="localise" ? renderLocalise() : renderAtlas(); };
-  // Reflect the mode in the toggle before the first render.
+    S.mode==="localise" ? renderLocalise() : renderAtlas(); syncURL(); };
+  // Reflect the (possibly URL-restored) mode in the toggle before the first render.
   document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === S.mode));
   S.mode === "atlas" ? renderAtlas() : renderLocalise();
 }
