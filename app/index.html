@@ -172,6 +172,18 @@
   }
   /* mono for technical/anatomical tokens, sans for prose (consistency) */
   .why-item .t,.dloc,.oh-loc,.chip .sd{font-family:var(--mono);}
+  /* mobile ergonomics */
+  @media (max-width:560px){
+    .wrap{padding:12px;}
+    .grid{gap:12px;}
+    .pane{padding:14px 13px;}
+    .sides button{min-width:36px;min-height:34px;font-size:12px;} /* thumb-sized side toggles */
+    .frow{padding:7px 2px 7px 8px;}
+    .chip{padding:4px 8px 4px 11px;font-size:12px;} .chip .x{font-size:15px;padding:0 2px;} /* easier remove */
+    .difflist{max-height:none;} /* no nested scroll trap on a phone */
+    .out-head{position:relative;} .oh-lead{flex-direction:column;} .report-btn{align-self:flex-start;}
+    .ctrls{gap:8px 12px;}
+  }
 </style>
 </head>
 <body>
