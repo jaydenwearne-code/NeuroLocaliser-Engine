@@ -172,7 +172,7 @@ function renderResults() {
     + whatCard(sel.site);
   const nx = el.querySelector(".neuraxis");
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
-  } catch (err) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty" style="text-align:left;color:var(--contra)">render error: ${esc(String(err))}<br><small>${esc((err.stack||"").split("\n").slice(0,4).join(" | "))}</small></div>`; return; }
+  } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
   const dl = document.getElementById("difflist");
   if (dl) dl.onclick = e => { const row = e.target.closest(".drow"); if (!row) return; S.selected = row.dataset.k; renderResults(); };
 }
@@ -191,6 +191,18 @@ function feedbackButton(list) {
   const top = (list && list[0]) ? `${siteName(list[0].site)} (${list[0].site.id})` : "";
   const url = buildFeedbackURL({ caseUrl: location.href, topResult: top, findings: [...S.tokens].join(", ") });
   return `<a class="report-btn" href="${esc(url)}" target="_blank" rel="noopener" title="Opens a feedback form — do not include patient identifiers">⚑ Report a problem</a>`;
+}
+
+// A friendly failure panel — never a blank/broken page. Carries the case link + a report button so a
+// tester can send exactly what broke. Technical detail is tucked behind a disclosure.
+function errorPanel(err) {
+  const url = buildFeedbackURL({ caseUrl: location.href, topResult: "(render error)", findings: [...S.tokens].join(", ") });
+  return `<div class="err-panel">
+    <b>Something went wrong showing this case.</b>
+    <p>This is a prototype and your input is safe. Please help us by reporting it — the exact case is attached automatically.</p>
+    <a class="report-btn" href="${esc(url)}" target="_blank" rel="noopener">⚑ Report this problem</a>
+    <details style="margin-top:8px"><summary style="font-size:11px;color:var(--muted)">Technical detail</summary><small style="color:var(--muted)">${esc(String(err))}</small></details>
+  </div>`;
 }
 
 // compact header: the leading/selected lesion + status + functional flag (safety — kept prominent)
@@ -378,7 +390,8 @@ function boot() {
     S.mode==="localise" ? renderLocalise() : renderAtlas(); syncURL(); };
   // Reflect the (possibly URL-restored) mode in the toggle before the first render.
   document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === S.mode));
-  S.mode === "atlas" ? renderAtlas() : renderLocalise();
+  try { S.mode === "atlas" ? renderAtlas() : renderLocalise(); }
+  catch (err) { app.innerHTML = errorPanel(err); }
 }
 
 function reveal() {
