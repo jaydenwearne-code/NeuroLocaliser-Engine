@@ -12,6 +12,7 @@ import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { encodeCase, decodeCase } from "./case-url.js";
+import { buildFeedbackURL } from "./feedback.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -184,6 +185,14 @@ function card(capHTML, body) {
   return `<section class="out-card"><div class="out-cap">${capHTML}</div>${body}</section>`;
 }
 
+// A "Report a problem" link → the external form, pre-filled with the LIVE case URL (syncURL ran first),
+// the top candidate, and the findings. Only teaching-vocabulary findings leave, only on click.
+function feedbackButton(list) {
+  const top = (list && list[0]) ? `${siteName(list[0].site)} (${list[0].site.id})` : "";
+  const url = buildFeedbackURL({ caseUrl: location.href, topResult: top, findings: [...S.tokens].join(", ") });
+  return `<a class="report-btn" href="${esc(url)}" target="_blank" rel="noopener" title="Opens a feedback form — do not include patient identifiers">⚑ Report a problem</a>`;
+}
+
 // compact header: the leading/selected lesion + status + functional flag (safety — kept prominent)
 function resultHeader(sel, list, total, r) {
   const nAll = r.explainAll.length;
@@ -197,7 +206,7 @@ function resultHeader(sel, list, total, r) {
     ? `<div class="annot"><b>Functional sign noted:</b> ${esc(fnd.note)}</div>`
     : "";
   return `<div class="out-head">
-    <div class="oh-lead"><b>${esc(siteName(sel.site))}</b><span class="oh-loc">${esc(siteLoc(sel.site))}${sel.site.territory?` · ${esc(sel.site.territory)}`:""}</span></div>
+    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b><span class="oh-loc">${esc(siteLoc(sel.site))}${sel.site.territory?` · ${esc(sel.site.territory)}`:""}</span></div>${feedbackButton(list)}</div>
     <p class="oh-status">${status}</p>${funcFlag}</div>`;
 }
 
