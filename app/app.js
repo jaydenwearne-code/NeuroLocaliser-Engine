@@ -10,6 +10,7 @@ import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js
 import { prevalenceOf } from "../src/model/prevalence.js";
 import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
+import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -338,8 +339,33 @@ function renderAtlasDetail() {
     <h3 style="margin-top:14px">Causes</h3>${groups}`;
 }
 
-// ================= modes =================
-document.getElementById("modes").onclick = e => { const m = e.target.dataset.mode; if (!m || m===S.mode) return;
-  S.mode = m; document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on", b.dataset.mode===m));
-  S.mode==="localise" ? renderLocalise() : renderAtlas(); };
-renderLocalise();
+// ================= modes + bootstrap =================
+function boot() {
+  document.getElementById("modes").onclick = e => { const m = e.target.dataset.mode; if (!m || m===S.mode) return;
+    S.mode = m; document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on", b.dataset.mode===m));
+    S.mode==="localise" ? renderLocalise() : renderAtlas(); };
+  // Reflect the mode in the toggle before the first render.
+  document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === S.mode));
+  S.mode === "atlas" ? renderAtlas() : renderLocalise();
+}
+
+function reveal() {
+  document.getElementById("gate").classList.remove("show");
+  document.getElementById("app-shell").classList.add("show");
+}
+
+async function startGate() {
+  const gateEl = document.getElementById("gate");
+  if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal(); boot(); return; }
+  gateEl.classList.add("show");
+  document.getElementById("gate-form").onsubmit = async ev => {
+    ev.preventDefault();
+    const errEl = document.getElementById("gate-err");
+    if (!document.getElementById("gate-ack").checked) { errEl.textContent = "Please tick the acknowledgment to continue."; return; }
+    const okPass = await checkPassphrase(document.getElementById("gate-pass").value);
+    if (!okPass) { errEl.textContent = "Incorrect passphrase."; return; }
+    try { localStorage.setItem(GATE_STORAGE_KEY, "ok"); } catch {}
+    reveal(); boot();
+  };
+}
+startGate();

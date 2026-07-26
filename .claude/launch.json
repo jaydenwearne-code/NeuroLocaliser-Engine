@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "neurolocaliser",
+      "runtimeExecutable": "/Users/jaydenwearne/.local/node-v24.18.0-darwin-arm64/bin/node",
+      "runtimeArgs": ["app/serve.mjs"],
+      "port": 8137
+    }
+  ]
+}

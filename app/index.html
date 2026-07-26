@@ -106,23 +106,64 @@
   .whynot-list{margin:4px 0 2px;padding-left:18px;}
   .whynot-list li{margin:2px 0;}
   .whynot .wn-terr{color:var(--faint);font-family:var(--mono);font-size:10.5px;}
+  /* entry gate + safety bar (ED stress-test build) */
+  #gate,#app-shell{display:none;}
+  .gate{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(1100px 560px at 100% -10%,color-mix(in srgb,var(--terra) 8%,transparent),transparent 60%),var(--cream);}
+  #gate.show{display:flex;}
+  .gate-card{width:min(420px,100%);background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:26px 24px;}
+  .gate-card .wordmark{font-size:22px;margin:0 0 2px;}
+  .gate-sub{font-size:12.5px;color:var(--muted);margin:0 0 18px;}
+  .gate-lbl{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:14px;}
+  .gate-lbl input{display:block;width:100%;margin-top:5px;font:inherit;font-size:14px;padding:9px 11px;
+    border:1px solid var(--line);border-radius:9px;background:var(--band);color:var(--ink);}
+  .gate-ack{display:flex;gap:9px;align-items:flex-start;font-size:11.5px;color:var(--muted);line-height:1.45;margin-bottom:16px;cursor:pointer;}
+  .gate-ack input{margin-top:2px;flex:none;}
+  .gate-go{width:100%;font:inherit;font-weight:800;font-size:14px;border:0;border-radius:10px;padding:11px;
+    background:var(--terra);color:#fff;cursor:pointer;box-shadow:var(--shadow);transition:filter .15s ease;}
+  .gate-go:hover{filter:brightness(1.05);}
+  .gate-err{min-height:16px;font-size:12px;color:var(--red);margin:10px 0 0;}
+  #app-shell.show{display:block;}
+  .safebar{position:sticky;bottom:0;font-size:11px;color:var(--muted);text-align:center;
+    padding:7px 12px;background:color-mix(in srgb,var(--band) 92%,transparent);border-top:1px solid var(--line);
+    backdrop-filter:saturate(1.1) blur(3px);}
+  .safebar b{color:var(--ink);}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
-      <p class="subtitle">Findings in → <b>where</b> · <b>why</b> · <b>what</b> — localisation derived from anatomy, not a stored list</p>
-      <p class="disc">Teaching prototype. Not a medical device; not for clinical use.</p>
-    </div>
-    <div class="modes" id="modes">
-      <button data-mode="localise" class="on">Localise</button>
-      <button data-mode="atlas">Atlas</button>
-    </div>
-  </header>
-  <div id="app"></div>
-  <footer>Built directly on the engine (<code>solve()</code> + <code>causesFor()</code>) — zero dependencies, no build step.</footer>
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
+    <p class="gate-sub">Teaching prototype — access for invited testers</p>
+    <form id="gate-form" autocomplete="off">
+      <label class="gate-lbl">Access passphrase
+        <input type="password" id="gate-pass" autocomplete="off" autofocus>
+      </label>
+      <label class="gate-ack"><input type="checkbox" id="gate-ack">
+        <span>I understand this is a <b>teaching prototype</b> — not a medical device and not for clinical decisions — I will <b>not enter patient identifiers</b>, and I understand my findings stay in this browser.</span>
+      </label>
+      <button type="submit" class="gate-go">Enter</button>
+      <p class="gate-err" id="gate-err" role="alert"></p>
+    </form>
+  </div>
+</div>
+<div id="app-shell">
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
+        <p class="subtitle">Findings in → <b>where</b> · <b>why</b> · <b>what</b> — localisation derived from anatomy, not a stored list</p>
+      </div>
+      <div class="modes" id="modes">
+        <button data-mode="localise" class="on">Localise</button>
+        <button data-mode="atlas">Atlas</button>
+      </div>
+    </header>
+    <div id="app"></div>
+    <footer>Built directly on the engine (<code>solve()</code> + <code>causesFor()</code>) — zero dependencies, no build step.</footer>
+  </div>
+  <div class="safebar" role="note"><b>Teaching prototype.</b> Not a medical device; not for clinical decisions. No patient identifiers. Findings stay in your browser.</div>
 </div>
 <script type="module" src="./app.js"></script>
 </body>
