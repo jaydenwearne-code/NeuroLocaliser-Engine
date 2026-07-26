@@ -27,8 +27,8 @@ tempo-aware causes layer (**why**) and an educational next-steps layer (**what n
 teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
-clinician-grade teaching tool (localise → *where · why · what*). **48 test suites / 1664 assertions green** —
-always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
+**51 test suites / 1687 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -63,6 +63,14 @@ docs (in `docs/superpowers/`) that record every decision:
   (`EXAM_TREE` + `flattenFindings`). Plan: `plans/2026-07-25-ui-restructure.md`.
 - **Output cards (done)** — the results pane is a compact header + three labelled cards (**Where / Why /
   What**) with progressive disclosure (ruled-out, sieve, per-site "why" collapsed). Plan: `plans/2026-07-26-output-cards.md`.
+- **ED stress-test prototype (done)** — the app is now deployable for clinician stress-testing: a client-side
+  passphrase gate + safety acknowledgment (`app/gate.js`), a persistent safety bar, shareable/restorable
+  **case URLs** (`app/case-url.js`, state ↔ URL hash), a "Report a problem" button pre-filling an external
+  form with the exact case (`app/feedback.js`), a friendly error boundary, a refined-clinical aesthetic pass,
+  and a mobile ergonomics pass. Pure `app/`-layer + CSS; zero engine changes. Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-07-27-ed-stress-test-prototype*.md`. **Deploy is intentionally NOT done**
+  — GitHub Pages needs the repo public + the local commits pushed (owner go-ahead required); swap the
+  placeholder passphrase digest (`app/gate.js`) and feedback form config (`app/feedback.js`) before handing out the URL.
 
 **Where the detail lives:** dated design specs in `docs/superpowers/specs/` and executable plans in
 `docs/superpowers/plans/` (each plan's top line says whether it's implemented). `CONTRIBUTING.md` has the

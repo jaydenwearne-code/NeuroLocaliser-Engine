@@ -97,6 +97,9 @@ node test/differential.test.js   # narrowing differential + explainAll/display/d
 node test/ranking-realism.test.js # Sub-project A — known-negative exclusion + prevalence tiebreak
 node test/tracts.test.js         # Sub-project B — long-tract taxonomy + tractsFor derivation
 node test/neuraxis-diagram.test.js # Sub-project B — derived neuraxis SVG builder
+node test/case-url.test.js       # ED prototype — shareable case ⇄ URL-hash serializer
+node test/feedback-url.test.js   # ED prototype — feedback prefill-URL builder
+node test/gate.test.js           # ED prototype — passphrase gate hash-and-compare
 ```
 
 ## Status

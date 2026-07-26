@@ -395,7 +395,17 @@ easiest mechanism-fit first. Per-region designs + plans live in `docs/superpower
 > (known-negative exclusion + prevalence), the **long-tract "why" layer** (`tracts.js` + composed Course
 > narrative + derived why-not-others + neuraxis diagram), and causes breadth (sieve completion). **Still
 > genuinely open:** a fuller declarative **pathology layer** (ALS/MND beyond the `umnLmnPattern` flag) and
-> **multi-location DDx synthesis** (combined view when the picture is multifocal). 48 suites / 1664 green.
+> **multi-location DDx synthesis** (combined view when the picture is multifocal). 51 suites / 1687 green.
+>
+> **STATUS UPDATE (2026-07-27): the app is now packaged for ED stress-testing** — client-side passphrase
+> gate + safety acknowledgment (`app/gate.js`), persistent safety bar, shareable/restorable case URLs
+> (`app/case-url.js`), a "Report a problem" button pre-filling an external form with the exact case
+> (`app/feedback.js`), a friendly error boundary, a refined-clinical aesthetic, and a mobile pass. Spec/plan:
+> `docs/superpowers/{specs,plans}/2026-07-27-ed-stress-test-prototype*.md`. **Two handoffs remain before
+> going live** (owner-provided): the real passphrase (store its SHA-256 in `app/gate.js`) and the real
+> feedback form URL + entry ids (`app/feedback.js`). **Deploy is deliberately not done:** free GitHub Pages
+> needs the repo public + the ~26 local commits pushed — both require explicit owner go-ahead (or use a
+> Cloudflare/Netlify drag-deploy to keep the repo private). See the plan's "Deployment" section.
 
 ### Next: pathology layer (ALS) · non-organic (FND) · UI  *(historical — see status update above)*
 The neuraxis regions are essentially complete (brainstem → cord → cortex → subcortex → skull base → motor
