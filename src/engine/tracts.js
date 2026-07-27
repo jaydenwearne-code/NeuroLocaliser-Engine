@@ -4,7 +4,7 @@
 // known-negative exclusion + prevalence ranking already applied. A site is "on the tract" when it PREDICTS
 // one of the tract's findings — keyed on shared findings, not (level,part), so composites (hemicord, whole
 // MCA) map correctly even though the cord/anterior primitive is a buildingBlock.
-import { TRACTS, neuraxisIndex } from "../model/tracts.js";
+import { TRACTS, NEURAXIS, neuraxisIndex } from "../model/tracts.js";
 import { differential } from "./inverse.js";
 import { expectedFindings } from "./forward.js";
 import { LOCALISING } from "./score.js";
@@ -21,10 +21,17 @@ export function tractsFor(observedSet, opts = {}) {
     const matched = observed.filter(t => findingSet.has(idOf(t)));
     if (!matched.length) continue;
     const sides = [...new Set(matched.map(sideOf))];
+    // Order candidate sites along the pathway. Classic rostro-caudal tracts order by the global neuraxis
+    // (preserved exactly). Non-classical pathways (oculosympathetic, visual) whose course leaves the neuraxis
+    // order by their OWN course position, so central→preganglionic→postganglionic / nerve→chiasm→cortex read right.
+    const courseLevels = tract.course.map(w => w.level);
+    const classic = courseLevels.every(l => NEURAXIS.includes(l));
+    const courseIndexOf = lvl => { const i = courseLevels.indexOf(lvl); return i >= 0 ? i : courseLevels.length + neuraxisIndex(lvl); };
+    const sortKey = lvl => classic ? neuraxisIndex(lvl) : courseIndexOf(lvl);
     const sites = cands
       .filter(c => [...c.exp].some(t => findingSet.has(idOf(t))))
-      .map(c => ({ site: c.site, level: c.site.level, neuraxisIndex: neuraxisIndex(c.site.level), explained: c.explained }))
-      .sort((a, b) => a.neuraxisIndex - b.neuraxisIndex || a.site.id.localeCompare(b.site.id));
+      .map(c => ({ site: c.site, level: c.site.level, neuraxisIndex: neuraxisIndex(c.site.level), courseIndex: courseIndexOf(c.site.level), explained: c.explained }))
+      .sort((a, b) => sortKey(a.level) - sortKey(b.level) || a.neuraxisIndex - b.neuraxisIndex || a.site.id.localeCompare(b.site.id));
     out.push({ tract, findingsMatched: matched, sides, sites, decussation: tract.decussation });
   }
   return out;
@@ -53,10 +60,14 @@ export function tractNarrative(tract) {
 
 // Level buckets for the "why not the other sites" reasoning.
 const BUCKET = {
-  cortex: "cortical", subcortex: "deep subcortical", aphasia_subcortical: "deep subcortical", thalamus: "deep subcortical",
+  cortex: "cortical", subcortex: "deep subcortical", aphasia_subcortical: "deep subcortical",
+  thalamus: "deep subcortical", hypothalamus: "deep subcortical",
   midbrain: "brainstem", pons: "brainstem", medulla: "brainstem", cord: "spinal cord",
+  // non-classical pathway stations (oculosympathetic, visual)
+  sympathetic: "sympathetic chain", skull_base: "skull base / orbit", visual_pathway: "chiasm / optic tract", pupil: "orbit / pupil",
 };
-const BUCKET_ORDER = ["cortical", "deep subcortical", "brainstem", "spinal cord"];
+const BUCKET_ORDER = ["cortical", "deep subcortical", "brainstem", "spinal cord",
+  "chiasm / optic tract", "sympathetic chain", "skull base / orbit", "orbit / pupil"];
 const bucketOf = level => BUCKET[level] || "other";
 
 // For the SELECTED lesion, derive what each OTHER candidate on its tract(s) would additionally produce (and

@@ -14,11 +14,17 @@ export function neuraxisSVG(tracts, opts = {}) {
   if (!tracts || !tracts.length) return "";
   const { selectedId = null, labelFor = s => s.id } = opts;
 
-  // rows = union of course levels + candidate-site levels, in NEURAXIS order
+  // rows = union of course levels + candidate-site levels. Order follows the implicated pathways' OWN course
+  // (so non-rostro-caudal pathways — oculosympathetic, visual — order correctly); levels off every course
+  // fall back to the global NEURAXIS. For the classic rostro-caudal tracts the course IS neuraxis order, so
+  // this reproduces the previous behaviour exactly.
   const levelsUsed = new Set();
   for (const t of tracts) for (const wp of t.tract.course) levelsUsed.add(wp.level);
   for (const t of tracts) for (const s of t.sites) levelsUsed.add(s.level);
-  const rows = NEURAXIS.filter(l => levelsUsed.has(l));
+  const courseOrder = [];
+  for (const t of tracts) for (const wp of t.tract.course) if (!courseOrder.includes(wp.level)) courseOrder.push(wp.level);
+  const orderKey = l => { const i = courseOrder.indexOf(l); return i >= 0 ? i : courseOrder.length + (NEURAXIS.indexOf(l) + 1 || 99); };
+  const rows = [...levelsUsed].sort((a, b) => orderKey(a) - orderKey(b));
   const idxOf = l => rows.indexOf(l);
 
   // dedup candidate sites by id, grouped by level (tract order → stable stacking)

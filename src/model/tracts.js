@@ -74,4 +74,48 @@ export const TRACTS = [
     decussation: { between: ["midbrain", "pons"], label: "corticobulbar decussation (to the facial nucleus)" },
     crossingNote: "contralateral to the lower-face weakness; the forehead is spared because the upper face is bilaterally innervated",
   },
+  // ---- non-classical longitudinal pathways (same declarative shape; enrich the "why" for non-tract findings) ----
+  {
+    // Keyed on the SYMPATHETIC-SPECIFIC findings (miosis + anhidrosis), NOT ptosis — ptosis is shared with CN III,
+    // and CN III causes a DILATED pupil, so keying on miosis/anhidrosis keeps a pupil-sparing III palsy out.
+    id: "oculosympathetic", label: "oculosympathetic (Horner) pathway", direction: "descending",
+    findings: ["miosis", "anhidrosis_face", "anhidrosis_body"],
+    together: "the three-neuron sympathetic supply to the pupil dilator, Müller's muscle, and the facial sweat glands",
+    course: [
+      { level: "hypothalamus", label: "posterolateral hypothalamus", detail: "posterolateral hypothalamus (first-order neuron)", supply: "deep perforators", narrativeOnly: true },
+      { level: "medulla",      label: "lateral brainstem",           detail: "descending sympathetic tract in the lateral brainstem",                     supply: "PICA / vertebral" },
+      { level: "cord",         label: "ciliospinal centre (C8–T2)",  detail: "ciliospinal centre of Budge in the intermediolateral cord (C8–T2)",         supply: "anterior spinal artery" },
+      { level: "sympathetic",  label: "cervical sympathetic chain",  detail: "preganglionic fibres over the lung apex to the superior cervical ganglion (second-order neuron)", supply: "lung apex / subclavian region" },
+      { level: "skull_base",   label: "carotid → cavernous → orbit", detail: "postganglionic fibres along the internal carotid, through the cavernous sinus, to the orbit (third-order neuron)", supply: "internal carotid" },
+    ],
+    decussation: {}, // ipsilateral throughout — no decussation
+    crossingNote: "Horner's is ipsilateral to the lesion throughout; the order is read from the sweating — anhidrosis of the whole hemibody is central (first-order), face-only is preganglionic (second-order), and little or none is postganglionic (third-order)",
+  },
+  {
+    id: "mlf", label: "medial longitudinal fasciculus (MLF)", direction: "ascending",
+    findings: ["ino"],
+    together: "the internuclear fibres linking the abducens nucleus to the contralateral medial-rectus subnucleus",
+    // course listed rostral→caudal (the shared convention); direction "ascending" reverses it in the
+    // narrative so it reads pons (abducens internuclear neurons) → midbrain (medial-rectus subnucleus).
+    course: [
+      { level: "midbrain", label: "medial-rectus subnucleus", detail: "medial-rectus subnucleus of the oculomotor nucleus in the midbrain", supply: "PCA / basilar perforators" },
+      { level: "pons",     label: "abducens nucleus / PPRF",  detail: "abducens internuclear neurons in the pons",                          supply: "basilar perforators" },
+    ],
+    decussation: {}, // the internuclear crossing is a detail; the localising fact is that INO is ipsilateral to the lesion
+    crossingNote: "an internuclear ophthalmoplegia is ipsilateral to the lesion — the adducting eye fails and the abducting eye shows nystagmus; bilateral INO suggests MS in the young and brainstem stroke in the older patient",
+  },
+  {
+    id: "visual", label: "visual pathway", direction: "descending",
+    findings: ["optic_neuropathy", "central_scotoma", "altitudinal_defect", "bitemporal_hemianopia",
+      "homonymous_hemianopia", "superior_quadrantanopia", "inferior_quadrantanopia", "cortical_blindness"],
+    together: "the retinofugal pathway from the optic nerve to the primary visual cortex",
+    course: [
+      { level: "skull_base",     label: "optic nerve (CN II)",   detail: "optic nerve in the optic canal (monocular loss before the chiasm)", supply: "ophthalmic artery" },
+      { level: "visual_pathway", label: "chiasm → tract → LGN",  detail: "optic chiasm, optic tract, then the lateral geniculate nucleus (bitemporal at the chiasm, homonymous beyond)", supply: "perforators / anterior choroidal" },
+      { level: "subcortex",      label: "optic radiations",      detail: "optic radiations — Meyer's loop (temporal, superior fields) and the parietal fibres (inferior fields)", supply: "MCA branches" },
+      { level: "cortex",         label: "primary visual cortex", detail: "primary (calcarine) visual cortex in the occipital lobe",           supply: "PCA (with MCA macular collateral)" },
+    ],
+    decussation: { inLevel: "visual_pathway", label: "optic chiasm (nasal fibres cross)" },
+    crossingNote: "before the chiasm the defect is monocular; at the chiasm the crossing nasal fibres give a bitemporal hemianopia; beyond it the defect is a contralateral homonymous hemianopia, becoming more congruous and macula-sparing towards the occipital cortex",
+  },
 ];

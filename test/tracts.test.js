@@ -8,9 +8,10 @@ let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
 const opts = { dominantSide: "left" };
 
-// ---- consistency guard: every course level has a structure producing a tract finding ----
+// ---- consistency guard: every course level (bar narrative-only origins) has a producing structure ----
 for (const t of TRACTS) {
   for (const wp of t.course) {
+    if (wp.narrativeOnly) continue; // an anatomical origin/terminus with no discrete lesion site (e.g. hypothalamus)
     const has = STRUCTURES.some(s => s.level === wp.level && t.findings.includes(s.produces));
     ok(`${t.id}: course level ${wp.level} has a producing structure`, has);
   }
@@ -60,6 +61,52 @@ ok("plain arm+leg weakness does NOT implicate corticobulbar",
 
 // ---- non-tract input → empty (fallback) ----
 ok("a non-tract finding implicates no tract", tractsFor(new Set(["dysarthria@none"]), opts).length === 0);
+
+// ---- oculosympathetic (Horner) pathway ----
+const horner = tractsFor(new Set(["miosis@left", "anhidrosis_face@left"]), opts);
+const symp = horner.find(t => t.tract.id === "oculosympathetic");
+ok("Horner findings (miosis + anhidrosis) implicate the oculosympathetic pathway", !!symp);
+{ const n = tractNarrative(symp.tract);
+  ok("oculosympathetic narrative mentions the ciliospinal centre of Budge", /ciliospinal centre of Budge/i.test(n));
+  ok("oculosympathetic narrative mentions the superior cervical ganglion", /superior cervical ganglion/i.test(n));
+  ok("oculosympathetic narrative mentions the internal carotid", /internal carotid/i.test(n)); }
+ok("oculosympathetic is ipsilateral throughout (crossing note)", /ipsilateral/i.test(symp.tract.crossingNote));
+ok("oculosympathetic has no decussation", !symp.tract.decussation.between && !symp.tract.decussation.inLevel);
+// sites ordered central (brainstem/cord) → preganglionic (sympathetic) → postganglionic (skull_base)
+{ const lvlSeq = symp.sites.map(s => s.level);
+  const firstSym = lvlSeq.indexOf("sympathetic"), firstSB = lvlSeq.indexOf("skull_base"), lastCord = lvlSeq.lastIndexOf("cord");
+  ok("oculosympathetic candidates ordered central→pre→postganglionic",
+     (lastCord === -1 || firstSym === -1 || lastCord < firstSym) && (firstSym === -1 || firstSB === -1 || firstSym < firstSB)); }
+// a pupil-SPARING/involving CN III palsy (ptosis + dilated pupil, NO miosis/anhidrosis) must NOT hijack it
+ok("a CN III picture (ptosis + fixed dilated pupil) does NOT implicate the oculosympathetic pathway",
+   tractsFor(new Set(["ptosis@left", "fixed_dilated_pupil@left"]), opts).every(t => t.tract.id !== "oculosympathetic"));
+
+// ---- MLF / INO ----
+const inoTf = tractsFor(new Set(["ino@left"]), opts);
+const mlf = inoTf.find(t => t.tract.id === "mlf");
+ok("ino implicates the MLF pathway", !!mlf);
+ok("MLF course listed rostral→caudal (midbrain, pons)", mlf && mlf.tract.course.map(w => w.level).join(">") === "midbrain>pons");
+ok("MLF narrative reads caudal→rostral (pons → midbrain)", mlf && /begins in the abducens internuclear neurons in the pons[\s\S]*medial-rectus subnucleus/i.test(tractNarrative(mlf.tract)));
+ok("MLF crossing note says INO is ipsilateral to the lesion", mlf && /ipsilateral to the lesion/i.test(mlf.tract.crossingNote));
+
+// ---- visual pathway ----
+const vis = tractsFor(new Set(["bitemporal_hemianopia@midline"]), opts).find(t => t.tract.id === "visual");
+ok("a bitemporal hemianopia implicates the visual pathway", !!vis);
+{ const n = tractNarrative(vis.tract);
+  ok("visual narrative mentions the optic chiasm", /chiasm/i.test(n));
+  ok("visual narrative mentions the calcarine / occipital cortex", /calcarine|occipital/i.test(n)); }
+ok("visual pathway decussates at the chiasm", vis.tract.decussation.label && /chiasm/i.test(vis.tract.decussation.label));
+// a homonymous hemianopia should surface candidate sites from tract through to occipital cortex
+{ const hh = tractsFor(new Set(["homonymous_hemianopia@right"]), opts).find(t => t.tract.id === "visual");
+  const lvls = new Set(hh.sites.map(s => s.level));
+  ok("homonymous defect spans post-chiasmal stations (radiation/cortex)", lvls.has("subcortex") || lvls.has("cortex")); }
+
+// ---- oculosympathetic why-not surfaces the order discrimination (emergent) ----
+{ const pregSite = candidateSites().find(s => /preganglionic/.test(s.id) || (s.level === "sympathetic"));
+  if (pregSite) {
+    const wnS = whyNotOthers(new Set(["miosis@left", "anhidrosis_face@left"]), pregSite, opts);
+    ok("Horner why-not includes a brainstem/central alternative", wnS.buckets.some(b => b.bucket === "brainstem" || b.bucket === "spinal cord"));
+  } else ok("Horner why-not (preganglionic site present)", false); }
 
 // ---- composed anatomy narrative (richer-why) ----
 const cstTract = TRACTS.find(t => t.id === "corticospinal");

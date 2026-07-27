@@ -303,7 +303,7 @@ function whyCard(tf, sel, total) {
   const wn = whyNotOthers(S.tokens, sel.site, opts);
   const common = prevalenceOf(sel.site) === 2;
   const tractLabels = tf.map(t => esc(t.tract.label)).join(" and ");
-  const whyThis = `<p class="synth"><b>Why this site.</b> The deficit is confined to ${tractLabels} fibres with no accompanying signs, so the lesion lies where the tract runs in relative isolation — a small, deep lesion such as ${esc(siteName(sel.site))}.${common ? " Lesions here are also common." : ""}</p>`;
+  const whyThis = `<p class="synth"><b>Why this site.</b> The findings map onto the ${tractLabels}, so the lesion lies somewhere along that pathway; the accompanying signs (and the ones that are absent) place it at ${esc(siteName(sel.site))}.${common ? " Lesions here are also common." : ""}</p>`;
   const lines = wn.buckets.map(b => {
     const signs = b.findings.map(id => esc(desc(id))).join(", ");
     const lead = b.bucket === wn.selectedBucket ? `A neighbouring ${esc(b.bucket)} lesion` : `If ${esc(b.bucket)}`;
