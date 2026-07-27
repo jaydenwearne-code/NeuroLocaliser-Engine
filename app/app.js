@@ -169,7 +169,8 @@ function renderResults() {
   el.innerHTML = resultHeader(sel, list, total, r)
     + whereCard(list, cands, total, r)
     + whyCard(tf, sel, total)
-    + whatCard(sel.site);
+    + whatCard(sel.site)
+    + nextCard(sel.site);
   const nx = el.querySelector(".neuraxis");
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
@@ -316,40 +317,57 @@ function whyCard(tf, sel, total) {
   return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`);
 }
 
-// ③ What — causes + sieve + next steps (whatBlock body, wrapped in the card shell)
+// ③ What — the full surgical sieve of causes (curated + phonebook + region generics), shown inline.
 function whatCard(site) {
   return card("What", whatBlock(site));
+}
+
+// One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
+function renderCause(c) {
+  return `<div class="cause${c.generic?" generic":""}"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}</div>`;
 }
 
 function whatBlock(site) {
   const res = causesFor(site, { onset: S.onset || undefined });
   const ph = nameForSite(site);
   const red = ph.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(ph.red)}</div>` : "";
-  const groups = res.byCategory.map(g => `
-    <div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>
-      ${g.causes.map(c=>`<div class="cause"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${c.likelihood}</span>${c.red?`<span class="rf">RED</span>`:""}</div>`).join("")}
-    </div>`).join("");
-  const compN = (res.completion || []).reduce((n, g) => n + g.causes.length, 0);
-  const sieve = compN ? `
-    <details class="sieve" style="margin-top:8px"><summary>Complete the surgical sieve <span class="c">+${compN}</span></summary>
-      <p class="derived" style="margin:4px 0 6px">Derived from site type — the other sieve categories a lesion here could fall into (not vetted per site).</p>
-      ${res.completion.map(g => `
-        <div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>
-          ${g.causes.map(c=>`<div class="cause generic"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${c.likelihood}</span>${c.red?`<span class="rf">RED</span>`:""}</div>`).join("")}
-        </div>`).join("")}
-    </details>` : "";
+  // Full sieve inline: for each category, the site's specific causes first, then region generics (marked).
+  const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));
+  const byComp = Object.fromEntries((res.completion || []).map(g => [g.cat, g]));
+  const groups = CATEGORIES.map(cat => {
+    const causes = [...(bySpec[cat.id]?.causes || []), ...(byComp[cat.id]?.causes || [])];
+    if (!causes.length) return "";
+    return `<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${cat.tint})"></span>${esc(cat.label)}</div>${causes.map(renderCause).join("")}</div>`;
+  }).join("");
+  // Lead: the common causes to think of first (given the chosen tempo, if any).
+  const leadCauses = res.all.filter(x => x.likelihood === "common").slice(0, 3).map(x => x.name);
+  const lead = leadCauses.length
+    ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
+  const cap = (S.onset || res.derived)
+    ? `<p class="what-cap">${S.onset ? `<span style="color:var(--terra)">${esc(S.onset)}</span> onset` : ""}${res.derived ? ` <span class="derived">(derived from site type — not individually curated)</span>` : ""}</p>` : "";
+  return `${cap}${lead}${red}
+    ${groups || `<div class="empty">No causes for this onset — try a different tempo.</div>`}
+    <p class="derived">The full surgical sieve is shown; “generic” items are region-typical categories, not vetted per site.</p>`;
+}
+
+// ④ Next steps — its own card, tiered (immediate → first-line → confirmatory → monitoring) + urgency/referral.
+function nextCard(site) {
+  return card("Next steps", nextBlock(site));
+}
+
+function nextBlock(site) {
   const nx = nextStepsFor(site);
   const urgTint = nx.urgency === "emergency" ? "--red" : nx.urgency === "urgent" ? "--gold" : "--faint";
   const urgLabel = nx.urgency === "emergency" ? "EMERGENCY" : nx.urgency === "urgent" ? "URGENT" : "routine";
-  const next = `<h3 style="margin-top:14px">Next steps <span class="derived">(educational — not clinical advice)</span></h3>
+  const tier = (title, items) => (items && items.length)
+    ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
+  return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
-    <ul class="nextlist">${nx.investigations.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
-    ${nx.curated ? "" : `<p class="derived">Investigations derived from site type — not individually curated.</p>`}`;
-  return `${S.onset || res.derived ? `<p class="what-cap">${S.onset?`<span style="color:var(--terra)">${esc(S.onset)}</span> onset`:""}${res.derived?` <span class="derived">(derived from site type — not yet individually curated)</span>`:""}</p>` : ""}
-    ${red}
-    ${groups || `<div class="empty">No causes for this onset — try a different tempo.</div>`}
-    ${sieve}
-    ${next}`;
+    ${tier("Immediate / bedside", nx.immediate)}
+    ${tier("First-line investigations", nx.investigations)}
+    ${tier("Confirmatory / specialist", nx.confirmatory)}
+    ${tier("Monitoring / safety-netting", nx.monitoring)}
+    ${nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`}`;
 }
 
 // ================= ATLAS =================

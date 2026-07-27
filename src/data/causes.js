@@ -27,33 +27,36 @@ export const TEMPO = [
 ];
 export const LIKELIHOOD = ["common", "uncommon", "rare"];
 
-// terse constructor
-const c = (name, cat, tempo, likelihood, red = false) => ({ name, cat, tempo, likelihood, red });
+// terse constructor. `feature` (optional) is a short discriminating clue — "what points to this cause" —
+// shown as a teaching hint under the cause name. Curated flagship entries carry it; the live phonebook
+// categoriser and the derived fallback leave it blank.
+const c = (name, cat, tempo, likelihood, red = false, feature = "") => ({ name, cat, tempo, likelihood, red, feature });
 
 // ---- curated causes, keyed like the phonebook (site.id if it has its own entry, else level_part) ----
 export const CAUSES = {
   // --- brainstem ---
   midbrain_medial: [ // Weber / Benedikt / Claude
-    c("PCA perforator infarct", "vascular", ["hyperacute","acute"], "common"),
-    c("Haemorrhage / cavernous malformation", "vascular", ["acute"], "uncommon"),
-    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon"),
-    c("Midbrain tumour / metastasis", "neoplastic", ["chronic"], "rare"),
+    c("PCA perforator infarct", "vascular", ["hyperacute","acute"], "common", false, "Sudden onset; crossed signs (ipsilateral CN III + contralateral hemiparesis)"),
+    c("Haemorrhage / cavernous malformation", "vascular", ["acute"], "uncommon", false, "Headache, depressed consciousness; blood on CT/GRE"),
+    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false, "Younger patient, subacute, prior episodes; T2 lesions"),
+    c("Midbrain tumour / metastasis", "neoplastic", ["chronic"], "rare", false, "Progressive over weeks; enhancing mass"),
+    c("Top-of-the-basilar embolism", "vascular", ["hyperacute","acute"], "uncommon", true, "Bilateral, with visual + behavioural change and reduced consciousness"),
   ],
   medulla_lateral: [ // Wallenberg
-    c("PICA / vertebral artery occlusion", "vascular", ["hyperacute","acute"], "common"),
-    c("Vertebral artery dissection", "vascular", ["hyperacute","acute"], "common", true),
-    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon"),
-    c("Lateral medullary tumour / metastasis", "neoplastic", ["chronic"], "rare"),
+    c("PICA / vertebral artery occlusion", "vascular", ["hyperacute","acute"], "common", false, "Vertigo, ipsilateral facial + contralateral body pain/temp loss, Horner's, dysphagia"),
+    c("Vertebral artery dissection", "vascular", ["hyperacute","acute"], "common", true, "Younger patient, neck pain/recent trauma, often no vascular risk factors"),
+    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false, "Younger, subacute onset, prior demyelinating episodes"),
+    c("Lateral medullary tumour / metastasis", "neoplastic", ["chronic"], "rare", false, "Progressive; enhancing lesion on MRI"),
   ],
   medulla_medial: [ // Dejerine
-    c("Anterior spinal / vertebral artery infarct", "vascular", ["hyperacute","acute"], "common"),
-    c("Vertebral dissection", "vascular", ["acute"], "uncommon", true),
+    c("Anterior spinal / vertebral artery infarct", "vascular", ["hyperacute","acute"], "common", false, "Contralateral hemiparesis + tongue deviation + dorsal-column loss"),
+    c("Vertebral dissection", "vascular", ["acute"], "uncommon", true, "Neck pain, younger patient"),
   ],
   pons_medial: [ // Millard-Gubler / Foville
-    c("Basilar perforator infarct", "vascular", ["hyperacute","acute"], "common"),
-    c("Pontine haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true),
-    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon"),
-    c("Pontine glioma (esp. children)", "neoplastic", ["chronic"], "rare"),
+    c("Basilar perforator infarct", "vascular", ["hyperacute","acute"], "common", false, "Crossed pontine signs; risk of progression to basilar occlusion"),
+    c("Pontine haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true, "Pinpoint pupils, coma, hyperthermia; hypertensive"),
+    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false, "Younger, subacute, prior episodes; may cause INO"),
+    c("Pontine glioma (esp. children)", "neoplastic", ["chronic"], "rare", false, "Progressive multiple cranial neuropathies; diffuse pontine expansion"),
   ],
   pons_basis_pontis: [ // ventral pontine lacune (ataxic hemiparesis / DCH)
     c("Small-vessel lacunar infarct", "vascular", ["acute"], "common"),
@@ -62,9 +65,10 @@ export const CAUSES = {
   ],
   // --- cord ---
   cord_anterior: [ // anterior spinal artery
-    c("Anterior spinal artery infarct", "vascular", ["hyperacute","acute"], "common"),
-    c("Compressive myelopathy (disc / mass)", "neoplastic", ["subacute","chronic"], "common"),
-    c("Transverse myelitis (demyelinating)", "inflammatory", ["subacute"], "uncommon"),
+    c("Anterior spinal artery infarct", "vascular", ["hyperacute","acute"], "common", false, "Sudden para/tetraparesis + pain/temp loss, dorsal columns spared; aortic surgery/hypotension"),
+    c("Compressive myelopathy (disc / mass / abscess)", "neoplastic", ["subacute","chronic"], "common", true, "Progressive with a sensory level; MRI shows compression — surgical emergency"),
+    c("Transverse myelitis (demyelinating)", "inflammatory", ["subacute"], "uncommon", false, "Subacute, cord signal change over ≥1 segment; MS/NMO/MOG or para-infectious"),
+    c("Epidural abscess", "infective", ["acute","subacute"], "uncommon", true, "Fever, focal spinal pain, raised inflammatory markers; risk factors (IVDU, diabetes)"),
   ],
   cord_posterior: [
     c("B12 / copper deficiency (SCD)", "metabolic", ["subacute","chronic"], "common"),
@@ -117,20 +121,21 @@ export const CAUSES = {
     c("Granulomatosis with polyangiitis / sarcoid", "inflammatory", ["subacute"], "uncommon"),
   ],
   skull_base_optic_neuritis: [
-    c("Multiple sclerosis", "inflammatory", ["subacute"], "common"),
-    c("Idiopathic optic neuritis", "inflammatory", ["subacute"], "common"),
-    c("NMO / MOG-associated", "inflammatory", ["subacute"], "uncommon"),
-    c("Infective / para-infectious", "infective", ["subacute"], "rare"),
+    c("Multiple sclerosis", "inflammatory", ["subacute"], "common", false, "Young adult, painful on eye movement, central scotoma, RAPD; recovers over weeks"),
+    c("Idiopathic optic neuritis", "inflammatory", ["subacute"], "common", false, "Isolated, painful, unilateral; normal brain MRI"),
+    c("NMO / MOG-associated", "inflammatory", ["subacute"], "uncommon", true, "Severe/bilateral or poor recovery; check aquaporin-4 & MOG antibodies"),
+    c("Infective / para-infectious", "infective", ["subacute"], "rare", false, "Recent infection/vaccination; may be bilateral in children"),
   ],
   skull_base_optic_aion: [
-    c("Non-arteritic AION (vasculopathic)", "vascular", ["acute"], "common"),
-    c("Arteritic AION — giant-cell arteritis", "vascular", ["acute"], "uncommon", true),
+    c("Arteritic AION — giant-cell arteritis", "vascular", ["acute"], "uncommon", true, "Age >50, jaw claudication, scalp tenderness, raised ESR/CRP — sight- and life-threatening"),
+    c("Non-arteritic AION (vasculopathic)", "vascular", ["acute"], "common", false, "Painless altitudinal loss, 'disc at risk', vascular risk factors; ESR/CRP normal"),
   ],
   skull_base_vii_stylomastoid: [ // Bell's palsy site
-    c("Bell's palsy (idiopathic / HSV)", "inflammatory", ["acute"], "common"),
-    c("Ramsay Hunt (herpes zoster)", "infective", ["acute"], "uncommon"),
-    c("Lyme disease", "infective", ["subacute"], "uncommon"),
-    c("Sarcoidosis", "inflammatory", ["subacute"], "rare"),
+    c("Bell's palsy (idiopathic / HSV)", "inflammatory", ["acute"], "common", false, "Isolated LMN facial weakness (forehead involved), over hours–days; diagnosis of exclusion"),
+    c("Ramsay Hunt (herpes zoster oticus)", "infective", ["acute"], "uncommon", false, "Vesicles in the ear canal, ear pain, ± hearing loss/vertigo"),
+    c("Lyme disease", "infective", ["subacute"], "uncommon", false, "Endemic area/tick exposure; may be bilateral facial palsy"),
+    c("Parotid tumour / malignant infiltration", "neoplastic", ["chronic"], "uncommon", true, "Slowly progressive or a parotid mass — not a true 'Bell's'"),
+    c("Sarcoidosis", "inflammatory", ["subacute"], "rare", false, "May be bilateral; consider with uveitis/hilar lymphadenopathy"),
   ],
   skull_base_vii_geniculate: [ // Ramsay Hunt
     c("Herpes zoster oticus (Ramsay Hunt)", "infective", ["acute"], "common"),
@@ -153,8 +158,8 @@ export const CAUSES = {
   ],
   // --- cortex / subcortex ---
   subcortex_internal_capsule: [
-    c("Small-vessel lacunar infarct", "vascular", ["acute"], "common"),
-    c("Hypertensive haemorrhage", "vascular", ["acute"], "uncommon", true),
+    c("Small-vessel lacunar infarct", "vascular", ["acute"], "common", false, "Pure motor (or sensorimotor) deficit, no cortical signs; hypertension/diabetes"),
+    c("Hypertensive haemorrhage", "vascular", ["acute"], "uncommon", true, "Deep bleed on CT; headache, reduced consciousness, very high BP"),
   ],
   cortex_hand_knob: [
     c("Small precentral (hand-knob) infarct", "vascular", ["acute"], "common"),
@@ -173,9 +178,10 @@ export const CAUSES = {
   ],
   // --- deep grey / cerebellum / movement ---
   cerebellum_hemisphere: [
-    c("Cerebellar infarct (SCA / PICA)", "vascular", ["hyperacute","acute"], "common", true),
-    c("Cerebellar haemorrhage", "vascular", ["acute"], "uncommon", true),
-    c("Metastasis / haemangioblastoma", "neoplastic", ["chronic"], "uncommon"),
+    c("Cerebellar infarct (SCA / PICA)", "vascular", ["hyperacute","acute"], "common", true, "Acute ataxia/vertigo; watch for swelling → 4th-ventricle compression/hydrocephalus"),
+    c("Cerebellar haemorrhage", "vascular", ["acute"], "uncommon", true, "Headache, vomiting, reduced consciousness — may need urgent decompression"),
+    c("Metastasis / haemangioblastoma", "neoplastic", ["chronic"], "uncommon", false, "Progressive; haemangioblastoma linked to von Hippel–Lindau"),
+    c("Alcohol / toxic / paraneoplastic degeneration", "degenerative", ["subacute","chronic"], "uncommon", false, "Subacute midline/truncal ataxia; check history and anti-neuronal antibodies"),
   ],
   basal_ganglia_substantia_nigra: [
     c("Parkinson's disease", "degenerative", ["chronic"], "common"),
@@ -189,11 +195,15 @@ export const CAUSES = {
   ],
   // --- motor unit ---
   motor_unit_anterior_horn: [
-    c("Motor neurone disease / SMA", "degenerative", ["chronic"], "common"),
-    c("Poliomyelitis / West Nile", "infective", ["acute"], "rare"),
+    c("Motor neurone disease / ALS", "degenerative", ["chronic"], "common", false, "Progressive painless mixed UMN+LMN, no sensory loss; fasciculations, wasting"),
+    c("Spinal muscular atrophy", "degenerative", ["chronic"], "common", false, "Pure LMN, hereditary; younger onset by type"),
+    c("Poliomyelitis / West Nile virus", "infective", ["acute"], "rare", false, "Acute febrile asymmetric flaccid paralysis"),
+    c("Kennedy's disease (SBMA)", "degenerative", ["chronic"], "rare", false, "X-linked, bulbar involvement, gynaecomastia; CAG repeat"),
   ],
   motor_unit_nmj_postsynaptic: [
-    c("Myasthenia gravis (autoimmune)", "inflammatory", ["subacute","chronic"], "common"),
+    c("Myasthenia gravis (autoimmune)", "inflammatory", ["subacute","chronic"], "common", false, "Fatigable weakness, ptosis/diplopia worse through the day; AChR/MuSK antibodies"),
+    c("Myasthenic crisis (respiratory)", "inflammatory", ["acute"], "uncommon", true, "Bulbar + respiratory weakness — monitor FVC, may need ventilation"),
+    c("Lambert-Eaton myasthenic syndrome", "inflammatory", ["subacute"], "rare", false, "Proximal weakness that improves with exertion; small-cell lung cancer association"),
   ],
 };
 

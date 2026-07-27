@@ -34,6 +34,10 @@ for (const id of ["common","uncommon","rare"]) ok(`likelihood ${id} exists`, lik
   }
   ok("every curated cause has valid cat / tempo / likelihood / name", bad === 0);
   ok("CAUSES is non-trivial (>= 20 curated sites)", keys.length >= 20);
+  // deepened flagship entries carry a discriminating `feature` clue (optional field, teaching hint)
+  const withFeature = keys.reduce((n, k) => n + CAUSES[k].filter(c => typeof c.feature === "string" && c.feature.length > 0).length, 0);
+  ok(`flagship causes carry discriminating features (>= 20 with feature; got ${withFeature})`, withFeature >= 20);
+  ok("Wallenberg dissection carries a feature clue", (CAUSES.medulla_lateral || []).some(c => /dissection/i.test(c.name) && c.feature && /neck pain|younger/i.test(c.feature)));
 }
 // curated keys resolve to a real site (id or level_part)
 {

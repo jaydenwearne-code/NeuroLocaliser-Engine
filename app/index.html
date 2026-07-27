@@ -58,7 +58,10 @@
   .multi{border:1px dashed var(--contra);border-radius:9px;padding:9px 10px;margin-top:8px;font-size:12px;background:var(--contra-bg);}
   /* causes */
   .catgrp{margin-bottom:9px;} .cathead{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;margin-bottom:3px;} .catdot{width:9px;height:9px;border-radius:50%;flex:none;}
-  .cause{display:flex;align-items:baseline;gap:8px;font-size:12px;padding:2px 0 2px 16px;} .cause .cn{flex:1;} .cause .tp{font-family:var(--mono);font-size:9.5px;color:var(--faint);} .cause .lk{font-size:9px;font-weight:700;letter-spacing:.03em;color:var(--muted);} .cause .rf{font-size:9px;font-weight:800;color:var(--red);background:var(--red-bg);border-radius:4px;padding:0 5px;}
+  .cause{font-size:12px;padding:3px 0 3px 16px;} .cline{display:flex;align-items:baseline;gap:8px;} .cause .cn{flex:1;} .cause .tp{font-family:var(--mono);font-size:9.5px;color:var(--faint);} .cause .lk{font-size:9px;font-weight:700;letter-spacing:.03em;color:var(--muted);} .cause .rf{font-size:9px;font-weight:800;color:var(--red);background:var(--red-bg);border-radius:4px;padding:0 5px;}
+  .cfeat{font-size:10.5px;color:var(--muted);line-height:1.4;margin-top:1px;padding-right:6px;}
+  .what-lead{font-size:12px;color:var(--ink);background:var(--band);border-radius:8px;padding:7px 10px;margin:0 0 10px;} .what-lead b{color:var(--terra);}
+  .ns-tier{margin-top:10px;} .ns-h{margin:0 0 2px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);font-weight:800;}
   .derived{font-size:11px;color:var(--faint);font-style:italic;margin-bottom:6px;}
   .empty{color:var(--faint);font-size:12.5px;padding:20px 4px;text-align:center;}
   /* atlas */
@@ -208,7 +211,7 @@
     <header>
       <div>
         <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
-        <p class="subtitle">Findings in → <b>where</b> · <b>why</b> · <b>what</b> — localisation derived from anatomy, not a stored list</p>
+        <p class="subtitle">Reason through the neurological exam the way a neurologist does — <b>localise</b> the lesion, understand <b>why</b>, and know <b>what to do next</b>.</p>
       </div>
       <div class="modes" id="modes">
         <button data-mode="localise" class="on">Localise</button>

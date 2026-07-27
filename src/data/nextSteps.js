@@ -1,21 +1,25 @@
-// nextSteps.js — the EDUCATIONAL "what next" layer: first-line investigations, urgency, and referral
-// pathway for a lesion at a site. These are TEACHING PROMPTS, not clinical directives — no drug doses, no
-// definitive management. The app pairs them with an explicit "not clinical advice" disclaimer.
+// nextSteps.js — the EDUCATIONAL "what next" layer, now TIERED: immediate/bedside actions, first-line
+// investigations, confirmatory/specialist tests, and monitoring/safety-netting, plus urgency + referral.
+// These are TEACHING PROMPTS, not clinical directives — no drug doses, no definitive management. The app
+// pairs them with an explicit "not clinical advice" disclaimer.
 //
-//   nextStepsFor(site) -> { investigations: [str], urgency: "emergency"|"urgent"|"routine", referral, curated }
+//   nextStepsFor(site) -> { immediate, investigations, confirmatory, monitoring, urgency, referral, curated }
 //
-// Keyed like causes.js / the phonebook: curated by site.id (else level_part); a derive fallback keyed off
-// site.level / territory so EVERY site returns something (derive-don't-store spirit).
+// Curated per-site entries (by site.id, else level_part) carry the site-specific first-line investigations
+// and referral; the immediate / confirmatory / monitoring tiers are DERIVED from urgency + region so EVERY
+// site gets a full, structured plan (derive-don't-store spirit). A curated entry may override any tier via
+// its optional `extra` ({ immediate, confirmatory, monitoring }).
 
-const ns = (investigations, urgency, referral) => ({ investigations, urgency, referral });
+const ns = (investigations, urgency, referral, extra = {}) => ({ investigations, urgency, referral, ...extra });
 
 // ---- curated, high-value sites (seeded from the phonebook red flags + ddx) ----
 export const NEXT = {
   // brainstem / posterior circulation strokes
   medulla_lateral: ns( // Wallenberg
-    ["Urgent MRI brain (DWI) + MRA/CTA head & neck — assess vertebral/PICA territory and dissection",
-     "Bedside swallow screen before any oral intake (aspiration risk)"],
-    "emergency", "Acute stroke team — hyperacute pathway; keep nil by mouth until swallow assessed."),
+    ["Urgent MRI brain (DWI) + MRA/CTA head & neck — assess vertebral/PICA territory and dissection"],
+    "emergency", "Acute stroke team — hyperacute pathway; keep nil by mouth until swallow assessed.",
+    { immediate: ["Bedside swallow screen before any oral intake (aspiration risk)", "ABCDE, IV access, bedside glucose"],
+      confirmatory: ["Vessel imaging for dissection (fat-sat MRI neck)", "Vascular risk-factor work-up (ECG/telemetry, lipids, HbA1c)"] }),
   medulla_medial: ns( // Dejerine
     ["Urgent MRI brain (DWI) + MRA/CTA — anterior spinal / vertebral territory and dissection"],
     "emergency", "Acute stroke team — hyperacute pathway."),
@@ -24,17 +28,21 @@ export const NEXT = {
     "emergency", "Acute stroke team; image before assuming infarct."),
   pons_medial: ns( // Millard-Gubler / Foville
     ["Urgent MRI brain + MRA (basilar territory)", "Consider CT if haemorrhage suspected"],
-    "emergency", "Acute stroke team — basilar disease can progress to locked-in; monitor closely."),
+    "emergency", "Acute stroke team — basilar disease can progress to locked-in; monitor closely.",
+    { monitoring: ["Frequent neuro-obs — basilar disease can progress rapidly to locked-in syndrome"] }),
   central_vestibular_nucleus: ns( // central AVS / HINTS-central
     ["Urgent MRI brain (DWI, posterior fossa) — a normal head-impulse with skew/direction-changing nystagmus suggests stroke, not neuritis"],
-    "emergency", "Acute stroke team — do not discharge as peripheral vertigo."),
+    "emergency", "Acute stroke team — do not discharge as peripheral vertigo.",
+    { immediate: ["Perform HINTS at the bedside; a central pattern (normal head-impulse, skew, direction-changing nystagmus) is a red flag"] }),
   // skull base
   skull_base_cavernous_sinus: ns(
     ["MRI brain + orbits with contrast + MRV (cavernous sinus)", "Inflammatory markers; blood cultures if septic thrombosis suspected"],
     "urgent", "Neurosurgery / ophthalmology; septic cavernous sinus thrombosis needs urgent antimicrobials + neurosurgical input."),
   skull_base_optic_aion: ns( // AION — exclude GCA
     ["Immediate ESR + CRP (± platelets) to exclude giant-cell arteritis", "Temporal artery ultrasound / biopsy if GCA suspected"],
-    "emergency", "Same-day ophthalmology + rheumatology if GCA suspected — sight- and life-threatening."),
+    "emergency", "Same-day ophthalmology + rheumatology if GCA suspected — sight- and life-threatening.",
+    { immediate: ["Same-day ESR/CRP/platelets; if GCA is strongly suspected escalate urgently — do not wait for biopsy to seek specialist review"],
+      monitoring: ["Sight- and life-threatening: monitor the other eye and for systemic GCA features"] }),
   skull_base_optic_neuritis: ns(
     ["MRI brain + orbits with contrast (demyelination)", "Aquaporin-4 (NMO) and MOG antibodies"],
     "urgent", "Neurology / neuro-ophthalmology."),
@@ -44,11 +52,14 @@ export const NEXT = {
   // cord
   cord_anterior: ns(
     ["Urgent whole-spine MRI to exclude cord compression", "If non-compressive: consider vascular / inflammatory (MRI cord signal, LP, aquaporin-4/MOG)"],
-    "emergency", "Spinal surgery / neurology — cord compression is time-critical."),
+    "emergency", "Spinal surgery / neurology — cord compression is time-critical.",
+    { immediate: ["Examine for a sensory level; post-void bladder scan; assess perianal sensation + anal tone"],
+      monitoring: ["Serial power/sensory level and bladder function — deterioration is a surgical emergency"] }),
   // cortex / deep vascular
   cortex_mca: ns(
     ["Immediate non-contrast CT head, then CT/MR angiography + perfusion", "Bloods incl. glucose; ECG"],
-    "emergency", "Hyperacute stroke pathway — assess for thrombolysis / thrombectomy within the window."),
+    "emergency", "Hyperacute stroke pathway — assess for thrombolysis / thrombectomy within the window.",
+    { immediate: ["Confirm time of onset (last-known-well), bedside glucose, and NIHSS — the clock drives treatment"] }),
   subcortex_internal_capsule: ns( // lacune
     ["MRI brain (DWI) — small-vessel lacune", "Vascular risk-factor screen (BP, glucose, lipids); consider hypertensive haemorrhage on CT"],
     "urgent", "Stroke team / TIA clinic."),
@@ -58,14 +69,16 @@ export const NEXT = {
     "routine", "Neuromuscular / MND clinic."),
   motor_unit_nmj_postsynaptic: ns( // myasthenia
     ["Acetylcholine-receptor (± MuSK) antibodies", "Repetitive nerve stimulation / single-fibre EMG", "CT chest for thymoma"],
-    "urgent", "Neurology — watch for bulbar/respiratory involvement (myasthenic crisis)."),
+    "urgent", "Neurology — watch for bulbar/respiratory involvement (myasthenic crisis).",
+    { immediate: ["Bedside respiratory function (FVC / single-breath count) + bulbar/swallow check"],
+      monitoring: ["Serial FVC — a myasthenic crisis needs prompt supported ventilation"] }),
   // peripheral vestibular
   peripheral_vestibular_labyrinth: ns(
     ["Clinical HINTS exam (peripheral pattern); audiometry if hearing involved"],
     "routine", "Usually self-limiting; ENT / neurology if atypical or central features."),
 };
 
-// ---- derive fallback (derive-don't-store) — keyed off site.level / territory ----
+// ---- derive fallback (derive-don't-store) — first-line investigations keyed off site.level / territory ----
 function derive(site) {
   const terr = (site.territory || "").toLowerCase();
   const vasc = /aca|mca|pca|pica|aica|\bsca\b|basilar|vertebral|perforator|lenticulostriate|spinal artery|choroidal/.test(terr);
@@ -88,9 +101,75 @@ function derive(site) {
   }
 }
 
+// ---- derived tiers: bedside / confirmatory / monitoring, from urgency + region (fill when not curated) ----
+const has = (level, ...ls) => ls.includes(level);
+const bulbarLevel = s => has(s.level, "medulla", "pons", "pseudobulbar", "brainstem_aras") || /bulbar/.test(s.part || "");
+const cordLevel = s => has(s.level, "cord", "cauda", "conus", "combined_degeneration");
+const arousalLevel = s => has(s.level, "brainstem_aras", "thalamus_arousal", "cerebrum", "locked_in");
+const nmuLevel = s => has(s.level, "motor_unit", "polyneuropathy");
+const opticLevel = s => s.level === "visual_pathway" || /optic/.test(s.part || "");
+const vestibularLevel = s => has(s.level, "peripheral_vestibular", "central_vestibular");
+
+function regionBedside(site) {
+  const out = [];
+  if (bulbarLevel(site)) out.push("Bedside swallow screen; keep nil by mouth until safe (aspiration risk)");
+  if (cordLevel(site)) out.push("Post-void bladder scan; check perianal sensation + anal tone; document any sensory level");
+  if (arousalLevel(site)) out.push("GCS + pupils; protect the airway; check glucose");
+  if (nmuLevel(site)) out.push("Bedside respiratory function (FVC / single-breath count); watch for bulbar/respiratory involvement");
+  if (opticLevel(site)) out.push("Visual acuity, fields to confrontation, colour vision, and fundoscopy");
+  if (vestibularLevel(site)) out.push("HINTS exam; look for direction-changing or vertical nystagmus and skew (central pattern)");
+  return out;
+}
+
+function deriveImmediate(site, urgency) {
+  const general = urgency === "emergency"
+    ? ["ABCDE assessment; IV access; bedside glucose", "Escalate early to the relevant acute team"]
+    : urgency === "urgent"
+    ? ["Baseline observations and bedside glucose"]
+    : ["Document a full baseline neurological examination"];
+  return [...regionBedside(site), ...general];
+}
+
+function deriveConfirmatory(site) {
+  const terr = (site.territory || "").toLowerCase();
+  const vasc = /aca|mca|pca|pica|aica|\bsca\b|basilar|vertebral|perforator|lenticulostriate|spinal artery|choroidal/.test(terr);
+  if (vasc || has(site.level, "midbrain", "pons", "medulla", "cerebellum", "cortex", "subcortex"))
+    return ["Vascular risk-factor work-up (ECG/telemetry, echocardiogram, lipids, HbA1c)", "If imaging non-diagnostic: consider LP and a vasculitis/autoimmune screen"];
+  if (cordLevel(site))
+    return ["If non-compressive: MRI cord signal, LP (oligoclonal bands), aquaporin-4/MOG antibodies, B12/copper"];
+  if (site.level === "skull_base")
+    return ["Contrast MRI ± CT bone windows; targeted bloods per the differential; biopsy if a mass is found"];
+  if (has(site.level, "nerve", "root", "plexus", "polyneuropathy"))
+    return ["Screening bloods (glucose/HbA1c, B12, TFTs, immunoglobulins, ESR/CRP)", "Imaging or LP if a compressive or inflammatory cause is suspected"];
+  if (site.level === "motor_unit")
+    return ["Relevant antibodies (AChR/MuSK; anti-neuronal if paraneoplastic suspected)", "Respiratory function tests"];
+  if (opticLevel(site))
+    return ["OCT + formal perimetry; contrast MRI orbits/brain; aquaporin-4/MOG antibodies"];
+  return ["Targeted second-line tests guided by the leading differential"];
+}
+
+function deriveMonitoring(site, urgency) {
+  const out = [];
+  if (urgency === "emergency") out.push("Continuous monitoring; escalate on any deterioration");
+  else if (urgency === "urgent") out.push("Safety-net and review promptly; give clear return advice");
+  else out.push("Review with results; safety-net for any red-flag features");
+  if (bulbarLevel(site)) out.push("Aspiration/respiratory watch until swallow confirmed safe");
+  else if (cordLevel(site)) out.push("Monitor bladder/bowel function and for any progression");
+  else if (nmuLevel(site)) out.push("Monitor respiratory function (FVC) if weakness is progressing");
+  return out;
+}
+
 // ---- public API ----
 export function nextStepsFor(site) {
   const key = NEXT[site.id] ? site.id : `${site.level}_${site.part}`;
-  if (NEXT[key]) return { ...NEXT[key], curated: true };
-  return { ...derive(site), curated: false };
+  const base = NEXT[key] ? { ...NEXT[key], curated: true } : { ...derive(site), curated: false };
+  return {
+    immediate: base.immediate || deriveImmediate(site, base.urgency),
+    investigations: base.investigations || [],
+    confirmatory: base.confirmatory || deriveConfirmatory(site),
+    monitoring: base.monitoring || deriveMonitoring(site, base.urgency),
+    urgency: base.urgency,
+    referral: base.referral,
+    curated: base.curated,
+  };
 }
