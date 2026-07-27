@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**51 test suites / 1687 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**51 test suites / 1737 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -78,16 +78,20 @@ long-form roadmap + "Next". *On the original Mac only,* there is a persistent `~
 (`neurolocaliser-engine-state` et al.) that does **not** travel with the repo — this file + the plan docs are
 the source of truth on any other machine.
 
-**Run the app:** `node app/serve.mjs` → http://localhost:8137/app/ (local static server; nothing is hosted
-externally). **Git:** tracked on GitHub (`origin/main`). As of 2026-07-26 local `main` is **~25 commits ahead
-of `origin/main` and NOT pushed** (the owner is holding it local); an early `unify-localiser-engines` branch
-was pushed and its PR is fully superseded by local `main`.
+**Run the app:** `node app/serve.mjs` → http://localhost:8137/app/ (local static server). **DEPLOYED
+(2026-07-27):** live on GitHub Pages at **https://jaydenwearne-code.github.io/NeuroLocaliser-Engine/app/**
+(client-side passphrase `NeuroLocaliser`; gate is a speed-bump, no data behind it). Repo is **public**;
+`origin/main` holds the full history and **auto-redeploys on every push to `main`**. The one pre-live handoff
+still open: the **feedback form** in `app/feedback.js` is a placeholder (owner to supply a Google Form/Tally
+URL + entry ids). See spec/plan `docs/superpowers/{specs,plans}/2026-07-27-ed-stress-test-prototype*`.
 
 **Parked follow-ups (not yet done):**
 1. **Multi-location DDx synthesis** — causes / next-steps / why are shown for the *one* selected lesion only;
    a genuinely multifocal picture has no combined cross-site view.
-2. **Corticobulbar & further tracts** — the 4 core tracts are modelled; other tracts (spinocerebellar, etc.)
-   and non-tract "why" enrichment are fast-follows.
+2. **Further pathways** — modelled so far: the 4 core tracts (corticospinal, spinothalamic, dorsal-column,
+   corticobulbar) **plus 3 non-classical pathways** (oculosympathetic/Horner, MLF/INO, visual) added 2026-07-28,
+   so non-tract findings get the rich Why (Course + why-not + diagram). Still fast-follows: spinocerebellar,
+   central tegmental (palatal tremor), trigeminothalamic (face sensation).
 3. **Pathology layer (optional)** — `umnLmnPattern()` already flags mixed UMN+LMN → MND; a fuller declarative
    cross-site pathology layer (ALS/MND, SCD, etc.) was scoped in `CONTRIBUTING.md` but is not built.
 
