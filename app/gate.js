@@ -8,8 +8,8 @@
 
 export const GATE_STORAGE_KEY = "nl_gate_v1"; // bump the suffix to force re-acknowledgment if copy changes
 
-// Default = SHA-256 of "neuro". REPLACE before handing the URL to testers.
-export const PASSPHRASE_DIGEST = "93643857b87ceed65536214b0565ba3eaee22cf6be2b28e618e93847b4024f19";
+// SHA-256 of the shared tester passphrase (set 2026-07-27). The plaintext is never stored here.
+export const PASSPHRASE_DIGEST = "c8084e435655fd2a12f606066174d57c5293ff5bef20ec1dd1c4596acf54c947";
 
 export async function sha256hex(text) {
   const data = new TextEncoder().encode(String(text));
