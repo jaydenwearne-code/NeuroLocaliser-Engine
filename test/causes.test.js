@@ -44,6 +44,25 @@ for (const id of ["common","uncommon","rare"]) ok(`likelihood ${id} exists`, lik
   ok("Ramsay Hunt flags looking for ear-canal vesicles", (CAUSES.skull_base_vii_stylomastoid || []).some(c => /ramsay hunt/i.test(c.name) && /external auditory meatus|pinna|vesicle/i.test(c.pathognomonic || "")));
   ok("tabes dorsalis flags the Argyll Robertson pupil", (CAUSES.cord_posterior || []).some(c => /tabes/i.test(c.name) && /argyll robertson/i.test(c.pathognomonic || "")));
 }
+// pathognomonic keyword lookup enriches phonebook/derived causes across sites (not just curated)
+{
+  const orbitalApex = { id: "left_skull_base_orbital_apex", level: "skull_base", part: "orbital_apex", side: "left", territory: "orbital apex" };
+  const oa = causesFor(orbitalApex);
+  ok("mucormycosis (phonebook/curated) gets a palatal-eschar flag via the lookup",
+     oa.all.some(x => /mucor|fungal/i.test(x.name) && /eschar/i.test(x.pathognomonic || "")));
+  // a Wernicke-bearing site flags the triad
+  const wsites = [...SITES];
+  for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") { try { wsites.push(...sitesMod[k]()); } catch {} }
+  let wernickeFlagged = false, gcaFlagged = false;
+  for (const key of Object.keys(BY_SITE)) {
+    const s = wsites.find(x => x.id === key) || wsites.find(x => `${x.level}_${x.part}` === key) || { id: key, level: key.split("_")[0], part: key.split("_").slice(1).join("_"), side: "left", territory: "" };
+    const r = causesFor(s);
+    if (r.all.some(x => /wernicke|thiamine/i.test(x.name) && /triad/i.test(x.pathognomonic || ""))) wernickeFlagged = true;
+    if (r.all.some(x => /giant.cell|arteritic/i.test(x.name) && /temporal artery/i.test(x.pathognomonic || ""))) gcaFlagged = true;
+  }
+  ok("Wernicke's flags the triad wherever it appears in the phonebook", wernickeFlagged);
+  ok("GCA/arteritic AION flags the temporal-artery sign", gcaFlagged);
+}
 // curated keys resolve to a real site (id or level_part)
 {
   const allSites = [...SITES];

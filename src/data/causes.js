@@ -240,6 +240,32 @@ const CAT_TEMPO = {
 };
 const RED_RE = /dissection|giant.cell|arteritic|mucor|abscess|herniation|emergency|malignan|septic|cavernous sinus thrombo|carotid.cavernous/i;
 
+// ---- pathognomonic "Confirm on exam" bedside signs (keyword → sign), applied to ANY cause whose name
+// matches and that has no inline `pathognomonic` yet. First match wins. Kept to genuine bedside signs you
+// look for on examination (NOT investigations); the borderline few name their confirming test in-line.
+// The already-curated inline flags (Ramsay Hunt, Argyll Robertson, Wilson's, MG, LEMS, Friedreich's) are
+// deliberately NOT duplicated here — they surface at their curated site only.
+const PATHOGNOMONIC = [
+  [/mucor|invasive fungal sinusitis/i,           "a black necrotic eschar on the hard palate or nasal mucosa (in a diabetic or immunocompromised patient)"],
+  [/dermatomyositis/i,                            "Gottron's papules over the knuckles and a heliotrope rash on the eyelids"],
+  [/leprosy/i,                                    "thickened, palpable peripheral nerves with hypopigmented, anaesthetic skin patches"],
+  [/wernicke|thiamine/i,                          "the triad of ophthalmoplegia (or nystagmus), gait ataxia and confusion in an at-risk patient (alcohol, hyperemesis, bariatric surgery)"],
+  [/progressive supranuclear palsy|\bpsp\b/i,     "a vertical supranuclear gaze palsy (especially down-gaze) with early backward falls; reflex (doll's-eye) eye movements are preserved"],
+  [/charcot-marie-tooth|\bcmt\b/i,                "pes cavus, hammer toes and 'inverted champagne-bottle' distal-leg wasting"],
+  [/kennedy|\bsbma\b/i,                           "perioral and tongue fasciculations with gynaecomastia"],
+  [/olfactory.groove|subfrontal meningioma/i,     "Foster-Kennedy syndrome — ipsilateral optic atrophy with contralateral papilloedema on fundoscopy, plus anosmia"],
+  [/botulism/i,                                   "symmetric descending flaccid paralysis with fixed dilated pupils and a dry mouth, no fever or sensory loss"],
+  [/giant.cell|arteritic aion/i,                  "a tender, thickened, pulseless temporal artery with jaw claudication and scalp tenderness (raised ESR/CRP confirms)"],
+  [/normal.pressure hydrocephalus/i,              "the triad of a magnetic/apraxic gait, urinary incontinence and cognitive decline; the gait improves after a large-volume LP (tap test)"],
+  [/cluster headache/i,                           "strictly unilateral attacks with ipsilateral cranial autonomic features (lacrimation, conjunctival injection, ptosis/miosis) and marked restlessness"],
+  [/numb.chin/i,                                  "isolated numbness of the chin (mental neuropathy) — a red flag for malignant infiltration"],
+];
+function pathognomonicFor(name) {
+  const s = String(name || "");
+  for (const [re, sign] of PATHOGNOMONIC) if (re.test(s)) return sign;
+  return "";
+}
+
 function categorise(ddxItem, i, fallbackCat) {
   const s = ddxItem.toLowerCase();
   let cat = fallbackCat;
@@ -338,6 +364,9 @@ export function causesFor(site, { onset } = {}) {
     list = BY_SITE[pbKey].ddx.map((d, i) => categorise(d, i, fallbackCat));
     source = "phonebook";
   } else { list = derive(site); source = "derived"; }
+  // enrich with pathognomonic "confirm on exam" flags — any cause whose name matches the keyword table and
+  // that has no inline flag yet (covers curated, phonebook and derived from one source of truth).
+  list = list.map(x => x.pathognomonic ? x : { ...x, pathognomonic: pathognomonicFor(x.name) });
   const derived = source === "derived";
   const filtered = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice())
     .sort((a, b) => LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood));
