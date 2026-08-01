@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**51 test suites / 1737 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**51 test suites / 1772 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -88,10 +88,11 @@ URL + entry ids). See spec/plan `docs/superpowers/{specs,plans}/2026-07-27-ed-st
 **Parked follow-ups (not yet done):**
 1. **Multi-location DDx synthesis** — causes / next-steps / why are shown for the *one* selected lesion only;
    a genuinely multifocal picture has no combined cross-site view.
-2. **Further pathways** — modelled so far: the 4 core tracts (corticospinal, spinothalamic, dorsal-column,
-   corticobulbar) **plus 3 non-classical pathways** (oculosympathetic/Horner, MLF/INO, visual) added 2026-07-28,
-   so non-tract findings get the rich Why (Course + why-not + diagram). Still fast-follows: spinocerebellar,
-   central tegmental (palatal tremor), trigeminothalamic (face sensation).
+2. **Further pathways** — **10 pathways now modelled** (all in `src/model/tracts.js`, same declarative shape):
+   the 4 core tracts (corticospinal, spinothalamic, dorsal-column, corticobulbar) + 3 non-classical
+   (oculosympathetic/Horner, MLF/INO, visual) + 3 fast-follows added 2026-07-28 (cerebellar/spinocerebellar,
+   central tegmental/palatal tremor, trigeminothalamic/face sensation). Non-tract findings get the rich Why
+   (Course + why-not + diagram). No major pathway gaps remain.
 3. **Pathology layer (optional)** — `umnLmnPattern()` already flags mixed UMN+LMN → MND; a fuller declarative
    cross-site pathology layer (ALS/MND, SCD, etc.) was scoped in `CONTRIBUTING.md` but is not built.
 
