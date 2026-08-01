@@ -63,10 +63,11 @@ const BUCKET = {
   cortex: "cortical", subcortex: "deep subcortical", aphasia_subcortical: "deep subcortical",
   thalamus: "deep subcortical", hypothalamus: "deep subcortical",
   midbrain: "brainstem", pons: "brainstem", medulla: "brainstem", cord: "spinal cord",
+  guillain_mollaret: "brainstem", combined_degeneration: "spinal cord", cerebellum: "cerebellum",
   // non-classical pathway stations (oculosympathetic, visual)
   sympathetic: "sympathetic chain", skull_base: "skull base / orbit", visual_pathway: "chiasm / optic tract", pupil: "orbit / pupil",
 };
-const BUCKET_ORDER = ["cortical", "deep subcortical", "brainstem", "spinal cord",
+const BUCKET_ORDER = ["cortical", "deep subcortical", "brainstem", "cerebellum", "spinal cord",
   "chiasm / optic tract", "sympathetic chain", "skull base / orbit", "orbit / pupil"];
 const bucketOf = level => BUCKET[level] || "other";
 

@@ -118,4 +118,43 @@ export const TRACTS = [
     decussation: { inLevel: "visual_pathway", label: "optic chiasm (nasal fibres cross)" },
     crossingNote: "before the chiasm the defect is monocular; at the chiasm the crossing nasal fibres give a bitemporal hemianopia; beyond it the defect is a contralateral homonymous hemianopia, becoming more congruous and macula-sparing towards the occipital cortex",
   },
+  {
+    id: "cerebellar", label: "cerebellar (spinocerebellar) coordination pathway", direction: "ascending",
+    findings: ["limb_ataxia", "truncal_ataxia", "dysmetria", "dysdiadochokinesis", "intention_tremor"],
+    together: "the cerebellum and its inflow/outflow — the spinocerebellar tracts and the three cerebellar peduncles",
+    // listed rostral→caudal; direction "ascending" reverses it so the narrative reads cord → cerebellum.
+    course: [
+      { level: "cerebellum",           label: "cerebellar hemisphere / vermis", detail: "cerebellar hemisphere (limb) and vermis (trunk)", supply: "PICA / AICA / SCA" },
+      { level: "midbrain",             label: "superior cerebellar peduncle",   detail: "superior cerebellar peduncle (cerebellar outflow)", supply: "SCA / basilar perforators" },
+      { level: "pons",                 label: "middle cerebellar peduncle",     detail: "middle cerebellar peduncle (pontocerebellar inflow)", supply: "AICA / basilar" },
+      { level: "medulla",              label: "inferior cerebellar peduncle",   detail: "inferior cerebellar peduncle (spinocerebellar & olivocerebellar inflow)", supply: "PICA / vertebral" },
+      { level: "combined_degeneration", label: "spinocerebellar tracts (cord)", detail: "spinocerebellar tracts in the cord (unconscious proprioception)", supply: "posterolateral cord (or hereditary — Friedreich)" },
+    ],
+    decussation: {}, // net ipsilateral
+    crossingNote: "cerebellar signs are ipsilateral to the affected limb — the cerebellar outflow crosses at the superior peduncle but the corticospinal tract crosses again, so the two cancel; midline (vermis) lesions give truncal/gait ataxia, hemisphere lesions give ipsilateral limb ataxia",
+  },
+  {
+    id: "central_tegmental", label: "central tegmental tract (Guillain–Mollaret triangle)", direction: "descending",
+    findings: ["palatal_tremor"],
+    together: "the dentato–rubro–olivary loop whose interruption produces palatal (oculopalatal) tremor",
+    course: [
+      { level: "midbrain",         label: "red nucleus",            detail: "red nucleus (apex of the triangle)",                              supply: "PCA / basilar perforators", narrativeOnly: true },
+      { level: "guillain_mollaret", label: "central tegmental tract → inferior olive", detail: "central tegmental tract and inferior olive (Guillain–Mollaret triangle)", supply: "vertebral perforators" },
+    ],
+    decussation: {},
+    crossingNote: "palatal tremor localises to the Guillain–Mollaret triangle (dentate nucleus → superior cerebellar peduncle → red nucleus → central tegmental tract → inferior olive); a lesion causes hypertrophic olivary degeneration, and the tremor emerges weeks later, often with pendular nystagmus (oculopalatal tremor)",
+  },
+  {
+    id: "trigeminothalamic", label: "trigeminothalamic pathway (face sensation)", direction: "ascending",
+    findings: ["face_pain_loss", "face_touch_loss", "face_sensory_loss"],
+    together: "the face's sensory relay — the spinal trigeminal nucleus (pain/temperature) and principal sensory nucleus (touch) to the VPM thalamus",
+    // listed rostral→caudal; direction "ascending" reverses it so the narrative reads nuclei → thalamus.
+    course: [
+      { level: "thalamus", label: "VPM thalamus",              detail: "ventral posteromedial (VPM) nucleus of the thalamus",                supply: "thalamoperforators" },
+      { level: "pons",     label: "principal sensory nucleus", detail: "principal sensory (chief) trigeminal nucleus — fine touch",           supply: "basilar perforators" },
+      { level: "medulla",  label: "spinal trigeminal nucleus", detail: "spinal trigeminal nucleus — pain & temperature (extends into the upper cord)", supply: "PICA / vertebral" },
+    ],
+    decussation: {},
+    crossingNote: "second-order fibres cross and ascend as the trigeminothalamic tract, so a lesion above the nuclei gives CONTRALATERAL facial sensory loss; a lesion of the spinal trigeminal nucleus itself (e.g. the lateral medulla) gives IPSILATERAL facial pain/temperature loss — the crossed-body, uncrossed-face pattern of Wallenberg",
+  },
 ];

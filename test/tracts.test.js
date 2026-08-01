@@ -101,6 +101,32 @@ ok("visual pathway decussates at the chiasm", vis.tract.decussation.label && /ch
   const lvls = new Set(hh.sites.map(s => s.level));
   ok("homonymous defect spans post-chiasmal stations (radiation/cortex)", lvls.has("subcortex") || lvls.has("cortex")); }
 
+// ---- cerebellar (spinocerebellar) pathway ----
+const cbTf = tractsFor(new Set(["limb_ataxia@left"]), opts).find(t => t.tract.id === "cerebellar");
+ok("limb_ataxia implicates the cerebellar pathway", !!cbTf);
+{ const n = tractNarrative(cbTf.tract);
+  ok("cerebellar narrative mentions the cerebellar peduncle(s)", /cerebellar peduncle/i.test(n));
+  ok("cerebellar narrative mentions the spinocerebellar tracts", /spinocerebellar/i.test(n)); }
+ok("cerebellar signs described as ipsilateral", /ipsilateral/i.test(cbTf.tract.crossingNote));
+ok("cerebellar candidates include a cerebellum site", cbTf.sites.some(s => s.level === "cerebellum"));
+
+// ---- central tegmental tract (palatal tremor) ----
+const ctt = tractsFor(new Set(["palatal_tremor@midline"]), opts).find(t => t.tract.id === "central_tegmental");
+ok("palatal_tremor implicates the central tegmental tract", !!ctt);
+ok("central-tegmental crossing note names the Guillain–Mollaret triangle", ctt && /guillain.?mollaret/i.test(ctt.tract.crossingNote));
+ok("central-tegmental mentions hypertrophic olivary degeneration", ctt && /hypertrophic olivary/i.test(ctt.tract.crossingNote));
+
+// ---- trigeminothalamic (face sensation) ----
+const tt = tractsFor(new Set(["face_pain_loss@left"]), opts).find(t => t.tract.id === "trigeminothalamic");
+ok("face_pain_loss implicates the trigeminothalamic pathway", !!tt);
+{ const n = tractNarrative(tt.tract);
+  ok("trigeminothalamic narrative reads spinal trigeminal nucleus → VPM", /spinal trigeminal nucleus[\s\S]*VPM|ventral posteromedial/i.test(n)); }
+ok("trigeminothalamic crossing note captures the Wallenberg crossed pattern",
+   tt && /ipsilateral facial|uncrossed-face|crossed-body/i.test(tt.tract.crossingNote));
+// Wallenberg picture (ipsi face pain + contra body pain/temp) implicates BOTH trigeminothalamic AND spinothalamic
+{ const wall = tractsFor(new Set(["face_pain_loss@left", "spinothalamic@right"]), opts).map(t => t.tract.id);
+  ok("Wallenberg picture implicates both trigeminothalamic and spinothalamic", wall.includes("trigeminothalamic") && wall.includes("spinothalamic")); }
+
 // ---- oculosympathetic why-not surfaces the order discrimination (emergent) ----
 { const pregSite = candidateSites().find(s => /preganglionic/.test(s.id) || (s.level === "sympathetic"));
   if (pregSite) {
