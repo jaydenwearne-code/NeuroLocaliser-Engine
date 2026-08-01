@@ -188,9 +188,16 @@ export const CAUSES = {
     c("Alcohol / toxic / paraneoplastic degeneration", "degenerative", ["subacute","chronic"], "uncommon", false, "Subacute midline/truncal ataxia; check history and anti-neuronal antibodies"),
   ],
   basal_ganglia_substantia_nigra: [
-    c("Parkinson's disease", "degenerative", ["chronic"], "common"),
-    c("Drug-induced parkinsonism", "metabolic", ["subacute"], "common"),
-    c("Atypical parkinsonism (PSP / MSA)", "degenerative", ["chronic"], "uncommon"),
+    c("Parkinson's disease", "degenerative", ["chronic"], "common", false, "Asymmetric onset, rest tremor, bradykinesia, good levodopa response"),
+    c("Drug-induced parkinsonism", "metabolic", ["subacute"], "common", false, "Dopamine-blocker exposure (antipsychotics, metoclopramide); usually symmetric"),
+    c("Atypical parkinsonism (PSP / MSA)", "degenerative", ["chronic"], "uncommon", false, "Early falls/vertical gaze palsy (PSP) or autonomic failure (MSA); poor levodopa response"),
+    c("Wilson's disease (young-onset)", "metabolic", ["subacute","chronic"], "uncommon", false, "Patient <40 with mixed parkinsonism/tremor/dystonia, ± liver disease or psychiatric change", "Kayser-Fleischer rings at the corneal limbus (slit-lamp; a wing-beating tremor is also characteristic)"),
+  ],
+  basal_ganglia_globus_pallidus: [ // dystonia
+    c("Wilson's disease (young-onset)", "metabolic", ["subacute","chronic"], "uncommon", false, "Young patient with dystonia ± parkinsonism/tremor and liver/psychiatric features", "Kayser-Fleischer rings at the corneal limbus"),
+    c("Primary / genetic dystonia (e.g. DYT1)", "degenerative", ["chronic"], "common", false, "Younger onset, may be task-specific, no other neurological signs"),
+    c("Tardive dystonia (dopamine-blocker exposure)", "metabolic", ["subacute","chronic"], "common", false, "History of antipsychotic / antiemetic use"),
+    c("Bilateral pallidal injury (hypoxia / kernicterus / manganese)", "metabolic", ["subacute","chronic"], "uncommon", false, "Perinatal jaundice, hypoxic insult, or chronic manganese/liver failure"),
   ],
   guillain_mollaret_triangle: [
     c("Brainstem stroke / cavernoma (with hypertrophic olivary degeneration)", "vascular", ["chronic"], "common"),
