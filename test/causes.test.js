@@ -38,6 +38,11 @@ for (const id of ["common","uncommon","rare"]) ok(`likelihood ${id} exists`, lik
   const withFeature = keys.reduce((n, k) => n + CAUSES[k].filter(c => typeof c.feature === "string" && c.feature.length > 0).length, 0);
   ok(`flagship causes carry discriminating features (>= 20 with feature; got ${withFeature})`, withFeature >= 20);
   ok("Wallenberg dissection carries a feature clue", (CAUSES.medulla_lateral || []).some(c => /dissection/i.test(c.name) && c.feature && /neck pain|younger/i.test(c.feature)));
+  // pathognomonic "confirm on exam" flags — genuine bedside signs on the causes that have one
+  const withPath = keys.reduce((n, k) => n + CAUSES[k].filter(c => typeof c.pathognomonic === "string" && c.pathognomonic.length > 0).length, 0);
+  ok(`some causes carry a pathognomonic confirm-on-exam flag (>= 6; got ${withPath})`, withPath >= 6);
+  ok("Ramsay Hunt flags looking for ear-canal vesicles", (CAUSES.skull_base_vii_stylomastoid || []).some(c => /ramsay hunt/i.test(c.name) && /external auditory meatus|pinna|vesicle/i.test(c.pathognomonic || "")));
+  ok("tabes dorsalis flags the Argyll Robertson pupil", (CAUSES.cord_posterior || []).some(c => /tabes/i.test(c.name) && /argyll robertson/i.test(c.pathognomonic || "")));
 }
 // curated keys resolve to a real site (id or level_part)
 {

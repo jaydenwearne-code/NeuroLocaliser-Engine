@@ -324,7 +324,8 @@ function whatCard(site) {
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
 function renderCause(c) {
-  return `<div class="cause${c.generic?" generic":""}"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}</div>`;
+  const path = c.pathognomonic ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(c.pathognomonic)}</span></div>` : "";
+  return `<div class="cause${c.generic?" generic":""}"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
 }
 
 function whatBlock(site) {

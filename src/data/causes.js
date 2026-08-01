@@ -27,10 +27,14 @@ export const TEMPO = [
 ];
 export const LIKELIHOOD = ["common", "uncommon", "rare"];
 
-// terse constructor. `feature` (optional) is a short discriminating clue — "what points to this cause" —
-// shown as a teaching hint under the cause name. Curated flagship entries carry it; the live phonebook
-// categoriser and the derived fallback leave it blank.
-const c = (name, cat, tempo, likelihood, red = false, feature = "") => ({ name, cat, tempo, likelihood, red, feature });
+// terse constructor.
+//  `feature` (optional) — a short discriminating clue ("what points to this cause"), a suggestive hint.
+//  `pathognomonic` (optional) — a genuine pathognomonic / near-pathognomonic BEDSIDE sign to look for that
+//   confirms this cause ("if you see X, it's Y"). Shown as a distinct "Confirm on exam" flag. Reserved for
+//   real bedside confirmatory signs (e.g. Ramsay Hunt ear vesicles) — NOT investigations (those are Next steps).
+// The live phonebook categoriser and the derived fallback leave both blank.
+const c = (name, cat, tempo, likelihood, red = false, feature = "", pathognomonic = "") =>
+  ({ name, cat, tempo, likelihood, red, feature, pathognomonic });
 
 // ---- curated causes, keyed like the phonebook (site.id if it has its own entry, else level_part) ----
 export const CAUSES = {
@@ -71,12 +75,12 @@ export const CAUSES = {
     c("Epidural abscess", "infective", ["acute","subacute"], "uncommon", true, "Fever, focal spinal pain, raised inflammatory markers; risk factors (IVDU, diabetes)"),
   ],
   cord_posterior: [
-    c("B12 / copper deficiency (SCD)", "metabolic", ["subacute","chronic"], "common"),
-    c("Tabes dorsalis (neurosyphilis)", "infective", ["chronic"], "rare"),
+    c("B12 / copper deficiency (SCD)", "metabolic", ["subacute","chronic"], "common", false, "Distal paraesthesiae + sensory ataxia; a positive Romberg"),
+    c("Tabes dorsalis (neurosyphilis)", "infective", ["chronic"], "rare", false, "Lightning pains, sensory ataxia, areflexia", "an Argyll Robertson pupil (accommodates but does not react to light)"),
     c("Demyelination", "inflammatory", ["subacute"], "uncommon"),
   ],
   cord_central: [ // syrinx
-    c("Syringomyelia (± Chiari)", "congenital", ["chronic"], "common"),
+    c("Syringomyelia (± Chiari)", "congenital", ["chronic"], "common", false, "Cape-distribution dissociated sensory loss (pain/temp lost, touch spared)", "painless burns or scars on the hands from unnoticed injury"),
     c("Post-traumatic syrinx", "traumatic", ["chronic"], "uncommon"),
     c("Intramedullary tumour (ependymoma / astrocytoma)", "neoplastic", ["chronic"], "uncommon"),
   ],
@@ -86,7 +90,7 @@ export const CAUSES = {
     c("Nitrous-oxide toxicity", "metabolic", ["subacute"], "uncommon", true),
   ],
   combined_degeneration_friedreich: [
-    c("Friedreich's ataxia (frataxin, GAA repeat)", "degenerative", ["chronic"], "common"),
+    c("Friedreich's ataxia (frataxin, GAA repeat)", "degenerative", ["chronic"], "common", false, "Teenager, progressive ataxia + areflexia with extensor plantars", "pes cavus and scoliosis with absent ankle jerks but upgoing plantars"),
     c("Other hereditary spinocerebellar ataxia", "degenerative", ["chronic"], "uncommon"),
     c("Vitamin E deficiency (mimic)", "metabolic", ["chronic"], "rare"),
   ],
@@ -132,13 +136,13 @@ export const CAUSES = {
   ],
   skull_base_vii_stylomastoid: [ // Bell's palsy site
     c("Bell's palsy (idiopathic / HSV)", "inflammatory", ["acute"], "common", false, "Isolated LMN facial weakness (forehead involved), over hours–days; diagnosis of exclusion"),
-    c("Ramsay Hunt (herpes zoster oticus)", "infective", ["acute"], "uncommon", false, "Vesicles in the ear canal, ear pain, ± hearing loss/vertigo"),
-    c("Lyme disease", "infective", ["subacute"], "uncommon", false, "Endemic area/tick exposure; may be bilateral facial palsy"),
+    c("Ramsay Hunt (herpes zoster oticus)", "infective", ["acute"], "uncommon", false, "Ear pain, ± hearing loss/vertigo", "vesicles in the external auditory meatus or on the pinna"),
+    c("Lyme disease", "infective", ["subacute"], "uncommon", false, "Endemic area/tick exposure; may be bilateral facial palsy", "an expanding erythema migrans rash at a tick-bite site"),
     c("Parotid tumour / malignant infiltration", "neoplastic", ["chronic"], "uncommon", true, "Slowly progressive or a parotid mass — not a true 'Bell's'"),
     c("Sarcoidosis", "inflammatory", ["subacute"], "rare", false, "May be bilateral; consider with uveitis/hilar lymphadenopathy"),
   ],
   skull_base_vii_geniculate: [ // Ramsay Hunt
-    c("Herpes zoster oticus (Ramsay Hunt)", "infective", ["acute"], "common"),
+    c("Herpes zoster oticus (Ramsay Hunt)", "infective", ["acute"], "common", false, "Ear pain + facial palsy, ± taste/hearing/vertigo", "vesicles in the external auditory meatus or on the pinna"),
     c("Geniculate schwannoma", "neoplastic", ["chronic"], "rare"),
   ],
   skull_base_iam: [
@@ -195,15 +199,15 @@ export const CAUSES = {
   ],
   // --- motor unit ---
   motor_unit_anterior_horn: [
-    c("Motor neurone disease / ALS", "degenerative", ["chronic"], "common", false, "Progressive painless mixed UMN+LMN, no sensory loss; fasciculations, wasting"),
+    c("Motor neurone disease / ALS", "degenerative", ["chronic"], "common", false, "Progressive painless mixed UMN+LMN, no sensory loss; fasciculations, wasting", "tongue wasting with fasciculations plus brisk reflexes in a wasted limb (mixed UMN+LMN)"),
     c("Spinal muscular atrophy", "degenerative", ["chronic"], "common", false, "Pure LMN, hereditary; younger onset by type"),
     c("Poliomyelitis / West Nile virus", "infective", ["acute"], "rare", false, "Acute febrile asymmetric flaccid paralysis"),
     c("Kennedy's disease (SBMA)", "degenerative", ["chronic"], "rare", false, "X-linked, bulbar involvement, gynaecomastia; CAG repeat"),
   ],
   motor_unit_nmj_postsynaptic: [
-    c("Myasthenia gravis (autoimmune)", "inflammatory", ["subacute","chronic"], "common", false, "Fatigable weakness, ptosis/diplopia worse through the day; AChR/MuSK antibodies"),
+    c("Myasthenia gravis (autoimmune)", "inflammatory", ["subacute","chronic"], "common", false, "Fatigable weakness, ptosis/diplopia worse through the day", "ptosis that improves after an ice-pack is held on the eye for 2 minutes (ice-pack test); Cogan's lid twitch"),
     c("Myasthenic crisis (respiratory)", "inflammatory", ["acute"], "uncommon", true, "Bulbar + respiratory weakness — monitor FVC, may need ventilation"),
-    c("Lambert-Eaton myasthenic syndrome", "inflammatory", ["subacute"], "rare", false, "Proximal weakness that improves with exertion; small-cell lung cancer association"),
+    c("Lambert-Eaton myasthenic syndrome", "inflammatory", ["subacute"], "rare", false, "Small-cell lung cancer association", "power and reflexes that AUGMENT (improve) after a few seconds of sustained contraction"),
   ],
 };
 
