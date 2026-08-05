@@ -243,9 +243,16 @@ const RED_RE = /dissection|giant.cell|arteritic|mucor|abscess|herniation|emergen
 // ---- pathognomonic "Confirm on exam" bedside signs (keyword → sign), applied to ANY cause whose name
 // matches and that has no inline `pathognomonic` yet. First match wins. Kept to genuine bedside signs you
 // look for on examination (NOT investigations); the borderline few name their confirming test in-line.
-// The already-curated inline flags (Ramsay Hunt, Argyll Robertson, Wilson's, MG, LEMS, Friedreich's) are
-// deliberately NOT duplicated here — they surface at their curated site only.
+// Kept to genuine bedside signs; the borderline few name their confirming test in-line.
 const PATHOGNOMONIC = [
+  // formerly-inline curated flags, now centralised so they surface wherever the disease is named
+  [/ramsay hunt|zoster oticus/i,                 "vesicles in the external auditory meatus or on the pinna"],
+  [/tabes|argyll robertson|neurosyphilis/i,      "an Argyll Robertson pupil (accommodates but does not react to light)"],
+  [/wilson/i,                                     "Kayser-Fleischer rings at the corneal limbus (± a wing-beating tremor)"],
+  [/myasthenia|\bmg\b/i,                          "ptosis that improves after a 2-minute ice-pack on the eye (ice-pack test); Cogan's lid twitch"],
+  [/lambert.eaton|\blems\b/i,                     "power and reflexes that AUGMENT after a few seconds of sustained contraction"],
+  [/friedreich/i,                                 "pes cavus and scoliosis with absent ankle jerks but upgoing plantars"],
+  // swept from the phonebook (2026-07-28)
   [/mucor|invasive fungal sinusitis/i,           "a black necrotic eschar on the hard palate or nasal mucosa (in a diabetic or immunocompromised patient)"],
   [/dermatomyositis/i,                            "Gottron's papules over the knuckles and a heliotrope rash on the eyelids"],
   [/leprosy/i,                                    "thickened, palpable peripheral nerves with hypopigmented, anaesthetic skin patches"],
