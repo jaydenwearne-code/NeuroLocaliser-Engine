@@ -81,9 +81,10 @@ the source of truth on any other machine.
 **Run the app:** `node app/serve.mjs` → http://localhost:8137/app/ (local static server). **DEPLOYED
 (2026-07-27):** live on GitHub Pages at **https://jaydenwearne-code.github.io/NeuroLocaliser-Engine/app/**
 (client-side passphrase `NeuroLocaliser`; gate is a speed-bump, no data behind it). Repo is **public**;
-`origin/main` holds the full history and **auto-redeploys on every push to `main`**. The one pre-live handoff
-still open: the **feedback form** in `app/feedback.js` is a placeholder (owner to supply a Google Form/Tally
-URL + entry ids). See spec/plan `docs/superpowers/{specs,plans}/2026-07-27-ed-stress-test-prototype*`.
+`origin/main` holds the full history and **auto-redeploys on every push to `main`**. **Feedback is live** via
+`app/feedback.js` `feedbackHref()` in **mailto mode** → the filterable alias `jayden.wearne+neurolocaliser@gmail.com`,
+pre-filling the case link + top result + findings + a curated question set; the `mode:"form"` Google-Form path
+stays wired for a later swap. See spec/plan `docs/superpowers/{specs,plans}/2026-07-27-ed-stress-test-prototype*`.
 
 **Parked follow-ups (not yet done):**
 1. **Multi-location DDx synthesis** — causes / next-steps / why are shown for the *one* selected lesion only;
