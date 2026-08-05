@@ -148,9 +148,14 @@ is fetched and each item re-verified at build. Discrepancies flagged for review.
 - Basilar: mRS 0–1, NIHSS **≥10**, PC-ASPECTS **≥6**, **≤24h** (COR 1). Target reperfusion **mTICI 2b–3**.
 
 **Acute management**
-- BP: pre-lysis <185/110; **avoid intensive SBP lowering (<140) after reperfusion** (no benefit / harmful);
-  permissive hypertension otherwise (treat if SBP >220 or DBP >120 — *classic post-lysis target <180/105 to be
-  reconciled with the 2026 wording at review*).
+- BP (verified 2026 wording): pre-lysis **<185/110** (control first, to be eligible). After IVT, **intensive
+  SBP lowering to <140 is NOT recommended even with complete reperfusion (TICI 3)**; more intensive reduction
+  **may be harmful after EVT** — post-reperfusion BP is "disciplined, not reflexively lowered." The exact
+  **first-24h upper ceiling** (classically <180/105) is **NOT confirmed retained** by the secondary summaries —
+  encode from the PRIMARY source at build, and until then present it as "per your local protocol," not a fixed
+  number. If not thrombolysed/reperfused, permissive hypertension (secondary sources: treat if SBP >220 or
+  DBP >120) — reconcile against the primary source.
+  Sources: [AHA top-things-to-know](https://professional.heart.org/en/science-news/2026-guideline-for-the-early-management-of-patients-with-acute-ischemic-stroke/top-things-to-know).
 - Glucose: maintain **140–180 mg/dL**; avoid hypoglycaemia (<70); intensive 80–130 not recommended.
 - Baseline ECG/troponin recommended but must not delay IVT/EVT.
 
