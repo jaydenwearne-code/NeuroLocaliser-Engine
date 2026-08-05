@@ -12,7 +12,7 @@ import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { encodeCase, decodeCase } from "./case-url.js";
-import { buildFeedbackURL } from "./feedback.js";
+import { feedbackHref } from "./feedback.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -190,14 +190,14 @@ function card(capHTML, body) {
 // the top candidate, and the findings. Only teaching-vocabulary findings leave, only on click.
 function feedbackButton(list) {
   const top = (list && list[0]) ? `${siteName(list[0].site)} (${list[0].site.id})` : "";
-  const url = buildFeedbackURL({ caseUrl: location.href, topResult: top, findings: [...S.tokens].join(", ") });
-  return `<a class="report-btn" href="${esc(url)}" target="_blank" rel="noopener" title="Opens a feedback form — do not include patient identifiers">⚑ Report a problem</a>`;
+  const url = feedbackHref({ caseUrl: location.href, topResult: top, findings: [...S.tokens].join(", ") });
+  return `<a class="report-btn" href="${esc(url)}" target="_blank" rel="noopener" title="Send feedback — do not include patient identifiers">⚑ Report a problem</a>`;
 }
 
 // A friendly failure panel — never a blank/broken page. Carries the case link + a report button so a
 // tester can send exactly what broke. Technical detail is tucked behind a disclosure.
 function errorPanel(err) {
-  const url = buildFeedbackURL({ caseUrl: location.href, topResult: "(render error)", findings: [...S.tokens].join(", ") });
+  const url = feedbackHref({ caseUrl: location.href, topResult: "(render error)", findings: [...S.tokens].join(", ") });
   return `<div class="err-panel">
     <b>Something went wrong showing this case.</b>
     <p>This is a prototype and your input is safe. Please help us by reporting it — the exact case is attached automatically.</p>

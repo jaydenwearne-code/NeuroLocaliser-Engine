@@ -1,5 +1,5 @@
-// feedback-url.test.js — the feedback prefill-URL builder is a pure function (DOM-free, testable in node).
-import { buildFeedbackURL } from "../app/feedback.js";
+// feedback-url.test.js — the feedback link builders are pure functions (DOM-free, testable in node).
+import { buildFeedbackURL, buildFeedbackMailto, feedbackHref, FEEDBACK_QUESTIONS } from "../app/feedback.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -19,6 +19,21 @@ ok("omits absent fields", !partial.includes("entry.1") && !partial.includes("ent
 
 const empty = buildFeedbackURL({}, { base: "https://example.test/form", usePrefillFlag: false, fields: {} });
 ok("empty data + no flag returns the bare base", empty === "https://example.test/form");
+
+// ---- mailto builder ----
+const mail = buildFeedbackMailto({ caseUrl: "https://app/#f=weak_arm@left", topResult: "Wallenberg", findings: "weak_arm@left" }, "tester@example.test");
+ok("mailto starts with the address", mail.startsWith("mailto:tester@example.test?"));
+ok("mailto has a subject", /subject=NeuroLocaliser(\+|%20)feedback/i.test(mail));
+ok("mailto body embeds the case link (encoded)", /weak_arm%40left/.test(mail));
+ok("mailto body includes the top result", /Wallenberg/.test(mail));
+ok("mailto body includes the curated questions", FEEDBACK_QUESTIONS.every(q => mail.includes(encodeURIComponent(q).replace(/%20/g, "+")) || mail.includes(encodeURIComponent(q))));
+ok("mailto warns against identifiers", /identifier/i.test(decodeURIComponent(mail)));
+
+// ---- feedbackHref switches on config.mode ----
+const asForm = feedbackHref({ caseUrl: "x" }, { mode: "form", base: "https://f/", usePrefillFlag: false, fields: { caseUrl: "entry.1" } });
+ok("feedbackHref(form) returns the form URL", asForm.startsWith("https://f/?entry.1="));
+const asMail = feedbackHref({ caseUrl: "x" }, { mode: "mailto" });
+ok("feedbackHref(mailto) returns a mailto link", asMail.startsWith("mailto:"));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
