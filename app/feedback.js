@@ -8,9 +8,9 @@
 // ever leave, and only when the tester chooses to submit.
 
 // ── delivery config ──────────────────────────────────────────────────────────────────────────────────
-// Address feedback is emailed to. PLACEHOLDER — replace before sharing. NB: this repo is public, so this
-// address becomes world-readable; a filterable alias (e.g. you+neurolocaliser@gmail.com) is a good idea.
-export const FEEDBACK_EMAIL = "REPLACE_ME@example.com";
+// Address feedback is emailed to. Filterable Gmail alias — delivers to the main inbox, but +neurolocaliser
+// lets you filter/label these. NB: this repo is public, so this address is world-readable (scrapeable).
+export const FEEDBACK_EMAIL = "jayden.wearne+neurolocaliser@gmail.com";
 
 export const FEEDBACK_CONFIG = {
   mode: "mailto", // "mailto" (live now) | "form" (once the Google Form exists)
