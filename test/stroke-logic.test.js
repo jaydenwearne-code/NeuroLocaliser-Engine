@@ -1,5 +1,5 @@
 // stroke-logic.test.js — pure code-stroke logic (DOM-free, testable in node).
-import { nihssTotal, nihssToFindings } from "../app/stroke-logic.js";
+import { nihssTotal, nihssToFindings, timeWindows, lvoScreen } from "../app/stroke-logic.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -23,6 +23,22 @@ ok("no extinction token when score 0", ![...f].some(t => t.startsWith("neglect")
 const g = nihssToFindings({ armL:4, legL:2, extinction:2 }, "left");
 ok("left weakness emits left tokens", g.has("weak_arm@left") && g.has("weak_leg@left"));
 ok("extinction emits neglect", g.has("neglect@none"));
+
+// timeWindows and lvoScreen tests
+const AT = (mins) => { const d = new Date("2026-07-28T08:00:00Z"); return { lkw: d.toISOString(), now: d.getTime() + mins*60000 }; };
+{ const a = AT(60); const t = timeWindows(a.lkw, a.now);
+  ok("at 60 min IVT standard window is open", t.ivtStandard.status === "open");
+  ok("at 60 min elapsed is 60", t.elapsedMin === 60); }
+{ const a = AT(275); const t = timeWindows(a.lkw, a.now);
+  ok("at 275 min IVT standard is closed", t.ivtStandard.status === "closed");
+  ok("at 275 min IVT extended still open", t.ivtExtended.status === "open"); }
+{ const a = AT(350); const t = timeWindows(a.lkw, a.now);
+  ok("at 350 min EVT early is closing (≤30 left of 360)", t.evtEarly.status === "closing"); }
+ok("missing LKW → unknown windows", timeWindows(null, Date.now()).ivtStandard.status === "unknown");
+
+ok("LVO likely: gaze + NIHSS≥6", lvoScreen({ gaze:2, armR:4 }).likely === true);
+ok("LVO not likely: low NIHSS", lvoScreen({ armR:1 }).likely === false);
+ok("LVO screen gives reasons", lvoScreen({ language:2, armR:4, legR:2 }).reasons.length > 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

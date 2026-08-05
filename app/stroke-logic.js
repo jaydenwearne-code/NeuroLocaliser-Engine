@@ -34,3 +34,47 @@ export function nihssToFindings(nihss = {}, dominant = "left") {
   if (n(nihss.loc) >= 2) out.add("reduced_consciousness@none");
   return out;
 }
+
+// Thrombolytic time windows (in minutes from last-known-well)
+const WINDOWS = { ivtStandard: 270, ivtExtended: 540, evtEarly: 360, evtExtended: 1440 };
+
+// Compute window status given elapsed time and limit
+function windowStatus(elapsed, limit) {
+  if (elapsed >= limit) return { status: "closed", minsLeft: 0 };
+  const minsLeft = limit - elapsed;
+  return { status: minsLeft <= 30 ? "closing" : "open", minsLeft };
+}
+
+// Compute thrombolytic window statuses based on time since LKW (last-known-well).
+// Returns { elapsedMin, ivtStandard, ivtExtended, evtEarly, evtExtended }, where each window
+// is { status: "open"|"closing"|"closed"|"unknown", minsLeft: number|null }.
+// "closing" means ≤30 min remaining. Missing/invalid lkwISO yields all "unknown".
+export function timeWindows(lkwISO, nowMs = Date.now()) {
+  const lkw = lkwISO ? Date.parse(lkwISO) : NaN;
+  if (!Number.isFinite(lkw)) {
+    const u = { status: "unknown", minsLeft: null };
+    return { elapsedMin: null, ivtStandard: u, ivtExtended: u, evtEarly: u, evtExtended: u };
+  }
+  const elapsedMin = Math.max(0, Math.round((nowMs - lkw) / 60000));
+  return {
+    elapsedMin,
+    ivtStandard: windowStatus(elapsedMin, WINDOWS.ivtStandard),
+    ivtExtended: windowStatus(elapsedMin, WINDOWS.ivtExtended),
+    evtEarly:    windowStatus(elapsedMin, WINDOWS.evtEarly),
+    evtExtended: windowStatus(elapsedMin, WINDOWS.evtExtended),
+  };
+}
+
+// Rapid LVO (large-vessel occlusion) screen: identify patients likely to benefit from thrombectomy.
+// Returns { likely: boolean, reasons: string[] }.
+// LVO likely when a cortical sign (gaze/language/extinction > 0) is present AND nihssTotal ≥ 6.
+export function lvoScreen(nihss = {}) {
+  const reasons = [];
+  if (n(nihss.gaze)) reasons.push("gaze deviation");
+  if (n(nihss.language)) reasons.push("aphasia");
+  if (n(nihss.extinction)) reasons.push("neglect/extinction");
+  const total = nihssTotal(nihss);
+  const likely = reasons.length > 0 && total >= 6;
+  if (likely) reasons.push(`NIHSS ${total} (≥6)`);
+  return { likely, reasons };
+}
