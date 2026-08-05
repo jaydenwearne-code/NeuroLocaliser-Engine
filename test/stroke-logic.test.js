@@ -40,5 +40,19 @@ ok("LVO likely: gaze + NIHSS≥6", lvoScreen({ gaze:2, armR:4 }).likely === true
 ok("LVO not likely: low NIHSS", lvoScreen({ armR:1 }).likely === false);
 ok("LVO screen gives reasons", lvoScreen({ language:2, armR:4, legR:2 }).reasons.length > 0);
 
+// Task 4: evalAuto, eligibilitySummary, buildHandover
+import { evalAuto, eligibilitySummary, buildHandover } from "../app/stroke-logic.js";
+ok("evalAuto age <80 true", evalAuto("age", { age: 72 }) === true);
+ok("evalAuto age missing → null (need-info)", evalAuto("age", {}) === null);
+ok("evalAuto nihss6 true at 8", evalAuto("nihss6", { nihssTotal: 8 }) === true);
+ok("evalAuto bp185 false when >185/110", evalAuto("bp185", { sbp: 200, dbp: 95 }) === false);
+{ const crit = [{ id:"a", kind:"inclusion", auto:"nihss6" }, { id:"b", kind:"inclusion" }, { id:"c", kind:"contra" }];
+  const s = eligibilitySummary(crit, { nihssTotal: 8 }, new Set(["c"]));
+  ok("summary counts a met inclusion", s.met === 1);
+  ok("summary counts a need-info inclusion (no auto, manual)", s.needInfo === 1);
+  ok("summary lists present contraindications", s.contraPresent.includes("c")); }
+{ const h = buildHandover({ lkw:"2026-07-28T08:00:00Z", nihss:{armR:4} }, { nihssTotal: 4, elapsedMin: 60, topSite: "left MCA" });
+  ok("handover includes NIHSS + time + localisation", /NIHSS/.test(h) && /60/.test(h) && /left MCA/.test(h)); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

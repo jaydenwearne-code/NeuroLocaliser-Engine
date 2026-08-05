@@ -78,3 +78,40 @@ export function lvoScreen(nihss = {}) {
   if (likely) reasons.push(`NIHSS ${total} (≥6)`);
   return { likely, reasons };
 }
+
+// Evaluate an inclusion criterion's auto-check against derived state. Returns null when the input is unknown.
+export function evalAuto(autoId, d = {}) {
+  switch (autoId) {
+    case "age":       return d.age == null ? null : d.age < 80;
+    case "nihss6":    return d.nihssTotal == null ? null : d.nihssTotal >= 6;
+    case "mrs01":     return d.mrs == null ? null : d.mrs <= 1;
+    case "bp185":     return (d.sbp == null || d.dbp == null) ? null : (d.sbp < 185 && d.dbp < 110);
+    case "glucoseOk": return d.glucose == null ? null : (d.glucose >= 50 && d.glucose <= 400);
+    case "windowIVT": return d.windowIVT == null ? null : d.windowIVT;   // renderer passes a boolean from timeWindows
+    case "windowEVT": return d.windowEVT == null ? null : d.windowEVT;
+    default:          return null;
+  }
+}
+
+export function eligibilitySummary(criteria = [], derived = {}, ticks = new Set()) {
+  let met = 0, notMet = 0, needInfo = 0; const contraPresent = [];
+  for (const c of criteria) {
+    if (c.kind === "contra") { if (ticks.has(c.id)) contraPresent.push(c.id); continue; }
+    const v = c.auto ? evalAuto(c.auto, derived) : (ticks.has(c.id) ? true : null); // manual inclusions: ticked = met
+    if (v === true) met++; else if (v === false) notMet++; else needInfo++;
+  }
+  return { met, notMet, needInfo, contraPresent };
+}
+
+export function buildHandover(state = {}, derived = {}) {
+  const lines = [
+    "CODE STROKE — summary (educational aid; verify against local protocol)",
+    `Last-known-well: ${state.lkw || "—"}  |  Elapsed: ${derived.elapsedMin != null ? derived.elapsedMin + " min" : "—"}`,
+    `Age: ${state.age ?? "—"}  |  Pre-stroke mRS: ${state.mrs ?? "—"}`,
+    `NIHSS: ${derived.nihssTotal ?? "—"}  |  Likely localisation: ${derived.topSite || "—"}  |  LVO screen: ${derived.lvo ? "positive" : "negative/unknown"}`,
+    `BP: ${state.sbp ?? "—"}/${state.dbp ?? "—"}  |  Glucose: ${state.glucose ?? "—"}`,
+    `Thrombolysis: ${derived.ivtSummary || "—"}`,
+    `Thrombectomy: ${derived.evtSummary || "—"}`,
+  ];
+  return lines.join("\n");
+}
