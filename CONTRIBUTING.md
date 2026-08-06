@@ -406,6 +406,14 @@ easiest mechanism-fit first. Per-region designs + plans live in `docs/superpower
 > feedback form URL + entry ids (`app/feedback.js`). **Deploy is deliberately not done:** free GitHub Pages
 > needs the repo public + the ~26 local commits pushed — both require explicit owner go-ahead (or use a
 > Cloudflare/Netlify drag-deploy to keep the repo private). See the plan's "Deployment" section.
+>
+> **STATUS UPDATE (2026-07-28): code-stroke mode added** — a third mode (a clinician's cognitive-aid
+> worksheet: intake · live clock · NIHSS · syndrome/LVO via `solve()` · thrombolysis/thrombectomy eligibility
+> checklists · acute-mgmt reference · mimic prompt · handover). Educational only, never a verdict; every
+> criterion cites the **2026 AHA/ASA guideline** (DOI 10.1161/STR.0000000000000513) and the clinical content
+> was **owner-reviewed** (glucose in mmol/L; contraindications reframed relative per 2026 — confirm the full
+> Table-8 list against local protocol). Files `app/stroke-{data,logic}.js` + `app/code-stroke.js`. Built via
+> subagent-driven development. Spec/plan: `docs/superpowers/{specs,plans}/2026-07-28-code-stroke-mode*.md`.
 
 ### Next: pathology layer (ALS) · non-organic (FND) · UI  *(historical — see status update above)*
 The neuraxis regions are essentially complete (brainstem → cord → cortex → subcortex → skull base → motor

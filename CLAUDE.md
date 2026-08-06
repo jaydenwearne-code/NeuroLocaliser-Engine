@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**51 test suites / 1772 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**53 test suites / 1826 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -63,6 +63,15 @@ docs (in `docs/superpowers/`) that record every decision:
   (`EXAM_TREE` + `flattenFindings`). Plan: `plans/2026-07-25-ui-restructure.md`.
 - **Output cards (done)** — the results pane is a compact header + three labelled cards (**Where / Why /
   What**) with progressive disclosure (ruled-out, sieve, per-site "why" collapsed). Plan: `plans/2026-07-26-output-cards.md`.
+- **Code-stroke mode (done)** — a third mode alongside localise/atlas: a single-scrolling clinician's
+  **cognitive-aid worksheet** (intake · live clock vs decision windows · NIHSS · likely syndrome/LVO reusing
+  `solve()` · thrombolysis & thrombectomy eligibility checklists · acute-mgmt reference · stroke-mimic prompt ·
+  handover summary). Educational only — **never a treat/don't-treat verdict**; shows met/not-met/need-info +
+  per-item citations + a persistent safety banner. Clinical criteria from the **2026 AHA/ASA guideline**
+  (DOI 10.1161/STR.0000000000000513), owner-reviewed; glucose in mmol/L; contraindications reframed relative
+  per 2026 (confirm full Table-8 list + local protocol). New files: `app/stroke-data.js` (cited data),
+  `app/stroke-logic.js` (pure logic), `app/code-stroke.js` (worksheet DOM). Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-07-28-code-stroke-mode*.md`. Built via subagent-driven development.
 - **ED stress-test prototype (done)** — the app is now deployable for clinician stress-testing: a client-side
   passphrase gate + safety acknowledgment (`app/gate.js`), a persistent safety bar, shareable/restorable
   **case URLs** (`app/case-url.js`, state ↔ URL hash), a "Report a problem" button pre-filling an external
