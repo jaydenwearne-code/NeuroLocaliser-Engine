@@ -22,7 +22,7 @@ ok("no extinction token when score 0", ![...f].some(t => t.startsWith("neglect")
 // left-limb weakness → left-side tokens, gaze to the right
 const g = nihssToFindings({ armL:4, legL:2, extinction:2 }, "left");
 ok("left weakness emits left tokens", g.has("weak_arm@left") && g.has("weak_leg@left"));
-ok("extinction emits neglect", g.has("neglect@none"));
+ok("extinction emits neglect on the deficit side (lateralised, contralesional)", g.has("neglect@left"));
 
 // timeWindows and lvoScreen tests
 const AT = (mins) => { const d = new Date("2026-07-28T08:00:00Z"); return { lkw: d.toISOString(), now: d.getTime() + mins*60000 }; };

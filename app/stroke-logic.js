@@ -27,10 +27,10 @@ export function nihssToFindings(nihss = {}, dominant = "left") {
     if (n(nihss.sensory)) out.add(`cortical_sensory_arm@${deficitSide}`);
     if (n(nihss.ataxia)) out.add(`limb_ataxia@${deficitSide}`);
     if (n(nihss.gaze)) out.add(`gaze_deviation@${other(deficitSide)}`); // eyes look toward the lesion
+    if (n(nihss.extinction)) out.add(`neglect@${deficitSide}`); // neglect is contralesional = the body-deficit side (lateralised finding)
   }
   if (n(nihss.language)) { out.add("speech_nonfluent@none"); out.add("comprehension_impaired@none"); }
   if (n(nihss.dysarthria)) out.add("dysarthria@none");
-  if (n(nihss.extinction)) out.add("neglect@none");
   if (n(nihss.loc) >= 2) out.add("reduced_consciousness@none");
   return out;
 }
