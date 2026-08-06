@@ -26,12 +26,14 @@ export const THROMBOLYSIS_CRITERIA = [
   { id:"windowIVT",kind:"inclusion", auto:"windowIVT", label:"Within 4.5 h of last-known-well (or extended 4.5–9 h / wake-up with perfusion or DWI-FLAIR mismatch)", cite:GUIDELINE_CITE },
   { id:"bp185",    kind:"inclusion", auto:"bp185",     label:"BP controllable to <185/110 before treatment", cite:GUIDELINE_CITE },
   { id:"glucose",  kind:"inclusion", auto:"glucoseOk", label:"Glucose is not the cause of the deficit (treat hypo/hyperglycaemia)", cite:GUIDELINE_CITE },
-  { id:"recentICH",kind:"contra",    label:"Prior intracranial haemorrhage", cite:GUIDELINE_CITE },
-  { id:"recentSurg",kind:"contra",   label:"Recent major surgery / serious trauma (per guideline window)", cite:GUIDELINE_CITE },
-  { id:"activeBleed",kind:"contra",  label:"Active internal bleeding / bleeding diathesis", cite:GUIDELINE_CITE },
-  { id:"anticoag", kind:"contra",    label:"Therapeutic anticoagulation / relevant coagulopathy", cite:GUIDELINE_CITE },
-  // NB (Task 8): the 2026 guideline MODIFIED the contraindication list — reconcile this set against the
-  // primary source and the owner's local protocol before final commit; add/remove items as verified.
+  { id:"recentICH",   kind:"contra", label:"Any prior intracranial haemorrhage", cite:GUIDELINE_CITE },
+  { id:"recentStroke",kind:"contra", label:"Ischaemic stroke or serious head trauma in the last 3 months", cite:GUIDELINE_CITE },
+  { id:"activeBleed", kind:"contra", label:"Active internal bleeding", cite:GUIDELINE_CITE },
+  { id:"recentSurg",  kind:"contra", label:"Recent major surgery — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  { id:"coag",        kind:"contra", label:"Platelets <100 ×10⁹/L, INR >1.7, or therapeutic anticoagulation — RELATIVE in 2026 (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  // 2026 modification (reconciled at Task 8): several contraindications are now RELATIVE (weigh risk/benefit),
+  // not absolute. This is the well-established set; confirm the FULL list against the guideline's Table 8 and
+  // your local thrombolysis protocol, which governs at the bedside.
 ];
 
 export const THROMBECTOMY_CRITERIA = [
@@ -43,8 +45,8 @@ export const THROMBECTOMY_CRITERIA = [
 ];
 
 export const ACUTE_MGMT = [
-  { id:"bp", title:"Blood pressure", body:"Pre-lysis: control to <185/110 to be eligible. After IVT/EVT: do NOT intensively lower SBP to <140 (no benefit; harmful after EVT) — disciplined, not reflexive lowering. First-24 h upper ceiling: per your local protocol (confirm against the primary source).", cite:GUIDELINE_CITE },
-  { id:"glucose", title:"Glucose", body:"Maintain ~140–180 mg/dL; avoid hypoglycaemia (<70). Intensive control (80–130) not recommended.", cite:GUIDELINE_CITE },
+  { id:"bp", title:"Blood pressure", body:"Pre-lysis: control to <185/110 to be eligible. After IVT/EVT: permissive — allow SBP up to ~180–185, reduce only modestly (10–15%) if truly needed, and do NOT intensively lower to <140 (no benefit after IVT; harmful after EVT).", cite:GUIDELINE_CITE },
+  { id:"glucose", title:"Glucose", body:"Maintain ~7.8–10 mmol/L; avoid hypoglycaemia (<3.9). Intensive control (4.4–7.2) not recommended.", cite:GUIDELINE_CITE },
   { id:"reversal", title:"Anticoagulation", body:"Establish agent + last dose; reverse per local protocol before/at decision. Baseline ECG/troponin recommended but must not delay IVT/EVT.", cite:GUIDELINE_CITE },
 ];
 

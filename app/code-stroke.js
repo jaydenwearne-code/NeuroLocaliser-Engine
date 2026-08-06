@@ -21,7 +21,7 @@ export function renderCodeStroke(ctx) {
         ${field("mrs","Pre-stroke mRS (0–5)","number",st.mrs)}
         ${field("sbp","Systolic BP","number",st.sbp)}
         ${field("dbp","Diastolic BP","number",st.dbp)}
-        ${field("glucose","Glucose (mg/dL)","number",st.glucose)}
+        ${field("glucose","Glucose (mmol/L)","number",st.glucose)}
       </div>
     </div>
     <div class="cs-sec"><h3>Before you commit — mimics</h3><ul class="cs-mimic">${MIMICS.map(m=>`<li>${esc(m)}</li>`).join("")}</ul></div>

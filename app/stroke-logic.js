@@ -86,7 +86,7 @@ export function evalAuto(autoId, d = {}) {
     case "nihss6":    return d.nihssTotal == null ? null : d.nihssTotal >= 6;
     case "mrs01":     return d.mrs == null ? null : d.mrs <= 1;
     case "bp185":     return (d.sbp == null || d.dbp == null) ? null : (d.sbp < 185 && d.dbp < 110);
-    case "glucoseOk": return d.glucose == null ? null : (d.glucose >= 50 && d.glucose <= 400);
+    case "glucoseOk": return d.glucose == null ? null : (d.glucose >= 2.8 && d.glucose <= 22.2); // mmol/L (≈50–400 mg/dL)
     case "windowIVT": return d.windowIVT == null ? null : d.windowIVT;   // renderer passes a boolean from timeWindows
     case "windowEVT": return d.windowEVT == null ? null : d.windowEVT;
     default:          return null;
