@@ -35,7 +35,7 @@ const REGION_ORDER = ["cortex","subcortex","corpus_callosum","thalamus","hypotha
   "olfactory","visual_pathway","skull_base","peripheral_vestibular","central_vestibular","pupil","sympathetic",
   "motor_unit","root","plexus","nerve","polyneuropathy"];
 
-const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
