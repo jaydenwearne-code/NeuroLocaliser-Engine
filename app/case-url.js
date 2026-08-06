@@ -33,7 +33,7 @@ export function decodeCase(hash, opts = {}) {
     if (toks.length) out.tokens = new Set(toks);
   }
   const o = p.get("o"); if (o) out.onset = o;
-  const m = p.get("m"); if (m === "localise" || m === "atlas") out.mode = m;
+  const m = p.get("m"); if (m === "localise" || m === "atlas" || m === "stroke") out.mode = m;
   const s = p.get("s"); if (s && (!validSites || validSites.has(s))) out.selected = s;
   const dom = p.get("dom"); if (dom === "left" || dom === "right") out.dominant = dom;
   const sl = p.get("sl"); if (sl) out.sensoryLevel = sl;

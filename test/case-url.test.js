@@ -30,6 +30,7 @@ ok("drops tokens with no side", ![...dropped.tokens].some(t => t === "noside"));
 const badSite = decodeCase("#f=weak_arm@left&s=not_a_site", { validFindings, validSites });
 ok("drops an unknown selected site", badSite.selected === undefined);
 ok("rejects an unknown mode", decodeCase("#m=wat", {}).mode === undefined);
+ok("accepts the stroke mode", decodeCase("#m=stroke", {}).mode === "stroke");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

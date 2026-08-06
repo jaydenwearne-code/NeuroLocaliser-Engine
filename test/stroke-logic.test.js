@@ -18,6 +18,9 @@ ok("emits aphasia tokens (non-lateralised)", f.has("speech_nonfluent@none") && f
 ok("emits dysarthria", f.has("dysarthria@none"));
 ok("emits cortical sensory on the deficit side", f.has("cortical_sensory_arm@right"));
 ok("no extinction token when score 0", ![...f].some(t => t.startsWith("neglect")));
+// a bilateral visual score (item 3 = 3) must NOT be emitted as a one-sided hemianopia
+ok("bilateral visual (score 3) emits no lateralised field cut", ![...nihssToFindings({ visual:3, armR:2 }, "left")].some(t => t.startsWith("homonymous_hemianopia")));
+ok("unilateral visual (score 2) still emits a field cut", [...nihssToFindings({ visual:2, armR:2 }, "left")].some(t => t === "homonymous_hemianopia@right"));
 
 // left-limb weakness → left-side tokens, gaze to the right
 const g = nihssToFindings({ armL:4, legL:2, extinction:2 }, "left");
