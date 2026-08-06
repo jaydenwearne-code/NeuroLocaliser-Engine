@@ -72,7 +72,15 @@ function recompute(ctx){
     const findings = nihssToFindings(st.nihss, S.dominant);
     if (findings.size) { const r = solve(findings, { dominantSide: S.dominant }); topSite = r.display[0] ? siteName(r.display[0].site) : "";
       app.querySelector("#csLoc").innerHTML = `<div class="cs-summary"><b>Likely:</b> ${esc(topSite||"—")}${lvo.likely?` · <span style="color:var(--contra);font-weight:700">LVO likely — activate stroke team / thrombectomy centre</span>`:""}</div><p class="derived" style="margin-top:4px">A low NIHSS does not exclude a posterior-circulation (basilar) LVO. Screen, not a diagnosis.</p>`; }
-    else app.querySelector("#csLoc").innerHTML = `<div class="empty">Enter NIHSS to estimate localisation.</div>`;
+    else {
+      // Items 3/4/7/8/11 (visual/facial/sensory/ataxia/gaze/extinction) carry no side in the NIHSS, so the
+      // bridge can only place them once a motor score anchors the affected side. Say so, rather than reading
+      // as "nothing found".
+      const sideless = ["visual","facial","sensory","ataxia","gaze","extinction"].some(k => Number(S.stroke.nihss[k]) > 0);
+      app.querySelector("#csLoc").innerHTML = sideless
+        ? `<div class="empty">Lateralised deficits entered, but no arm/leg (motor) score to infer the affected side — add a motor score to localise. (LVO screen + windows still apply.)</div>`
+        : `<div class="empty">Enter NIHSS to estimate localisation.</div>`;
+    }
   } catch { app.querySelector("#csLoc").innerHTML = `<div class="empty">—</div>`; }
 
   // time windows

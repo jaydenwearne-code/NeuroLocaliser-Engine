@@ -23,7 +23,7 @@ export const NIHSS_ITEMS = [
 
 export const THROMBOLYSIS_CRITERIA = [
   { id:"dx",       kind:"inclusion", label:"Disabling acute ischaemic stroke, deficit not clearing", cite:GUIDELINE_CITE },
-  { id:"windowIVT",kind:"inclusion", auto:"windowIVT", label:"Within 4.5 h of last-known-well (or extended 4.5–9 h / wake-up with perfusion or DWI-FLAIR mismatch)", cite:GUIDELINE_CITE },
+  { id:"windowIVT",kind:"inclusion", auto:"windowIVT", label:"Within a thrombolysis time window (✓ = ≤4.5 h; the 4.5–9 h / wake-up window applies ONLY with advanced-imaging mismatch — confirm imaging manually)", cite:GUIDELINE_CITE },
   { id:"bp185",    kind:"inclusion", auto:"bp185",     label:"BP controllable to <185/110 before treatment", cite:GUIDELINE_CITE },
   { id:"glucose",  kind:"inclusion", auto:"glucoseOk", label:"Glucose is not the cause of the deficit (treat hypo/hyperglycaemia)", cite:GUIDELINE_CITE },
   { id:"recentICH",   kind:"contra", label:"Any prior intracranial haemorrhage", cite:GUIDELINE_CITE },
@@ -38,10 +38,10 @@ export const THROMBOLYSIS_CRITERIA = [
 
 export const THROMBECTOMY_CRITERIA = [
   { id:"lvo",       kind:"inclusion", label:"Anterior LVO (ICA or M1) on CTA/MRA (or basilar for posterior)", cite:GUIDELINE_CITE },
-  { id:"nihss6",    kind:"inclusion", auto:"nihss6", label:"NIHSS ≥ 6 (≥ 10 for basilar)", cite:GUIDELINE_CITE },
+  { id:"nihss6",    kind:"inclusion", auto:"nihss6", label:"NIHSS ≥ 6 (✓ uses ≥ 6; for a basilar occlusion judge against ≥ 10)", cite:GUIDELINE_CITE },
   { id:"mrs01",     kind:"inclusion", auto:"mrs01",  label:"Pre-stroke mRS 0–1", cite:GUIDELINE_CITE },
   { id:"aspects",   kind:"inclusion", label:"ASPECTS 3–10 (<6 h) / 3–5 (6–24 h) / PC-ASPECTS ≥6 (basilar)", cite:GUIDELINE_CITE },
-  { id:"windowEVT", kind:"inclusion", auto:"windowEVT", label:"Within 6 h (or 6–24 h selected, age <80, with imaging)", cite:GUIDELINE_CITE },
+  { id:"windowEVT", kind:"inclusion", auto:"windowEVT", label:"Within a thrombectomy time window (✓ = a window is open; the 6–24 h window is for SELECTED patients — confirm age <80 + imaging manually; basilar up to 24 h)", cite:GUIDELINE_CITE },
 ];
 
 export const ACUTE_MGMT = [
