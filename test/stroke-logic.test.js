@@ -21,6 +21,10 @@ ok("no extinction token when score 0", ![...f].some(t => t.startsWith("neglect")
 // a bilateral visual score (item 3 = 3) must NOT be emitted as a one-sided hemianopia
 ok("bilateral visual (score 3) emits no lateralised field cut", ![...nihssToFindings({ visual:3, armR:2 }, "left")].some(t => t.startsWith("homonymous_hemianopia")));
 ok("unilateral visual (score 2) still emits a field cut", [...nihssToFindings({ visual:2, armR:2 }, "left")].some(t => t === "homonymous_hemianopia@right"));
+// affected-side toggle fills the side when there is no motor anchor; motor still wins when present
+ok("affectedSide places a side-less deficit when there is no motor score", nihssToFindings({ visual:2 }, "left", "right").has("homonymous_hemianopia@right"));
+ok("motor-derived side wins over the affectedSide toggle", (() => { const s = nihssToFindings({ armR:3, facial:2 }, "left", "left"); return s.has("facial_weakness@right") && !s.has("facial_weakness@left"); })());
+ok("no motor and no affectedSide → still no lateralised token", ![...nihssToFindings({ visual:2 }, "left", "")].some(t => t.startsWith("homonymous")));
 
 // left-limb weakness → left-side tokens, gaze to the right
 const g = nihssToFindings({ armL:4, legL:2, extinction:2 }, "left");

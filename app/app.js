@@ -41,7 +41,7 @@ const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" 
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
 const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", sensoryLevel:"", distalReach:"", atlas:null,
-  stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
+  stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
 // ---- shareable case URLs: hydrate S from the URL hash on boot, keep the hash live on every change ----

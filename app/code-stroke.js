@@ -22,6 +22,9 @@ export function renderCodeStroke(ctx) {
         ${field("sbp","Systolic BP","number",st.sbp)}
         ${field("dbp","Diastolic BP","number",st.dbp)}
         ${field("glucose","Glucose (mmol/L)","number",st.glucose)}
+        <div class="cs-field"><label>Affected side</label><select data-fld="affectedSide">${
+          [["","auto (from motor)"],["left","left"],["right","right"]].map(([v,l])=>`<option value="${v}"${st.affectedSide===v?" selected":""}>${l}</option>`).join("")
+        }</select></div>
       </div>
     </div>
     <div class="cs-sec"><h3>Before you commit — mimics</h3><ul class="cs-mimic">${MIMICS.map(m=>`<li>${esc(m)}</li>`).join("")}</ul></div>
@@ -69,7 +72,7 @@ function recompute(ctx){
   // localisation via the existing engine
   let topSite = "";
   try {
-    const findings = nihssToFindings(st.nihss, S.dominant);
+    const findings = nihssToFindings(st.nihss, S.dominant, st.affectedSide);
     if (findings.size) { const r = solve(findings, { dominantSide: S.dominant }); topSite = r.display[0] ? siteName(r.display[0].site) : "";
       app.querySelector("#csLoc").innerHTML = `<div class="cs-summary"><b>Likely:</b> ${esc(topSite||"—")}${lvo.likely?` · <span style="color:var(--contra);font-weight:700">LVO likely — activate stroke team / thrombectomy centre</span>`:""}</div><p class="derived" style="margin-top:4px">A low NIHSS does not exclude a posterior-circulation (basilar) LVO. Screen, not a diagnosis.</p>`; }
     else {
@@ -78,7 +81,7 @@ function recompute(ctx){
       // as "nothing found".
       const sideless = ["visual","facial","sensory","ataxia","gaze","extinction"].some(k => Number(S.stroke.nihss[k]) > 0);
       app.querySelector("#csLoc").innerHTML = sideless
-        ? `<div class="empty">Lateralised deficits entered, but no arm/leg (motor) score to infer the affected side — add a motor score to localise. (LVO screen + windows still apply.)</div>`
+        ? `<div class="empty">Lateralised deficits entered, but no side to place them — add a motor score or set <b>Affected side</b> above to localise. (LVO screen + windows still apply.)</div>`
         : `<div class="empty">Enter NIHSS to estimate localisation.</div>`;
     }
   } catch { app.querySelector("#csLoc").innerHTML = `<div class="empty">—</div>`; }

@@ -14,10 +14,14 @@ export function nihssTotal(nihss = {}) {
 // (contralateral to the lesion — the localiser's crossing model resolves lesion side); gaze deviates
 // toward the lesion (opposite the body-deficit side); neglect is lateralised (contralesional). Aphasia and
 // dysarthria are non-lateralised. A bilateral visual score (item 3 = 3) is NOT emitted as a one-sided cut.
-export function nihssToFindings(nihss = {}, dominant = "left") {
+export function nihssToFindings(nihss = {}, dominant = "left", affectedSide = "") {
   const out = new Set();
   const rightMotor = n(nihss.armR) + n(nihss.legR), leftMotor = n(nihss.armL) + n(nihss.legL);
-  const deficitSide = rightMotor === 0 && leftMotor === 0 ? null : (rightMotor >= leftMotor ? "right" : "left");
+  const motorSide = rightMotor === 0 && leftMotor === 0 ? null : (rightMotor >= leftMotor ? "right" : "left");
+  // Motor-derived side wins (objective, matches the limbs scored); the explicit affectedSide toggle only
+  // fills the gap when there is no motor score — so the side-less NIHSS items (visual/facial/sensory/
+  // ataxia/extinction/gaze) can still be placed for a pure cortical/cerebellar deficit.
+  const deficitSide = motorSide || (affectedSide === "left" || affectedSide === "right" ? affectedSide : null);
   if (n(nihss.armL)) out.add("weak_arm@left");
   if (n(nihss.armR)) out.add("weak_arm@right");
   if (n(nihss.legL)) out.add("weak_leg@left");
