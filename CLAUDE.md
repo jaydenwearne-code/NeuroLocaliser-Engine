@@ -95,12 +95,11 @@ the source of truth on any other machine.
 pre-filling the case link + top result + findings + a curated question set; the `mode:"form"` Google-Form path
 stays wired for a later swap. See spec/plan `docs/superpowers/{specs,plans}/2026-07-27-ed-stress-test-prototype*`.
 
-**BRANCH STATE (important for a cold start):** the **code-stroke mode** lives on branch
-**`feat/code-stroke-mode`** (pushed; PR open at `github.com/jaydenwearne-code/NeuroLocaliser-Engine`), **not yet
-merged to `main` and not deployed**. Merging that PR to `main` auto-deploys it — hold until the owner reconciles
-the thrombolysis contraindications against the guideline's full Table 8 + local protocol. `main` (origin, at the
-code-stroke *plan* commit) has everything EXCEPT the code-stroke code — including the full pathologies/workup
-layer — so the "expand pathologies + workup" work below should branch off `main`.
+**CODE-STROKE MODE: MERGED to `main` and DEPLOYED live (2026-08-07).** The thrombolysis contraindication table
+is **owner-approved** — the full standard AHA/ASA set (7 absolute + 7 relative) in `app/stroke-data.js`
+`THROMBOLYSIS_CRITERIA`, with a standing "verify against local protocol" line (no outstanding Table-8 item).
+Branch `feat/code-stroke-mode` is merged (safe to delete). Everything — code-stroke + the full pathologies/workup
+layer — is on `main`, so the "expand pathologies + workup" work below branches off `main`.
 
 **Parked follow-ups (not yet done):**
 1. **Multi-location DDx synthesis** — causes / next-steps / why are shown for the *one* selected lesion only;
