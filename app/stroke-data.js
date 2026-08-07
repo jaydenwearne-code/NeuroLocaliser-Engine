@@ -26,14 +26,24 @@ export const THROMBOLYSIS_CRITERIA = [
   { id:"windowIVT",kind:"inclusion", auto:"windowIVT", label:"Within a thrombolysis time window (✓ = ≤4.5 h; the 4.5–9 h / wake-up window applies ONLY with advanced-imaging mismatch — confirm imaging manually)", cite:GUIDELINE_CITE },
   { id:"bp185",    kind:"inclusion", auto:"bp185",     label:"BP controllable to <185/110 before treatment", cite:GUIDELINE_CITE },
   { id:"glucose",  kind:"inclusion", auto:"glucoseOk", label:"Glucose is not the cause of the deficit (treat hypo/hyperglycaemia)", cite:GUIDELINE_CITE },
-  { id:"recentICH",   kind:"contra", label:"Any prior intracranial haemorrhage", cite:GUIDELINE_CITE },
-  { id:"recentStroke",kind:"contra", label:"Ischaemic stroke or serious head trauma in the last 3 months", cite:GUIDELINE_CITE },
-  { id:"activeBleed", kind:"contra", label:"Active internal bleeding", cite:GUIDELINE_CITE },
-  { id:"recentSurg",  kind:"contra", label:"Recent major surgery — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
-  { id:"coag",        kind:"contra", label:"Platelets <100 ×10⁹/L, INR >1.7, or therapeutic anticoagulation — RELATIVE in 2026 (weigh risk/benefit)", cite:GUIDELINE_CITE },
-  // 2026 modification (reconciled at Task 8): several contraindications are now RELATIVE (weigh risk/benefit),
-  // not absolute. This is the well-established set; confirm the FULL list against the guideline's Table 8 and
-  // your local thrombolysis protocol, which governs at the bedside.
+  // --- Contraindications (owner-approved 2026-08-07). Absolute first, then RELATIVE (weigh risk/benefit). ---
+  { id:"currentICH",     kind:"contra", label:"Haemorrhage on the baseline CT/MRI", cite:GUIDELINE_CITE },
+  { id:"recentICH",      kind:"contra", label:"Any prior intracranial haemorrhage", cite:GUIDELINE_CITE },
+  { id:"recentStroke",   kind:"contra", label:"Ischaemic stroke or serious head trauma in the last 3 months", cite:GUIDELINE_CITE },
+  { id:"intracranialSurg",kind:"contra",label:"Intracranial or spinal surgery in the last 3 months", cite:GUIDELINE_CITE },
+  { id:"structuralLesion",kind:"contra",label:"Intracranial neoplasm (intra-axial), arteriovenous malformation, or aneurysm", cite:GUIDELINE_CITE },
+  { id:"activeBleed",    kind:"contra", label:"Active internal bleeding", cite:GUIDELINE_CITE },
+  { id:"endocarditisDissection", kind:"contra", label:"Infective endocarditis or suspected aortic dissection", cite:GUIDELINE_CITE },
+  { id:"coag",           kind:"contra", label:"Platelets <100 ×10⁹/L, INR >1.7, or therapeutic anticoagulation (DOAC <48 h / treatment-dose LMWH <24 h) — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  { id:"recentSurg",     kind:"contra", label:"Recent major surgery or serious trauma (~14 days) — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  { id:"giGuBleed",      kind:"contra", label:"Recent gastrointestinal or urinary-tract haemorrhage (~21 days) — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  { id:"recentMI",       kind:"contra", label:"Recent myocardial infarction (last 3 months) — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  { id:"arterialPuncture",kind:"contra",label:"Arterial puncture at a non-compressible site (~7 days) — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  { id:"minorSymptoms",  kind:"contra", label:"Rapidly improving or minor, non-disabling deficit — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  { id:"pregnancy",      kind:"contra", label:"Pregnancy or early postpartum — RELATIVE (weigh risk/benefit)", cite:GUIDELINE_CITE },
+  // Owner-approved contraindication table (2026-08-07): absolute items first, then RELATIVE items (weighed
+  // risk/benefit per the 2026 modification). BP >185/110 and glucose are handled as the inclusion criteria
+  // above. Always verify against your local thrombolysis protocol, which governs at the bedside.
 ];
 
 export const THROMBECTOMY_CRITERIA = [
