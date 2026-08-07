@@ -13,6 +13,7 @@ import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { encodeCase, decodeCase } from "./case-url.js";
 import { feedbackHref } from "./feedback.js";
+import { renderCodeStroke, stopStrokeClock } from "./code-stroke.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -34,12 +35,13 @@ const REGION_ORDER = ["cortex","subcortex","corpus_callosum","thalamus","hypotha
   "olfactory","visual_pathway","skull_base","peripheral_vestibular","central_vestibular","pupil","sympathetic",
   "motor_unit","root","plexus","nerve","polyneuropathy"];
 
-const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", sensoryLevel:"", distalReach:"", atlas:null };
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", sensoryLevel:"", distalReach:"", atlas:null,
+  stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
 // ---- shareable case URLs: hydrate S from the URL hash on boot, keep the hash live on every change ----
@@ -402,14 +404,17 @@ function renderAtlasDetail() {
 }
 
 // ================= modes + bootstrap =================
+function renderStroke(){ renderCodeStroke({ S, app, esc, siteName, solve, syncURL }); }
+
 function boot() {
   restoreFromURL();
   document.getElementById("modes").onclick = e => { const m = e.target.dataset.mode; if (!m || m===S.mode) return;
+    stopStrokeClock();
     S.mode = m; document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on", b.dataset.mode===m));
-    S.mode==="localise" ? renderLocalise() : renderAtlas(); syncURL(); };
+    m==="localise" ? renderLocalise() : m==="atlas" ? renderAtlas() : renderStroke(); syncURL(); };
   // Reflect the (possibly URL-restored) mode in the toggle before the first render.
   document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === S.mode));
-  try { S.mode === "atlas" ? renderAtlas() : renderLocalise(); }
+  try { S.mode==="atlas" ? renderAtlas() : S.mode==="stroke" ? renderStroke() : renderLocalise(); }
   catch (err) { app.innerHTML = errorPanel(err); }
 }
 

@@ -49,11 +49,11 @@ import { NIHSS_ITEMS, THROMBOLYSIS_CRITERIA, THROMBECTOMY_CRITERIA, ACUTE_MGMT, 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
 
-// NIHSS: 11 rows (arm/leg are L/R → 15 scored components); max total 42.
-ok("NIHSS has the 11 standard rows", NIHSS_ITEMS.length === 11);
+// NIHSS: 13 array rows (1a/1b/1c split; arm & leg carry side:true → scored L+R = 15 components); max total 42.
+ok("NIHSS models the 13 standard rows", NIHSS_ITEMS.length === 13);
 ok("every NIHSS item has options with numeric scores", NIHSS_ITEMS.every(i => i.options.length && i.options.every(o => Number.isInteger(o.score))));
-const maxTotal = NIHSS_ITEMS.reduce((s, i) => s + Math.max(...i.options.map(o => o.score)), 0);
-ok(`NIHSS max total is 42 (got ${maxTotal})`, maxTotal === 42);
+const maxTotal = NIHSS_ITEMS.reduce((s, i) => s + Math.max(...i.options.map(o => o.score)) * (i.side ? 2 : 1), 0);
+ok(`NIHSS max total is 42, counting arm/leg per side (got ${maxTotal})`, maxTotal === 42);
 
 // every eligibility criterion + reference card carries a citation (the accuracy gate)
 const allCited = [...THROMBOLYSIS_CRITERIA, ...THROMBECTOMY_CRITERIA, ...ACUTE_MGMT];

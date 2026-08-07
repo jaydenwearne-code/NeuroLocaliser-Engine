@@ -100,6 +100,8 @@ node test/neuraxis-diagram.test.js # Sub-project B — derived neuraxis SVG buil
 node test/case-url.test.js       # ED prototype — shareable case ⇄ URL-hash serializer
 node test/feedback-url.test.js   # ED prototype — feedback prefill-URL builder
 node test/gate.test.js           # ED prototype — passphrase gate hash-and-compare
+node test/stroke-data.test.js    # Code-stroke mode — clinical content integrity (NIHSS 42, cites)
+node test/stroke-logic.test.js   # Code-stroke mode — NIHSS/localiser bridge, windows, LVO, eligibility, handover
 ```
 
 ## Status

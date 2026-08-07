@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**51 test suites / 1772 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**53 test suites / 1826 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -63,6 +63,15 @@ docs (in `docs/superpowers/`) that record every decision:
   (`EXAM_TREE` + `flattenFindings`). Plan: `plans/2026-07-25-ui-restructure.md`.
 - **Output cards (done)** — the results pane is a compact header + three labelled cards (**Where / Why /
   What**) with progressive disclosure (ruled-out, sieve, per-site "why" collapsed). Plan: `plans/2026-07-26-output-cards.md`.
+- **Code-stroke mode (done)** — a third mode alongside localise/atlas: a single-scrolling clinician's
+  **cognitive-aid worksheet** (intake · live clock vs decision windows · NIHSS · likely syndrome/LVO reusing
+  `solve()` · thrombolysis & thrombectomy eligibility checklists · acute-mgmt reference · stroke-mimic prompt ·
+  handover summary). Educational only — **never a treat/don't-treat verdict**; shows met/not-met/need-info +
+  per-item citations + a persistent safety banner. Clinical criteria from the **2026 AHA/ASA guideline**
+  (DOI 10.1161/STR.0000000000000513), owner-reviewed; glucose in mmol/L; contraindications reframed relative
+  per 2026 (confirm full Table-8 list + local protocol). New files: `app/stroke-data.js` (cited data),
+  `app/stroke-logic.js` (pure logic), `app/code-stroke.js` (worksheet DOM). Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-07-28-code-stroke-mode*.md`. Built via subagent-driven development.
 - **ED stress-test prototype (done)** — the app is now deployable for clinician stress-testing: a client-side
   passphrase gate + safety acknowledgment (`app/gate.js`), a persistent safety bar, shareable/restorable
   **case URLs** (`app/case-url.js`, state ↔ URL hash), a "Report a problem" button pre-filling an external
@@ -86,6 +95,13 @@ the source of truth on any other machine.
 pre-filling the case link + top result + findings + a curated question set; the `mode:"form"` Google-Form path
 stays wired for a later swap. See spec/plan `docs/superpowers/{specs,plans}/2026-07-27-ed-stress-test-prototype*`.
 
+**BRANCH STATE (important for a cold start):** the **code-stroke mode** lives on branch
+**`feat/code-stroke-mode`** (pushed; PR open at `github.com/jaydenwearne-code/NeuroLocaliser-Engine`), **not yet
+merged to `main` and not deployed**. Merging that PR to `main` auto-deploys it — hold until the owner reconciles
+the thrombolysis contraindications against the guideline's full Table 8 + local protocol. `main` (origin, at the
+code-stroke *plan* commit) has everything EXCEPT the code-stroke code — including the full pathologies/workup
+layer — so the "expand pathologies + workup" work below should branch off `main`.
+
 **Parked follow-ups (not yet done):**
 1. **Multi-location DDx synthesis** — causes / next-steps / why are shown for the *one* selected lesion only;
    a genuinely multifocal picture has no combined cross-site view.
@@ -96,6 +112,30 @@ stays wired for a later swap. See spec/plan `docs/superpowers/{specs,plans}/2026
    (Course + why-not + diagram). No major pathway gaps remain.
 3. **Pathology layer (optional)** — `umnLmnPattern()` already flags mixed UMN+LMN → MND; a fuller declarative
    cross-site pathology layer (ALS/MND, SCD, etc.) was scoped in `CONTRIBUTING.md` but is not built.
+
+## NEXT (planned): expand the pathologies + workup at localised lesions
+
+**Goal:** deepen the **pathology layer** (`src/data/causes.js`) and the **workup layer** (`src/data/nextSteps.js`)
+for more of the ~185 named sites — many are currently served by the phonebook/derived fallback rather than a
+hand-curated, richer entry.
+
+**Where & how:**
+- **Pathologies:** add/extend a curated `CAUSES["<site.id or level_part>"]` entry — a list of
+  `c(name, category, tempo[], likelihood, red?, feature?, pathognomonic?)`. `category` ∈ the surgical-sieve
+  `CATEGORIES`; `tempo` ∈ `TEMPO` (hyperacute/acute/subacute/chronic); `feature` = a discriminating clue;
+  `pathognomonic` = a genuine bedside "Confirm on exam" sign (or add the pathology to the central
+  `PATHOGNOMONIC` keyword table so it flags wherever named). Curated entries take precedence over the
+  phonebook/derived fallback; the app shows the full sieve inline (`causesFor(site,{onset})`).
+- **Workup:** add/extend a curated `NEXT["<site>"]` entry — `ns(investigations, urgency, referral, {immediate?,
+  confirmatory?, monitoring?})`. Uncurated sites already get tiers derived from urgency + region, so curate
+  where the specifics matter.
+- **TDD:** assert emergence/coverage in `test/causes.test.js` and `test/next-steps.test.js` first, then add
+  content until green; keep all suites green. Run: `PATH=… npm test`.
+- **Clinical accuracy (hard norm):** cause lists, red flags, and `pathognomonic` signs must be clinically
+  sound; keep `pathognomonic` to genuine bedside signs (not investigations — those are workup). Flag anything
+  uncertain for the owner's (clinician) review before relying on it — as was done for the code-stroke content.
+- **Base branch:** `causes.js`/`nextSteps.js` are on `main` and are NOT touched by the open `feat/code-stroke-mode`
+  branch, so **branch off `main`** for this work.
 
 ## Commands
 
@@ -145,9 +185,16 @@ src/engine/    generic solver code (rarely changes when adding a region)
   patterns.js    cross-cutting SYNTHESIS (NOT localisation): umnLmnPattern() and functionalFlag()
 src/data/
   syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags
-  causes.js      tempo-aware surgical-sieve DDx: causesFor(site,{onset}) -> {byCategory, completion, …}
-                 (curated → phonebook → derived; `completion` = region-tuned sieve gap-fill). regionOf/sieveGenerics
-  nextSteps.js   educational nextStepsFor(site) -> investigations + urgency + referral (teaching, not advice)
+  causes.js      THE PATHOLOGY LAYER. tempo-aware surgical-sieve DDx: causesFor(site,{onset}) ->
+                 {byCategory, completion, all, source}. Precedence: curated CAUSES[site] → phonebook ddx
+                 (categorised live) → attribute-derived fallback. Each cause via `c(name,cat,tempo,
+                 likelihood,red,feature,pathognomonic)`: `feature` = a "what points to it" clue; `pathognomonic`
+                 = a bedside "🔎 Confirm on exam" sign. A central `PATHOGNOMONIC` keyword→sign table enriches
+                 causes from ALL sources by name (Ramsay Hunt vesicles, Argyll Robertson, KF rings, …).
+                 `completion` = region-tuned sieve gap-fill (regionOf/sieveGenerics).
+  nextSteps.js   THE WORKUP LAYER (educational). nextStepsFor(site) -> {immediate, investigations,
+                 confirmatory, monitoring, urgency, referral, curated}. Curated NEXT[site] carries specifics;
+                 tiers derive from urgency + region (bulbar/cord/arousal/nmu/optic/vestibular) otherwise.
 app/             zero-build teaching web app (pure consumer of the engine; no model changes)
   index.html     markup + all CSS
   app.js         renders the nested exam tree + the where/why/what output cards; pure consumer of solve()/
