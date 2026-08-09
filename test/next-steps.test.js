@@ -42,5 +42,41 @@ const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  "
 { const ns = nextStepsFor({ id: "z", level: "cord", part: "anterior", territory: "" });
   ok("cord lesion derive -> emergency + whole-spine MRI", ns.urgency === "emergency" && ns.investigations.some(i => /spine|cord|mri/i.test(i))); }
 
+// --- Region A: anterior/posterior circulation cortex workup ---
+const cortexSite = (key, part, territory) => ({ id: `left_${key}`, level: "cortex", part, side: "left", territory });
+
+// complete MCA — hyperacute pathway PLUS the malignant-oedema watch that is unique to this site
+{ const ns = nextStepsFor(cortexSite("cortex_mca", "mca", "MCA (complete territory)"));
+  ok("complete MCA is curated + emergency", ns.curated === true && ns.urgency === "emergency");
+  ok("complete MCA monitoring warns about malignant oedema / conscious level", ns.monitoring.some(i => /malignant|oedema|edema|conscious|hemicraniectomy/i.test(i)));
+  ok("complete MCA immediate tier drives the clock (last-known-well / NIHSS)", ns.immediate.some(i => /last.known.well|onset|nihss/i.test(i))); }
+
+// MCA superior division — LVO / thrombectomy assessment
+{ const ns = nextStepsFor(cortexSite("cortex_mca_superior", "mca_superior", "MCA superior division"));
+  ok("MCA superior division is curated + emergency", ns.curated === true && ns.urgency === "emergency");
+  ok("MCA superior division investigations include CT then angiography", ns.investigations.some(i => /angiogra|\bcta\b|\bmra\b/i.test(i))); }
+
+// MCA inferior division — the Wernicke/neglect presentation mistaken for delirium; HSV is the can't-miss
+{ const ns = nextStepsFor(cortexSite("cortex_mca_inferior", "mca_inferior", "MCA inferior division"));
+  ok("MCA inferior division is curated + emergency", ns.curated === true && ns.urgency === "emergency");
+  ok("MCA inferior division prompts considering encephalitis (LP / HSV PCR) if febrile", ns.confirmatory.some(i => /hsv|encephalitis|lumbar puncture|\blp\b/i.test(i)));
+  ok("MCA inferior division warns it is mistaken for delirium/psychiatric", ns.immediate.some(i => /delirium|psychiatr|confus/i.test(i))); }
+
+// ACA — the parasagittal / sinus-thrombosis alternatives change the imaging
+{ const ns = nextStepsFor(cortexSite("cortex_aca", "aca", "ACA"));
+  ok("ACA is curated + emergency", ns.curated === true && ns.urgency === "emergency");
+  ok("ACA investigations include venous imaging (sinus thrombosis)", ns.investigations.some(i => /venogra|\bmrv\b|\bctv\b|venous/i.test(i))); }
+
+// PCA / occipital — the isolated hemianopia that gets missed
+{ const ns = nextStepsFor(cortexSite("cortex_pca", "pca", "PCA"));
+  ok("PCA is curated + emergency", ns.curated === true && ns.urgency === "emergency");
+  ok("PCA immediate tier prompts formal field testing", ns.immediate.some(i => /field|confrontation/i.test(i))); }
+
+// watershed — the mechanism is haemodynamic, so the workup is the carotids + the BP/cardiac cause
+{ const ns = nextStepsFor(cortexSite("cortex_watershed_anterior", "watershed_anterior", "ACA-MCA border zone"));
+  ok("watershed is curated", ns.curated === true);
+  ok("watershed investigations image the carotids", ns.investigations.some(i => /carotid/i.test(i)));
+  ok("watershed looks for the hypoperfusion trigger (BP / cardiac / sepsis)", ns.immediate.some(i => /blood pressure|\bbp\b|hypotens|cardiac|sepsis/i.test(i))); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

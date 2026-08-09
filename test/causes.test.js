@@ -176,6 +176,61 @@ ok("gap-fill invariant: completion never repeats a present category (all sites)"
 const icHyper = causesFor(icSite, { onset: "hyperacute" }).completion.flatMap(g => g.causes);
 ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes("hyperacute")));
 
+// --- 8: Region A — anterior/posterior circulation cortex (curated, was the generic derived fallback) ---
+// These are the highest-traffic sites in the app. The phonebook keys them with dominant/nondominant
+// sub-objects rather than a flat `ddx`, so they used to fall through to the attribute-derived generic
+// list ("Ischaemic or haemorrhagic stroke") with no discriminating features at all.
+{
+  const S = (key, part, territory) =>
+    ({ id: `left_${key}`, level: "cortex", part, side: "left", territory });
+  const region = {
+    cortex_mca:                S("cortex_mca", "mca", "MCA (complete territory)"),
+    cortex_mca_superior:       S("cortex_mca_superior", "mca_superior", "MCA superior division"),
+    cortex_mca_inferior:       S("cortex_mca_inferior", "mca_inferior", "MCA inferior division"),
+    cortex_aca:                S("cortex_aca", "aca", "ACA"),
+    cortex_pca:                S("cortex_pca", "pca", "PCA"),
+    cortex_watershed_anterior: S("cortex_watershed_anterior", "watershed_anterior", "ACA-MCA border zone"),
+    cortex_watershed_posterior:S("cortex_watershed_posterior", "watershed_posterior", "MCA-PCA border zone"),
+    cortex_motor_facearm:      S("cortex_motor_facearm", "motor_facearm", "MCA (precentral)"),
+    cortex_motor_leg:          S("cortex_motor_leg", "motor_leg", "ACA (paracentral)"),
+    cortex_sensory_facearm:    S("cortex_sensory_facearm", "sensory_facearm", "MCA (postcentral)"),
+    cortex_sensory_leg:        S("cortex_sensory_leg", "sensory_leg", "ACA (paracentral)"),
+    cortex_parietal:           S("cortex_parietal", "parietal", "MCA inferior division"),
+  };
+  for (const [key, site] of Object.entries(region)) {
+    ok(`Region A curated: ${key}`, Array.isArray(CAUSES[key]) && CAUSES[key].length >= 3);
+    const r = causesFor(site);
+    ok(`Region A ${key} resolves as curated (not the generic fallback)`, r.source === "curated");
+    ok(`Region A ${key} spans >= 2 sieve categories`, new Set(r.all.map(x => x.cat)).size >= 2);
+    ok(`Region A ${key} — every cause carries a discriminating feature`, r.all.every(x => x.feature && x.feature.length > 10));
+  }
+  // specific clinical emergences the curation must teach
+  const has = (key, re) => (CAUSES[key] || []).some(c => re.test(c.name));
+  const feat = (key, re) => (CAUSES[key] || []).find(c => re.test(c.name)) || {};
+  ok("complete MCA names proximal MCA / carotid-T occlusion (LVO)", has("cortex_mca", /carotid.t|proximal mca|\bm1\b/i));
+  ok("complete MCA flags malignant MCA oedema as a red flag", (CAUSES.cortex_mca || []).some(c => /malignant/i.test(c.name) && c.red === true));
+  ok("complete MCA malignant-oedema feature names the day 2-5 deterioration window", /day\s*2|2.5|decompress/i.test(feat("cortex_mca", /malignant/i).feature || ""));
+  ok("complete MCA includes carotid dissection", has("cortex_mca", /dissection/i));
+  ok("carotid dissection flags the painful Horner's on exam", /horner/i.test(feat("cortex_mca", /dissection/i).pathognomonic || ""));
+  ok("MCA inferior division includes HSV encephalitis (temporal, can't-miss)", (CAUSES.cortex_mca_inferior || []).some(c => /herpes|hsv/i.test(c.name) && c.red === true && c.cat === "infective"));
+  ok("ACA includes parasagittal meningioma (the cord-mimic)", has("cortex_aca", /parasagittal/i));
+  ok("ACA parasagittal feature warns it mimics a cord lesion", /cord/i.test(feat("cortex_aca", /parasagittal/i).feature || ""));
+  ok("ACA includes superior sagittal sinus thrombosis as a red flag", (CAUSES.cortex_aca || []).some(c => /sagittal sinus/i.test(c.name) && c.red === true));
+  ok("PCA includes PRES (metabolic, reversible)", (CAUSES.cortex_pca || []).some(c => /pres|posterior reversible/i.test(c.name) && c.cat === "metabolic"));
+  ok("watershed names hypoperfusion / border-zone mechanism", has("cortex_watershed_anterior", /watershed|border.zone|hypoperfusion/i));
+  ok("watershed names severe carotid stenosis", has("cortex_watershed_anterior", /carotid stenosis|carotid occlusion/i));
+  ok("anterior watershed teaches the man-in-a-barrel pattern", (CAUSES.cortex_watershed_anterior || []).some(c => /man.in.a.barrel/i.test(c.feature || "")));
+  ok("motor-leg strip includes parasagittal meningioma", has("cortex_motor_leg", /parasagittal/i));
+  ok("parietal includes posterior cortical atrophy (degenerative)", (CAUSES.cortex_parietal || []).some(c => /posterior cortical atrophy|benson/i.test(c.name) && c.cat === "degenerative"));
+  // tempo realism: every Region A vascular cause must be reachable at a hyperacute/acute onset
+  const vascTempoOk = Object.keys(region).every(k =>
+    (CAUSES[k] || []).filter(c => c.cat === "vascular").every(c => c.tempo.some(t => t === "hyperacute" || t === "acute")));
+  ok("Region A vascular causes are all acute-or-faster in tempo", vascTempoOk);
+  // the onset filter still narrows sensibly at these newly-curated sites
+  const mcaChronic = causesFor(region.cortex_mca, { onset: "chronic" });
+  ok("complete MCA at chronic onset drops the hyperacute-only occlusion", mcaChronic.all.every(c => c.tempo.includes("chronic")));
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);
