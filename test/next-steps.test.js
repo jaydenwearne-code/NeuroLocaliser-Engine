@@ -78,5 +78,23 @@ const cortexSite = (key, part, territory) => ({ id: `left_${key}`, level: "corte
   ok("watershed investigations image the carotids", ns.investigations.some(i => /carotid/i.test(i)));
   ok("watershed looks for the hypoperfusion trigger (BP / cardiac / sepsis)", ns.immediate.some(i => /blood pressure|\bbp\b|hypotens|cardiac|sepsis/i.test(i))); }
 
+// every Region A cortical site curated in causes.js must also carry a curated workup — a curated
+// pathology list beside a generic derived workup reads as half-finished in the app.
+for (const [key, part] of [["cortex_mca","mca"], ["cortex_mca_superior","mca_superior"],
+                           ["cortex_mca_inferior","mca_inferior"], ["cortex_aca","aca"], ["cortex_pca","pca"],
+                           ["cortex_occipital","occipital"], ["cortex_watershed_anterior","watershed_anterior"],
+                           ["cortex_watershed_posterior","watershed_posterior"], ["cortex_motor_facearm","motor_facearm"],
+                           ["cortex_motor_leg","motor_leg"], ["cortex_sensory_facearm","sensory_facearm"],
+                           ["cortex_sensory_leg","sensory_leg"], ["cortex_parietal","parietal"]]) {
+  const ns = nextStepsFor(cortexSite(key, part, ""));
+  ok(`Region A workup curated: ${key}`, ns.curated === true);
+  ok(`Region A workup has all four tiers: ${key}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+  ok(`Region A workup urgency valid: ${key}`, ["emergency","urgent","routine"].includes(ns.urgency));
+}
+// parietal: a cortical syndrome without weakness still needs imaging, and PCA-type degenerative mimics need a different path
+{ const ns = nextStepsFor(cortexSite("cortex_parietal", "parietal", ""));
+  ok("parietal workup notes a cortical syndrome without weakness still needs imaging", ns.immediate.concat(ns.investigations).some(i => /without weakness|still needs imaging|neglect/i.test(i))); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
