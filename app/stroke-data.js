@@ -54,6 +54,15 @@ export const THROMBECTOMY_CRITERIA = [
   { id:"windowEVT", kind:"inclusion", auto:"windowEVT", label:"Within a thrombectomy time window (✓ = a window is open; the 6–24 h window is for SELECTED patients — confirm age <80 + imaging manually; basilar up to 24 h)", cite:GUIDELINE_CITE },
 ];
 
+// Beyond the core Class I criteria above — 2026 expansions and cautions to weigh (owner-approved 2026-08-07,
+// cross-checked vs the guideline). Informational: shown as "considerations", not tick-box inclusions.
+export const THROMBECTOMY_CONSIDERATIONS = [
+  { label:"Large ischaemic core (ASPECTS 0–2): EVT is REASONABLE in selected patients within 6 h — age <80, NIHSS ≥6, pre-stroke mRS 0–1, no significant mass effect (recent large-core trials).", cite:GUIDELINE_CITE },
+  { label:"Pre-stroke mRS 2 (worse baseline): EVT is REASONABLE in selected early-window anterior LVO with ASPECTS ≥6 — weigh the higher baseline disability and potentially worse achievable outcome.", cite:GUIDELINE_CITE },
+  { label:"Disabling deficit with NIHSS <6: the trial threshold is NIHSS ≥6, but a genuinely disabling deficit (e.g. aphasia, hemianopia) warrants individualised discussion with the neurointerventional team.", cite:GUIDELINE_CITE },
+  { label:"Medium-vessel occlusion (M2/M3, A2, P1/P2): EVT benefit is NOT established — recent MeVO trials were neutral; not a standard indication, individualise.", cite:GUIDELINE_CITE },
+];
+
 export const ACUTE_MGMT = [
   { id:"bp", title:"Blood pressure", body:"Pre-lysis: control to <185/110 to be eligible. After IVT/EVT: permissive — allow SBP up to ~180–185, reduce only modestly (10–15%) if truly needed, and do NOT intensively lower to <140 (no benefit after IVT; harmful after EVT).", cite:GUIDELINE_CITE },
   { id:"glucose", title:"Glucose", body:"Maintain ~7.8–10 mmol/L; avoid hypoglycaemia (<3.9). Intensive control (4.4–7.2) not recommended.", cite:GUIDELINE_CITE },

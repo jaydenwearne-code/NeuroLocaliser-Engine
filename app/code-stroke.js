@@ -1,6 +1,6 @@
 // code-stroke.js — the code-stroke worksheet (a clinician's cognitive aid). Pure consumer of stroke-data,
 // stroke-logic, and the localiser. Educational only — never a treat/don't-treat verdict. See the spec.
-import { NIHSS_ITEMS, MIMICS, GUIDELINE_CITE, THROMBOLYSIS_CRITERIA, THROMBECTOMY_CRITERIA, ACUTE_MGMT } from "./stroke-data.js";
+import { NIHSS_ITEMS, MIMICS, GUIDELINE_CITE, THROMBOLYSIS_CRITERIA, THROMBECTOMY_CRITERIA, THROMBECTOMY_CONSIDERATIONS, ACUTE_MGMT } from "./stroke-data.js";
 import { nihssTotal, nihssToFindings, timeWindows, lvoScreen, evalAuto, eligibilitySummary, buildHandover } from "./stroke-logic.js";
 
 const WIN_LABELS = { ivtStandard:"IV thrombolysis ≤4.5 h", ivtExtended:"IVT extended 4.5–9 h / wake-up", evtEarly:"Thrombectomy ≤6 h", evtExtended:"Thrombectomy 6–24 h (selected)" };
@@ -98,7 +98,10 @@ function recompute(ctx){
     windowIVT: tw.ivtStandard.status==="unknown"?null:(tw.ivtStandard.status!=="closed"||tw.ivtExtended.status!=="closed"),
     windowEVT: tw.evtEarly.status==="unknown"?null:(tw.evtEarly.status!=="closed"||tw.evtExtended.status!=="closed") };
   app.querySelector("#csIvt").innerHTML = critPanel(THROMBOLYSIS_CRITERIA, derived, st.thrombolysisTicks, ctx);
-  app.querySelector("#csEvt").innerHTML = critPanel(THROMBECTOMY_CRITERIA, derived, st.thrombectomyTicks, ctx);
+  app.querySelector("#csEvt").innerHTML = critPanel(THROMBECTOMY_CRITERIA, derived, st.thrombectomyTicks, ctx)
+    + `<div class="cs-consider"><h4 class="ns-h">Considerations / expanded indications</h4>${
+        THROMBECTOMY_CONSIDERATIONS.map(x => `<div class="cs-summary">${esc(x.label)} <span class="cite">${esc(x.cite)}</span></div>`).join("")
+      }</div>`;
   wireTicks(app.querySelector("#csIvt"), st.thrombolysisTicks, ctx);
   wireTicks(app.querySelector("#csEvt"), st.thrombectomyTicks, ctx);
 
