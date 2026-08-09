@@ -18,6 +18,12 @@ export const CATEGORIES = [
   { id: "traumatic",    label: "Traumatic / mechanical",                     tint: "--muted" },
   { id: "degenerative", label: "Degenerative / hereditary",                  tint: "--faint" },
   { id: "congenital",   label: "Congenital / structural",                    tint: "--none" },
+  // Listed LAST, and deliberately outside the surgical sieve: these are differentials for the
+  // PRESENTATION, not lesions at this site (Todd's paresis, migraine aura, hypoglycaemia, delirium).
+  // Shoehorning them into a sieve category would misteach; the sieve completion never fabricates them.
+  // NB: needs its own --mimic token. --contra is aliased to the same hex as --terra in the dark theme,
+  // which made the mimic dot indistinguishable from the vascular one.
+  { id: "mimic",        label: "Mimic (not a lesion at this site)",          tint: "--mimic" },
 ];
 export const TEMPO = [
   { id: "hyperacute", label: "Hyperacute (secs–min)" },
@@ -192,6 +198,10 @@ export const CAUSES = {
       "a painful ipsilateral partial Horner's — ptosis and miosis with facial sweating preserved (the sudomotor fibres travel with the external carotid) — alongside the neck pain"),
     c("Glioma / metastasis presenting with a large hemispheric deficit", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progression over weeks rather than seconds, often with seizures at onset and headache that is worse in the morning"),
+    c("Hypoglycaemia", "mimic", ["hyperacute","acute"], "common", true,
+      "A bedside glucose is the first test in any sudden focal deficit — hypoglycaemia can reproduce a dense hemiparesis with aphasia, and it reverses completely on correction"),
+    c("Focal seizure with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "A witnessed convulsion or a stereotyped preceding aura, with weakness that improves over minutes to hours rather than persisting"),
   ],
   cortex_mca_superior: [ // fronto-opercular (Broca / motor aprosodia)
     c("MCA superior division infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -204,6 +214,8 @@ export const CAUSES = {
       "Fever, headache and raised inflammatory markers with a ring-enhancing lesion — look for the source (ear, sinuses, endocarditis, right-to-left shunt)"),
     c("Demyelination (large juxtacortical plaque)", "inflammatory", ["subacute"], "rare", false,
       "Younger patient, evolving over days with prior episodes and other lesions disseminated in time and space on MRI"),
+    c("Focal motor seizure with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "A witnessed focal motor seizure or preceding aura, with weakness improving over minutes to hours; during the seizure itself the eyes deviate AWAY from the affected hemisphere — the opposite of the gaze deviation of an infarct"),
   ],
   cortex_mca_inferior: [ // temporoparietal (Wernicke / neglect)
     c("MCA inferior division infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -214,6 +226,10 @@ export const CAUSES = {
       "Headache and vomiting with reduced consciousness; a lobar bleed in an older patient suggests cerebral amyloid angiopathy"),
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Weeks of progressive language or spatial failure, often with seizures; an enhancing mass on MRI"),
+    c("Delirium", "mimic", ["acute","subacute"], "common", false,
+      "Fluctuating attention with a systemic trigger (infection, drugs, metabolic upset) — alertness waxes and wanes, whereas Wernicke's aphasia selectively destroys comprehension and naming in a fully alert patient"),
+    c("Focal temporal seizure with postictal aphasia", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Language failure that fluctuates and improves over minutes to hours, often after a witnessed seizure or with automatisms"),
   ],
   cortex_aca: [
     c("ACA infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -238,6 +254,10 @@ export const CAUSES = {
       "Field loss progressing over weeks, often with headache or seizures; an enhancing mass on MRI"),
     c("Posterior cortical atrophy (Benson's syndrome)", "degenerative", ["chronic"], "rare", false,
       "Years of progressive visuospatial failure — trouble reading, judging distance and dressing — in a younger dementia patient whose memory is relatively preserved early on"),
+    c("Migraine with visual aura", "mimic", ["hyperacute","acute"], "common", false,
+      "A POSITIVE, moving, scintillating scotoma that builds over 20–30 minutes and then resolves, often followed by headache — an infarct gives NEGATIVE, static field loss that is maximal instantly"),
+    c("Occipital seizure", "mimic", ["hyperacute","acute"], "rare", false,
+      "Brief, stereotyped, repeated episodes of coloured circular visual hallucinations with abrupt onset and offset, sometimes with eye deviation"),
   ],
   cortex_occipital: [
     c("PCA infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -248,6 +268,8 @@ export const CAUSES = {
       "Severe hypertension, eclampsia or calcineurin-inhibitor exposure, with headache, seizures and cortical visual loss — reversible if the trigger is corrected"),
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Field loss progressing over weeks, often with headache or seizures; an enhancing mass on MRI"),
+    c("Migraine with visual aura", "mimic", ["hyperacute","acute"], "common", false,
+      "A POSITIVE, moving, scintillating scotoma building over 20–30 minutes then resolving, often followed by headache — an infarct gives NEGATIVE, static field loss, maximal instantly"),
   ],
   cortex_watershed_anterior: [ // ACA-MCA border zone
     c("Border-zone (watershed) infarct from hypoperfusion", "vascular", ["hyperacute","acute"], "common", true,
@@ -280,6 +302,8 @@ export const CAUSES = {
       "Fever with headache and raised inflammatory markers; a ring-enhancing lesion with a source such as sinusitis or endocarditis"),
     c("Focal cortical demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient with weakness evolving over days and prior demyelinating episodes"),
+    c("Focal motor seizure with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Weakness following a witnessed focal motor seizure or a Jacksonian march, improving over minutes to hours rather than persisting"),
   ],
   cortex_motor_leg: [ // paracentral lobule, ACA
     c("ACA infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -300,6 +324,10 @@ export const CAUSES = {
       "Weeks of progressive numbness, often preceded by focal sensory seizures marching up the arm to the face"),
     c("Focal cortical demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient with numbness evolving over days and prior demyelinating episodes"),
+    c("Focal sensory seizure (Jacksonian march)", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "POSITIVE tingling that marches over seconds to minutes from hand to face and then stops — a lesion gives NEGATIVE, static numbness"),
+    c("Migraine sensory aura", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Tingling spreading over 20–30 minutes, often following a visual aura and then a headache; it resolves completely"),
   ],
   cortex_sensory_leg: [ // paracentral lobule, ACA
     c("ACA infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -322,6 +350,10 @@ export const CAUSES = {
       "Years of progressive visuospatial and apraxic failure — trouble reading, judging distance and dressing — with memory relatively preserved early on"),
     c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
       "Fever, headache and raised inflammatory markers with a ring-enhancing lesion; look for the source"),
+    c("Delirium", "mimic", ["acute","subacute"], "common", false,
+      "Fluctuating attention with a systemic trigger; formal testing shows GLOBAL inattention rather than a neglect confined to one side of space"),
+    c("Focal seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Brief, stereotyped, repeated episodes with abrupt onset and offset, rather than a fixed deficit that persists between events"),
   ],
   // --- deep grey / cerebellum / movement ---
   cerebellum_hemisphere: [
@@ -367,6 +399,9 @@ import { BY_SITE } from "./syndromes.js";
 // keyword → category, tried in priority order (first match wins). Infective/inflammatory before vascular so
 // "septic thrombosis" / "granulomatous" don't fall to vascular; neoplastic last (it is the broad catch-all).
 const CAT_KEYWORDS = [
+  // mimic first: this language is unambiguous and nothing else claims it. Kept deliberately TIGHT (no bare
+  // /seizure/, which would swallow genuine epileptogenic lesions like cortical dysplasia).
+  ["mimic",        /\btodd\b|todd's|focal seizure|seizure aura|migrain|hypoglyc|post.?ictal|transient global amnesia|conversion disorder|functional neurological/],
   ["infective",    /zoster|herpes|\blyme\b|abscess|\bhiv\b|syphilis|tabes|polio|west nile|infect|apicitis|mucor|aspergill|fungal|meningitis|encephalitis|septic|sepsis|tubercul|\btb\b|otitis|osteomyelitis/],
   ["inflammatory", /\bms\b|multiple sclerosis|demyelinat|neuritis|inflammat|sarcoid|tolosa|autoimmune|guillain|miller-fisher|vasculit|\bnmo\b|\bmog\b|granulomatos|polyangiitis|wegener|myasthen|behcet|lupus|cidp|idiopathic \(hsv\)|bell's palsy|encephalomyeliti/],
   ["metabolic",    /b12|copper|nitrous|thiamine|wernicke|diabet|toxic|metabolic|deficiency|\bpres\b|alcohol|hepatic|uraemic|uremic|electrolyte|drug-induced|nutrition|vitamin/],
@@ -379,7 +414,7 @@ const CAT_KEYWORDS = [
 const CAT_TEMPO = {
   vascular:["hyperacute","acute"], infective:["acute","subacute"], inflammatory:["subacute"],
   neoplastic:["chronic"], metabolic:["subacute","chronic"], degenerative:["chronic"],
-  congenital:["chronic"], traumatic:["acute","subacute"],
+  congenital:["chronic"], traumatic:["acute","subacute"], mimic:["hyperacute","acute"],
 };
 const RED_RE = /dissection|giant.cell|arteritic|mucor|abscess|herniation|emergency|malignan|septic|cavernous sinus thrombo|carotid.cavernous/i;
 

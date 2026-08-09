@@ -231,6 +231,51 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   ok("complete MCA at chronic onset drops the hyperacute-only occlusion", mcaChronic.all.every(c => c.tempo.includes("chronic")));
 }
 
+// --- 9: the MIMIC category (owner-approved 2026-08-09) ---
+// Todd's paresis, migraine aura and the like are high-yield differentials for the PRESENTATION but are not
+// lesions at the site at all, so they get their own bucket rather than being shoehorned into the sieve.
+{
+  ok("mimic category exists", catIds.includes("mimic"));
+  const mimicCat = CATEGORIES.find(c => c.id === "mimic");
+  ok("mimic category is listed LAST so real pathology leads", CATEGORIES[CATEGORIES.length - 1].id === "mimic");
+  ok("mimic label makes clear it is not a lesion at this site", /not a lesion|no lesion|non.lesional/i.test(mimicCat.label));
+  ok("mimic category has a tint", !!mimicCat.tint);
+  // colour-collision guard: every category needs its OWN token, and mimic must not borrow --contra
+  // (aliased to the same hex as --terra in the dark theme, which made mimic look vascular).
+  const tints = CATEGORIES.map(c => c.tint);
+  ok("every category has a distinct tint token", new Set(tints).size === tints.length);
+  ok("mimic uses its dedicated --mimic token", mimicCat.tint === "--mimic");
+  ok("no category borrows the --terra-aliased --contra token", !tints.includes("--contra"));
+
+  const S = (key, part) => ({ id: `left_${key}`, level: "cortex", part, side: "left", territory: "" });
+  ok("MCA superior division offers Todd's paresis as a mimic",
+     (CAUSES.cortex_mca_superior || []).some(c => c.cat === "mimic" && /todd/i.test(c.name)));
+  ok("complete MCA offers hypoglycaemia as a mimic (the bedside must-exclude)",
+     (CAUSES.cortex_mca || []).some(c => c.cat === "mimic" && /hypoglyc/i.test(c.name)));
+  ok("PCA/occipital offers migraine aura as a mimic",
+     (CAUSES.cortex_pca || []).some(c => c.cat === "mimic" && /migraine/i.test(c.name)));
+  ok("MCA inferior division offers a mimic for the fluent-aphasia picture",
+     (CAUSES.cortex_mca_inferior || []).some(c => c.cat === "mimic"));
+  // mimics obey the same content norms as every other cause
+  const allMimics = Object.keys(CAUSES).flatMap(k => CAUSES[k].filter(c => c.cat === "mimic"));
+  ok(`mimics carry a discriminating feature (${allMimics.length} mimics)`, allMimics.length > 0 && allMimics.every(c => c.feature && c.feature.length > 10));
+  ok("mimics have a valid tempo", allMimics.every(c => c.tempo.every(t => tempoIds.includes(t))));
+  // a mimic surfaces through causesFor as its own group
+  const supRes = causesFor(S("cortex_mca_superior", "mca_superior"));
+  ok("causesFor groups mimics separately", supRes.byCategory.some(g => g.cat === "mimic" && g.causes.length));
+  ok("the mimic group sorts after the real pathology groups",
+     supRes.byCategory.findIndex(g => g.cat === "mimic") === supRes.byCategory.length - 1);
+  // the sieve gap-fill must NEVER invent a generic mimic — mimics are site-specific or absent
+  const allS = [...SITES];
+  for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") { try { allS.push(...sitesMod[k]()); } catch {} }
+  let genericMimic = null;
+  for (const s of allS) { const r = causesFor(s, {}); if (r.completion.some(g => g.cat === "mimic")) { genericMimic = s.id; break; } }
+  ok(`sieve completion never fabricates a generic mimic (offender: ${genericMimic})`, genericMimic === null);
+  // the live phonebook categoriser recognises mimic language too
+  const cat1 = causesFor({ id: "z1", level: "cortex", part: "zz", side: "left", territory: "" });
+  ok("derived fallback introduces no mimics", cat1.all.every(c => c.cat !== "mimic"));
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);
