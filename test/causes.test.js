@@ -366,6 +366,81 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
          .every(c => c.tempo.some(t => t === "hyperacute" || t === "acute"))));
 }
 
+// --- 11: Region C — remaining brainstem + cerebellum ---
+// Posterior fossa: where a small lesion is lethal, where "awake but unable to move" gets mistaken for coma,
+// and where the treatable metabolic causes (Wernicke, osmotic demyelination) hide among the strokes.
+{
+  const REGION_C = ["midbrain_lateral","midbrain_trochlear","midbrain_hemi","dorsal_midbrain_tectum",
+    "pons_lateral","pons_lateral_trigeminal","pons_trigeminal","pons_hemi","medulla_hemi",
+    "pontomesencephalic_tegmentum","brainstem_aras_paramedian_tegmentum","locked_in_ventral_pons",
+    "thalamus_arousal_paramedian","pseudobulbar_corticobulbar",
+    "cerebellum_vermis","cerebellum_flocculonodular","cerebellum_pancerebellar",
+    "guillain_mollaret_rubral","guillain_mollaret_dentate"];
+  for (const key of REGION_C) {
+    ok(`Region C curated: ${key}`, Array.isArray(CAUSES[key]) && CAUSES[key].length >= 3);
+    const list = CAUSES[key] || [];
+    ok(`Region C ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => x.feature && x.feature.length > 10));
+    ok(`Region C ${key} spans >= 2 categories`, new Set(list.map(x => x.cat)).size >= 2);
+    ok(`Region C ${key} — valid categories and tempo`, list.every(x => catIds.includes(x.cat) && x.tempo.every(t => tempoIds.includes(t))));
+  }
+  const has = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name));
+  const feat = (k, re) => (CAUSES[k] || []).some(c => re.test(c.feature || ""));
+  const red = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name) && c.red === true);
+
+  // locked-in: the one that gets mistaken for coma
+  ok("locked-in names basilar artery occlusion, red-flagged", red("locked_in_ventral_pons", /basilar/i));
+  ok("locked-in teaches that the patient is AWAKE and communicates by vertical eye movement",
+     feat("locked_in_ventral_pons", /awake|aware|conscious|vertical eye|blink/i));
+  ok("locked-in includes central pontine myelinolysis", has("locked_in_ventral_pons", /myelinolysis|osmotic/i));
+  ok("pontine hemisyndrome includes osmotic demyelination with the sodium-correction clue",
+     (CAUSES.pons_hemi || []).some(c => /myelinolysis|osmotic/i.test(c.name) && /sodium|hyponatr|rapid|correct/i.test(c.feature || "")));
+
+  // artery of Percheron — and the venous mimic that must not be missed
+  ok("Percheron names the artery of Percheron", has("thalamus_arousal_paramedian", /percheron/i));
+  ok("bilateral thalamic picture also names deep cerebral venous thrombosis",
+     has("thalamus_arousal_paramedian", /venous|thrombosis|straight sinus|galen/i));
+
+  // dorsal midbrain / Parinaud
+  ok("dorsal midbrain names a pineal tumour", has("dorsal_midbrain_tectum", /pineal|germinoma/i));
+  ok("dorsal midbrain names hydrocephalus, red-flagged", red("dorsal_midbrain_tectum", /hydrocephalus|shunt/i));
+  const parinaudSign = causesFor({ id: "dorsal_midbrain_tectum", level: "dorsal_midbrain", part: "tectum", side: "midline", territory: "" })
+    .all.some(x => /convergence.retraction|light.near/i.test(x.pathognomonic || "") || /convergence.retraction|light.near/i.test(x.feature || ""));
+  ok("dorsal midbrain teaches convergence-retraction nystagmus / light-near dissociation", parinaudSign);
+
+  // AICA vs PICA — the discriminator is hearing
+  ok("lateral pons (AICA) teaches ipsilateral deafness as the AICA-vs-PICA discriminator",
+     feat("pons_lateral", /deaf|hearing/i));
+  // trigeminal complex — MS in the young
+  ok("pontine trigeminal names demyelination", has("pons_trigeminal", /demyelin|multiple sclerosis|\bms\b/i));
+  // trochlear nucleus decussates
+  ok("trochlear nucleus teaches the CONTRALATERAL superior oblique palsy",
+     feat("midbrain_trochlear", /contralateral|decussat|head tilt|superior oblique/i));
+  // upbeat nystagmus — the treatable one
+  ok("pontomesencephalic tegmentum names Wernicke's, red-flagged", red("pontomesencephalic_tegmentum", /wernicke|thiamine/i));
+  // pseudobulbar vs bulbar
+  ok("pseudobulbar teaches the UMN-vs-LMN bulbar discriminator (brisk jaw jerk / spastic tongue)",
+     feat("pseudobulbar_corticobulbar", /jaw jerk|spastic tongue|brisk|fasciculat|wasted/i));
+  ok("pseudobulbar names motor neurone disease", has("pseudobulbar_corticobulbar", /motor neurone|motor neuron|\bmnd\b|\bals\b/i));
+  // cerebellum
+  ok("vermis names alcohol-related degeneration", has("cerebellum_vermis", /alcohol/i));
+  ok("vermis names medulloblastoma (the paediatric midline tumour)", has("cerebellum_vermis", /medulloblastoma/i));
+  ok("pancerebellar names a paraneoplastic cause", has("cerebellum_pancerebellar", /paraneoplas|anti.yo|anti.hu/i));
+  ok("pancerebellar names anticonvulsant toxicity", has("cerebellum_pancerebellar", /phenytoin|anticonvuls|toxic/i));
+  ok("pancerebellar names a hereditary ataxia", has("cerebellum_pancerebellar", /spinocerebellar|\bsca\b|hereditar|friedreich/i));
+  // Guillain-Mollaret — the delayed sign
+  ok("Guillain-Mollaret corners teach the DELAY before palatal tremor appears",
+     feat("guillain_mollaret_dentate", /month|delay|week|later|hypertroph/i) || feat("guillain_mollaret_rubral", /month|delay|week|later|hypertroph/i));
+  // midbrain eponyms
+  ok("lateral midbrain names Claude's or Benedikt's syndrome",
+     /claude|benedikt/i.test(JSON.stringify(CAUSES.midbrain_lateral || [])) ||
+     feat("midbrain_lateral", /claude|benedikt|red nucleus|tremor|ataxia/i));
+
+  // posterior-fossa safety: cerebellar mass effect is the thing that kills
+  ok("cerebellar sites flag swelling / obstructive hydrocephalus somewhere in their causes",
+     ["cerebellum_vermis","cerebellum_pancerebellar","cerebellum_flocculonodular"].some(k =>
+       feat(k, /swell|hydrocephalus|mass effect|herniat|compress/i)));
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);

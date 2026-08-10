@@ -148,5 +148,59 @@ for (const [key, level, part] of REGION_B) {
 { const ns = nextStepsFor(bSite("subcortex_optic_radiation", "subcortex", "optic_radiation"));
   ok("optic radiation prompts formal field testing", ns.immediate.concat(ns.investigations).some(i => /field|perimetr|confrontation/i.test(i))); }
 
+// --- Region C: remaining brainstem + cerebellum ---
+const cSite = (id, level, part, side = "midline") => ({ id, level, part, side, territory: "" });
+const REGION_C_SITES = [
+  ["left_midbrain_lateral","midbrain","lateral","left"], ["left_midbrain_trochlear","midbrain","trochlear","left"],
+  ["left_midbrain_hemi","midbrain","hemi","left"], ["dorsal_midbrain_tectum","dorsal_midbrain","tectum"],
+  ["left_pons_lateral","pons","lateral","left"], ["left_pons_lateral_trigeminal","pons","lateral_trigeminal","left"],
+  ["left_pons_trigeminal","pons","trigeminal","left"], ["left_pons_hemi","pons","hemi","left"],
+  ["left_medulla_hemi","medulla","hemi","left"], ["pontomesencephalic_tegmentum","pontomesencephalic","tegmentum"],
+  ["brainstem_aras","brainstem_aras","paramedian_tegmentum"], ["locked_in","locked_in","ventral_pons"],
+  ["thalamus_bilateral_percheron","thalamus_arousal","paramedian"], ["pseudobulbar_corticobulbar","pseudobulbar","corticobulbar"],
+  ["cerebellum_vermis","cerebellum","vermis"], ["cerebellum_flocculonodular","cerebellum","flocculonodular"],
+  ["cerebellum_pancerebellar","cerebellum","pancerebellar"],
+  ["gm_rubral_left","guillain_mollaret","rubral"], ["gm_dentate_left","guillain_mollaret","dentate"],
+];
+for (const [id, level, part, side] of REGION_C_SITES) {
+  const ns = nextStepsFor(cSite(id, level, part, side));
+  ok(`Region C workup curated: ${id}`, ns.curated === true);
+  ok(`Region C workup has all four tiers: ${id}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+
+// locked-in / basilar occlusion — the reversible catastrophe
+{ const ns = nextStepsFor(cSite("locked_in", "locked_in", "ventral_pons"));
+  ok("locked-in is an emergency", ns.urgency === "emergency");
+  ok("locked-in workup names basilar imaging (CTA/MRA)", ns.investigations.some(i => /cta|mra|angiog|basilar/i.test(i)));
+  ok("locked-in referral names thrombectomy / neurointervention",
+     /thrombectom|neurointerven|endovascular|stroke/i.test(ns.referral));
+  ok("locked-in bedside establishes vertical-eye-movement communication with an AWAKE patient",
+     ns.immediate.some(i => /vertical|blink|eye movement|awake|aware/i.test(i))); }
+
+// cerebellar mass effect — posterior fossa swelling kills by obstructive hydrocephalus.
+// Scoped to the sites that can actually mass (focal infarct/haemorrhage/tumour); pancerebellar is a
+// diffuse degenerative/toxic syndrome, where a swelling warning would be clinically wrong, not merely absent.
+{ for (const id of ["cerebellum_vermis","cerebellum_flocculonodular"]) {
+    const ns = nextStepsFor(cSite(id, "cerebellum", id.split("_")[1]));
+    ok(`${id} monitoring warns about posterior-fossa swelling / hydrocephalus`,
+       ns.monitoring.some(i => /swell|hydrocephalus|conscious|deteriorat|herniat/i.test(i)));
+  } }
+
+// bilateral thalamic — image the veins, not just the arteries
+{ const ns = nextStepsFor(cSite("thalamus_bilateral_percheron", "thalamus_arousal", "paramedian"));
+  ok("Percheron workup includes venous imaging for deep cerebral venous thrombosis",
+     ns.investigations.concat(ns.confirmatory).some(i => /venogra|venous|\bctv\b|\bmrv\b/i.test(i))); }
+
+// pancerebellar — the treatable/reversible screen
+{ const ns = nextStepsFor(cSite("cerebellum_pancerebellar", "cerebellum", "pancerebellar"));
+  ok("pancerebellar workup screens reversible causes (drug levels, B12/thyroid, paraneoplastic)",
+     ns.confirmatory.concat(ns.investigations).some(i => /drug level|phenytoin|b12|thyroid|paraneoplas/i.test(i))); }
+
+// upbeat nystagmus — treat thiamine empirically, do not wait
+{ const ns = nextStepsFor(cSite("pontomesencephalic_tegmentum", "pontomesencephalic", "tegmentum"));
+  ok("upbeat-nystagmus workup gives empirical thiamine before confirmation",
+     ns.immediate.concat(ns.investigations).some(i => /thiamine|pabrinex/i.test(i))); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
