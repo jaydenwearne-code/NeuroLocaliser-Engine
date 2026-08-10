@@ -2,6 +2,8 @@
 // Teaching prompts, NOT clinical directives (no doses / definitive management). Keyed like causes.js:
 // curated by site id or level_part, else a derive fallback so EVERY site returns something.
 import { nextStepsFor } from "../src/data/nextSteps.js";
+import { causesFor } from "../src/data/causes.js";
+import { candidateSites } from "../src/engine/inverse.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -505,6 +507,115 @@ for (const p of REGION_G_PARTS) {
     if (!ns.monitoring.some(i => /speech and language|\bsalt\b|speech therap/i.test(i))) { bad = `cortex_${p}`; break; }
   }
   ok(`every aphasia site refers to speech and language therapy (offender: ${bad})`, bad === null); }
+
+// --- Region H: the closing sweep ---
+const hSite = (lvl, part) => ({ id: `left_${lvl}_${part}`, level: lvl, part, side: "left", territory: "" });
+const REGION_H_SITES = [
+  ["hypothalamus","supraoptic"],["hypothalamus","thermoregulatory"],["hypothalamus","ventromedial"],
+  ["hypothalamus","lateral"],["hypothalamus","suprachiasmatic"],["hypothalamus","mammillary"],["hypothalamus","tuberal"],
+  ["thalamus","vpm"],["thalamus","vl"],["thalamus","pulvinar"],["thalamus","limbic"],
+  ["peripheral_vestibular","posterior_canal"],["peripheral_vestibular","horizontal_canal"],["peripheral_vestibular","anterior_canal"],
+  ["basal_ganglia","subthalamic"],["basal_ganglia","striatum"],
+  ["corpus_callosum","anterior"],["corpus_callosum","splenium"],
+  ["aphasia_subcortical","thalamic"],["aphasia_subcortical","striatocapsular"],
+  ["sympathetic","preganglionic"],["sympathetic","pancoast"],["cerebrum","diffuse"],
+];
+for (const [lvl, part] of REGION_H_SITES) {
+  const ns = nextStepsFor(hSite(lvl, part));
+  ok(`Region H workup curated: ${lvl}_${part}`, ns.curated === true);
+  ok(`Region H workup has all four tiers: ${lvl}_${part}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+
+// hypothalamic sites need pituitary/endocrine assessment, not just imaging.
+// EXCEPT the mammillary bodies: they are a limbic/memory structure, and their syndrome is nutritional
+// (Wernicke-Korsakoff), so demanding a pituitary hormone profile there would be padding, not medicine.
+{ let bad = null;
+  for (const [lvl, part] of REGION_H_SITES.filter(([l, p]) => l === "hypothalamus" && p !== "mammillary")) {
+    const ns = nextStepsFor(hSite(lvl, part));
+    if (!ns.investigations.concat(ns.confirmatory).some(i => /pituitary|hormone|endocrin|cortisol|thyroid/i.test(i))) { bad = part; break; }
+  }
+  ok(`every hypothalamic workup includes endocrine assessment (offender: ${bad})`, bad === null); }
+{ const ns = nextStepsFor(hSite("hypothalamus", "supraoptic"));
+  ok("DI workup pairs serum and urine osmolality", ns.investigations.some(i => /osmolal/i.test(i)));
+  ok("DI workup monitors sodium and fluid balance", ns.monitoring.some(i => /sodium|fluid balance/i.test(i))); }
+{ const ns = nextStepsFor(hSite("hypothalamus", "mammillary"));
+  ok("mammillary is an emergency", ns.urgency === "emergency");
+  ok("mammillary gives thiamine before glucose", ns.immediate.some(i => /thiamine/i.test(i) && /glucose|before/i.test(i))); }
+{ const ns = nextStepsFor(hSite("hypothalamus", "tuberal"));
+  ok("tuberal workup images for a hamartoma with dedicated sequences", ns.investigations.some(i => /hamartoma|thin|dedicated|hypothalam/i.test(i))); }
+{ const ns = nextStepsFor(hSite("hypothalamus", "lateral"));
+  ok("narcolepsy workup includes sleep studies / orexin", ns.investigations.concat(ns.confirmatory).some(i => /polysomnog|mslt|orexin|hypocretin|sleep study/i.test(i))); }
+
+// BPPV — the treatment IS the bedside manoeuvre
+{ const ns = nextStepsFor(hSite("peripheral_vestibular", "posterior_canal"));
+  ok("posterior-canal workup performs Dix-Hallpike at the bedside", ns.immediate.some(i => /dix.hallpike/i.test(i)));
+  ok("posterior-canal treatment is the Epley manoeuvre", ns.immediate.concat(ns.monitoring).some(i => /epley|repositioning/i.test(i)));
+  ok("posterior-canal workup applies HINTS to exclude stroke", ns.immediate.some(i => /hints|head impulse/i.test(i)));
+  ok("uncomplicated BPPV does not need routine imaging", ns.investigations.some(i => /not.*routin|no.*imaging|imaging is not|unnecessary|only if/i.test(i))); }
+{ const ns = nextStepsFor(hSite("peripheral_vestibular", "horizontal_canal"));
+  ok("horizontal-canal workup uses the supine roll test", ns.immediate.some(i => /supine roll|roll test/i.test(i))); }
+{ const ns = nextStepsFor(hSite("peripheral_vestibular", "anterior_canal"));
+  ok("anterior-canal workup images for a central cause of downbeat nystagmus",
+     ns.investigations.some(i => /mri|craniocervical|imaging/i.test(i))); }
+
+// deep grey
+{ const ns = nextStepsFor(hSite("basal_ganglia", "subthalamic"));
+  ok("hemiballismus workup checks GLUCOSE (non-ketotic hyperglycaemia)", ns.immediate.concat(ns.investigations).some(i => /glucose|hba1c|hyperglyc/i.test(i))); }
+{ const ns = nextStepsFor(hSite("basal_ganglia", "striatum"));
+  ok("chorea workup checks copper/caeruloplasmin (Wilson's)", ns.investigations.some(i => /copper|caeruloplasmin|ceruloplasmin/i.test(i)));
+  ok("chorea workup reviews drugs first", ns.immediate.some(i => /drug|medication/i.test(i)));
+  ok("chorea workup includes genetic testing with counselling", ns.confirmatory.some(i => /genetic|huntington|counsel/i.test(i))); }
+
+// callosum
+{ const ns = nextStepsFor(hSite("corpus_callosum", "splenium"));
+  ok("splenium workup tests reading vs writing", ns.immediate.some(i => /read|writ/i.test(i))); }
+{ const ns = nextStepsFor(hSite("corpus_callosum", "anterior"));
+  ok("anterior callosum workup gives thiamine if alcohol-related", ns.immediate.concat(ns.investigations).some(i => /thiamine|alcohol/i.test(i))); }
+
+// striatocapsular — the vessel imaging point
+{ const ns = nextStepsFor(hSite("aphasia_subcortical", "striatocapsular"));
+  ok("striatocapsular is an emergency", ns.urgency === "emergency");
+  ok("striatocapsular workup mandates vessel imaging", ns.investigations.some(i => /cta|mra|vessel|angiog/i.test(i))); }
+
+// sympathetic chain
+{ for (const part of ["preganglionic","pancoast"]) {
+    const ns = nextStepsFor(hSite("sympathetic", part));
+    ok(`sympathetic_${part} workup images the lung apex`, ns.investigations.some(i => /apex|apical|chest|\bct\b/i.test(i)));
+  } }
+
+// diffuse encephalopathy — look outside the brain, and get an EEG
+{ const ns = nextStepsFor(hSite("cerebrum", "diffuse"));
+  ok("diffuse encephalopathy screens metabolic causes first",
+     ns.investigations.some(i => /glucose|sodium|ammonia|calcium|blood gas|bloods/i.test(i)));
+  ok("diffuse encephalopathy includes EEG for non-convulsive status", ns.investigations.concat(ns.confirmatory).some(i => /eeg/i.test(i)));
+  ok("diffuse encephalopathy reviews drugs and withdrawal", ns.immediate.some(i => /drug|medication|withdrawal|alcohol/i.test(i))); }
+
+// --- GLOBAL INVARIANT: a curated cause list must never sit beside a generic derived workup ---
+// Established in Region A after finding cortex_parietal with rich causes and a fallback workup — it reads
+// as half-finished in the app. Now asserted across EVERY candidate site rather than per region.
+{
+  const gaps = [];
+  const seen = new Set();
+  for (const s of candidateSites()) {
+    const lp = `${s.level}_${s.part}`;
+    if (seen.has(lp)) continue;
+    seen.add(lp);
+    if (causesFor(s, {}).source === "curated" && nextStepsFor(s).curated !== true) gaps.push(lp);
+  }
+  ok(`INVARIANT: every curated-causes site has a curated workup (${gaps.length} gap(s): ${gaps.slice(0, 5).join(", ")})`, gaps.length === 0);
+  // and the four tiers are populated everywhere they are curated
+  const thin = [];
+  const seen2 = new Set();
+  for (const s of candidateSites()) {
+    const lp = `${s.level}_${s.part}`;
+    if (seen2.has(lp)) continue;
+    seen2.add(lp);
+    const n = nextStepsFor(s);
+    if (n.curated && !(n.immediate.length && n.investigations.length && n.confirmatory.length && n.monitoring.length)) thin.push(lp);
+  }
+  ok(`INVARIANT: every curated workup fills all four tiers (${thin.length} thin: ${thin.slice(0, 5).join(", ")})`, thin.length === 0);
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

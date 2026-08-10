@@ -105,17 +105,24 @@ const wallenberg = { id: "left_medulla_lateral", level: "medulla", part: "latera
 
 // --- 6: phonebook-sourced causes (the live ddx categoriser) ---
 {
-  // A NAMED site not hand-curated → its phonebook ddx is categorised live. Chosen DYNAMICALLY rather than
-  // hard-coded: this used to pin the superior orbital fissure, which then broke the moment that site was
-  // curated (Region D). The categoriser is what's under test, not any particular site's curation status.
-  const allSites = [...SITES];
-  for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") { try { allSites.push(...sitesMod[k]()); } catch {} }
-  const pbSite = allSites.find(s => causesFor(s).source === "phonebook");
-  ok("some site is still phonebook-sourced (the categoriser path is live)", !!pbSite);
-  const r = causesFor(pbSite);
-  ok(`phonebook-sourced, not curated (${pbSite && pbSite.id})`, r.source === "phonebook" && r.derived === false && r.all.length > 0);
+  // The phonebook categoriser is the FALLBACK for any site without a curated entry. Every site is now
+  // curated (Region H closed the layer), so there is no longer a naturally phonebook-sourced site to
+  // observe — but the code path is still live and still matters for any site added in future.
+  // So exercise it DIRECTLY: temporarily remove a curated entry, confirm causesFor() falls back to the
+  // phonebook and categorises it, then restore. Previous versions of this test pinned a real site
+  // (the superior orbital fissure, then a dynamic pick) and broke each time curation advanced.
+  const probeSite = { id: "left_medulla_lateral", level: "medulla", part: "lateral", side: "left", territory: "" };
+  const probeKey = CAUSES[probeSite.id] ? probeSite.id : `${probeSite.level}_${probeSite.part}`;
+  const saved = CAUSES[probeKey];
+  ok("probe site is curated before the fallback test", !!saved);
+  delete CAUSES[probeKey];
+  const r = causesFor(probeSite);
+  ok("with no curated entry, causesFor falls back to the phonebook", r.source === "phonebook" && r.derived === false && r.all.length > 0);
   ok("phonebook ddx is grouped into sieve categories", r.byCategory.length > 0 && r.byCategory.every(g => catIds.includes(g.cat)));
   ok("phonebook causes have valid cat/tempo/likelihood", r.all.every(c => catIds.includes(c.cat) && c.tempo.every(t=>tempoIds.includes(t)) && likeIds.includes(c.likelihood)));
+  ok("phonebook ddx is categorised by keyword (vascular for Wallenberg's stroke ddx)", r.byCategory.some(g => g.cat === "vascular"));
+  CAUSES[probeKey] = saved;
+  ok("curated entry restored after the fallback test", causesFor(probeSite).source === "curated");
   // the SOF keyword mappings that used to be checked here now live in its curated entry — assert the
   // clinical content survived curation, so the move didn't quietly lose coverage
   const sof = causesFor({ id: "left_skull_base_sup_orbital_fissure", level: "skull_base", part: "sup_orbital_fissure", side: "left", territory: "superior orbital fissure" });
@@ -757,6 +764,96 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
      (CAUSES.cortex_temporoparietal || []).some(c => c.cat === "mimic"));
   ok("conduction aphasia (arcuate) names an MCA branch infarct", has("cortex_arcuate", /mca|infarct|supramarginal/i));
   ok("cortical sensory hand names a small cortical infarct or TIA", has("cortex_sensory_hand", /infarct|\btia\b|embol/i));
+}
+
+// --- 16: Region H — the closing sweep (hypothalamus, thalamic nuclei, BPPV, deep grey, callosum) ---
+// The last 23 keys. Small, scattered groups, but several carry a REVERSIBLE cause that is missed if the
+// site is left on a generic fallback (thiamine, glucose, an Epley manoeuvre, copper).
+{
+  const REGION_H = [
+    "hypothalamus_supraoptic","hypothalamus_thermoregulatory","hypothalamus_ventromedial","hypothalamus_lateral",
+    "hypothalamus_suprachiasmatic","hypothalamus_mammillary","hypothalamus_tuberal",
+    "thalamus_vpm","thalamus_vl","thalamus_pulvinar","thalamus_limbic",
+    "peripheral_vestibular_posterior_canal","peripheral_vestibular_horizontal_canal","peripheral_vestibular_anterior_canal",
+    "basal_ganglia_subthalamic","basal_ganglia_striatum",
+    "corpus_callosum_anterior","corpus_callosum_splenium",
+    "aphasia_subcortical_thalamic","aphasia_subcortical_striatocapsular",
+    "sympathetic_preganglionic","sympathetic_pancoast","cerebrum_diffuse",
+  ];
+  for (const key of REGION_H) {
+    const list = CAUSES[key] || [];
+    ok(`Region H curated: ${key}`, Array.isArray(CAUSES[key]) && list.length >= 3);
+    ok(`Region H ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => x.feature && x.feature.length > 10));
+    ok(`Region H ${key} spans >= 2 categories`, new Set(list.map(x => x.cat)).size >= 2);
+    ok(`Region H ${key} — valid categories and tempo`, list.every(x => catIds.includes(x.cat) && x.tempo.every(t => tempoIds.includes(t))));
+  }
+  const has = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name));
+  const feat = (k, re) => (CAUSES[k] || []).some(c => re.test(c.feature || "") || re.test(c.pathognomonic || ""));
+  const red = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name) && c.red === true);
+
+  // hypothalamus — the reversible and the pathognomonic
+  ok("mammillary bodies name Wernicke-Korsakoff, red-flagged", red("hypothalamus_mammillary", /wernicke|korsakoff|thiamine/i));
+  ok("mammillary feature says give thiamine before glucose", feat("hypothalamus_mammillary", /thiamine.*(before|prior)|before.*glucose/i));
+  ok("supraoptic names central diabetes insipidus causes", has("hypothalamus_supraoptic", /craniopharyngioma|germinoma|hypophysitis|surg|trauma|histiocytosis|sarcoid/i));
+  ok("supraoptic teaches dilute urine with rising sodium", feat("hypothalamus_supraoptic", /dilute|polyuri|sodium|osmolal|thirst/i));
+  ok("tuberal names a hypothalamic hamartoma", has("hypothalamus_tuberal", /hamartoma/i));
+  ok("hamartoma carries gelastic seizures + precocious puberty as the giveaway",
+     feat("hypothalamus_tuberal", /gelastic|laugh/i) && feat("hypothalamus_tuberal", /precocious/i));
+  ok("lateral hypothalamus links to narcolepsy / orexin", has("hypothalamus_lateral", /narcoleps|orexin|hypocretin/i));
+  ok("ventromedial teaches hyperphagia / hypothalamic obesity", feat("hypothalamus_ventromedial", /hyperphag|obes|appetite|satiet/i));
+  ok("suprachiasmatic teaches circadian / sleep-wake reversal", feat("hypothalamus_suprachiasmatic", /circadian|sleep.wake|melatonin|non.24/i));
+  ok("thermoregulatory names a drug cause (NMS / serotonin syndrome)", has("hypothalamus_thermoregulatory", /neuroleptic malignant|serotonin syndrome|drug|malignant hyperthermia/i));
+
+  // thalamic nuclei
+  ok("VPM teaches isolated FACIAL sensory loss", feat("thalamus_vpm", /face|facial|cheiro.oral|perioral/i));
+  ok("VL names thalamic tremor and is linked to the DBS target", feat("thalamus_vl", /tremor/i));
+  ok("pulvinar teaches neglect / visual attention", feat("thalamus_pulvinar", /neglect|attention|visual/i));
+  ok("limbic thalamus teaches diencephalic AMNESIA", feat("thalamus_limbic", /amnesi|memory|confabulat/i));
+  ok("limbic thalamus names the artery of Percheron", has("thalamus_limbic", /percheron|paramedian/i));
+
+  // BPPV — the treatable vertigo, and the central red flag
+  for (const k of ["peripheral_vestibular_posterior_canal","peripheral_vestibular_horizontal_canal","peripheral_vestibular_anterior_canal"]) {
+    ok(`${k} names BPPV / canalithiasis`, has(k, /bppv|canalith|otoconi|positional/i));
+  }
+  ok("posterior canal names the Dix-Hallpike and the Epley", feat("peripheral_vestibular_posterior_canal", /dix.hallpike/i) && feat("peripheral_vestibular_posterior_canal", /epley|repositioning/i));
+  ok("horizontal canal names the supine roll test", feat("peripheral_vestibular_horizontal_canal", /supine roll|roll test|barbecue|lempert|gufoni/i));
+  ok("anterior canal warns that DOWNBEAT nystagmus may be central, red-flagged",
+     (CAUSES.peripheral_vestibular_anterior_canal || []).some(c => c.red === true && /downbeat|central/i.test(c.name + " " + (c.feature || ""))));
+  ok("vestibular sites offer neuritis or Meniere's as alternatives",
+     ["peripheral_vestibular_posterior_canal","peripheral_vestibular_horizontal_canal"].some(k => has(k, /neuritis|meniere|labyrinthitis/i)));
+
+  // deep grey
+  ok("subthalamic names hemiballismus from a lacunar infarct", has("basal_ganglia_subthalamic", /infarct|lacun/i));
+  ok("subthalamic names NON-KETOTIC HYPERGLYCAEMIA (the reversible one)",
+     has("basal_ganglia_subthalamic", /hyperglyc|non.ketotic|nonketotic/i));
+  ok("striatum names Huntington's and Wilson's", has("basal_ganglia_striatum", /huntington/i) && has("basal_ganglia_striatum", /wilson/i));
+  ok("striatum names Sydenham's / autoimmune chorea", has("basal_ganglia_striatum", /sydenham|autoimmune|lupus|antiphospholipid/i));
+
+  // callosum
+  ok("anterior callosum teaches alien hand / disconnection", feat("corpus_callosum_anterior", /alien|disconnect|intermanual|left hand/i));
+  ok("anterior callosum names Marchiafava-Bignami", has("corpus_callosum_anterior", /marchiafava/i));
+  ok("splenium teaches alexia WITHOUT agraphia", feat("corpus_callosum_splenium", /alexia/i) && feat("corpus_callosum_splenium", /agraphia|writ/i));
+  ok("splenium names a reversible splenial lesion (MERS / drug / infection)",
+     has("corpus_callosum_splenium", /reversible|mers|cytotoxic/i));
+
+  // subcortical aphasia
+  ok("thalamic aphasia teaches FLUCTUATION with preserved repetition", feat("aphasia_subcortical_thalamic", /fluctuat|repetition|arous/i));
+  ok("striatocapsular aphasia points back to a proximal MCA occlusion",
+     feat("aphasia_subcortical_striatocapsular", /mca|proximal|occlusion|collateral|vessel/i));
+
+  // sympathetic chain
+  ok("preganglionic Horner's names a Pancoast tumour, red-flagged", red("sympathetic_preganglionic", /pancoast|apical|lung|tumour/i));
+  ok("preganglionic teaches ANHIDROSIS of the face (second-order localisation)", feat("sympathetic_preganglionic", /sweat|anhidros|face/i));
+  ok("Pancoast site names the apical lung tumour, red-flagged", red("sympathetic_pancoast", /pancoast|apical|lung|superior sulcus/i));
+  ok("Pancoast teaches the Horner's + C8/T1 + shoulder pain triad", feat("sympathetic_pancoast", /horner|c8|t1|shoulder|arm pain/i));
+
+  // diffuse encephalopathy — the ultimate 'look outside the brain'
+  ok("diffuse cerebrum leads with metabolic / toxic causes", has("cerebrum_diffuse", /metabolic|toxic|drug|sepsis|uraemi|hepatic|electrolyte/i));
+  ok("diffuse cerebrum names hypoxic-ischaemic injury", has("cerebrum_diffuse", /hypoxic|anoxic|cardiac arrest/i));
+  ok("diffuse cerebrum names non-convulsive status as the missable one",
+     has("cerebrum_diffuse", /non.convulsive|status epilepticus|\bncse\b/i));
+  ok("diffuse cerebrum teaches that focal signs argue AGAINST a diffuse cause",
+     feat("cerebrum_diffuse", /focal|lateralis|lateraliz|asymmetr/i));
 }
 
 // ---- report ----
