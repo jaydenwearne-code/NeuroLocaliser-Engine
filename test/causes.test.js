@@ -105,13 +105,23 @@ const wallenberg = { id: "left_medulla_lateral", level: "medulla", part: "latera
 
 // --- 6: phonebook-sourced causes (the live ddx categoriser) ---
 {
-  // a NAMED site not hand-curated → its phonebook ddx is categorised live
-  const sof = { id: "left_skull_base_sup_orbital_fissure", level: "skull_base", part: "sup_orbital_fissure", side: "left", territory: "superior orbital fissure" };
-  const r = causesFor(sof);
-  ok("SOF (phonebook-sourced, not curated)", r.source === "phonebook" && r.derived === false && r.all.length > 0);
-  ok("SOF ddx categorised — Tolosa-Hunt → inflammatory", r.byCategory.some(g => g.cat === "inflammatory" && g.causes.some(c => /tolosa/i.test(c.name))));
-  ok("SOF ddx categorised — tumour → neoplastic", r.byCategory.some(g => g.cat === "neoplastic"));
+  // A NAMED site not hand-curated → its phonebook ddx is categorised live. Chosen DYNAMICALLY rather than
+  // hard-coded: this used to pin the superior orbital fissure, which then broke the moment that site was
+  // curated (Region D). The categoriser is what's under test, not any particular site's curation status.
+  const allSites = [...SITES];
+  for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") { try { allSites.push(...sitesMod[k]()); } catch {} }
+  const pbSite = allSites.find(s => causesFor(s).source === "phonebook");
+  ok("some site is still phonebook-sourced (the categoriser path is live)", !!pbSite);
+  const r = causesFor(pbSite);
+  ok(`phonebook-sourced, not curated (${pbSite && pbSite.id})`, r.source === "phonebook" && r.derived === false && r.all.length > 0);
+  ok("phonebook ddx is grouped into sieve categories", r.byCategory.length > 0 && r.byCategory.every(g => catIds.includes(g.cat)));
   ok("phonebook causes have valid cat/tempo/likelihood", r.all.every(c => catIds.includes(c.cat) && c.tempo.every(t=>tempoIds.includes(t)) && likeIds.includes(c.likelihood)));
+  // the SOF keyword mappings that used to be checked here now live in its curated entry — assert the
+  // clinical content survived curation, so the move didn't quietly lose coverage
+  const sof = causesFor({ id: "left_skull_base_sup_orbital_fissure", level: "skull_base", part: "sup_orbital_fissure", side: "left", territory: "superior orbital fissure" });
+  ok("SOF is now curated", sof.source === "curated");
+  ok("SOF still offers Tolosa-Hunt as inflammatory", sof.byCategory.some(g => g.cat === "inflammatory" && g.causes.some(c => /tolosa/i.test(c.name))));
+  ok("SOF still offers a neoplastic cause", sof.byCategory.some(g => g.cat === "neoplastic"));
 }
 // --- 6b: attribute-derived fallback for a site with NO curated + NO phonebook entry ---
 {
@@ -439,6 +449,86 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   ok("cerebellar sites flag swelling / obstructive hydrocephalus somewhere in their causes",
      ["cerebellum_vermis","cerebellum_pancerebellar","cerebellum_flocculonodular"].some(k =>
        feat(k, /swell|hydrocephalus|mass effect|herniat|compress/i)));
+}
+
+// --- 12: Region D — skull base / cranial-nerve course, visual pathway, pupil, olfactory ---
+// The longitudinal axis: WHERE ALONG a nerve's course the lesion sits changes the differential entirely,
+// and several of these are "this sign means cancer / aneurysm / dissection until proven otherwise".
+{
+  const REGION_D = [
+    "visual_pathway_chiasm","visual_pathway_optic_tract","visual_pathway_lgn","skull_base_optic_canal",
+    "olfactory_olfactory_groove",
+    "pupil_cn3_compressive","pupil_cn3_ischaemic","pupil_ciliary_ganglion",
+    "skull_base_iii_orbit_sup","skull_base_iii_orbit_inf","skull_base_vi_cisternal","skull_base_vi_petrous_apex",
+    "skull_base_trochlear_cisternal","skull_base_sup_orbital_fissure",
+    "skull_base_v_ganglion","skull_base_v1_division","skull_base_v1_petrous","skull_base_foramen_rotundum","skull_base_v3_ovale",
+    "skull_base_vii_tympanic","skull_base_vii_mastoid","skull_base_vii_parotid",
+    "skull_base_ix_jugular","skull_base_x_jugular","skull_base_x_recurrent_laryngeal",
+    "skull_base_xi_jugular","skull_base_xi_posterior_triangle",
+    "skull_base_hypoglossal_canal","skull_base_xii_neck","skull_base_carotid_space",
+    "skull_base_collet_sicard","skull_base_villaret",
+  ];
+  for (const key of REGION_D) {
+    const list = CAUSES[key] || [];
+    ok(`Region D curated: ${key}`, Array.isArray(CAUSES[key]) && list.length >= 3);
+    ok(`Region D ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => x.feature && x.feature.length > 10));
+    ok(`Region D ${key} spans >= 2 categories`, new Set(list.map(x => x.cat)).size >= 2);
+    ok(`Region D ${key} — valid categories and tempo`, list.every(x => catIds.includes(x.cat) && x.tempo.every(t => tempoIds.includes(t))));
+  }
+  const has = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name));
+  const feat = (k, re) => (CAUSES[k] || []).some(c => re.test(c.feature || "") || re.test(c.pathognomonic || ""));
+  const red = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name) && c.red === true);
+
+  // THE third-nerve rule: pupil involvement separates aneurysm from microvascular
+  ok("compressive CN III names a posterior communicating artery aneurysm, red-flagged",
+     red("pupil_cn3_compressive", /aneurysm|posterior communicating|pcom/i));
+  ok("compressive CN III teaches 'pupil-involving = aneurysm until proven otherwise'",
+     feat("pupil_cn3_compressive", /pupil/i) && feat("pupil_cn3_compressive", /aneurysm|until proven|urgent|angiog/i));
+  ok("compressive CN III names uncal herniation", has("pupil_cn3_compressive", /herniat|uncal/i));
+  ok("ischaemic CN III is the PUPIL-SPARING microvascular one",
+     feat("pupil_cn3_ischaemic", /pupil.spar|spares the pupil/i) && has("pupil_cn3_ischaemic", /microvascular|diabet|ischaem/i));
+  // Adie
+  ok("Adie pupil teaches dilute-pilocarpine denervation supersensitivity",
+     feat("pupil_ciliary_ganglion", /pilocarpine|supersensitiv|tonic/i));
+  // CN VI false localising sign
+  ok("cisternal CN VI teaches the false-localising sign of raised intracranial pressure",
+     feat("skull_base_vi_cisternal", /false.localis|false.localiz|raised intracranial|raised icp/i));
+  // facial nerve: the segment changes the diagnosis
+  ok("parotid facial palsy names malignancy, red-flagged", red("skull_base_vii_parotid", /malignan|carcinoma|tumour|cancer/i));
+  ok("parotid facial palsy warns it is NOT Bell's palsy",
+     feat("skull_base_vii_parotid", /not bell|rather than bell|never bell|mass|lump/i));
+  ok("tympanic/mastoid facial palsy names cholesteatoma or middle-ear disease",
+     has("skull_base_vii_tympanic", /cholesteatoma|otitis|middle.ear/i) || has("skull_base_vii_mastoid", /cholesteatoma|otitis|mastoid/i));
+  // lower cranial nerves
+  ok("recurrent laryngeal names lung malignancy", has("skull_base_x_recurrent_laryngeal", /lung|bronch|mediastin|malignan/i));
+  ok("recurrent laryngeal teaches the LEFT nerve's aortic-arch loop",
+     feat("skull_base_x_recurrent_laryngeal", /aortic arch|left.*loop|loops/i));
+  ok("recurrent laryngeal names thyroid/neck surgery as iatrogenic", has("skull_base_x_recurrent_laryngeal", /thyroid|surg|iatrogen/i));
+  ok("accessory nerve in the posterior triangle names iatrogenic lymph-node biopsy",
+     has("skull_base_xi_posterior_triangle", /biopsy|iatrogen|surg/i));
+  // carotid space — dissection
+  ok("carotid space names dissection, red-flagged", red("skull_base_carotid_space", /dissect/i));
+  // chiasm — the treatable emergency
+  ok("chiasm names pituitary adenoma", has("visual_pathway_chiasm", /pituitary|adenoma/i));
+  ok("chiasm names pituitary apoplexy, red-flagged", red("visual_pathway_chiasm", /apoplexy/i));
+  ok("chiasm names craniopharyngioma or meningioma", has("visual_pathway_chiasm", /craniopharyngioma|meningioma/i));
+  // optic canal / olfactory groove
+  ok("optic canal names traumatic optic neuropathy", has("skull_base_optic_canal", /trauma/i));
+  ok("olfactory groove names meningioma", has("olfactory_olfactory_groove", /meningioma/i));
+  ok("olfactory groove teaches Foster Kennedy", feat("olfactory_olfactory_groove", /foster kennedy/i) || has("olfactory_olfactory_groove", /foster kennedy/i));
+  ok("olfactory groove names post-viral anosmia", has("olfactory_olfactory_groove", /viral|covid|infect/i));
+  // V3 — numb chin is sinister
+  ok("V3 / foramen ovale names perineural tumour spread", has("skull_base_v3_ovale", /perineural|spread|malignan|carcinoma/i));
+  ok("V3 teaches that a numb chin suggests malignancy",
+     feat("skull_base_v3_ovale", /numb chin|mental nerve|malignan|sinister/i));
+  // trochlear nerve course — trauma
+  ok("cisternal CN IV names head trauma", has("skull_base_trochlear_cisternal", /trauma/i));
+  // multi-nerve skull-base syndromes
+  ok("Collet-Sicard and Villaret span multiple lower cranial nerves with a mass lesion",
+     has("skull_base_collet_sicard", /tumour|metasta|glomus|schwannoma|carcinoma/i) &&
+     has("skull_base_villaret", /tumour|metasta|glomus|schwannoma|carcinoma|dissect/i));
+  ok("Villaret includes the sympathetic chain (Horner's) in its feature text",
+     feat("skull_base_villaret", /horner|sympathetic/i));
 }
 
 // ---- report ----

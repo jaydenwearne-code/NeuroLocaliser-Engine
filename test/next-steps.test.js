@@ -202,5 +202,77 @@ for (const [id, level, part, side] of REGION_C_SITES) {
   ok("upbeat-nystagmus workup gives empirical thiamine before confirmation",
      ns.immediate.concat(ns.investigations).some(i => /thiamine|pabrinex/i.test(i))); }
 
+// --- Region D: skull base / cranial-nerve course, visual pathway, pupil, olfactory ---
+const dSite = (lvl, part) => ({ id: `left_${lvl}_${part}`, level: lvl, part, side: "left", territory: "" });
+const REGION_D_SITES = [
+  ["visual_pathway","chiasm"], ["visual_pathway","optic_tract"], ["visual_pathway","lgn"],
+  ["skull_base","optic_canal"], ["olfactory","olfactory_groove"],
+  ["pupil","cn3_compressive"], ["pupil","cn3_ischaemic"], ["pupil","ciliary_ganglion"],
+  ["skull_base","iii_orbit_sup"], ["skull_base","iii_orbit_inf"], ["skull_base","vi_cisternal"],
+  ["skull_base","vi_petrous_apex"], ["skull_base","trochlear_cisternal"], ["skull_base","sup_orbital_fissure"],
+  ["skull_base","v_ganglion"], ["skull_base","v1_division"], ["skull_base","v1_petrous"],
+  ["skull_base","foramen_rotundum"], ["skull_base","v3_ovale"],
+  ["skull_base","vii_tympanic"], ["skull_base","vii_mastoid"], ["skull_base","vii_parotid"],
+  ["skull_base","ix_jugular"], ["skull_base","x_jugular"], ["skull_base","x_recurrent_laryngeal"],
+  ["skull_base","xi_jugular"], ["skull_base","xi_posterior_triangle"],
+  ["skull_base","hypoglossal_canal"], ["skull_base","xii_neck"], ["skull_base","carotid_space"],
+  ["skull_base","collet_sicard"], ["skull_base","villaret"],
+];
+for (const [lvl, part] of REGION_D_SITES) {
+  const ns = nextStepsFor(dSite(lvl, part));
+  ok(`Region D workup curated: ${lvl}_${part}`, ns.curated === true);
+  ok(`Region D workup has all four tiers: ${lvl}_${part}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+
+// pupil-involving CN III — the aneurysm rule
+{ const ns = nextStepsFor(dSite("pupil", "cn3_compressive"));
+  ok("compressive CN III is an emergency", ns.urgency === "emergency");
+  ok("compressive CN III gets emergency vessel imaging (CTA/MRA/angiography)",
+     ns.investigations.some(i => /cta|mra|angiog/i.test(i)));
+  ok("compressive CN III bedside checks the PUPIL first", ns.immediate.some(i => /pupil/i.test(i))); }
+
+// chiasm — visual fields plus the endocrine emergency
+{ const ns = nextStepsFor(dSite("visual_pathway", "chiasm"));
+  ok("chiasm workup orders formal visual fields", ns.immediate.concat(ns.investigations).some(i => /field|perimetr/i.test(i)));
+  ok("chiasm workup includes pituitary hormone profile", ns.investigations.concat(ns.confirmatory).some(i => /pituitary|hormone|endocrin|cortisol|prolactin/i.test(i)));
+  ok("chiasm workup covers apoplexy: steroids without waiting",
+     ns.immediate.concat(ns.monitoring).some(i => /steroid|hydrocortisone|apoplexy/i.test(i))); }
+
+// carotid space — dissection is a stroke waiting to happen
+{ const ns = nextStepsFor(dSite("skull_base", "carotid_space"));
+  ok("carotid space workup images the vessels urgently", ns.investigations.some(i => /cta|mra|doppler|angiog|vessel|fat.sat/i.test(i)));
+  ok("carotid space monitoring warns about impending stroke", ns.monitoring.some(i => /stroke|tia|antiplatelet|anticoagul/i.test(i))); }
+
+// parotid facial palsy — not Bell's, so not steroids-and-go-home
+{ const ns = nextStepsFor(dSite("skull_base", "vii_parotid"));
+  ok("parotid facial palsy workup examines/images the parotid and neck",
+     ns.immediate.concat(ns.investigations).some(i => /parotid|neck|mass|lump/i.test(i)));
+  ok("parotid facial palsy refers to ENT / maxillofacial rather than treating as Bell's",
+     /ent|maxillofacial|head and neck|surg/i.test(ns.referral)); }
+
+// recurrent laryngeal — image the WHOLE course, into the chest
+{ const ns = nextStepsFor(dSite("skull_base", "x_recurrent_laryngeal"));
+  ok("recurrent laryngeal workup includes laryngoscopy", ns.immediate.concat(ns.investigations).some(i => /laryngoscop|cord|ent/i.test(i)));
+  ok("recurrent laryngeal workup images the neck AND chest", ns.investigations.some(i => /chest|thora|mediastin/i.test(i))); }
+
+// facial palsy segments — eye protection whenever closure fails
+{ for (const part of ["vii_tympanic","vii_mastoid"]) {
+    const ns = nextStepsFor(dSite("skull_base", part));
+    ok(`${part} workup involves ENT urgently`, /ent|otolaryng/i.test(ns.referral));
+  } }
+// trigeminal — an anaesthetic cornea needs protecting
+{ const ns = nextStepsFor(dSite("skull_base", "v_ganglion"));
+  ok("trigeminal ganglion monitoring protects the anaesthetic cornea", ns.monitoring.concat(ns.immediate).some(i => /cornea|eye protect|lubric/i.test(i))); }
+
+// numb chin — treat as malignancy until proven otherwise
+{ const ns = nextStepsFor(dSite("skull_base", "v3_ovale"));
+  ok("V3 workup pursues malignancy (imaging skull base ± systemic screen)",
+     ns.investigations.concat(ns.confirmatory).some(i => /mri|ct|malignan|primary|screen|biopsy/i.test(i))); }
+
+// olfactory — test smell formally, and examine the nose
+{ const ns = nextStepsFor(dSite("olfactory", "olfactory_groove"));
+  ok("olfactory workup tests smell formally", ns.immediate.concat(ns.investigations).some(i => /smell|olfact|sniff|upsit/i.test(i))); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
