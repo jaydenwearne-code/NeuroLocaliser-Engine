@@ -678,6 +678,87 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   ok("lateral cord maps to musculocutaneous + lateral median", feat("plexus_lateral_cord", /musculocutaneous|biceps|median/i));
 }
 
+// --- 15: Region G — remaining cortex (higher function, aphasias, frontal syndromes) ---
+// These are the sites where the deficit is COGNITIVE, so the differential swings toward dementia,
+// encephalitis and tumour rather than pure vascular — and several carry a treat-now emergency.
+{
+  const REGION_G = ["cortex_frontal_eye_field","cortex_dlpfc","cortex_medial_pfc","cortex_orbitofrontal",
+    "cortex_temporoparietal","cortex_temporal","cortex_insula","cortex_sensory_hand","cortex_arcuate",
+    "cortex_angular","cortex_premotor","cortex_sma","cortex_paracentral","cortex_auditory",
+    "cortex_anterior_temporal","cortex_fusiform","cortex_aphasia_global","cortex_aphasia_mixed_transcortical"];
+  for (const key of REGION_G) {
+    const list = CAUSES[key] || [];
+    ok(`Region G curated: ${key}`, Array.isArray(CAUSES[key]) && list.length >= 3);
+    ok(`Region G ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => x.feature && x.feature.length > 10));
+    ok(`Region G ${key} spans >= 2 categories`, new Set(list.map(x => x.cat)).size >= 2);
+    ok(`Region G ${key} — valid categories and tempo`, list.every(x => catIds.includes(x.cat) && x.tempo.every(t => tempoIds.includes(t))));
+  }
+  const has = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name));
+  const feat = (k, re) => (CAUSES[k] || []).some(c => re.test(c.feature || "") || re.test(c.pathognomonic || ""));
+  const red = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name) && c.red === true);
+
+  // HSV encephalitis — the treat-now emergency of the temporal lobe
+  ok("temporal lobe names HSV encephalitis, red-flagged", red("cortex_temporal", /herpes|hsv|encephalitis/i));
+  ok("HSV feature says treat empirically / do not wait", feat("cortex_temporal", /aciclovir|acyclovir|empiric|do not wait|immediately/i));
+  ok("anterior temporal also names HSV or limbic encephalitis",
+     has("cortex_anterior_temporal", /herpes|hsv|limbic|encephalitis/i));
+  ok("temporal lobe names limbic / autoimmune encephalitis", has("cortex_temporal", /limbic|autoimmune|nmda|lgi1/i));
+  ok("temporal lobe names mesial temporal sclerosis / epilepsy", has("cortex_temporal", /mesial temporal|hippocampal sclerosis|epilep/i));
+
+  // parasagittal — the great spinal-cord mimic
+  ok("paracentral names a parasagittal meningioma, red-flagged", red("cortex_paracentral", /parasagittal|falx|meningioma/i));
+  ok("paracentral teaches that it MIMICS a cord lesion (bilateral legs + bladder)",
+     feat("cortex_paracentral", /cord|spinal|mimic|bilateral leg|paraparesis/i));
+  ok("paracentral names superior sagittal sinus thrombosis", has("cortex_paracentral", /sagittal sinus|venous|thrombosis/i));
+
+  // malignant MCA — the decompression window
+  ok("global aphasia names a large MCA territory infarct, red-flagged", red("cortex_aphasia_global", /mca|middle cerebral|malignant/i));
+  ok("global aphasia warns about malignant oedema / decompressive craniectomy",
+     feat("cortex_aphasia_global", /oedema|edema|craniectomy|swell|herniat|decompress/i));
+
+  // watershed isolation of the speech area
+  ok("mixed transcortical names global hypoperfusion / watershed",
+     has("cortex_aphasia_mixed_transcortical", /hypoperfus|watershed|carotid|hypotens|cardiac arrest|hypoxic/i));
+  ok("mixed transcortical teaches preserved REPETITION",
+     feat("cortex_aphasia_mixed_transcortical", /repetition|echolal/i));
+
+  // frontal eye field — stroke vs seizure gaze
+  ok("frontal eye field teaches gaze deviation TOWARD the lesion in stroke",
+     feat("cortex_frontal_eye_field", /toward|towards/i));
+  ok("frontal eye field offers a seizure mimic with gaze AWAY from the focus",
+     (CAUSES.cortex_frontal_eye_field || []).some(c => c.cat === "mimic" || /seizure/i.test(c.name)));
+
+  // frontal lobe syndromes lean degenerative
+  ok("DLPFC names frontotemporal dementia", has("cortex_dlpfc", /frontotemporal|\bftd\b|bvftd/i));
+  ok("DLPFC names normal pressure hydrocephalus (treatable)", has("cortex_dlpfc", /normal pressure hydrocephalus|\bnph\b/i));
+  ok("medial PFC teaches abulia / akinetic mutism", feat("cortex_medial_pfc", /abulia|akinetic mutism|apath/i));
+  ok("medial PFC offers depression as the mimic",
+     (CAUSES.cortex_medial_pfc || []).some(c => c.cat === "mimic" || /depress/i.test(c.name)));
+  ok("orbitofrontal names traumatic brain injury", has("cortex_orbitofrontal", /trauma|contusion|\btbi\b/i));
+  ok("orbitofrontal links a subfrontal meningioma to anosmia", feat("cortex_orbitofrontal", /anosmia|smell|olfactory/i));
+
+  // SMA — the post-resection syndrome that recovers
+  ok("SMA names a post-surgical SMA syndrome", has("cortex_sma", /resect|surg|post.operative|\bsma syndrome\b/i));
+  ok("SMA teaches that the post-resection deficit RECOVERS", feat("cortex_sma", /recover|transient|weeks|resolve/i));
+
+  // insula — the cardiac connection
+  ok("insula teaches the autonomic / cardiac consequence", feat("cortex_insula", /cardiac|arrhythmi|autonomic|blood pressure|ecg/i));
+
+  // angular gyrus — Gerstmann
+  ok("angular gyrus teaches Gerstmann's tetrad", feat("cortex_angular", /gerstmann|acalculia|agraphia|finger agnosia|left.right/i));
+
+  // posterior cortex agnosias
+  ok("fusiform names prosopagnosia or pure alexia", feat("cortex_fusiform", /prosopagnos|face|alexia|achromatops/i));
+  ok("fusiform names posterior cortical atrophy", has("cortex_fusiform", /posterior cortical atrophy|benson|alzheimer/i));
+  ok("auditory cortex teaches that CORTICAL DEAFNESS needs BILATERAL lesions",
+     feat("cortex_auditory", /bilateral/i));
+  ok("premotor/apraxia names corticobasal degeneration", has("cortex_premotor", /corticobasal|\bcbd\b/i));
+  ok("Wernicke's site (temporoparietal) offers delirium or a seizure mimic",
+     (CAUSES.cortex_temporoparietal || []).some(c => c.cat === "mimic"));
+  ok("conduction aphasia (arcuate) names an MCA branch infarct", has("cortex_arcuate", /mca|infarct|supramarginal/i));
+  ok("cortical sensory hand names a small cortical infarct or TIA", has("cortex_sensory_hand", /infarct|\btia\b|embol/i));
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);

@@ -426,5 +426,85 @@ for (const p of REGION_F_PLEXUS) {
   ok("lumbar plexus workup checks clotting / images the retroperitoneum",
      ns.immediate.concat(ns.investigations).some(i => /clotting|inr|anticoagul|retroperiton|\bct\b/i.test(i))); }
 
+// --- Region G: remaining cortex (higher function, aphasias, frontal syndromes) ---
+const gSite = (part) => ({ id: `left_cortex_${part}`, level: "cortex", part, side: "left", territory: "" });
+const REGION_G_PARTS = ["frontal_eye_field","dlpfc","medial_pfc","orbitofrontal","temporoparietal","temporal",
+  "insula","sensory_hand","arcuate","angular","premotor","sma","paracentral","auditory","anterior_temporal",
+  "fusiform","aphasia_global","aphasia_mixed_transcortical"];
+for (const p of REGION_G_PARTS) {
+  const ns = nextStepsFor(gSite(p));
+  ok(`Region G workup curated: cortex_${p}`, ns.curated === true);
+  ok(`Region G workup has all four tiers: cortex_${p}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+
+// HSV — aciclovir before the PCR, every time it is on the differential
+{ for (const p of ["temporal","anterior_temporal"]) {
+    const ns = nextStepsFor(gSite(p));
+    ok(`cortex_${p} starts empirical aciclovir without waiting`,
+       ns.immediate.some(i => /aciclovir|acyclovir/i.test(i)));
+    ok(`cortex_${p} sends CSF / viral PCR`, ns.investigations.concat(ns.confirmatory).some(i => /lumbar puncture|csf|pcr/i.test(i)));
+  } }
+{ const ns = nextStepsFor(gSite("temporal"));
+  ok("temporal workup covers autoimmune/limbic antibodies", ns.confirmatory.some(i => /antibod|lgi1|nmda|paraneoplas/i.test(i)));
+  ok("temporal workup includes EEG", ns.investigations.concat(ns.confirmatory).some(i => /eeg/i.test(i))); }
+
+// paracentral — image the BRAIN when the cord scan is normal
+{ const ns = nextStepsFor(gSite("paracentral"));
+  ok("paracentral workup images the BRAIN for the cord mimic",
+     ns.investigations.some(i => /brain|mri head|intracranial/i.test(i)));
+  ok("paracentral workup includes venography for sagittal sinus thrombosis",
+     ns.investigations.concat(ns.confirmatory).some(i => /venogra|\bmrv\b|\bctv\b|venous/i.test(i))); }
+
+// global aphasia — malignant MCA monitoring
+{ const ns = nextStepsFor(gSite("aphasia_global"));
+  ok("global aphasia is an emergency", ns.urgency === "emergency");
+  ok("global aphasia monitors for malignant oedema and decompression",
+     ns.monitoring.some(i => /oedema|edema|craniectomy|conscious|swell|decompress/i.test(i))); }
+
+// mixed transcortical — find the haemodynamic cause
+{ const ns = nextStepsFor(gSite("aphasia_mixed_transcortical"));
+  ok("mixed transcortical workup images the carotids", ns.investigations.some(i => /carotid|cta|mra|doppler/i.test(i)));
+  ok("mixed transcortical bedside tests REPETITION specifically", ns.immediate.some(i => /repetition|repeat|echolal/i.test(i))); }
+
+// dementia-leaning frontal sites need the reversible screen
+{ for (const p of ["dlpfc","medial_pfc","orbitofrontal"]) {
+    const ns = nextStepsFor(gSite(p));
+    ok(`cortex_${p} screens reversible causes (B12/thyroid/imaging)`,
+       ns.investigations.some(i => /b12|thyroid|tsh|reversible|bloods/i.test(i)));
+    ok(`cortex_${p} images to exclude a frontal mass`, ns.investigations.some(i => /mri|\bct\b/i.test(i)));
+  } }
+{ const ns = nextStepsFor(gSite("orbitofrontal"));
+  ok("orbitofrontal workup tests SMELL (subfrontal meningioma)", ns.immediate.some(i => /smell|olfact|anosmia/i.test(i))); }
+{ const ns = nextStepsFor(gSite("dlpfc"));
+  ok("DLPFC workup considers NPH as reversible", ns.investigations.concat(ns.confirmatory).some(i => /hydrocephalus|\bnph\b|ventric|tap test/i.test(i))); }
+
+// insula — cardiac monitoring
+{ const ns = nextStepsFor(gSite("insula"));
+  ok("insular workup includes cardiac monitoring / ECG", ns.immediate.concat(ns.investigations).some(i => /ecg|cardiac|telemetry|troponin/i.test(i))); }
+
+// bedside tests that are otherwise missed
+{ const ns = nextStepsFor(gSite("angular"));
+  ok("angular workup tests the Gerstmann elements at the bedside",
+     ns.immediate.some(i => /calculat|writ|finger|left.right|gerstmann/i.test(i))); }
+{ const ns = nextStepsFor(gSite("premotor"));
+  ok("premotor workup tests apraxia by miming tool use",
+     ns.immediate.some(i => /mime|pretend|apraxia|tool|gesture/i.test(i))); }
+{ const ns = nextStepsFor(gSite("sma"));
+  ok("SMA monitoring reassures about the transient post-resection deficit",
+     ns.monitoring.some(i => /recover|transient|weeks|reassur/i.test(i))); }
+{ const ns = nextStepsFor(gSite("sensory_hand"));
+  ok("cortical sensory hand tests discriminative sensation (stereognosis / graphaesthesia)",
+     ns.immediate.some(i => /stereognos|graphaesth|graphesth|two.point|discriminat/i.test(i)));
+  ok("cortical sensory hand treats a transient episode as a TIA", ns.investigations.concat(ns.monitoring).some(i => /tia|secondary prevention|antiplatelet|carotid/i.test(i))); }
+
+// aphasia sites all need speech and language therapy follow-up
+{ let bad = null;
+  for (const p of ["temporoparietal","arcuate","angular","aphasia_global","aphasia_mixed_transcortical"]) {
+    const ns = nextStepsFor(gSite(p));
+    if (!ns.monitoring.some(i => /speech and language|\bsalt\b|speech therap/i.test(i))) { bad = `cortex_${p}`; break; }
+  }
+  ok(`every aphasia site refers to speech and language therapy (offender: ${bad})`, bad === null); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
