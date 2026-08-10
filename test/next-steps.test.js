@@ -23,17 +23,22 @@ const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  "
   ok("derived cord monitoring tier mentions bladder / progression", ns.monitoring.some(i => /bladder|progress/i.test(i)));
   ok("every tier is an array", ["immediate","investigations","confirmatory","monitoring"].every(k => Array.isArray(ns[k]))); }
 
-// derived tiers: NMJ/motor-unit site gets a respiratory-function bedside prompt
-{ const ns = nextStepsFor({ id: "z_nmu", level: "motor_unit", part: "muscle", territory: "" });
-  ok("motor-unit immediate tier prompts respiratory function", ns.immediate.some(i => /respiratory|fvc/i.test(i))); }
+// derived tiers: NMJ/motor-unit site gets a respiratory-function bedside prompt.
+// NB: uses a SYNTHETIC part. The derive fallback keys off LEVEL, so a made-up part exercises the same code
+// while staying immune to future curation — this test previously used part "muscle" and broke the moment
+// motor_unit_muscle was curated (Region E).
+{ const ns = nextStepsFor({ id: "z_nmu", level: "motor_unit", part: "zz_never_curated", territory: "" });
+  ok("motor-unit immediate tier prompts respiratory function", ns.immediate.some(i => /respiratory|fvc/i.test(i)));
+  ok("synthetic motor-unit site is genuinely on the derive path", ns.curated === false); }
 
 // curated: AION (giant-cell arteritis) — sight/life-threatening, ESR/CRP
 { const ns = nextStepsFor({ id: "skull_base_optic_aion", level: "skull_base", part: "optic_aion", territory: "" });
   ok("AION urgency is emergency", ns.urgency === "emergency");
   ok("AION investigations mention ESR / CRP", ns.investigations.some(i => /esr|crp|inflammatory/i.test(i))); }
 
-// derive fallback: an uncurated peripheral nerve site still returns something
-{ const ns = nextStepsFor({ id: "z_uncurated", level: "nerve", part: "ulnar_elbow", territory: "" });
+// derive fallback: an uncurated peripheral nerve site still returns something.
+// Synthetic part again — this used "ulnar_elbow", which stopped being uncurated in Region E.
+{ const ns = nextStepsFor({ id: "z_uncurated", level: "nerve", part: "zz_never_curated", territory: "" });
   ok("uncurated nerve site returns investigations (derive)", ns.investigations.length > 0);
   ok("uncurated site is flagged not-curated", ns.curated === false);
   ok("derived urgency is a valid value", ["emergency","urgent","routine"].includes(ns.urgency)); }
@@ -273,6 +278,74 @@ for (const [lvl, part] of REGION_D_SITES) {
 // olfactory — test smell formally, and examine the nose
 { const ns = nextStepsFor(dSite("olfactory", "olfactory_groove"));
   ok("olfactory workup tests smell formally", ns.immediate.concat(ns.investigations).some(i => /smell|olfact|sniff|upsit/i.test(i))); }
+
+// --- Region E: named peripheral nerves + polyneuropathy + motor unit ---
+const eSite = (lvl, part) => ({ id: `left_${lvl}_${part}`, level: lvl, part, side: "left", territory: "" });
+const REGION_E_SITES = [
+  ["nerve","phrenic"],["nerve","pudendal"],["nerve","saphenous"],["nerve","sural"],["nerve","axillary"],
+  ["nerve","musculocutaneous"],["nerve","suprascapular"],["nerve","long_thoracic"],["nerve","radial_axilla"],
+  ["nerve","radial_spiral_groove"],["nerve","radial_pin"],["nerve","median_proximal"],["nerve","median_ain"],
+  ["nerve","median_carpal_tunnel"],["nerve","ulnar_elbow"],["nerve","ulnar_wrist"],["nerve","femoral"],
+  ["nerve","obturator"],["nerve","lat_fem_cutaneous"],["nerve","superior_gluteal"],["nerve","sciatic"],
+  ["nerve","peroneal_common"],["nerve","peroneal_deep"],["nerve","peroneal_superficial"],["nerve","tibial"],
+  ["polyneuropathy","length_dependent"],["motor_unit","nmj_presynaptic"],["motor_unit","muscle"],
+];
+for (const [lvl, part] of REGION_E_SITES) {
+  const ns = nextStepsFor(eSite(lvl, part));
+  ok(`Region E workup curated: ${lvl}_${part}`, ns.curated === true);
+  ok(`Region E workup has all four tiers: ${lvl}_${part}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+
+// nerve conduction studies are the shared backbone of the entrapment workups
+{ let missing = null;
+  for (const [lvl, part] of REGION_E_SITES) {
+    if (lvl !== "nerve") continue;
+    const ns = nextStepsFor(eSite(lvl, part));
+    if (!ns.investigations.concat(ns.confirmatory).some(i => /nerve conduction|\bncs\b|\bemg\b|electrophysiolog/i.test(i))) { missing = `${lvl}_${part}`; break; }
+  }
+  ok(`every named-nerve workup includes nerve conduction studies / EMG (missing: ${missing})`, missing === null); }
+
+// femoral — the anticoagulated bleed is the emergency
+{ const ns = nextStepsFor(eSite("nerve", "femoral"));
+  ok("femoral workup images the retroperitoneum urgently", ns.investigations.some(i => /ct|retroperiton|imaging/i.test(i)));
+  ok("femoral workup checks clotting / reverses anticoagulation", ns.immediate.concat(ns.investigations).some(i => /clotting|inr|anticoagul|revers/i.test(i))); }
+
+// phrenic — image the chest, don't just reassure
+{ const ns = nextStepsFor(eSite("nerve", "phrenic"));
+  ok("phrenic workup includes chest imaging for malignancy", ns.investigations.some(i => /chest|\bct\b|x.ray|fluorosc/i.test(i)));
+  ok("phrenic workup assesses respiratory function", ns.investigations.concat(ns.immediate).some(i => /spiromet|vital capacity|lung function|erect and supine/i.test(i))); }
+
+// peroneal — the foot-drop discriminator must be at the bedside
+{ const ns = nextStepsFor(eSite("nerve", "peroneal_common"));
+  ok("peroneal workup tests INVERSION at the bedside to exclude L5", ns.immediate.some(i => /inversion|\bl5\b/i.test(i)));
+  ok("peroneal monitoring covers foot-drop splinting and falls", ns.monitoring.some(i => /splint|orthosis|afo|falls|trip/i.test(i))); }
+
+// carpal tunnel — conservative first, and the systemic screen
+{ const ns = nextStepsFor(eSite("nerve", "median_carpal_tunnel"));
+  ok("carpal tunnel workup screens reversible systemic causes", ns.investigations.some(i => /thyroid|tsh|glucose|hba1c|pregnan/i.test(i)));
+  ok("carpal tunnel management mentions splinting before surgery", ns.immediate.concat(ns.monitoring).some(i => /splint|conservat/i.test(i))); }
+
+// polyneuropathy — the treatable screen, and the red-flag escalation
+{ const ns = nextStepsFor(eSite("polyneuropathy", "length_dependent"));
+  ok("polyneuropathy workup screens the treatable causes (glucose, B12, TFT, electrophoresis)",
+     ns.investigations.some(i => /b12/i.test(i)) && ns.investigations.some(i => /glucose|hba1c/i.test(i)) &&
+     ns.investigations.some(i => /electrophoresis|paraprotein|light chain/i.test(i)));
+  ok("polyneuropathy monitoring includes foot care", ns.monitoring.some(i => /foot care|footwear|ulcer|podiatr/i.test(i)));
+  ok("polyneuropathy escalates rapid/asymmetric progression (GBS vital capacity)",
+     ns.monitoring.concat(ns.immediate).some(i => /vital capacity|rapid|ascend|urgent|escalat/i.test(i))); }
+
+// LEMS — find the tumour
+{ const ns = nextStepsFor(eSite("motor_unit", "nmj_presynaptic"));
+  ok("LEMS workup mandates CT chest for small cell lung cancer", ns.investigations.some(i => /ct chest|chest|lung/i.test(i)));
+  ok("LEMS workup sends voltage-gated calcium channel antibodies", ns.investigations.concat(ns.confirmatory).some(i => /calcium channel|vgcc|antibod/i.test(i)));
+  ok("LEMS monitoring repeats cancer screening if initially negative", ns.monitoring.some(i => /repeat|surveill|re.screen|interval/i.test(i))); }
+
+// myopathy — CK, and the rhabdo emergency
+{ const ns = nextStepsFor(eSite("motor_unit", "muscle"));
+  ok("myopathy workup checks creatine kinase", ns.investigations.some(i => /creatine kinase|\bck\b/i.test(i)));
+  ok("myopathy workup covers rhabdomyolysis (renal function, urine myoglobin, potassium)",
+     ns.immediate.concat(ns.investigations).some(i => /renal|potassium|myoglobin|urine|kidney/i.test(i))); }
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

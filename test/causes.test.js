@@ -531,6 +531,79 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
      feat("skull_base_villaret", /horner|sympathetic/i));
 }
 
+// --- 13: Region E — named peripheral nerves + polyneuropathy + motor unit ---
+// Entrapments share a generic aetiology (compress / trauma / diabetes), so the value here is entirely in the
+// per-site DISCRIMINATOR: which branch is spared tells you the level, and that is what these assert.
+{
+  const REGION_E = [
+    "nerve_phrenic","nerve_pudendal","nerve_saphenous","nerve_sural","nerve_axillary","nerve_musculocutaneous",
+    "nerve_suprascapular","nerve_long_thoracic","nerve_radial_axilla","nerve_radial_spiral_groove","nerve_radial_pin",
+    "nerve_median_proximal","nerve_median_ain","nerve_median_carpal_tunnel","nerve_ulnar_elbow","nerve_ulnar_wrist",
+    "nerve_femoral","nerve_obturator","nerve_lat_fem_cutaneous","nerve_superior_gluteal","nerve_sciatic",
+    "nerve_peroneal_common","nerve_peroneal_deep","nerve_peroneal_superficial","nerve_tibial",
+    "polyneuropathy_length_dependent","motor_unit_nmj_presynaptic","motor_unit_muscle",
+  ];
+  for (const key of REGION_E) {
+    const list = CAUSES[key] || [];
+    ok(`Region E curated: ${key}`, Array.isArray(CAUSES[key]) && list.length >= 3);
+    ok(`Region E ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => x.feature && x.feature.length > 10));
+    ok(`Region E ${key} spans >= 2 categories`, new Set(list.map(x => x.cat)).size >= 2);
+    ok(`Region E ${key} — valid categories and tempo`, list.every(x => catIds.includes(x.cat) && x.tempo.every(t => tempoIds.includes(t))));
+  }
+  const has = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name));
+  const feat = (k, re) => (CAUSES[k] || []).some(c => re.test(c.feature || "") || re.test(c.pathognomonic || ""));
+  const red = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name) && c.red === true);
+
+  // the level-localising SPARING rules — the heart of peripheral-nerve teaching
+  ok("radial at the axilla involves TRICEPS (vs spiral groove, which spares it)",
+     feat("nerve_radial_axilla", /triceps/i));
+  ok("radial at the spiral groove SPARES triceps", feat("nerve_radial_spiral_groove", /triceps/i));
+  ok("PIN palsy has NO sensory loss and no true wrist drop",
+     feat("nerve_radial_pin", /no sensory|sensation is spared|pure motor|radial deviat/i));
+  ok("carpal tunnel spares the palmar cutaneous branch (thenar skin sensation)",
+     feat("nerve_median_carpal_tunnel", /palmar cutaneous|thenar (skin|eminence)|spared/i));
+  ok("ulnar at the elbow involves the DORSAL cutaneous branch (dorsal hand numbness)",
+     feat("nerve_ulnar_elbow", /dorsal/i));
+  ok("ulnar at the wrist SPARES dorsal hand sensation", feat("nerve_ulnar_wrist", /dorsal/i));
+  ok("AIN palsy is PURE MOTOR — the weak 'OK' sign",
+     feat("nerve_median_ain", /ok sign|pure motor|pinch|flexor pollicis/i));
+  ok("common peroneal palsy spares INVERSION — the L5 discriminator",
+     feat("nerve_peroneal_common", /inversion|\bl5\b/i));
+  ok("long thoracic gives MEDIAL winging (vs the lateral winging of accessory palsy)",
+     feat("nerve_long_thoracic", /medial|wing/i));
+
+  // don't-miss aetiologies
+  ok("femoral nerve names retroperitoneal haematoma, red-flagged",
+     red("nerve_femoral", /haematoma|hematoma|retroperitoneal/i));
+  ok("femoral haematoma feature names anticoagulation", feat("nerve_femoral", /anticoagul|warfarin|doac|heparin/i));
+  ok("phrenic nerve names malignancy as a cause", has("nerve_phrenic", /malignan|tumour|lung|cancer/i));
+  ok("phrenic nerve teaches orthopnoea / raised hemidiaphragm", feat("nerve_phrenic", /orthopn|diaphragm|supine|lying flat/i));
+  ok("suprascapular names a ganglion cyst at the notch", has("nerve_suprascapular", /ganglion|cyst/i));
+  ok("axillary nerve names shoulder dislocation / humeral neck fracture",
+     has("nerve_axillary", /disloc|humer|fracture/i));
+  ok("axillary teaches the regimental-badge sensory patch", feat("nerve_axillary", /regimental|badge|deltoid/i));
+  ok("meralgia paraesthetica is PURE SENSORY with no weakness",
+     feat("nerve_lat_fem_cutaneous", /pure sensory|no weakness|sensory only/i));
+  ok("sciatic palsy teaches that the peroneal division is more vulnerable",
+     feat("nerve_sciatic", /peroneal|fibular/i));
+  ok("pudendal neuralgia teaches sitting-dependent pain", feat("nerve_pudendal", /sitting|sit\b|standing|toilet/i));
+  ok("saphenous / sural name iatrogenic surgical causes",
+     has("nerve_saphenous", /surg|vein|harvest|knee|iatrogen/i) && has("nerve_sural", /biops|surg|iatrogen/i));
+
+  // generalised: the treatable and the sinister
+  ok("polyneuropathy leads with diabetes", has("polyneuropathy_length_dependent", /diabet/i));
+  ok("polyneuropathy names B12 deficiency (treatable)", has("polyneuropathy_length_dependent", /b12|cobalamin/i));
+  ok("polyneuropathy names a hereditary cause (CMT)", has("polyneuropathy_length_dependent", /charcot.marie|\bcmt\b|hereditar/i));
+  ok("polyneuropathy flags rapid or asymmetric progression as the red flag",
+     (CAUSES.polyneuropathy_length_dependent || []).some(c => c.red === true && /vasculit|guillain|\bgbs\b|cidp|rapid/i.test(c.name + " " + (c.feature || ""))));
+  ok("LEMS names small cell lung cancer, red-flagged", red("motor_unit_nmj_presynaptic", /small cell|lung|paraneoplas/i));
+  ok("LEMS teaches post-exercise AUGMENTATION (the opposite of myasthenia)",
+     feat("motor_unit_nmj_presynaptic", /augment|facilitat|improve|after exercise|sustained contraction/i));
+  ok("myopathy names statins and an inflammatory cause",
+     has("motor_unit_muscle", /statin/i) && has("motor_unit_muscle", /myositis|inflammat|dermatomyos|polymyos/i));
+  ok("myopathy flags rhabdomyolysis, red-flagged", red("motor_unit_muscle", /rhabdomyolys/i));
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);
