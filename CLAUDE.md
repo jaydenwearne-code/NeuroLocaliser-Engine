@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**53 test suites / 1826 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**53 test suites / 3258 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -112,13 +112,33 @@ layer — is on `main`, so the "expand pathologies + workup" work below branches
 3. **Pathology layer (optional)** — `umnLmnPattern()` already flags mixed UMN+LMN → MND; a fuller declarative
    cross-site pathology layer (ALS/MND, SCD, etc.) was scoped in `CONTRIBUTING.md` but is not built.
 
-## NEXT (planned): expand the pathologies + workup at localised lesions
+## Pathologies + workup expansion (DONE 2026-08-10) — ⚠ AWAITING CLINICAL REVIEW
 
-**Goal:** deepen the **pathology layer** (`src/data/causes.js`) and the **workup layer** (`src/data/nextSteps.js`)
-for more of the ~185 named sites — many are currently served by the phonebook/derived fallback rather than a
-hand-curated, richer entry.
+**Merged to `main`.** Curated coverage went from ~37 sites to **ALL 201**: every site now has BOTH a
+hand-curated `CAUSES` entry and a curated four-tier `NEXT` workup. **900 cause entries** — 858 with a
+discriminating `feature`, 332 red-flagged, 30 inline `pathognomonic` plus the central keyword table.
+Built region by region (A cortex → B cord/lacunar → C brainstem/cerebellum → D skull-base/CN-course →
+E named nerves/motor unit → F roots/plexus → G remaining cortex → H closing sweep), TDD throughout.
 
-**Where & how:**
+- **New `mimic` category** (owner-approved): a 9th bucket for non-lesional differentials of the
+  *presentation* (Todd's paresis, migraine aura, hypoglycaemia, delirium). Listed LAST, labelled "Mimic
+  (not a lesion at this site)", with its own `--mimic` CSS token. It sits **outside the surgical sieve**,
+  so the `completion` gap-fill must never fabricate a generic mimic (asserted across all sites).
+- **Two GLOBAL invariants** in `test/next-steps.test.js`: (1) no curated cause list may sit beside a
+  generic derived workup; (2) every curated workup fills all four tiers. Both at zero gaps.
+- **`rootNS` builder** in `nextSteps.js` keeps the shared radiculopathy red flags consistent across all
+  17 roots by construction. Reuse that pattern for any future near-identical family.
+- **Testing trap worth knowing:** several older tests used a REAL site as their stand-in for
+  "uncurated"/"phonebook-sourced" and broke as curation advanced. They now use a synthetic part
+  (`zz_never_curated`) or, for the phonebook path, delete-probe-restore. Don't reintroduce hard-coded
+  site ids as proxies for curation status.
+
+> **⚠ THE CLINICAL CONTENT IS NOT YET REVIEWED.** It was authored to the agreed norms (discriminating
+> features, red flags, bedside-only pathognomonic signs, no doses) but the owner's per-region clinical
+> sign-off — the agreed review gate — has NOT happened for any of the eight regions. Treat it as draft
+> teaching content until it has.
+
+**Where & how (for extending it further):**
 - **Pathologies:** add/extend a curated `CAUSES["<site.id or level_part>"]` entry — a list of
   `c(name, category, tempo[], likelihood, red?, feature?, pathognomonic?)`. `category` ∈ the surgical-sieve
   `CATEGORIES`; `tempo` ∈ `TEMPO` (hyperacute/acute/subacute/chronic); `feature` = a discriminating clue;
@@ -133,8 +153,8 @@ hand-curated, richer entry.
 - **Clinical accuracy (hard norm):** cause lists, red flags, and `pathognomonic` signs must be clinically
   sound; keep `pathognomonic` to genuine bedside signs (not investigations — those are workup). Flag anything
   uncertain for the owner's (clinician) review before relying on it — as was done for the code-stroke content.
-- **Base branch:** `causes.js`/`nextSteps.js` are on `main` and are NOT touched by the open `feat/code-stroke-mode`
-  branch, so **branch off `main`** for this work.
+- **Base branch:** everything is on `main` — branch off it. The `feat/expand-pathologies-workup` branch that
+  built this layer is merged and safe to delete.
 
 ## Commands
 
