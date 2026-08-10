@@ -604,6 +604,80 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   ok("myopathy flags rhabdomyolysis, red-flagged", red("motor_unit_muscle", /rhabdomyolys/i));
 }
 
+// --- 14: Region F — nerve roots + brachial/lumbosacral plexus ---
+// Roots genuinely SHARE an aetiology (disc, spondylosis, tumour, zoster), so the discriminator here is the
+// LEVEL: which muscle, which reflex, which dermatome — and which don't-miss belongs at that level.
+{
+  const ROOTS = ["c3","c4","c5","c6","c7","c8","t1","t4","t10","l1","l2","l3","l4","l5","s1","s2","s3"].map(x => `root_${x}`);
+  const PLEXUS = ["upper_trunk","middle_trunk","lower_trunk","lateral_cord","medial_cord","posterior_cord","lumbar_plexus","sacral_plexus"].map(x => `plexus_${x}`);
+  for (const key of [...ROOTS, ...PLEXUS]) {
+    const list = CAUSES[key] || [];
+    ok(`Region F curated: ${key}`, Array.isArray(CAUSES[key]) && list.length >= 3);
+    ok(`Region F ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => x.feature && x.feature.length > 10));
+    ok(`Region F ${key} spans >= 2 categories`, new Set(list.map(x => x.cat)).size >= 2);
+    ok(`Region F ${key} — valid categories and tempo`, list.every(x => catIds.includes(x.cat) && x.tempo.every(t => tempoIds.includes(t))));
+  }
+  const has = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name));
+  const feat = (k, re) => (CAUSES[k] || []).some(c => re.test(c.feature || "") || re.test(c.pathognomonic || ""));
+  const red = (k, re) => (CAUSES[k] || []).some(c => re.test(c.name) && c.red === true);
+
+  // every root must name its own level-specific anatomy, not generic "radiculopathy"
+  let generic = null;
+  for (const k of ROOTS) if (!(CAUSES[k] || []).some(c => /\b(c[3-8]|t1|t4|t10|l[1-5]|s[1-3])\b/i.test(c.feature || ""))) { generic = k; break; }
+  ok(`every root's features name the level or its disc (offender: ${generic})`, generic === null);
+
+  // degenerative spine is the bread and butter, at every root level
+  let noDisc = null;
+  for (const k of ROOTS) if (!has(k, /disc|spondylo|foramin|stenos/i)) { noDisc = k; break; }
+  ok(`every root names degenerative/disc disease (offender: ${noDisc})`, noDisc === null);
+
+  // malignant infiltration must be flagged wherever a root can be infiltrated
+  let noMalig = null;
+  for (const k of ROOTS) if (!(CAUSES[k] || []).some(c => /metasta|malignan|tumour|infiltrat|myeloma|lymphoma/i.test(c.name) && c.red === true)) { noMalig = k; break; }
+  ok(`every root red-flags malignant infiltration (offender: ${noMalig})`, noMalig === null);
+
+  // level-specific don't-misses
+  ok("C8/T1 roots name a Pancoast (superior sulcus) tumour",
+     has("root_t1", /pancoast|superior sulcus|apical/i) || has("root_c8", /pancoast|superior sulcus|apical/i));
+  ok("T1 links a Horner's to the Pancoast picture", feat("root_t1", /horner|sympathetic/i));
+  ok("cervical roots warn about coexisting MYELOPATHY (cord compression)",
+     ["root_c5","root_c6","root_c7"].some(k => feat(k, /myelopath|cord compress|long.tract|brisk|upgoing|hoffmann/i)));
+  ok("C3/C4 roots link to the diaphragm", feat("root_c3", /diaphragm|phrenic|breath/i) || feat("root_c4", /diaphragm|phrenic|breath/i));
+  ok("thoracic roots name herpes zoster", has("root_t4", /zoster|shingles/i) && has("root_t10", /zoster|shingles/i));
+  ok("thoracic roots warn that visceral disease mimics a dermatomal band",
+     feat("root_t4", /cardiac|visceral|angina|pleur|mimic/i) || feat("root_t10", /visceral|abdominal|mimic|biliary|renal/i));
+  ok("T10 teaches Beevor's sign", feat("root_t10", /beevor|umbilic/i));
+  ok("thoracic/lumbar roots name diabetic radiculopathy", has("root_t10", /diabet/i) || has("root_l3", /diabet/i) || has("root_l4", /diabet/i));
+  ok("L5/S1 lead with lumbar disc prolapse", has("root_l5", /disc/i) && has("root_s1", /disc/i));
+  ok("S2/S3 roots cross-refer to cauda equina as the emergency",
+     ["root_s2","root_s3"].every(k => feat(k, /cauda equina|bilateral|saddle|sphincter|bladder/i)));
+
+  // --- plexus ---
+  ok("upper trunk names obstetric brachial plexus (Erb's) injury", has("plexus_upper_trunk", /birth|obstetric|shoulder dystocia|erb/i));
+  ok("upper trunk teaches the waiter's-tip posture", feat("plexus_upper_trunk", /waiter|porter|tip|adducted|internally rotated/i));
+  ok("lower trunk names a Pancoast tumour, red-flagged", red("plexus_lower_trunk", /pancoast|superior sulcus|apical|lung/i));
+  ok("lower trunk links Horner's to the sinister causes", feat("plexus_lower_trunk", /horner/i));
+  ok("lower trunk names a cervical rib / thoracic outlet", has("plexus_lower_trunk", /cervical rib|thoracic outlet|\btos\b/i));
+  // THE plexus discrimination: radiation vs neoplastic
+  ok("plexus names RADIATION plexopathy", ["plexus_upper_trunk","plexus_lower_trunk","plexus_lateral_cord"].some(k => has(k, /radiation|radiotherap/i)));
+  ok("radiation-vs-neoplastic discriminator is taught (myokymia / painless / upper vs painful / lower)",
+     ["plexus_upper_trunk","plexus_lower_trunk"].some(k => feat(k, /myokymia/i)) &&
+     ["plexus_upper_trunk","plexus_lower_trunk"].some(k => feat(k, /painless|pain/i)));
+  ok("plexus names neuralgic amyotrophy (Parsonage-Turner)",
+     ["plexus_upper_trunk","plexus_middle_trunk","plexus_posterior_cord"].some(k => has(k, /neuralgic amyotrophy|parsonage/i)));
+  ok("traumatic avulsion is named and red-flagged somewhere in the brachial plexus",
+     ["plexus_upper_trunk","plexus_lower_trunk","plexus_middle_trunk"].some(k => red(k, /avuls|traction|trauma/i)));
+  ok("avulsion teaches the pseudomeningocele / urgent-repair window",
+     ["plexus_upper_trunk","plexus_lower_trunk"].some(k => feat(k, /pseudomeningocele|avuls|repair|transfer|window|early/i)));
+  ok("lumbar plexus names retroperitoneal haematoma, red-flagged", red("plexus_lumbar_plexus", /haematoma|hematoma|retroperitoneal/i));
+  ok("lumbar plexus names diabetic amyotrophy", has("plexus_lumbar_plexus", /diabet|amyotroph/i));
+  ok("sacral plexus names pelvic malignancy, red-flagged", red("plexus_sacral_plexus", /pelvic|malignan|tumour|metasta/i));
+  // cords map to their nerves
+  ok("posterior cord maps to axillary + radial", feat("plexus_posterior_cord", /axillary|radial|deltoid|wrist drop/i));
+  ok("medial cord maps to ulnar + medial median", feat("plexus_medial_cord", /ulnar|median|intrinsic|claw/i));
+  ok("lateral cord maps to musculocutaneous + lateral median", feat("plexus_lateral_cord", /musculocutaneous|biceps|median/i));
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);

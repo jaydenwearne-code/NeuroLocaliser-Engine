@@ -347,5 +347,84 @@ for (const [lvl, part] of REGION_E_SITES) {
   ok("myopathy workup covers rhabdomyolysis (renal function, urine myoglobin, potassium)",
      ns.immediate.concat(ns.investigations).some(i => /renal|potassium|myoglobin|urine|kidney/i.test(i))); }
 
+// --- Region F: nerve roots + plexus ---
+const fSite = (lvl, part) => ({ id: `left_${lvl}_${part}`, level: lvl, part, side: "left", territory: "" });
+const REGION_F_ROOTS = ["c3","c4","c5","c6","c7","c8","t1","t4","t10","l1","l2","l3","l4","l5","s1","s2","s3"];
+const REGION_F_PLEXUS = ["upper_trunk","middle_trunk","lower_trunk","lateral_cord","medial_cord","posterior_cord","lumbar_plexus","sacral_plexus"];
+for (const p of REGION_F_ROOTS) {
+  const ns = nextStepsFor(fSite("root", p));
+  ok(`Region F workup curated: root_${p}`, ns.curated === true);
+  ok(`Region F workup has all four tiers: root_${p}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+for (const p of REGION_F_PLEXUS) {
+  const ns = nextStepsFor(fSite("plexus", p));
+  ok(`Region F workup curated: plexus_${p}`, ns.curated === true);
+  ok(`Region F workup has all four tiers: plexus_${p}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+
+// every root workup must image the right part of the spine
+{ let bad = null;
+  for (const p of REGION_F_ROOTS) {
+    const ns = nextStepsFor(fSite("root", p));
+    if (!ns.investigations.some(i => /mri/i.test(i))) { bad = `root_${p}`; break; }
+  }
+  ok(`every root workup includes MRI of the relevant spine (offender: ${bad})`, bad === null); }
+
+// cervical roots — check for myelopathy, which changes the urgency entirely
+{ let bad = null;
+  for (const p of ["c5","c6","c7"]) {
+    const ns = nextStepsFor(fSite("root", p));
+    if (!ns.immediate.concat(ns.monitoring).some(i => /myelopath|cord|hoffmann|upgoing|brisk|gait/i.test(i))) { bad = `root_${p}`; break; }
+  }
+  ok(`cervical root workups screen for myelopathy (offender: ${bad})`, bad === null); }
+
+// C8/T1 — image the lung apex
+{ for (const p of ["c8","t1"]) {
+    const ns = nextStepsFor(fSite("root", p));
+    ok(`root_${p} workup images the lung apex (Pancoast)`, ns.investigations.some(i => /apex|apical|chest|pancoast|\bct\b/i.test(i)));
+  } }
+
+// thoracic roots — exclude visceral disease before calling it radicular
+{ const ns = nextStepsFor(fSite("root", "t4"));
+  ok("T4 workup excludes cardiac/visceral causes first",
+     ns.immediate.concat(ns.investigations).some(i => /ecg|cardiac|troponin|visceral|aort/i.test(i))); }
+
+// S2/S3 — cauda equina safety net
+{ for (const p of ["s2","s3"]) {
+    const ns = nextStepsFor(fSite("root", p));
+    ok(`root_${p} is an emergency (cauda equina risk)`, ns.urgency === "emergency");
+    ok(`root_${p} bedside checks saddle sensation / sphincter`, ns.immediate.some(i => /saddle|anal tone|bladder|post.void/i.test(i)));
+  } }
+
+// lumbosacral roots — safety-net for cauda equina even when the root lesion looks routine
+{ let bad = null;
+  for (const p of ["l4","l5","s1"]) {
+    const ns = nextStepsFor(fSite("root", p));
+    if (!ns.monitoring.some(i => /cauda equina|saddle|bladder|sphincter/i.test(i))) { bad = `root_${p}`; break; }
+  }
+  ok(`lumbosacral root workups safety-net cauda equina (offender: ${bad})`, bad === null); }
+
+// plexus — EMG is what separates radiation from tumour
+{ let bad = null;
+  for (const p of REGION_F_PLEXUS) {
+    const ns = nextStepsFor(fSite("plexus", p));
+    if (!ns.investigations.concat(ns.confirmatory).some(i => /emg|nerve conduction|electrophysiolog/i.test(i))) { bad = `plexus_${p}`; break; }
+  }
+  ok(`every plexus workup includes EMG/NCS (offender: ${bad})`, bad === null); }
+{ const ns = nextStepsFor(fSite("plexus", "lower_trunk"));
+  ok("lower trunk workup images the lung apex for Pancoast", ns.investigations.some(i => /apex|apical|chest|pancoast/i.test(i)));
+  ok("lower trunk workup looks for myokymia to separate radiation from tumour",
+     ns.investigations.concat(ns.confirmatory).some(i => /myokymia/i.test(i))); }
+{ const ns = nextStepsFor(fSite("plexus", "upper_trunk"));
+  ok("upper trunk workup flags the early surgical window for avulsion",
+     ns.monitoring.concat(ns.referral ? [ns.referral] : []).some(i => /month|early|window|transfer|graft|refer/i.test(i)));
+  ok("upper trunk workup looks for pseudomeningocele on imaging",
+     ns.investigations.concat(ns.confirmatory).some(i => /pseudomeningocele|avuls|myelogra|mri.*plexus|plexus.*mri/i.test(i))); }
+{ const ns = nextStepsFor(fSite("plexus", "lumbar_plexus"));
+  ok("lumbar plexus workup checks clotting / images the retroperitoneum",
+     ns.immediate.concat(ns.investigations).some(i => /clotting|inr|anticoagul|retroperiton|\bct\b/i.test(i))); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
