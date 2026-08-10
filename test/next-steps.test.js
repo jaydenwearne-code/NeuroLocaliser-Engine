@@ -96,5 +96,57 @@ for (const [key, part] of [["cortex_mca","mca"], ["cortex_mca_superior","mca_sup
 { const ns = nextStepsFor(cortexSite("cortex_parietal", "parietal", ""));
   ok("parietal workup notes a cortical syndrome without weakness still needs imaging", ns.immediate.concat(ns.investigations).some(i => /without weakness|still needs imaging|neglect/i.test(i))); }
 
+// --- Region B: lacunar / deep + cord emergencies ---
+const bSite = (key, level, part) => ({ id: `left_${key}`, level, part, side: "left", territory: "" });
+const REGION_B = [
+  ["subcortex_corona_radiata","subcortex","corona_radiata"], ["subcortex_thalamus","subcortex","thalamus"],
+  ["subcortex_anterior_choroidal","subcortex","anterior_choroidal"], ["subcortex_sensorimotor","subcortex","sensorimotor"],
+  ["subcortex_optic_radiation","subcortex","optic_radiation"], ["pons_basis_pontis","pons","basis_pontis"],
+  ["cord_transverse","cord","transverse"], ["cord_hemi","cord","hemi"], ["cord_lateral","cord","lateral"],
+  ["cauda_equina","cauda","equina"], ["conus_medullaris","conus","medullaris"],
+  ["craniocervical_junction_foramen_magnum","craniocervical_junction","foramen_magnum"],
+];
+for (const [key, level, part] of REGION_B) {
+  const ns = nextStepsFor(bSite(key, level, part));
+  ok(`Region B workup curated: ${key}`, ns.curated === true);
+  ok(`Region B workup has all four tiers: ${key}`,
+     ns.immediate.length > 0 && ns.investigations.length > 0 && ns.confirmatory.length > 0 && ns.monitoring.length > 0);
+}
+
+// cauda equina — the most time-critical workup in the app
+{ const ns = nextStepsFor(bSite("cauda_equina", "cauda", "equina"));
+  ok("cauda equina is an emergency", ns.urgency === "emergency");
+  ok("cauda equina bedside: post-void residual, saddle sensation, anal tone",
+     ns.immediate.some(i => /bladder scan|post.void/i.test(i)) &&
+     ns.immediate.some(i => /saddle/i.test(i)) &&
+     ns.immediate.some(i => /anal tone|per rectum|\bpr\b/i.test(i)));
+  ok("cauda equina images the whole lumbosacral spine urgently", ns.investigations.some(i => /mri/i.test(i)));
+  ok("cauda equina referral names emergency spinal surgery / decompression",
+     /spinal|neurosurg|decompress/i.test(ns.referral) && /emergenc|immediat|urgent/i.test(ns.referral));
+  ok("cauda equina monitoring warns that delay costs function permanently",
+     ns.monitoring.some(i => /permanent|irreversib|time|delay|deteriorat/i.test(i))); }
+
+// conus — the point is that it changes which level you image
+{ const ns = nextStepsFor(bSite("conus_medullaris", "conus", "medullaris"));
+  ok("conus is an emergency", ns.urgency === "emergency");
+  ok("conus workup names the T12-L1 / conus level explicitly", ns.investigations.concat(ns.immediate).some(i => /t12|l1|conus/i.test(i))); }
+
+// transverse cord — exclude compression BEFORE labelling it inflammatory
+{ const ns = nextStepsFor(bSite("cord_transverse", "cord", "transverse"));
+  ok("transverse cord is an emergency", ns.urgency === "emergency");
+  ok("transverse cord images the whole spine to exclude compression first",
+     ns.investigations.some(i => /whole.spine|entire spine|exclude compress/i.test(i)));
+  ok("transverse cord confirmatory covers the inflammatory work-up (LP, AQP4/MOG)",
+     ns.confirmatory.some(i => /aquaporin|aqp4|\bmog\b|oligoclonal|lumbar puncture/i.test(i))); }
+
+// thalamic — central post-stroke pain needs a different follow-up than a motor lacune
+{ const ns = nextStepsFor(bSite("subcortex_thalamus", "subcortex", "thalamus"));
+  ok("thalamic workup mentions central post-stroke pain follow-up",
+     ns.monitoring.concat(ns.confirmatory).some(i => /post.stroke pain|central pain|neuropathic/i.test(i))); }
+
+// optic radiation — a field defect has driving/functional consequences
+{ const ns = nextStepsFor(bSite("subcortex_optic_radiation", "subcortex", "optic_radiation"));
+  ok("optic radiation prompts formal field testing", ns.immediate.concat(ns.investigations).some(i => /field|perimetr|confrontation/i.test(i))); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

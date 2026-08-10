@@ -147,7 +147,12 @@ const icSite = SITES.find(s => s.id === "right_subcortex_internal_capsule");
 const icRes = causesFor(icSite, {});
 const icSpecificCats = new Set(icRes.byCategory.map(g => g.cat));
 const icCompCats = new Set(icRes.completion.map(g => g.cat));
-ok("internal capsule specifics are vascular-only", icSpecificCats.size === 1 && icSpecificCats.has("vascular"));
+// `mimic` is deliberately OUTSIDE the surgical sieve, so it is excluded here: this assertion is about the
+// sieve gap-fill demonstration (curated vascular specifics + generics for the sieve categories left empty).
+const icSieveCats = new Set([...icSpecificCats].filter(x => x !== "mimic"));
+ok("internal capsule sieve specifics are vascular-only", icSieveCats.size === 1 && icSieveCats.has("vascular"));
+ok("internal capsule also carries mimics, outside the sieve", icSpecificCats.has("mimic"));
+ok("internal capsule completion is unaffected by the mimics", !icCompCats.has("mimic"));
 ok("internal capsule completion adds inflammatory", icCompCats.has("inflammatory"));
 ok("internal capsule completion adds neoplastic", icCompCats.has("neoplastic"));
 ok("internal capsule completion adds infective", icCompCats.has("infective"));
@@ -274,6 +279,91 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   // the live phonebook categoriser recognises mimic language too
   const cat1 = causesFor({ id: "z1", level: "cortex", part: "zz", side: "left", territory: "" });
   ok("derived fallback introduces no mimics", cat1.all.every(c => c.cat !== "mimic"));
+}
+
+// --- 10: Region B — lacunar / deep grey + cord emergencies ---
+// The highest-consequence region: cauda equina and cord compression are time-critical, and the deep
+// lacunar syndromes are where "no cortical signs" has to actively point somewhere rather than nowhere.
+{
+  const site = (key, level, part) => ({ id: `left_${key}`, level, part, side: "left", territory: "" });
+  const region = {
+    subcortex_corona_radiata:   site("subcortex_corona_radiata", "subcortex", "corona_radiata"),
+    subcortex_thalamus:         site("subcortex_thalamus", "subcortex", "thalamus"),
+    subcortex_anterior_choroidal: site("subcortex_anterior_choroidal", "subcortex", "anterior_choroidal"),
+    subcortex_sensorimotor:     site("subcortex_sensorimotor", "subcortex", "sensorimotor"),
+    subcortex_optic_radiation:  site("subcortex_optic_radiation", "subcortex", "optic_radiation"),
+    pons_basis_pontis:          site("pons_basis_pontis", "pons", "basis_pontis"),
+    cord_transverse:            site("cord_transverse", "cord", "transverse"),
+    cord_hemi:                  site("cord_hemi", "cord", "hemi"),
+    cord_lateral:               site("cord_lateral", "cord", "lateral"),
+    cauda_equina:               site("cauda_equina", "cauda", "equina"),
+    conus_medullaris:           site("conus_medullaris", "conus", "medullaris"),
+    craniocervical_junction_foramen_magnum: site("craniocervical_junction_foramen_magnum", "craniocervical_junction", "foramen_magnum"),
+  };
+  for (const [key, s] of Object.entries(region)) {
+    ok(`Region B curated: ${key}`, Array.isArray(CAUSES[key]) && CAUSES[key].length >= 3);
+    const r = causesFor(s);
+    ok(`Region B ${key} resolves as curated`, r.source === "curated");
+    ok(`Region B ${key} — every cause carries a discriminating feature`, r.all.every(x => x.feature && x.feature.length > 10));
+    ok(`Region B ${key} spans >= 2 categories`, new Set(r.all.map(x => x.cat)).size >= 2);
+  }
+  const has = (key, re) => (CAUSES[key] || []).some(c => re.test(c.name));
+  const find = (key, re) => (CAUSES[key] || []).find(c => re.test(c.name)) || {};
+
+  // cauda equina — the time-critical one
+  ok("cauda equina leads with central disc prolapse", has("cauda_equina", /disc/i));
+  ok("cauda equina includes epidural abscess, red-flagged", (CAUSES.cauda_equina || []).some(c => /abscess/i.test(c.name) && c.red === true));
+  ok("cauda equina includes spinal epidural haematoma (anticoagulation)", has("cauda_equina", /haematoma|hematoma/i));
+  ok("cauda equina haematoma feature names anticoagulation / recent procedure", /anticoagul|warfarin|doac|spinal|epidural (injection|anaesth)/i.test(find("cauda_equina", /haematoma|hematoma/i).feature || ""));
+  ok("cauda equina includes metastatic compression, red-flagged", (CAUSES.cauda_equina || []).some(c => /metasta|malignan|tumour/i.test(c.name) && c.red === true));
+  ok("every cauda equina cause is red-flagged or explicitly time-critical",
+     (CAUSES.cauda_equina || []).filter(c => c.cat !== "mimic").every(c => c.red === true));
+
+  // conus vs cauda — the discrimination that changes which level gets imaged
+  ok("conus teaches the early symmetric sphincter + UMN discriminator",
+     (CAUSES.conus_medullaris || []).some(c => /symmetric|sphincter|upper motor|umn|brisk|extensor plantar/i.test(c.feature || "")));
+
+  // transverse cord — compression must be excluded before an inflammatory label
+  ok("transverse cord names compression, red-flagged", (CAUSES.cord_transverse || []).some(c => /compress/i.test(c.name) && c.red === true));
+  ok("transverse cord names transverse myelitis", has("cord_transverse", /myelitis/i));
+  ok("transverse cord names cord infarct", has("cord_transverse", /infarct/i));
+  ok("transverse cord myelitis feature defers to excluding compression first",
+     /compress|exclude|before/i.test(find("cord_transverse", /myelitis/i).feature || ""));
+
+  // Brown-Sequard
+  ok("hemicord names penetrating / traumatic injury", has("cord_hemi", /penetrat|trauma|stab/i));
+  ok("hemicord names a compressive lesion, red-flagged", (CAUSES.cord_hemi || []).some(c => /compress|tumour|disc/i.test(c.name) && c.red === true));
+
+  // deep lacunar
+  ok("internal capsule teaches the capsular warning syndrome", has("subcortex_internal_capsule", /capsular warning/i));
+  ok("capsular warning feature describes stuttering / crescendo events",
+     /stutter|crescendo|recurrent|fluctuat/i.test(find("subcortex_internal_capsule", /capsular warning/i).feature || ""));
+  ok("thalamic site names Dejerine-Roussy / central post-stroke pain", has("subcortex_thalamus", /jerine|central post.stroke pain/i));
+  ok("thalamic haemorrhage is red-flagged", (CAUSES.subcortex_thalamus || []).some(c => /haemorrhage|hemorrhage/i.test(c.name) && c.red === true));
+  ok("anterior choroidal teaches the triad from one small perforator",
+     (CAUSES.subcortex_anterior_choroidal || []).some(c => /triad|hemianopia|three/i.test(c.feature || "")));
+  ok("optic radiation teaches Meyer's loop / quadrantanopia",
+     (CAUSES.subcortex_optic_radiation || []).some(c => /meyer|quadrantanop|pie in the sky/i.test(c.feature || "") || /meyer/i.test(c.name)));
+
+  // craniocervical junction
+  ok("craniocervical junction names Chiari I", has("craniocervical_junction_foramen_magnum", /chiari/i));
+  ok("craniocervical junction names foramen-magnum meningioma", has("craniocervical_junction_foramen_magnum", /meningioma|foramen.magnum/i));
+  ok("craniocervical junction includes drug causes of downbeat nystagmus (lithium / anticonvulsant)",
+     has("craniocervical_junction_foramen_magnum", /lithium|anticonvuls|phenytoin|toxic/i));
+
+  // pathognomonic additions land via the central table (so they flag wherever the disease is named)
+  const cjk = causesFor(region.craniocervical_junction_foramen_magnum);
+  ok("Chiari flags the cough-induced headache on exam",
+     cjk.all.some(x => /chiari/i.test(x.name) && /cough|strain|valsalva|laugh/i.test(x.pathognomonic || "")));
+  const th = causesFor(region.subcortex_thalamus);
+  ok("thalamic haemorrhage flags the forced-downgaze / small-pupil sign",
+     th.all.some(x => /haemorrhage/i.test(x.name) && /downward|down.gaze|tip of the nose|pupil/i.test(x.pathognomonic || "")));
+
+  // tempo realism for the emergencies
+  ok("cord + cauda vascular/traumatic causes are acute-or-faster",
+     ["cord_transverse","cord_hemi","cauda_equina","conus_medullaris"].every(k =>
+       (CAUSES[k] || []).filter(c => c.cat === "vascular" || c.cat === "traumatic")
+         .every(c => c.tempo.some(t => t === "hyperacute" || t === "acute"))));
 }
 
 // ---- report ----
