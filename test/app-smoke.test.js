@@ -2,6 +2,8 @@
 // every finding is reachable (tree ∪ "Other"); structure is well-formed; taxonomy spot-checks hold.
 import { EXAM_TREE, flattenFindings } from "../app/exam-map.js";
 import { FINDINGS } from "../src/model/findings.js";
+import { solve } from "../src/engine/inverse.js";
+import { nameForSite } from "../src/data/syndromes.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -51,6 +53,26 @@ ok("Fatiguability leaf carries the fatigable set",
    !!fatig && ["fatigable_weakness","fatigable_ocular","facilitating_weakness"].every(x => fatig.findings.includes(x)));
 const tone = findNode(EXAM_TREE, "tone");
 ok("Tone is its own top-level leaf", EXAM_TREE.some(n => n.id === "tone") && !!tone && Array.isArray(tone.findings));
+
+// ---- app/engine CONTRACT: the shapes app.js destructures off solve() ----
+// Regression guard for a crash found by driving the app (2026-08-10): the multifocal banner mapped
+// r.multi.sites as {site} wrappers, but minimalSet() yields RAW site objects — so nameForSite(undefined)
+// threw and the error boundary swallowed the ENTIRE results pane on every genuinely multifocal case.
+// r.nearFit IS a {site,missing} wrapper, which is exactly why the mismatch was easy to miss.
+{
+  const multiCase = new Set(["saddle_anaesthesia@midline","sphincter_dysfunction@left","radicular_pain@left","anal_wink_loss@midline"]);
+  const r = solve(multiCase);
+  ok("multifocal case still yields a multi cover", !!r.multi && Array.isArray(r.multi.sites) && r.multi.sites.length >= 2);
+  ok("r.multi.sites elements are RAW sites (have .id, not .site)",
+     r.multi.sites.every(s => typeof s.id === "string" && s.site === undefined));
+  ok("nameForSite() works on r.multi.sites elements directly — the banner cannot throw",
+     r.multi.sites.every(s => { try { return !!nameForSite(s).name; } catch { return false; } }));
+  ok("r.multi.uncovered is an array of finding tokens", Array.isArray(r.multi.uncovered));
+  // the sibling near-fit path uses the OPPOSITE shape; pin it so the two don't get "unified" by mistake
+  const nf = solve(new Set(["weak_arm@left","weak_leg@left","aphasia@none"])).nearFit;
+  ok("r.nearFit is a {site,missing} wrapper (NOT a raw site)", !nf || (!!nf.site && typeof nf.site.id === "string"));
+  ok("nameForSite() works on r.nearFit.site", !nf || !!nameForSite(nf.site).name);
+}
 
 console.log("\nNeuroLocaliser — EXAM TREE integrity (Sub-project D)\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);
