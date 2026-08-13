@@ -63,6 +63,36 @@ const SUBJECTIVE = new Set([
   "v1_sensory", "v2_sensory", "v3_sensory", "face_pain_loss", "face_touch_loss", "face_sensory_loss",
 ]);
 
+// ---- refractive (pinhole-correcting) acuity loss ----
+// Acuity that IMPROVES with a pinhole is refractive: the eye needs glasses, not a neurologist. It localises
+// nowhere, so — exactly like the functional signs — no structure produces it and it instead raises a flag.
+//
+// SAFETY RULE, mirroring functionalFlag: if any ORGANIC visual sign is present (a RAPD, a pale disc, a
+// whitened retina, a field defect, papilloedema, or acuity that does NOT correct), the flag is SUPPRESSED.
+// A pinhole improvement never excludes disease sitting behind it — refractive error and pathology coexist.
+const ORGANIC_VISUAL = new Set([
+  "rapd", "optic_atrophy", "retinal_pallor", "papilloedema", "va_reduced_no_pinhole", "optic_neuropathy",
+  "altitudinal_defect", "central_scotoma", "homonymous_hemianopia", "bitemporal_hemianopia",
+  "superior_quadrantanopia", "inferior_quadrantanopia", "cortical_blindness",
+]);
+
+export function refractiveFlag(observedSet) {
+  const ids = [...observedSet].map(idOf);
+  if (!ids.includes("va_reduced_pinhole_corrects"))
+    return { refractive: false, suppressed: false, organicSigns: [], note: "" };
+  const organicSigns = [...new Set(ids.filter(f => ORGANIC_VISUAL.has(f)))];
+  if (organicSigns.length) {
+    return {
+      refractive: false, suppressed: true, organicSigns,
+      note: `Acuity improves with a pinhole, but organic visual sign(s) are present (${organicSigns.slice(0, 3).join(", ")}${organicSigns.length > 3 ? ", …" : ""}). A pinhole improvement does NOT exclude disease behind it — refractive error and pathology coexist, so the organic findings stand.`,
+    };
+  }
+  return {
+    refractive: true, suppressed: false, organicSigns: [],
+    note: "Acuity improves with a PINHOLE and there is no organic visual sign — this is refractive error, not a neurological deficit. It does not localise. Refract before investigating; the pinhole is the cheapest test in neuro-ophthalmology.",
+  };
+}
+
 export function functionalFlag(observedSet) {
   const ids = [...observedSet].map(idOf);
   const signs = [...new Set(ids.filter(f => FND.has(f)))];

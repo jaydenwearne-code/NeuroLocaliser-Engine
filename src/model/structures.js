@@ -622,6 +622,31 @@ export const STRUCTURES = [
     note: "optic neuritis — central scotoma (painful, reduced colour vision; MS/idiopathic/NMO)" },
   { id: "neuritis_rapd",  level: "skull_base", part: "optic_neuritis", produces: "rapd",
     note: "optic neuritis — RAPD" },
+  // FUNDOSCOPY at the optic nerve — the pale disc is the chronic END-STATE of any optic neuropathy, and the
+  // acuity loss here is organic, so it does NOT correct with a pinhole. That pairing is the discriminator
+  // from a refractive error, which is why both are modelled at the same sites.
+  { id: "opt_atrophy",   level: "skull_base", part: "optic_canal", produces: "optic_atrophy",
+    note: "optic nerve (II) — pale, atrophic disc once the damage is established" },
+  { id: "opt_va",        level: "skull_base", part: "optic_canal", produces: "va_reduced_no_pinhole",
+    note: "optic nerve (II) — acuity loss that does not correct with a pinhole (organic)" },
+  { id: "aion_atrophy",  level: "skull_base", part: "optic_aion", produces: "optic_atrophy",
+    note: "AION — the swollen disc becomes pale and atrophic over weeks" },
+  { id: "aion_va",       level: "skull_base", part: "optic_aion", produces: "va_reduced_no_pinhole",
+    note: "AION — organic acuity loss, no pinhole improvement" },
+  { id: "neuritis_atrophy", level: "skull_base", part: "optic_neuritis", produces: "optic_atrophy",
+    note: "optic neuritis — temporal disc pallor follows the acute attack" },
+  { id: "neuritis_va",   level: "skull_base", part: "optic_neuritis", produces: "va_reduced_no_pinhole",
+    note: "optic neuritis — organic acuity loss, no pinhole improvement" },
+
+  // THE RETINA — a separate place from the optic nerve. A retinal ARTERY occlusion whitens the retina and
+  // leaves a cherry-red spot (the fovea, fed by the choroid, keeps its colour). It is a stroke of the eye:
+  // ophthalmic/internal-carotid territory, and it is measured in minutes to hours, not days.
+  { id: "retina_pallor", level: "visual_pathway", part: "retina", produces: "retinal_pallor", crosses: false,
+    note: "retinal artery occlusion — whitened ischaemic retina with a cherry-red spot (ipsilateral eye)" },
+  { id: "retina_va",     level: "visual_pathway", part: "retina", produces: "va_reduced_no_pinhole", crosses: false,
+    note: "retinal artery occlusion — sudden painless organic acuity loss, no pinhole improvement" },
+  { id: "retina_rapd",   level: "visual_pathway", part: "retina", produces: "rapd", crosses: false,
+    note: "retinal artery occlusion — RAPD (the afferent limb fails at the retina, before the nerve)" },
 
   // Oculosympathetic in the orbital fissure — COMPOSITE-ONLY (part not in PARTS, so no standalone site;
   // isolated Horner belongs to the Horner-order axis). Contributes Horner to SOF / cavernous / orbital apex.
@@ -979,6 +1004,13 @@ export const STRUCTURES = [
   { id: "preg_anhface", level: "sympathetic", part: "preganglionic", produces: "anhidrosis_face",
     note: "preganglionic Horner — facial anhidrosis, body spared" }
 ];
+
+// NB papilloedema is deliberately NOT a structure at any site. It is a PRESSURE sign, not a syndrome
+// component: a motor-cortex lesion does not "produce" papilloedema the way it produces weakness — a large
+// enough lesion anywhere intracranial does. Modelling it per-site would claim it as part of every cortical
+// syndrome and would penalise every intracranial site for over-prediction whenever it is absent. It is
+// instead an ORTHOGONAL COMPARTMENT AXIS in inverse.js (`raisedPressureAxis`), the same shape as the
+// sensory level: it narrows WHICH COMPARTMENT the lesion is in without joining any site's finding set.
 
 // Index by id for quick lookup.
 export const STRUCTURE_BY_ID = Object.fromEntries(STRUCTURES.map(s => [s.id, s]));

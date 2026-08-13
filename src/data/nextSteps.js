@@ -9,8 +9,46 @@
 // and referral; the immediate / confirmatory / monitoring tiers are DERIVED from urgency + region so EVERY
 // site gets a full, structured plan (derive-don't-store spirit). A curated entry may override any tier via
 // its optional `extra` ({ immediate, confirmatory, monitoring }).
+import { expectedFindings } from "../engine/forward.js";
+import { CAUSES } from "./causes.js";
 
 const ns = (investigations, urgency, referral, extra = {}) => ({ investigations, urgency, referral, ...extra });
+
+// ---- derived ophthalmic imaging prompt (2026-08-11) ----
+// Fundal photography and OCT of the retinal nerve fibre layer must surface wherever the picture involves a
+// VISUAL FIELD DEFECT or PAPILLOEDEMA. Both triggers are DERIVED rather than hand-listed per site, so a
+// future site or cause gets the prompt automatically:
+//   * field defect — the site's own expectedFindings contain a field / optic-nerve finding
+//   * papilloedema — the site's curated causes raise papilloedema, raised ICP, hydrocephalus or sinus thrombosis
+// Perimetry is deliberately NOT repeated here: the curated entries already prompt it, and this layer is
+// adding the imaging that was missing from the whole workup layer, not restating what is there.
+const VISUAL_FINDING = /^(homonymous_hemianopia|bitemporal_hemianopia|superior_quadrantanopia|inferior_quadrantanopia|optic_neuropathy|altitudinal_defect|central_scotoma|cortical_blindness|optic_atrophy|retinal_pallor|va_reduced_no_pinhole)@/;
+
+// Causes implying DISC SWELLING. Normal-pressure hydrocephalus is excluded BY NAME and deliberately: the
+// pressure is normal, so there is no papilloedema, and prompting for it there would teach the wrong thing.
+const RAISES_PRESSURE = /papilloedema|raised intracranial pressure|raised pressure|intracranial hypertension|hydrocephalus|sagittal sinus thrombosis|venous sinus thrombosis|Foster.Kennedy/i;
+const NOT_RAISED = /normal.pressure hydrocephalus/i;
+
+function hasFieldDefect(site) {
+  let exp; try { exp = [...expectedFindings(site)]; } catch { return false; }
+  return exp.some(t => VISUAL_FINDING.test(t));
+}
+function raisesPapilloedema(site) {
+  const key = CAUSES[site.id] ? site.id : `${site.level}_${site.part}`;
+  return (CAUSES[key] || []).some(c =>
+    !NOT_RAISED.test(c.name) && RAISES_PRESSURE.test(`${c.name} ${c.feature || ""} ${c.pathognomonic || ""}`));
+}
+
+export function ophthalmicImaging(site) {
+  const field = hasFieldDefect(site), pressure = raisesPapilloedema(site);
+  if (!field && !pressure) return [];
+  const why = field && pressure
+    ? "it gives an objective baseline for the field defect AND quantifies any disc swelling, which serial written descriptions never do reliably"
+    : field
+      ? "OCT shows whether it has already THINNED, which tells you how long the lesion has been there and how much vision is recoverable; a normal-looking disc with established thinning changes the prognosis, and the photographs give an objective baseline to compare against later"
+      : "serial photographs and OCT quantify papilloedema objectively and track it far better than repeated written descriptions, and OCT separates true swelling from disc drusen or a congenitally crowded disc";
+  return [`FUNDAL PHOTOGRAPHY and OCT of the retinal nerve fibre layer — ${why}`];
+}
 
 // Radiculopathy workups are genuinely near-identical apart from the level: the same imaging, the same
 // conservative-first management, the same red flags. Building them from a shared spine keeps the safety
@@ -1420,6 +1458,29 @@ export const NEXT = {
       confirmatory: ["Formal perimetry", "Vascular risk-factor work-up if infarct: ECG/telemetry, lipids, HbA1c"],
       monitoring: ["DRIVING advice — a homonymous field defect usually precludes driving; advise notifying the licensing authority",
                    "Visual rehabilitation and occupational therapy referral"] }),
+  visual_pathway_retina: ns(
+    ["ESR and CRP URGENTLY, with a full blood count — a raised ESR/CRP in a patient over 50 means giant cell arteritis until proven otherwise, and the steroids should not wait for the result",
+     "Carotid imaging (Doppler, CT or MR angiography) — this is an embolic event, so the carotid is a source and a symptomatic stenosis is operable",
+     "ECG and telemetry for atrial fibrillation, plus an echocardiogram where a cardiac source is suspected",
+     "Bloods for the young or unexplained case: thrombophilia and antiphospholipid screen, haemoglobinopathy, viscosity"],
+    "emergency",
+    "IMMEDIATE ophthalmology AND acute stroke pathway — this is a stroke, and the patient needs the same secondary prevention as any other stroke",
+    { immediate: [
+        "TREAT THIS AS A STROKE OF THE EYE, not an eye complaint — refer down the acute stroke pathway, because these patients have a high early risk of cerebral stroke and the eye is the warning",
+        "If the patient is over 50, ask about jaw claudication, scalp tenderness and shoulder-girdle pain and palpate the temporal arteries — if giant cell arteritis is possible, give HIGH-DOSE STEROIDS IMMEDIATELY to protect the fellow eye",
+        "Examine the fundus for the whitened retina and cherry-red spot, and look along the arterioles for a visible embolus",
+        "Check the blood pressure and glucose, and document the acuity formally — including whether a PINHOLE improves it",
+      ],
+      confirmatory: [
+        "Temporal artery biopsy where giant cell arteritis is suspected — but the steroids start first; the biopsy stays positive for days after treatment begins",
+        "Echocardiography (transthoracic, then transoesophageal if a source is still not found)",
+        "MRI brain with diffusion — a proportion have silent cerebral infarcts alongside the retinal one, which changes the urgency of secondary prevention",
+      ],
+      monitoring: [
+        "THE FELLOW EYE IS AT RISK — this is what makes it an emergency; in giant cell arteritis untreated second-eye involvement can follow within days",
+        "Visual prognosis is poor once the retina has been ischaemic for more than a few hours, so counsel honestly while still treating the cause",
+        "Full vascular secondary prevention — antiplatelet or anticoagulation as the source dictates, blood pressure, lipids, diabetes and smoking",
+      ] }),
   visual_pathway_lgn: ns(
     ["MRI brain with contrast — look for the characteristic sectoral/wedge infarct pattern",
      "Formal visual field perimetry"],
@@ -2216,9 +2277,11 @@ function deriveMonitoring(site, urgency) {
 export function nextStepsFor(site) {
   const key = NEXT[site.id] ? site.id : `${site.level}_${site.part}`;
   const base = NEXT[key] ? { ...NEXT[key], curated: true } : { ...derive(site), curated: false };
+  // The ophthalmic prompt is appended (never spliced into the curated array in place, which would mutate
+  // the module-level data and leak across calls).
   return {
     immediate: base.immediate || deriveImmediate(site, base.urgency),
-    investigations: base.investigations || [],
+    investigations: [...(base.investigations || []), ...ophthalmicImaging(site)],
     confirmatory: base.confirmatory || deriveConfirmatory(site),
     monitoring: base.monitoring || deriveMonitoring(site, base.urgency),
     urgency: base.urgency,

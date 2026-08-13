@@ -87,7 +87,10 @@ ok("xi_posterior_triangle -> trapezius only (SCM SPARED)", eq(baseOf("xi_posteri
 ok("hypoglossal_canal -> XII", eq(baseOf("hypoglossal_canal"), ["cn12_palsy"]));
 ok("xii_neck -> XII", eq(baseOf("xii_neck"), ["cn12_palsy"]));
 ok("cpa -> VII + hearing + V1 + ataxia", eq(baseOf("cpa"), ["facial_weakness","hearing_loss","v1_sensory","limb_ataxia"]));
-ok("optic_canal -> optic + RAPD", eq(baseOf("optic_canal"), ["optic_neuropathy","rapd"]));
+// the optic canal now also carries the FUNDOSCOPY + ACUITY companions (2026-08-11): a pale disc once the
+// damage is established, and acuity loss that does NOT correct with a pinhole (i.e. organic)
+ok("optic_canal -> optic + RAPD + disc pallor + non-correcting acuity",
+   eq(baseOf("optic_canal"), ["optic_neuropathy","rapd","optic_atrophy","va_reduced_no_pinhole"]));
 ok("carotid_space -> Horner", eq(baseOf("carotid_space"), ["miosis","ptosis"]));
 
 // hygiene: no crosses override, no gate, all ipsilateral, cn11_weakness has no producer
@@ -123,8 +126,8 @@ ok("SOF composite = III+IV+VI+V1+Horner (no V2)",
    eq(compFindings("sup_orbital_fissure"), [...OCULAR,"v1_sensory","miosis"]));
 ok("cavernous composite ADDS V2",
    eq(compFindings("cavernous_sinus"), [...OCULAR,"v1_sensory","v2_sensory","miosis"]));
-ok("orbital apex ADDS optic (+RAPD)",
-   eq(compFindings("orbital_apex"), [...OCULAR,"v1_sensory","miosis","optic_neuropathy","rapd"]));
+ok("orbital apex ADDS optic (+RAPD, disc pallor, non-correcting acuity)",
+   eq(compFindings("orbital_apex"), [...OCULAR,"v1_sensory","miosis","optic_neuropathy","rapd","optic_atrophy","va_reduced_no_pinhole"]));
 ok("petrous apex = VI + V1 (Gradenigo)", eq(compFindings("petrous_apex"), ["weak_abduction","v1_sensory"]));
 ok("jugular (Vernet) = IX gag/taste + X palate/cords + XI scm/trap",
    eq(compFindings("jugular_foramen"),

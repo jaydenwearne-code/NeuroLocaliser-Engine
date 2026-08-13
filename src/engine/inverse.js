@@ -66,17 +66,53 @@ export function knownNegatives(observedSet) {
   return neg;
 }
 
+// ---- the raised-pressure (compartment) axis ----
+// Papilloedema says INSIDE THE SKULL, not where. Anything intracranial that blocks CSF, swells or exerts
+// mass can produce it, so it belongs to no single site's finding set — modelling it per-site would make it
+// part of every cortical syndrome. It is instead an axis ORTHOGONAL to localisation, the same shape as the
+// sensory level: it narrows the COMPARTMENT (intracranial vs everything below the foramen magnum) and
+// annotates the answer, without ever changing which site wins within that compartment.
+//
+// Excluded deliberately: cord, roots, plexus, peripheral nerves, polyneuropathy, motor unit, combined
+// degenerations, the peripheral vestibular apparatus and the sympathetic chain — and the skull-base
+// CORRIDORS, which are extra-axial nerve-in-a-canal lesions rather than mass within the compartment.
+export const INTRACRANIAL_LEVELS = new Set([
+  "midbrain", "pons", "medulla", "brainstem", "pontomesencephalic", "dorsal_midbrain", "parinaud",
+  "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular",
+  "cortex", "subcortex", "cerebrum", "corpus_callosum", "aphasia_subcortical",
+  "thalamus", "thalamus_arousal", "hypothalamus", "basal_ganglia", "cerebellum",
+  "visual_pathway", "olfactory", "craniocervical_junction",
+]);
+const PRESSURE_TOKEN = /^papilloedema@/;
+
+// Is papilloedema among the observations, and what does that mean for the candidate list?
+export function raisedPressureAxis(observedSet) {
+  const present = [...observedSet].some(t => PRESSURE_TOKEN.test(t));
+  return {
+    present,
+    note: present
+      ? "Papilloedema means RAISED INTRACRANIAL PRESSURE. It does not localise, but it does place the lesion INSIDE THE SKULL — so the cord, roots, plexus, peripheral nerves and motor unit are excluded, and anything intracranial that blocks CSF, swells or exerts mass is in play. Image before any lumbar puncture."
+      : "",
+  };
+}
+
 export function differential(observedSet, opts = {}) {
-  const observed = [...observedSet];
+  // The pressure token is stripped before matching: no site's expectedFindings contain it, so leaving it in
+  // would make every site fail to explain it and collapse the differential to nothing.
+  const observed = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t));
+  const pressure = raisedPressureAxis(observedSet);
   const negatives = knownNegatives(observedSet);
   const cands = [];
   for (const site of candidateSites()) {
+    if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
     let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
     let contradicted = false;
     for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
     if (contradicted) continue;
     const explained = observed.filter(t => exp.has(t));
-    if (!explained.length) continue;
+    // Papilloedema on its own explains nothing site-specific, but it is still informative: every
+    // intracranial site stays in play rather than the list collapsing to empty.
+    if (!explained.length && !(pressure.present && !observed.length)) continue;
     cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
                  n: explained.length, prevalence: prevalenceOf(site) });
   }
@@ -242,26 +278,34 @@ export function describeLength(best, distalReach) {
 // ---- TOP-LEVEL SOLVE ----
 export function solve(observedSet, options = {}) {
   const opts = { dominantSide: options.dominantSide || "left", sensoryLevel: options.sensoryLevel };
-  const single = rankSingle(observedSet, opts);
+  // The raised-pressure token is an AXIS, not a site finding — no site's expectedFindings contain it. It is
+  // therefore stripped from every SCORED path (which would otherwise count it as permanently unexplained and
+  // report "no single lesion explains all"), while `differential` below still receives the full set so it can
+  // apply the compartment filter. `pressure` is returned so the caller can annotate.
+  const pressure = raisedPressureAxis(observedSet);
+  const localising = pressure.present
+    ? new Set([...observedSet].filter(t => !PRESSURE_TOKEN.test(t)))
+    : observedSet;
+  const single = rankSingle(localising, opts);
   const best = single[0] || null;
-  const singleExplainsAll = best ? coversAllLocalising(best, observedSet) : false;
+  const singleExplainsAll = best ? coversAllLocalising(best, localising) : false;
 
   let multi = null;
   if (!singleExplainsAll) {
-    const ms = minimalSet(observedSet, opts);
+    const ms = minimalSet(localising, opts);
     // Only surface a multifocal hypothesis if it needs >1 site (otherwise the single ranking already has it).
     if (ms && ms.sites.length > 1) multi = ms;
   }
 
-  const nf = nearFit(observedSet, opts);
+  const nf = nearFit(localising, opts);
   const level = describeLevel(best, options.sensoryLevel);
   const length = describeLength(best, options.distalReach);
   const diff = differential(observedSet, opts);
-  const total = observedSet.size;
+  const total = localising.size;
   const explainAll = diff.filter(c => c.n === total);
   const display = explainAll.length ? explainAll : diff;
   const defaultSite = display[0]?.site.id ?? null;
-  const ruledOut = ruledOutSites(observedSet, opts);
+  const ruledOut = ruledOutSites(localising, opts);
   return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,
-           differential: diff, explainAll, display, defaultSite, ruledOut };
+           differential: diff, explainAll, display, defaultSite, ruledOut, pressure };
 }

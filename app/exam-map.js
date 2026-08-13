@@ -26,6 +26,10 @@ export const EXAM_TREE = [
     { id: "cn2", label: "II — vision & fields", findings: [
       "optic_neuropathy","central_scotoma","altitudinal_defect","rapd","homonymous_hemianopia",
       "superior_quadrantanopia","inferior_quadrantanopia","bitemporal_hemianopia","macular_sparing" ] },
+    // Acuity and the fundus are their own step: the PINHOLE is the discriminator (refractive vs organic),
+    // and papilloedema is a pressure sign rather than a localiser.
+    { id: "acuity", label: "Acuity & fundoscopy", findings: [
+      "va_reduced_no_pinhole","va_reduced_pinhole_corrects","papilloedema","optic_atrophy","retinal_pallor" ] },
     { id: "eom", label: "III / IV / VI — eye movements", findings: [
       "ptosis","weak_adduction","weak_abduction","weak_elevation","weak_depression","vertical_diplopia",
       "gaze_deviation","nystagmus_gaze_evoked","nystagmus_downbeat","nystagmus_upbeat","nystagmus_pendular" ] },

@@ -3,10 +3,15 @@
 // CATEGORIES correlate with site attributes and with the TEMPO of onset. This module is the structured,
 // tempo-aware layer over the same knowledge the phonebook (syndromes.js) holds as free-text ddx.
 //
-//   causesFor(site, { onset }) -> { byCategory, all, onset, derived }
+//   causesFor(site, { onset }) -> { byCategory, all, onset, derived, source }
 //
 // Curated per-site entries (bootstrapped from the phonebook ddx) take precedence; a derived category
 // fallback seeds plausible categories from site attributes so EVERY site returns something.
+//
+// The surgical sieve is an AUTHORING CHECKLIST, not an output format. It exists to stop the author
+// forgetting a category — it must never manufacture content to fill itself. Where a category has no
+// plausible cause at a site, the honest output is silence, so `byCategory` simply omits it.
+// See docs/superpowers/specs/2026-08-11-differential-depth-design.md.
 
 // ---- the surgical sieve ----
 export const CATEGORIES = [
@@ -16,8 +21,14 @@ export const CATEGORIES = [
   { id: "infective",    label: "Infective",                                  tint: "--ipsi" },
   { id: "metabolic",    label: "Metabolic / toxic / nutritional",            tint: "--gold" },
   { id: "traumatic",    label: "Traumatic / mechanical",                     tint: "--muted" },
-  { id: "degenerative", label: "Degenerative / hereditary",                  tint: "--faint" },
-  { id: "congenital",   label: "Congenital / structural",                    tint: "--none" },
+  // Iatrogenic is deliberately its own bucket rather than a corner of `traumatic`: "a treatment caused
+  // this" is a different question from "an injury caused this", and it is the one a clinician forgets to
+  // ask. SCOPE (owner's decision, 2026-08-11): PROCEDURES AND RADIATION ONLY. A drug acting systemically
+  // stays under Metabolic / toxic — the line is "an intervention caused structural injury" versus "a
+  // substance acting on the body".
+  { id: "iatrogenic",   label: "Iatrogenic (treatment-related)",             tint: "--iatro" },
+  { id: "degenerative", label: "Degenerative",                               tint: "--faint" },
+  { id: "congenital",   label: "Congenital / hereditary",                    tint: "--none" },
   // Listed LAST, and deliberately outside the surgical sieve: these are differentials for the
   // PRESENTATION, not lesions at this site (Todd's paresis, migraine aura, hypoglycaemia, delirium).
   // Shoehorning them into a sieve category would misteach; the sieve completion never fabricates them.
@@ -42,6 +53,88 @@ export const LIKELIHOOD = ["common", "uncommon", "rare"];
 const c = (name, cat, tempo, likelihood, red = false, feature = "", pathognomonic = "") =>
   ({ name, cat, tempo, likelihood, red, feature, pathognomonic });
 
+// ---- family builder: the shared skull-base spine (depth spec, 2026-08-11) ----
+// Every skull-base key is a bony or dural corridor, so the same small set of processes reaches all of them.
+// What differs is WHICH nerves fail there and what the earliest clue is. `sbSpine` interpolates the
+// compartment's own signature into each shared cause, so no two corridors emit the same differential — the
+// no-two-identical-lists invariant in test/causes-depth.test.js is what enforces that.
+//
+// A compartment PICKS only the spine items that genuinely reach it. This is a consistency device — it keeps
+// the shared skull-base red flags phrased identically everywhere by construction, the way `rootNS` does in
+// nextSteps.js. It is NOT a way to pad a list to length: if an item does not belong at a corridor, omit it.
+const SB = {
+  mass: d => c("Schwannoma / meningioma / metastasis", "neoplastic", ["chronic"], "common", false,
+    `Months to years of slowly progressive ${d.deficit} — ${d.firstSign}`),
+  perineural: d => c("Perineural spread of head-and-neck malignancy", "neoplastic", ["subacute","chronic"], "uncommon", true,
+    `Progressive ${d.deficit} WITH PAIN, in someone who has had a facial skin cancer or a nasopharyngeal tumour — malignancy creeps along the nerve back through the skull base, and the scan must be requested specifically to look for it`),
+  osteomyelitis: d => c("Skull-base osteomyelitis (malignant otitis externa)", "infective", ["subacute"], "uncommon", true,
+    `Severe unremitting ear pain or headache with ${d.deficit} in an ELDERLY DIABETIC or immunocompromised patient — granulation tissue in the ear canal, a very high ESR, and bone erosion on imaging; it is fatal untreated`),
+  basalMeningitis: d => c("Basal meningitis (tuberculous, carcinomatous or fungal)", "infective", ["subacute"], "rare", true,
+    `${d.deficitCap} arriving alongside OTHER cranial neuropathies over weeks, with headache — when several nerves fail together the problem is the meninges, not one compressive lesion; it needs a large-volume CSF sample, often repeated`),
+  granulomatous: d => c("Granulomatous or IgG4-related inflammation (sarcoid, Tolosa-Hunt)", "inflammatory", ["subacute"], "rare", false,
+    `${d.deficitCap} with pain, responding briskly to steroids — but look for hilar lymphadenopathy, a raised ACE or an IgG4 elevation before accepting the label, because lymphoma and infection also respond at first`),
+  fracture: d => c("Basal skull fracture", "traumatic", ["hyperacute","acute"], "uncommon", true,
+    `${d.deficitCap} immediately after significant head trauma, often with CSF rhinorrhoea or otorrhoea, periorbital bruising or mastoid (Battle's) bruising`),
+  npc: d => c("Nasopharyngeal carcinoma", "neoplastic", ["subacute","chronic"], "uncommon", true,
+    `${d.deficitCap} with a blocked ear, epistaxis or a neck node, in a patient of Southern Chinese or South-East Asian background — it invades the skull base early and the nasopharynx must be examined, not just scanned`),
+};
+// deficit: lower-case noun phrase ("a depressed gag with dysphagia"); firstSign: the earliest bedside clue.
+const sbSpine = (deficit, firstSign, pick) => {
+  const d = { deficit, firstSign, deficitCap: deficit.charAt(0).toUpperCase() + deficit.slice(1) };
+  return pick.map(k => SB[k](d));
+};
+
+// ---- family builder: the shared named-nerve spine (depth spec, 2026-08-11) ----
+// A single named-nerve palsy is usually mechanical — compression, traction, a fracture, an operation — and
+// those causes are specific to each nerve. But the SAME few systemic processes can present as one isolated
+// mononeuropathy at ANY nerve, and they are precisely what gets missed once a palsy has been assumed
+// compressive. So every named nerve carries them, phrased identically by construction and interpolated with
+// its own deficit. `deficit` is a lower-case noun phrase ("foot drop with weak eversion").
+const NV = {
+  vasculitis: d => c("Vasculitic mononeuritis multiplex", "inflammatory", ["acute","subacute"], "uncommon", true,
+    `Pain accompanying ${d.deficit}, alongside weight loss, rash or constitutional upset, and then a second unrelated nerve failing days or weeks later — a painful mononeuropathy with systemic features is vasculitis until proven otherwise, and it needs urgent immunosuppression before the next nerve infarcts`),
+  sheathTumour: d => c("Nerve sheath tumour (schwannoma / neurofibroma)", "neoplastic", ["chronic"], "rare", false,
+    `${d.cap} progressing over months, with a palpable tender swelling on the nerve and a Tinel's sign FIXED at one point — an entrapment eases with rest and position change, a tumour does not`),
+  hnpp: d => c("Hereditary neuropathy with liability to pressure palsies", "congenital", ["acute","subacute"], "rare", false,
+    `RECURRENT painless palsies after trivial compression — sleeping awkwardly, leaning on an elbow, crossing the legs — recovering slowly, often with a family history; ask about previous episodes at OTHER nerves, because it is the pattern that gives it away`),
+  leprosy: d => c("Leprosy", "infective", ["chronic"], "rare", true,
+    `${d.cap} in a patient from an endemic area, with a thickened nerve and anaesthetic skin — still the commonest treatable neuropathy worldwide, and it is missed because it is never considered`,
+    "thickened, palpable peripheral nerve trunks with hypopigmented, anaesthetic skin patches — palpate the nerves and test sensation over the patches"),
+  diabetic: d => c("Diabetes (entrapment-prone nerve)", "metabolic", ["subacute","chronic"], "common", false,
+    `${d.cap} in a diabetic patient — diabetic nerves tolerate compression poorly, so an entrapment appears earlier, at a lesser insult, and recovers less completely than it would otherwise`),
+};
+const nvSpine = (deficit, pick) => {
+  const d = { deficit, cap: deficit.charAt(0).toUpperCase() + deficit.slice(1) };
+  return pick.map(k => NV[k](d));
+};
+
+// ---- family builder: the shared nerve-root spine (depth spec, 2026-08-11) ----
+// The 17 roots are the most near-identical family in this file: the same processes reach every root, and
+// only the myotome, dermatome and reflex change. `rtSpine` interpolates the root's own signature so the
+// shared radiculopathy red flags stay phrased identically by construction — the same reasoning as `rootNS`
+// in nextSteps.js — while no two roots emit the same differential.
+//
+// TWO PHRASING RULES, both learned the hard way (Regions E and F):
+//  1. Never join the deficit with a relative pronoun — `${cap} that arrived with fever` makes the clause
+//     attach to the last noun of the deficit phrase, not to the deficit.
+//  2. Keep each `deficit` SHORT (a handful of words naming the key sign) and embed it mid-sentence so the
+//     DISCRIMINATOR leads. The card already names the site, so restating the full syndrome is redundant
+//     and makes builder rows visibly longer than the hand-authored ones beside them.
+const RT = {
+  abscess: d => c("Spinal epidural abscess", "infective", ["acute", "subacute"], "rare", true,
+    `FEVER with focal spinal tenderness and rising inflammatory markers alongside ${d.deficit} — in someone who injects drugs, is diabetic, is bacteraemic or has been recently instrumented; the classic triad is usually incomplete, so image on suspicion rather than waiting for it to complete`),
+  lyme: d => c("Lyme radiculitis (Bannwarth syndrome)", "infective", ["subacute"], "rare", false,
+    `Pain far out of proportion to ${d.deficit}, worse at night, weeks after a tick bite or erythema migrans in an endemic area — a facial palsy or a lymphocytic CSF alongside it clinches the diagnosis, and it is fully treatable with antibiotics`),
+  leptomeningeal: d => c("Leptomeningeal metastasis", "neoplastic", ["subacute"], "rare", true,
+    `${d.cap} arriving together with OTHER root or cranial nerve levels, and with headache, in a patient with known cancer — several non-contiguous levels failing at once points to the meninges rather than to one foramen, and it needs a large-volume CSF cytology, often repeated`),
+  schwannoma: d => c("Nerve-root schwannoma or neurofibroma", "neoplastic", ["chronic"], "rare", false,
+    `${d.cap} progressing over months to years, with pain worse at NIGHT AND AT REST — unlike a disc it does not ease with lying down, and MRI shows a dumbbell lesion widening the exit foramen`),
+};
+const rtSpine = (deficit, pick) => {
+  const d = { deficit, cap: deficit.charAt(0).toUpperCase() + deficit.slice(1) };
+  return pick.map(k => RT[k](d));
+};
+
 // ---- curated causes, keyed like the phonebook (site.id if it has its own entry, else level_part) ----
 export const CAUSES = {
   // --- brainstem ---
@@ -51,22 +144,48 @@ export const CAUSES = {
     c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false, "Younger patient, subacute, prior episodes; T2 lesions"),
     c("Midbrain tumour / metastasis", "neoplastic", ["chronic"], "rare", false, "Progressive over weeks; enhancing mass"),
     c("Top-of-the-basilar embolism", "vascular", ["hyperacute","acute"], "uncommon", true, "Bilateral, with visual + behavioural change and reduced consciousness"),
+    c("Uncal herniation compressing the third nerve", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "A dilating pupil ipsilateral to a supratentorial mass or haematoma, with falling consciousness — the third nerve is crushed against the tentorial edge BEFORE the midbrain infarcts, so the blown pupil is the warning, not the endpoint; this is a neurosurgical emergency"),
+    c("Brainstem abscess or tuberculoma", "infective", ["subacute"], "rare", true,
+      "Fever with crossed brainstem signs progressing over days to weeks in an immunocompromised patient or someone from a TB-endemic area; a ring-enhancing brainstem lesion"),
   ],
   medulla_lateral: [ // Wallenberg
     c("PICA / vertebral artery occlusion", "vascular", ["hyperacute","acute"], "common", false, "Vertigo, ipsilateral facial + contralateral body pain/temp loss, Horner's, dysphagia"),
     c("Vertebral artery dissection", "vascular", ["hyperacute","acute"], "common", true, "Younger patient, neck pain/recent trauma, often no vascular risk factors"),
     c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false, "Younger, subacute onset, prior demyelinating episodes"),
     c("Lateral medullary tumour / metastasis", "neoplastic", ["chronic"], "rare", false, "Progressive; enhancing lesion on MRI"),
+    c("NMOSD — area postrema syndrome", "inflammatory", ["acute","subacute"], "uncommon", true,
+      "Intractable hiccups, nausea and vomiting lasting more than 48 hours, preceding or accompanying the lateral medullary picture — check aquaporin-4 antibodies, because NMOSD is treated differently from MS and MS drugs can make it worse"),
+    c("Vertebral artery injury from neck trauma or manipulation", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "Neck pain then posterior-circulation signs within hours to days of chiropractic manipulation, whiplash or a sports injury, in a younger patient with no vascular risk factors"),
+    c("Cavernous malformation", "vascular", ["acute","subacute"], "rare", false,
+      "Stepwise deterioration from repeated small bleeds rather than a single event; a 'popcorn' lesion with a haemosiderin rim on GRE — unlike an infarct, it re-bleeds"),
   ],
   medulla_medial: [ // Dejerine
     c("Anterior spinal / vertebral artery infarct", "vascular", ["hyperacute","acute"], "common", false, "Contralateral hemiparesis + tongue deviation + dorsal-column loss"),
     c("Vertebral dissection", "vascular", ["acute"], "uncommon", true, "Neck pain, younger patient"),
+    c("Bilateral medial medullary infarct", "vascular", ["hyperacute","acute"], "rare", true,
+      "Quadriparesis with tongue weakness and a SPARED face, from both paramedian branches — the 'heart appearance' on DWI. It is repeatedly mistaken for a high cord lesion or for Guillain-Barré, and it can progress to respiratory failure"),
+    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false,
+      "A younger patient whose crossed medial medullary signs evolve over days, with prior episodes and lesions disseminated in time and space"),
+    c("Medullary tumour / metastasis", "neoplastic", ["subacute","chronic"], "rare", false,
+      "Progression over weeks with headache and lower cranial nerve involvement; an enhancing medullary lesion on MRI"),
+    c("Craniocervical junction trauma (odontoid fracture)", "traumatic", ["hyperacute","acute"], "rare", true,
+      "Medullary signs after a neck injury or fall in an elderly or rheumatoid patient — immobilise and image the craniocervical junction before moving them"),
+    c("Brainstem abscess or tuberculoma", "infective", ["subacute"], "rare", true,
+      "Fever with progressive medullary signs over days to weeks in an immunocompromised or TB-exposed patient; a ring-enhancing lesion"),
   ],
   pons_medial: [ // Millard-Gubler / Foville
     c("Basilar perforator infarct", "vascular", ["hyperacute","acute"], "common", false, "Crossed pontine signs; risk of progression to basilar occlusion"),
     c("Pontine haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true, "Pinpoint pupils, coma, hyperthermia; hypertensive"),
     c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false, "Younger, subacute, prior episodes; may cause INO"),
     c("Pontine glioma (esp. children)", "neoplastic", ["chronic"], "rare", false, "Progressive multiple cranial neuropathies; diffuse pontine expansion"),
+    c("Osmotic demyelination syndrome (central pontine myelinolysis)", "metabolic", ["acute","subacute"], "uncommon", true,
+      "An improving hyponatraemic patient who DETERIORATES a few days after correction, with quadriparesis, dysarthria and dysphagia; the MRI change lags the clinical picture, so a normal early scan does not exclude it"),
+    c("Basilar artery dissection", "vascular", ["hyperacute","acute"], "rare", true,
+      "Occipital or neck pain preceding brainstem signs in a younger patient, sometimes after trauma or neck manipulation — it can occlude perforators progressively, so the deficit builds rather than being maximal at onset"),
+    c("Brainstem abscess or tuberculoma", "infective", ["subacute"], "rare", true,
+      "Fever with progressive crossed pontine signs over days to weeks; a ring-enhancing lesion in an immunocompromised or TB-exposed patient"),
   ],
   // --- Region C: remaining brainstem + cerebellum (2026-08-10) ---
   midbrain_lateral: [ // Claude's / Benedikt's — CN III with contralateral cerebellar or rubral signs
@@ -78,6 +197,12 @@ export const CAUSES = {
       "Younger patient evolving over days, with prior episodes and lesions disseminated in time and space"),
     c("Tumour / metastasis", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progression over weeks with headache; an enhancing brainstem lesion on MRI"),
+    c("Cavernous malformation", "vascular", ["acute","subacute"], "uncommon", false,
+      "Stepwise deterioration from repeated small bleeds in a younger patient, rather than one abrupt event; a 'popcorn' lesion with a haemosiderin rim on GRE"),
+    c("Wernicke's encephalopathy", "metabolic", ["acute","subacute"], "uncommon", true,
+      "Periaqueductal involvement in an at-risk patient — alcohol, hyperemesis, bariatric surgery or prolonged vomiting; give THIAMINE BEFORE any glucose, because a glucose load precipitates it"),
+    c("Neuro-Behçet's disease", "inflammatory", ["subacute"], "rare", false,
+      "Recurrent oral AND genital ulceration with uveitis, in a patient from the Mediterranean, Middle East or East Asia; the brainstem lesion is steroid-responsive, so it is worth asking about the ulcers explicitly"),
   ],
   midbrain_trochlear: [ // CN IV nucleus — the only cranial nerve nucleus whose fibres fully decussate
     c("Small brainstem infarct", "vascular", ["hyperacute","acute"], "uncommon", false,
@@ -88,6 +213,13 @@ export const CAUSES = {
       "Progressive vertical diplopia with upgaze failure or headache — a dorsal midbrain mass, often with hydrocephalus"),
     c("Head trauma", "traumatic", ["hyperacute","acute"], "common", false,
       "Vertical diplopia after a head injury; the trochlear nerve's long dorsal course makes it the most vulnerable to trauma"),
+    c("Decompensated congenital fourth nerve palsy", "congenital", ["chronic"], "common", false,
+      "Diplopia that feels new but is not — a long-standing palsy decompensating in adulthood, with a large vertical fusion range on testing and no other neurological sign",
+      "a long-standing head tilt visible in OLD PHOTOGRAPHS — ask the patient to bring childhood pictures or open their phone; it settles the diagnosis without imaging"),
+    c("Microvascular (diabetic) ischaemic palsy", "metabolic", ["hyperacute","acute"], "common", false,
+      "Painless isolated vertical diplopia in a patient over 50 with diabetes or hypertension, with no other neurological signs; it recovers spontaneously over about three months — failure to recover is what prompts imaging"),
+    c("Myasthenia gravis", "mimic", ["subacute"], "uncommon", false,
+      "Variable, fatiguable vertical diplopia that is worse at the end of the day and after sustained upgaze, with ptosis but a NORMAL pupil — myasthenia imitates any ocular motor palsy, so it belongs on every diplopia differential"),
   ],
   midbrain_hemi: [
     c("Top-of-the-basilar occlusion", "vascular", ["hyperacute","acute"], "common", true,
@@ -98,6 +230,12 @@ export const CAUSES = {
       "Progression over weeks with headache and gait disturbance; an enhancing brainstem mass"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient evolving over days with prior episodes"),
+    c("Duret haemorrhage / brainstem injury from herniation", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "Rapid deterioration to coma with a brainstem picture AFTER transtentorial herniation — a secondary bleed from stretched perforators, so the answer is to find and treat the supratentorial cause, not to treat the brainstem"),
+    c("Bickerstaff brainstem encephalitis", "inflammatory", ["acute","subacute"], "rare", true,
+      "Ophthalmoplegia, ataxia and reduced consciousness one to three weeks after a diarrhoeal or respiratory illness, with anti-GQ1b antibodies — the brainstem counterpart of Miller Fisher, and it responds to immunotherapy"),
+    c("Brainstem encephalitis (Listeria, enterovirus)", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache followed by multiple cranial neuropathies and depressed consciousness; Listeria needs AMPICILLIN, which standard empirical meningitis cover omits"),
   ],
   dorsal_midbrain_tectum: [ // Parinaud / dorsal midbrain syndrome
     c("Pineal region tumour (germinoma)", "neoplastic", ["subacute","chronic"], "common", true,
@@ -111,6 +249,10 @@ export const CAUSES = {
       "Younger patient evolving over days with prior demyelinating episodes"),
     c("Midbrain haemorrhage", "vascular", ["hyperacute","acute"], "rare", true,
       "Abrupt onset with headache and reduced consciousness"),
+    c("Progressive supranuclear palsy", "degenerative", ["chronic"], "uncommon", false,
+      "Years rather than weeks: early backward falls with a vertical gaze palsy, worst on DOWNgaze — the slow mimic of the dorsal midbrain syndrome, and the preserved reflex eye movements are what prove it supranuclear"),
+    c("Tectal contusion after head injury", "traumatic", ["hyperacute","acute"], "rare", false,
+      "Vertical gaze failure and pupillary abnormality after a significant head injury; the tectum is injured against the tentorial edge"),
   ],
   pupil_pretectum: [
     c("Dorsal midbrain (pretectal) lesion", "neoplastic", ["subacute","chronic"], "common", true,
@@ -119,6 +261,15 @@ export const CAUSES = {
       "Small irregular pupils with light-near dissociation, in a patient with other tertiary features"),
     c("Diabetic autonomic neuropathy", "metabolic", ["chronic"], "uncommon", false,
       "Long-standing diabetes with other autonomic features; light-near dissociation without a structural midbrain lesion"),
+    c("Holmes-Adie (tonic) pupil", "degenerative", ["subacute","chronic"], "common", false,
+      "A LARGE pupil in a young woman that constricts slowly and tonically to near and re-dilates slowly, often with absent ankle jerks; it is benign, and dilute 0.1% pilocarpine constricts it (denervation supersensitivity) where a normal pupil is unaffected",
+      "segmental, vermiform (worm-like) contractions of the iris margin rather than a smooth concentric constriction"),
+    c("Aberrant regeneration after a third nerve palsy", "iatrogenic", ["chronic"], "uncommon", true,
+      "The pupil constricts on ADDUCTION or downgaze rather than to light, months after a third nerve palsy — aberrant regeneration does NOT follow a microvascular palsy, so it implies a compressive cause and mandates vessel imaging"),
+    c("Obstructive hydrocephalus compressing the pretectum", "congenital", ["acute","subacute"], "uncommon", true,
+      "Light-near dissociation with upgaze failure appearing as the ventricles enlarge, with headache and vomiting; in a shunted patient assume shunt failure until proven otherwise"),
+    c("Afferent (optic nerve) lesion imitating light-near dissociation", "mimic", ["subacute","chronic"], "uncommon", false,
+      "If the AFFERENT limb is blocked the pupil reacts poorly to light yet the near response is intact — check for a relative afferent pupillary defect and reduced acuity or colour vision, which point to the optic nerve rather than the pretectum"),
   ],
   pons_lateral: [ // Marie-Foix — AICA territory
     c("AICA territory infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -129,6 +280,12 @@ export const CAUSES = {
       "Months to years of progressive unilateral hearing loss with tinnitus, then facial numbness and ataxia as it enlarges"),
     c("Demyelination", "inflammatory", ["subacute"], "uncommon", false,
       "Younger patient evolving over days with prior episodes and lesions elsewhere on MRI"),
+    c("Cavernous malformation", "vascular", ["acute","subacute"], "uncommon", false,
+      "Stepwise worsening from repeated small bleeds in a younger patient rather than one abrupt event; a 'popcorn' lesion with a haemosiderin rim on GRE — it re-bleeds, so it is managed quite differently from an infarct"),
+    c("Vertebrobasilar dolichoectasia", "congenital", ["chronic"], "rare", false,
+      "Slowly progressive cranial nerve compression from a markedly elongated, tortuous basilar artery — the same mechanism produces hemifacial spasm and trigeminal neuralgia, and it can also thrombose perforators"),
+    c("Superficial siderosis", "degenerative", ["chronic"], "rare", false,
+      "Years of progressive BILATERAL sensorineural deafness with ataxia and myelopathy, from recurrent occult subarachnoid bleeding; a haemosiderin rim coats the brainstem and cerebellum on GRE — hunt for the bleeding source, because it continues"),
   ],
   pons_lateral_trigeminal: [
     c("AICA territory infarct involving the trigeminal complex", "vascular", ["hyperacute","acute"], "common", true,
@@ -139,6 +296,13 @@ export const CAUSES = {
       "Younger patient with facial numbness evolving over days and prior demyelinating episodes"),
     c("Pontine haemorrhage", "vascular", ["hyperacute","acute"], "rare", true,
       "Abrupt onset with headache and reduced consciousness"),
+    c("Perineural spread of head-and-neck malignancy", "neoplastic", ["subacute","chronic"], "rare", true,
+      "Progressive facial numbness WITH PAIN in a patient who has had a facial skin cancer or nasopharyngeal tumour — malignancy tracks back along the trigeminal branches to the ganglion and pons, and the imaging must be requested specifically to look for it",
+      "numbness confined to the chin (the mental neuropathy, or 'numb chin sign') — in an adult this is malignant infiltration until proven otherwise"),
+    c("Neurosarcoidosis", "inflammatory", ["subacute","chronic"], "rare", true,
+      "Multiple cranial neuropathies with basal meningeal enhancement, in a patient with hilar lymphadenopathy, uveitis or raised serum ACE; it is steroid-responsive, so it is worth pursuing"),
+    c("Cavernous malformation", "vascular", ["acute","subacute"], "rare", false,
+      "Stepwise facial sensory loss from repeated small bleeds; a 'popcorn' lesion with a haemosiderin rim on GRE"),
   ],
   pons_trigeminal: [ // main sensory + motor V nuclei
     c("Demyelination (multiple sclerosis)", "inflammatory", ["subacute"], "common", false,
@@ -149,6 +313,12 @@ export const CAUSES = {
       "Progressive facial numbness with hearing loss over months; an absent corneal reflex is often the earliest sign"),
     c("Syringobulbia", "congenital", ["chronic"], "rare", false,
       "Years of progressive dissociated facial sensory loss in an onion-skin distribution, often with a cervical syrinx"),
+    c("Brainstem glioma", "neoplastic", ["subacute","chronic"], "uncommon", true,
+      "Facial numbness progressing over weeks alongside other cranial neuropathies and long-tract signs, with an expanding pons on MRI — progressive facial numbness is never benign and always warrants imaging"),
+    c("Pontine haemorrhage or cavernoma", "vascular", ["hyperacute","acute","subacute"], "rare", true,
+      "Abrupt or stepwise facial sensory loss with headache; a cavernoma re-bleeds, so the course is stuttering rather than single-hit"),
+    c("Brainstem encephalitis or tuberculoma", "infective", ["acute","subacute"], "rare", true,
+      "Fever with progressive facial numbness and other cranial neuropathies over days to weeks in an immunocompromised or TB-exposed patient"),
   ],
   pons_hemi: [
     c("Basilar artery occlusion", "vascular", ["hyperacute","acute"], "common", true,
@@ -161,6 +331,10 @@ export const CAUSES = {
       "Younger patient evolving over days with prior episodes"),
     c("Pontine glioma", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive crossed brainstem signs over weeks to months; a diffusely expanded pons on MRI"),
+    c("Brainstem abscess", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache with progressive bilateral pontine signs; a ring-enhancing lesion, often seeded from endocarditis, a dental source or a right-to-left shunt"),
+    c("Pontine contusion with diffuse axonal injury", "traumatic", ["hyperacute","acute"], "rare", true,
+      "Persistent coma with brainstem signs after a high-speed deceleration injury, out of proportion to the CT; the lesions show only on GRE or SWI"),
   ],
   medulla_hemi: [ // Reinhold / Babinski-Nageotte
     c("Vertebral artery occlusion or dissection", "vascular", ["hyperacute","acute"], "common", true,
@@ -171,6 +345,12 @@ export const CAUSES = {
       "Younger patient evolving over days with prior demyelinating episodes"),
     c("Tumour / metastasis", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progression over weeks with lower cranial-nerve signs and an enhancing lesion"),
+    c("Craniocervical junction compression (foramen-magnum meningioma, basilar invagination)", "neoplastic", ["chronic"], "rare", true,
+      "Months of slowly progressive signs with neck pain, classically with weakness that rotates around the limbs — surgically treatable, so it must not be dismissed as degenerative"),
+    c("Craniocervical junction trauma", "traumatic", ["hyperacute","acute"], "rare", true,
+      "Medullary signs after a neck injury, fall or road traffic collision; respiratory compromise is the immediate danger, so immobilise and image before moving the patient"),
+    c("Brainstem abscess or tuberculoma", "infective", ["subacute"], "rare", true,
+      "Fever with progressive medullary and lower cranial nerve signs over days to weeks; a ring-enhancing lesion in an immunocompromised or TB-exposed patient"),
   ],
   pontomesencephalic_tegmentum: [ // upbeat nystagmus
     c("Wernicke's encephalopathy", "metabolic", ["acute","subacute"], "common", true,
@@ -184,6 +364,11 @@ export const CAUSES = {
       "Nystagmus with ataxia in a patient on phenytoin, carbamazepine or lithium — check levels, as it is reversible"),
     c("Paraneoplastic or posterior-fossa tumour", "neoplastic", ["subacute","chronic"], "rare", false,
       "Subacute progressive brainstem-cerebellar signs; look for an underlying malignancy"),
+    c("Whipple's disease", "infective", ["chronic"], "rare", true,
+      "Progressive cognitive decline with a supranuclear gaze palsy, myoclonus and a history of weight loss, diarrhoea or arthralgia — untreated it is fatal, and it responds to prolonged antibiotics",
+      "oculomasticatory myorhythmia — continuous, rhythmic convergence of the eyes synchronised with contractions of the jaw; it occurs in no other disease"),
+    c("Extrapontine osmotic demyelination", "metabolic", ["acute","subacute"], "rare", true,
+      "Days after rapid correction of hyponatraemia, with a movement disorder (parkinsonism, dystonia) and behavioural change added to the brainstem picture; the risk is set by how fast the sodium rose"),
   ],
   brainstem_aras_paramedian_tegmentum: [
     c("Top-of-the-basilar / brainstem infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -196,6 +381,10 @@ export const CAUSES = {
       "Persistent coma after significant head trauma with imaging that looks milder than the clinical state"),
     c("Metabolic or drug-induced coma", "metabolic", ["hyperacute","acute"], "common", false,
       "Reduced consciousness with PRESERVED and symmetric brainstem reflexes and no focal signs — check glucose, sodium, ammonia, toxicology and CO2 before assuming a structural cause"),
+    c("Brainstem encephalitis / meningoencephalitis", "infective", ["acute","subacute"], "uncommon", true,
+      "Fever and headache preceding the fall in consciousness, with cranial neuropathies; do not delay aciclovir and antibiotics for the scan or the lumbar puncture"),
+    c("Acute disseminated encephalomyelitis (ADEM)", "inflammatory", ["acute","subacute"], "rare", true,
+      "Encephalopathy with multifocal deficits days to weeks after an infection or vaccination, typically in a child — large, poorly demarcated white-matter lesions that are ALL THE SAME AGE, unlike MS"),
   ],
   locked_in_ventral_pons: [
     c("Basilar artery occlusion", "vascular", ["hyperacute","acute"], "common", true,
@@ -207,6 +396,12 @@ export const CAUSES = {
       "A biphasic course after rapid correction of hyponatraemia, with quadriparesis and bulbar failure evolving over days"),
     c("Pontine trauma or tumour", "traumatic", ["hyperacute","acute","subacute"], "rare", false,
       "A clear mechanism, or progressive bilateral pontine signs from an expanding mass"),
+    c("Basilar artery dissection", "vascular", ["hyperacute","acute"], "rare", true,
+      "Occipital or neck pain before the brainstem signs, in a younger patient after trauma or neck manipulation; the deficit builds as perforators close, so a stuttering course does not exclude it"),
+    c("Severe brainstem demyelination", "inflammatory", ["acute","subacute"], "rare", false,
+      "A younger patient with a fulminant brainstem attack evolving over days, with prior demyelinating episodes; unlike basilar occlusion it is not maximal at onset"),
+    c("Complete neuromuscular paralysis (severe GBS, botulism, prolonged blockade)", "mimic", ["acute","subacute"], "uncommon", true,
+      "Total paralysis with preserved awareness — but here vertical gaze and blinking are ALSO lost, whereas true locked-in syndrome preserves them. Establish a yes/no eye-movement code before ever concluding a patient is unresponsive"),
   ],
   thalamus_arousal_paramedian: [ // artery of Percheron
     c("Artery of Percheron infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -217,6 +412,12 @@ export const CAUSES = {
       "Progressive drowsiness and cognitive decline over weeks to months with bilateral thalamic expansion"),
     c("Wernicke's encephalopathy", "metabolic", ["acute","subacute"], "uncommon", true,
       "Confusion with ophthalmoplegia and ataxia in an at-risk patient; medial thalamic and mammillary change on MRI — give thiamine empirically"),
+    c("Japanese encephalitis / flavivirus encephalitis", "infective", ["acute","subacute"], "rare", true,
+      "Fever and reduced consciousness with a parkinsonian or dystonic movement disorder and BILATERAL thalamic lesions, after residence in or travel to endemic Asia — the thalamic pattern is the clue that separates it from herpes encephalitis"),
+    c("Anti-Ma2 (paraneoplastic) diencephalitis", "inflammatory", ["subacute"], "rare", true,
+      "Subacute hypersomnolence, vertical gaze palsy and memory failure in a young man — look for a testicular tumour, because treating the tumour is what treats the encephalitis"),
+    c("Creutzfeldt-Jakob disease", "degenerative", ["subacute","chronic"], "rare", false,
+      "Rapidly progressive dementia over months with myoclonus and ataxia; in the variant form symmetrical high signal in the posterior thalami (the pulvinar sign) is characteristic on FLAIR and DWI"),
   ],
   pseudobulbar_corticobulbar: [
     c("Bilateral vascular disease (multi-infarct / lacunar state)", "vascular", ["subacute","chronic"], "common", false,
@@ -229,6 +430,10 @@ export const CAUSES = {
       "Years of falls (backwards, early), vertical gaze palsy and axial rigidity with pseudobulbar features"),
     c("Bilateral traumatic or hypoxic injury", "traumatic", ["acute","subacute"], "rare", false,
       "Bulbar failure following severe head injury or a hypoxic-ischaemic insult"),
+    c("CADASIL", "congenital", ["chronic"], "rare", false,
+      "Recurrent lacunar strokes and migraine WITH AURA from the thirties onward, with a family history of stroke and early dementia; confluent anterior temporal and external capsule white-matter change is the imaging signature"),
+    c("Bilateral perisylvian injury (Worster-Drought / cerebral palsy)", "congenital", ["chronic"], "rare", false,
+      "Lifelong drooling, dysarthria and swallowing difficulty with a brisk jaw jerk — the history reaches back to childhood rather than being new, which is what separates it from an acquired pseudobulbar palsy"),
   ],
   cerebellum_vermis: [
     c("Alcohol-related cerebellar degeneration", "metabolic", ["chronic"], "common", false,
@@ -239,6 +444,12 @@ export const CAUSES = {
       "Abrupt truncal ataxia with headache and vomiting; posterior-fossa SWELLING can obstruct the fourth ventricle and cause fatal herniation, so conscious level must be watched closely"),
     c("Paraneoplastic cerebellar degeneration", "neoplastic", ["subacute"], "rare", false,
       "Subacute ataxia over weeks with anti-Yo or anti-Hu antibodies; look for an underlying breast, ovarian or lung malignancy"),
+    c("Post-infectious acute cerebellitis", "infective", ["acute","subacute"], "common", false,
+      "A CHILD with abrupt truncal ataxia one to three weeks after chickenpox or another viral illness, systemically well and afebrile by then, recovering spontaneously over weeks — the commonest acute ataxia in childhood"),
+    c("Cerebellar malformation (Dandy-Walker, vermian hypoplasia)", "congenital", ["chronic"], "rare", false,
+      "Truncal ataxia and delayed motor milestones present from infancy rather than acquired, often with macrocephaly and hydrocephalus; the vermis is absent or hypoplastic on MRI"),
+    c("Miller Fisher syndrome", "mimic", ["acute","subacute"], "uncommon", true,
+      "Ophthalmoplegia, AREFLEXIA and ataxia one to three weeks after a diarrhoeal illness, with anti-GQ1b antibodies — the ataxia is sensory and peripheral, not cerebellar, so the areflexia is the giveaway; watch for progression to respiratory failure"),
   ],
   cerebellum_flocculonodular: [
     c("Medulloblastoma", "neoplastic", ["subacute","chronic"], "common", true,
@@ -249,6 +460,12 @@ export const CAUSES = {
       "Younger patient with nystagmus and unsteadiness evolving over days and prior episodes"),
     c("Drug toxicity (anticonvulsants, alcohol)", "metabolic", ["acute","subacute","chronic"], "common", false,
       "Nystagmus and unsteadiness with phenytoin, carbamazepine or alcohol — reversible, so check levels"),
+    c("Chiari I malformation", "congenital", ["chronic"], "common", false,
+      "Years of symptoms with DOWNBEAT nystagmus worst on lateral and downgaze, often with an associated syrinx; the tonsils sit below the foramen magnum"),
+    c("Fourth ventricular ependymoma", "neoplastic", ["subacute","chronic"], "uncommon", true,
+      "Progressive nystagmus, unsteadiness and vomiting with hydrocephalus; unlike medulloblastoma it grows out through the foramina of Luschka and Magendie, and it can present at any age"),
+    c("Episodic ataxia type 2", "congenital", ["chronic"], "rare", false,
+      "Discrete attacks of ataxia and vertigo lasting hours, provoked by stress, exertion or caffeine, with DOWNBEAT nystagmus persisting between attacks — it responds to acetazolamide, so it is worth identifying"),
   ],
   cerebellum_pancerebellar: [
     c("Alcohol-related cerebellar degeneration", "metabolic", ["chronic"], "common", false,
@@ -257,7 +474,7 @@ export const CAUSES = {
       "Ataxia with nystagmus and dysarthria in a patient on these drugs — check levels, since it is reversible on withdrawal, though chronic phenytoin can cause permanent loss"),
     c("Paraneoplastic cerebellar degeneration", "neoplastic", ["subacute"], "uncommon", true,
       "Rapidly progressive pancerebellar ataxia over weeks in a smoker or a patient with breast/ovarian/lung malignancy; anti-Yo, anti-Hu or anti-Tr antibodies — it may precede the cancer diagnosis"),
-    c("Spinocerebellar ataxia (hereditary)", "degenerative", ["chronic"], "uncommon", false,
+    c("Spinocerebellar ataxia (hereditary)", "congenital", ["chronic"], "uncommon", false,
       "Years of slowly progressive ataxia with a family history; genetic testing confirms the subtype"),
     c("Multiple system atrophy (MSA-C)", "degenerative", ["chronic"], "uncommon", false,
       "Progressive ataxia with early and prominent autonomic failure — postural hypotension, bladder dysfunction and erectile failure"),
@@ -275,6 +492,12 @@ export const CAUSES = {
       "Younger patient with prior demyelinating episodes and a lesion within the triangle"),
     c("Brainstem tumour or trauma", "neoplastic", ["subacute","chronic"], "rare", false,
       "A structural lesion interrupting the dentato-rubro-olivary pathway, with the tremor appearing after a delay"),
+    c("Progressive ataxia with palatal tremor (PAPT)", "degenerative", ["chronic"], "rare", false,
+      "Palatal tremor with progressive ataxia but NO preceding brainstem lesion — the sporadic degenerative form; the absence of a causative lesion is what separates it from symptomatic palatal tremor, and the olives are not hypertrophied early"),
+    c("Brainstem abscess or tuberculoma", "infective", ["subacute"], "rare", true,
+      "Fever with brainstem signs over days to weeks, the palatal tremor emerging later once the lesion has healed; a ring-enhancing lesion within the triangle"),
+    c("Cavernous malformation with recurrent bleeds", "vascular", ["subacute","chronic"], "rare", false,
+      "A stuttering course of small bleeds within the triangle, each adding deficit; the 'popcorn' lesion with a haemosiderin rim on GRE explains why the picture accumulates"),
   ],
   guillain_mollaret_dentate: [
     c("Brainstem or cerebellar haemorrhage / cavernoma", "vascular", ["acute","subacute","chronic"], "common", true,
@@ -285,6 +508,12 @@ export const CAUSES = {
       "Younger patient with prior episodes and a lesion interrupting the pathway"),
     c("Tumour or surgical injury", "neoplastic", ["subacute","chronic"], "rare", false,
       "A mass or a posterior-fossa operation interrupting the dentato-rubro-olivary pathway, with delayed onset"),
+    c("Posterior fossa surgery (dentate injury / cerebellar mutism)", "iatrogenic", ["subacute","chronic"], "uncommon", false,
+      "Ataxia with palatal tremor emerging weeks after resection of a fourth-ventricular tumour; in children, transient cerebellar mutism follows the same dentato-thalamic disruption and recovers only partially"),
+    c("Cerebellar abscess or tuberculoma", "infective", ["subacute"], "rare", true,
+      "Fever and headache with ipsilateral limb ataxia, often seeded from otitis media or mastoiditis; posterior-fossa mass effect can obstruct the fourth ventricle"),
+    c("Cavernous malformation with recurrent bleeds", "vascular", ["subacute","chronic"], "rare", false,
+      "Repeated small bleeds within the triangle giving a stuttering, accumulating picture; a 'popcorn' lesion with a haemosiderin rim on GRE"),
   ],
   pons_basis_pontis: [ // ventral pontine lacune (ataxic hemiparesis / dysarthria-clumsy-hand)
     c("Small-vessel lacunar infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -295,6 +524,12 @@ export const CAUSES = {
       "A deficit that stutters or worsens stepwise over hours — basilar territory disease can progress to locked-in syndrome, so monitor closely"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient, evolving over days, with prior episodes and other lesions on MRI"),
+    c("Osmotic demyelination syndrome (central pontine myelinolysis)", "metabolic", ["acute","subacute"], "uncommon", true,
+      "An improving hyponatraemic patient who DETERIORATES a few days after correction, with quadriparesis, dysarthria and dysphagia — the MRI change lags the clinical picture, so a normal early scan does not exclude it; the risk is set by how fast the sodium was raised"),
+    c("Listeria rhombencephalitis", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache followed by cranial neuropathies, ataxia and long-tract signs, in pregnancy, the elderly or the immunosuppressed — it needs AMPICILLIN, which standard empirical meningitis cover omits"),
+    c("Pontine glioma / metastasis", "neoplastic", ["subacute","chronic"], "rare", false,
+      "Progression over weeks with multiple cranial neuropathies alongside the long-tract signs; in a child, a diffuse intrinsic pontine glioma expanding the pons"),
   ],
   // --- cord ---
   cord_anterior: [ // anterior spinal artery
@@ -302,6 +537,12 @@ export const CAUSES = {
     c("Compressive myelopathy (disc / mass / abscess)", "neoplastic", ["subacute","chronic"], "common", true, "Progressive with a sensory level; MRI shows compression — surgical emergency"),
     c("Transverse myelitis (demyelinating)", "inflammatory", ["subacute"], "uncommon", false, "Subacute, cord signal change over ≥1 segment; MS/NMO/MOG or para-infectious"),
     c("Epidural abscess", "infective", ["acute","subacute"], "uncommon", true, "Fever, focal spinal pain, raised inflammatory markers; risk factors (IVDU, diabetes)"),
+    c("Aortic surgery, dissection or profound hypotension", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Paraplegia with pain and temperature loss but PRESERVED vibration and joint position, immediately after aortic aneurysm repair, dissection or a prolonged hypotensive episode — the artery of Adamkiewicz supplies the lower cord with almost no collateral, so perfusion pressure is the treatment target"),
+    c("Spinal dural arteriovenous fistula", "vascular", ["subacute","chronic"], "uncommon", true,
+      "Progressive weakness and sphincter disturbance WORSENED BY EXERCISE or standing, over months to years, with cord oedema and dorsal flow voids on MRI — treatable, and repeatedly mistaken for degenerative stenosis until the cord signal is noticed"),
+    c("Fibrocartilaginous embolism", "vascular", ["hyperacute"], "rare", true,
+      "Sudden severe back or neck pain then rapid paraplegia in a YOUNG, healthy person during exertion or minor trauma — disc material embolising into the spinal arteries; a diagnosis of exclusion, but it explains an otherwise inexplicable cord infarct"),
   ],
   cord_transverse: [ // complete cord cross-section — compression must be excluded FIRST
     c("Compressive myelopathy (tumour, disc, abscess, haematoma)", "neoplastic", ["acute","subacute"], "common", true,
@@ -326,6 +567,12 @@ export const CAUSES = {
       "Younger patient, evolving over days, often incomplete, with prior episodes and lesions elsewhere on MRI"),
     c("Partial cord infarct", "vascular", ["hyperacute","acute"], "rare", true,
       "Abrupt onset, maximal within minutes to hours, often with back pain at onset"),
+    c("Spinal epidural haematoma", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Sudden severe back pain then asymmetric cord signs progressing over HOURS, on anticoagulation or after neuraxial anaesthesia or lumbar puncture — the window for decompression is measured in hours, not days"),
+    c("Spinal epidural abscess", "infective", ["acute","subacute"], "uncommon", true,
+      "Fever with focal spinal tenderness and rising inflammatory markers; intravenous drug use, diabetes, bacteraemia or recent spinal instrumentation — the classic triad is often incomplete, so image on suspicion alone"),
+    c("Cervical spondylotic myelopathy", "degenerative", ["chronic"], "common", false,
+      "Months of clumsy hands and a stiffening gait in a patient over 55, with Hoffmann's sign and brisk reflexes BELOW the level but not above — asymmetric compression can closely mimic a hemicord lesion"),
   ],
   cord_lateral: [ // cervical cord — first-order Horner's + long tracts
     c("Syringomyelia (± Chiari)", "congenital", ["chronic"], "common", false,
@@ -336,6 +583,12 @@ export const CAUSES = {
       "Abrupt onset maximal within hours, often with back pain; consider aortic disease or hypotension"),
     c("Demyelination", "inflammatory", ["subacute"], "uncommon", false,
       "Younger patient, evolving over days, with prior episodes and lesions elsewhere"),
+    c("Copper deficiency myelopathy", "metabolic", ["subacute","chronic"], "rare", true,
+      "A B12-like myelopathy with a NORMAL B12 — after bariatric surgery, or from zinc excess (denture adhesive, supplements). Check copper and caeruloplasmin, because it arrests on replacement but the deficit does not reverse once established"),
+    c("HTLV-1 associated myelopathy (tropical spastic paraparesis)", "infective", ["chronic"], "rare", false,
+      "Years of slowly progressive spastic paraparesis with early bladder involvement and strikingly little sensory loss, in a patient from an endemic area — Japan, the Caribbean, South America or central Africa"),
+    c("Hereditary spastic paraplegia", "congenital", ["chronic"], "uncommon", false,
+      "Very slowly progressive, symmetric, near-pure spastic paraparesis over years with a family history; sensation and sphincters are relatively spared and the cord MRI is normal"),
   ],
   cauda_equina: [ // a surgical emergency — every structural cause here is red
     c("Central lumbar disc prolapse", "traumatic", ["hyperacute","acute","subacute"], "common", true,
@@ -348,6 +601,12 @@ export const CAUSES = {
       "Abrupt severe back pain with rapidly progressive deficit, on anticoagulation (warfarin or a DOAC) or after spinal anaesthesia, epidural injection or lumbar puncture"),
     c("Traumatic fracture with canal compromise", "traumatic", ["hyperacute","acute"], "uncommon", true,
       "Clear mechanism with focal spinal tenderness — immobilise and image before moving the patient"),
+    c("Guillain-Barré syndrome (inflammatory polyradiculopathy)", "inflammatory", ["acute","subacute"], "uncommon", true,
+      "Ascending areflexic weakness that is SYMMETRIC, with sensory symptoms but no sensory level and NO early urinary retention — retention and saddle anaesthesia at onset point back to compression, so image before settling on GBS"),
+    c("Lumbar canal stenosis (neurogenic claudication)", "degenerative", ["chronic"], "common", false,
+      "Leg pain and heaviness on walking, relieved by SITTING or leaning forward rather than by merely standing still, with preserved pedal pulses — the chronic positional cousin of cauda equina, without acute retention"),
+    c("Elsberg syndrome (CMV or HSV-2 polyradiculitis)", "infective", ["acute","subacute"], "rare", true,
+      "Subacute sacral radiculopathy with retention and saddle numbness in an immunocompromised or HIV-positive patient, often after genital herpes; MRI shows enhancing lumbosacral roots"),
   ],
   conus_medullaris: [
     c("Compressive lesion at T12-L1 (disc, tumour or metastasis)", "neoplastic", ["acute","subacute"], "common", true,
@@ -360,6 +619,12 @@ export const CAUSES = {
       "Evolving over days in a younger patient with cord signal change — but exclude compression first"),
     c("Spinal epidural abscess", "infective", ["acute","subacute"], "rare", true,
       "Fever, focal spinal pain and raised inflammatory markers with the risk factors for spinal infection"),
+    c("Spinal dural arteriovenous fistula", "vascular", ["chronic"], "uncommon", true,
+      "Months to years of progressive leg weakness and sphincter disturbance, characteristically WORSE AFTER EXERCISE or on standing; MRI shows cord oedema with dorsal flow voids. It is treatable, and is repeatedly mistaken for degenerative stenosis until the cord signal is noticed"),
+    c("Tethered cord / spinal dysraphism", "congenital", ["chronic"], "uncommon", false,
+      "Progressive sphincter disturbance and leg symptoms in a child or young adult, often with a cutaneous marker over the lower back — a hairy patch, dimple or lipoma; the conus lies abnormally low on MRI"),
+    c("Thoracolumbar burst fracture", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "Conus injury after axial loading — a fall from height landing on the feet, or a road traffic collision; mixed upper and lower motor neurone signs with early sphincter involvement"),
   ],
   craniocervical_junction_foramen_magnum: [
     c("Chiari I malformation", "congenital", ["chronic"], "common", false,
@@ -378,22 +643,55 @@ export const CAUSES = {
   cord_posterior: [
     c("B12 / copper deficiency (SCD)", "metabolic", ["subacute","chronic"], "common", false, "Distal paraesthesiae + sensory ataxia; a positive Romberg"),
     c("Tabes dorsalis (neurosyphilis)", "infective", ["chronic"], "rare", false, "Lightning pains, sensory ataxia, areflexia", "an Argyll Robertson pupil (accommodates but does not react to light)"),
-    c("Demyelination", "inflammatory", ["subacute"], "uncommon"),
+    c("Demyelination", "inflammatory", ["subacute"], "uncommon", false,
+      "A younger patient with Lhermitte's phenomenon — an electric shock down the spine on neck flexion — and proprioceptive loss evolving over days, with prior demyelinating episodes"),
+    c("Compressive lesion (tumour, disc or abscess)", "neoplastic", ["subacute"], "uncommon", true,
+      "Progressive proprioceptive loss WITH a sensory level and local spinal pain — compression has to be excluded by imaging before any metabolic label is accepted, because the window for decompression closes"),
+    c("Nitrous oxide abuse", "metabolic", ["subacute"], "uncommon", true,
+      "Rapid dorsal-column loss in a YOUNG person with a NORMAL or borderline B12 — nitrous oxide inactivates B12 rather than depleting it. Ask directly about 'nangs' or whipped-cream chargers, and check homocysteine and methylmalonic acid rather than trusting the B12 level"),
+    c("Cervical spondylotic myelopathy", "degenerative", ["chronic"], "common", false,
+      "Months of clumsy, numb hands and a stiffening gait in a patient over 55 — the posterior columns are compressed early, so proprioceptive loss and Lhermitte's often precede any weakness"),
   ],
   cord_central: [ // syrinx
     c("Syringomyelia (± Chiari)", "congenital", ["chronic"], "common", false, "Cape-distribution dissociated sensory loss (pain/temp lost, touch spared)", "painless burns or scars on the hands from unnoticed injury"),
-    c("Post-traumatic syrinx", "traumatic", ["chronic"], "uncommon"),
-    c("Intramedullary tumour (ependymoma / astrocytoma)", "neoplastic", ["chronic"], "uncommon"),
+    c("Post-traumatic syrinx", "traumatic", ["chronic"], "uncommon", false,
+      "New or ascending dissociated sensory loss and pain YEARS after a spinal cord injury — a late, progressive and treatable complication, so any new deficit in an established cord injury deserves re-imaging rather than being attributed to the original trauma"),
+    c("Intramedullary tumour (ependymoma / astrocytoma)", "neoplastic", ["chronic"], "uncommon", false,
+      "Slowly progressive central cord signs with a cord that is EXPANDED and enhances on MRI, often with an associated syrinx above or below the tumour"),
+    c("Central cord syndrome after hyperextension injury", "traumatic", ["hyperacute","acute"], "common", true,
+      "Weakness WORSE IN THE ARMS THAN THE LEGS after a hyperextension neck injury — classically an older patient with pre-existing spondylosis falling forwards onto the face; sacral sensation is typically spared"),
+    c("Longitudinally extensive transverse myelitis (NMOSD / MOG)", "inflammatory", ["acute","subacute"], "uncommon", true,
+      "Cord signal change extending over THREE OR MORE vertebral segments with a central or cape-like pattern — check aquaporin-4 and MOG antibodies, because NMOSD needs different treatment from MS and MS drugs can worsen it"),
+    c("Intramedullary metastasis", "neoplastic", ["subacute"], "rare", true,
+      "Rapidly progressive central cord signs over weeks with pain, in a patient with known malignancy; an enhancing intramedullary lesion with disproportionate surrounding oedema"),
   ],
   combined_degeneration_scd: [
-    c("Vitamin B12 deficiency", "metabolic", ["subacute","chronic"], "common"),
-    c("Copper deficiency (zinc excess / bariatric)", "metabolic", ["subacute","chronic"], "uncommon"),
-    c("Nitrous-oxide toxicity", "metabolic", ["subacute"], "uncommon", true),
+    c("Vitamin B12 deficiency", "metabolic", ["subacute","chronic"], "common", false,
+      "Sensory ataxia and a positive Romberg with BRISK knee jerks but ABSENT ankle jerks and extensor plantars — the mixed dorsal-column and corticospinal picture with a peripheral neuropathy underneath; treat on suspicion, because haematological change may be absent and the deficit becomes irreversible"),
+    c("Copper deficiency (zinc excess / bariatric)", "metabolic", ["subacute","chronic"], "uncommon", false,
+      "An identical myelopathy to B12 deficiency but with a NORMAL B12 — after bariatric surgery, or from zinc excess in denture adhesive or supplements; check copper and caeruloplasmin, since replacement arrests it but does not reverse established damage"),
+    c("Nitrous-oxide toxicity", "metabolic", ["subacute"], "uncommon", true,
+      "A young person with rapidly evolving myelopathy and a normal or borderline B12 — nitrous oxide inactivates B12 rather than depleting it; ask about 'nangs' or whipped-cream chargers and send homocysteine and methylmalonic acid"),
+    c("HIV vacuolar myelopathy", "infective", ["subacute","chronic"], "rare", true,
+      "A B12-like myelopathy with a normal B12 in advanced untreated HIV; test for HIV in any unexplained myelopathy, because it changes the whole management"),
+    c("Coeliac disease or malabsorption", "metabolic", ["chronic"], "rare", false,
+      "Combined-degeneration picture with weight loss, diarrhoea or iron deficiency — the myelopathy is the presenting problem and the gut disease is silent, so screen coeliac serology in an unexplained case"),
+    c("Folate deficiency or methotrexate exposure", "metabolic", ["subacute","chronic"], "rare", false,
+      "The same combined picture with a normal B12 in a patient on methotrexate or with poor dietary intake; correcting folate WITHOUT correcting B12 first can precipitate or worsen the neurological deficit"),
   ],
   combined_degeneration_friedreich: [
-    c("Friedreich's ataxia (frataxin, GAA repeat)", "degenerative", ["chronic"], "common", false, "Teenager, progressive ataxia + areflexia with extensor plantars", "pes cavus and scoliosis with absent ankle jerks but upgoing plantars"),
-    c("Other hereditary spinocerebellar ataxia", "degenerative", ["chronic"], "uncommon"),
-    c("Vitamin E deficiency (mimic)", "metabolic", ["chronic"], "rare"),
+    c("Friedreich's ataxia (frataxin, GAA repeat)", "congenital", ["chronic"], "common", false, "Teenager, progressive ataxia + areflexia with extensor plantars", "pes cavus and scoliosis with absent ankle jerks but upgoing plantars"),
+    c("Other hereditary spinocerebellar ataxia", "congenital", ["chronic"], "uncommon", false,
+      "Progressive ataxia over years with a family history; unlike Friedreich's the reflexes are usually preserved or brisk, and onset is typically in adulthood rather than the teens"),
+    c("Vitamin E deficiency (mimic)", "metabolic", ["chronic"], "rare", true,
+      "A Friedreich-like picture — ataxia, areflexia, proprioceptive loss — that is TREATABLE with vitamin E replacement; it follows fat malabsorption, cholestatic liver disease or abetalipoproteinaemia, so check a vitamin E level before settling on a genetic diagnosis"),
+    c("Cerebrotendinous xanthomatosis", "metabolic", ["chronic"], "rare", true,
+      "Progressive ataxia and spasticity with JUVENILE CATARACTS, chronic childhood diarrhoea and learning difficulty — and it is treatable with chenodeoxycholic acid if caught before the damage is fixed",
+      "Achilles tendon xanthomas — feel the tendons in any young patient with unexplained progressive ataxia; they are easily missed unless specifically sought"),
+    c("Abetalipoproteinaemia", "metabolic", ["chronic"], "rare", true,
+      "Childhood-onset ataxia with retinitis pigmentosa, fat malabsorption and ACANTHOCYTES on the blood film; it is a treatable vitamin E deficiency, so the film and the lipid profile matter"),
+    c("Ataxia with oculomotor apraxia / ataxia-telangiectasia", "congenital", ["chronic"], "uncommon", false,
+      "Childhood ataxia with difficulty INITIATING voluntary gaze — the patient thrusts the head to bring the eyes across — plus conjunctival telangiectasia, recurrent infection and a raised alpha-fetoprotein in ataxia-telangiectasia"),
   ],
   // --- Region H: the closing sweep — hypothalamus, thalamic nuclei, BPPV, deep grey, callosum (2026-08-10) ---
   hypothalamus_supraoptic: [
@@ -407,6 +705,8 @@ export const CAUSES = {
       "Headache with hypopituitarism and diabetes insipidus, classically in late pregnancy or postpartum; it can mimic an adenoma on imaging"),
     c("Metastasis to the pituitary stalk", "neoplastic", ["subacute"], "rare", true,
       "New diabetes insipidus in a patient with known malignancy — stalk metastases cause DI far more often than pituitary adenomas do"),
+    c("Nephrogenic diabetes insipidus (the mimic)", "mimic", ["subacute","chronic"], "uncommon", false,
+      "The same polyuria and polydipsia, but the kidney cannot respond to ADH rather than the hypothalamus failing to make it — lithium, hypercalcaemia or hypokalaemia are the usual causes; desmopressin concentrates the urine in cranial DI and does nothing in nephrogenic, which is what separates them"),
   ],
   hypothalamus_thermoregulatory: [
     c("Neuroleptic malignant syndrome / serotonin syndrome", "metabolic", ["hyperacute","acute"], "uncommon", true,
@@ -419,6 +719,8 @@ export const CAUSES = {
       "Hypothermia with confusion, ophthalmoplegia and ataxia in an at-risk patient — give thiamine immediately"),
     c("Hypothalamic tumour or infiltration", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive temperature instability with other hypothalamic endocrine features"),
+    c("Anticholinergic or sympathomimetic toxidrome", "metabolic", ["hyperacute","acute"], "uncommon", true,
+      "Hyperthermia with DRY, flushed skin, dilated pupils, urinary retention and delirium (anticholinergic), or with sweating, clonus and agitation (sympathomimetic) — check the drug and recreational history before attributing a fever to the brain, because both reverse on withdrawal and supportive care"),
   ],
   hypothalamus_ventromedial: [
     c("Craniopharyngioma (and its surgical treatment)", "neoplastic", ["subacute","chronic"], "common", true,
@@ -429,6 +731,10 @@ export const CAUSES = {
       "Hyperphagia and weight gain after severe head injury, often with other hypothalamic or frontal features"),
     c("Prader-Willi syndrome", "congenital", ["chronic"], "rare", false,
       "Lifelong hyperphagia from early childhood with hypotonia in infancy, short stature and hypogonadism"),
+    c("Langerhans cell histiocytosis", "neoplastic", ["subacute","chronic"], "rare", true,
+      "Hyperphagia and endocrine failure in a child or young adult with a thickened pituitary stalk, often alongside diabetes insipidus, bone lesions or a rash — biopsy of an accessible lesion makes the diagnosis, and it is treatable"),
+    c("Cranial irradiation of the hypothalamic region", "iatrogenic", ["chronic"], "uncommon", false,
+      "Progressive weight gain and endocrine failure YEARS after radiotherapy for a childhood brain tumour or leukaemia; the latency is long enough that the connection is often missed"),
   ],
   hypothalamus_lateral: [
     c("Narcolepsy with cataplexy (orexin/hypocretin loss)", "degenerative", ["chronic"], "common", false,
@@ -440,6 +746,10 @@ export const CAUSES = {
       "Secondary narcolepsy or profound somnolence after severe head injury"),
     c("Anti-Ma2 paraneoplastic or autoimmune hypothalamitis", "inflammatory", ["subacute"], "rare", true,
       "Subacute hypersomnia with endocrine failure and eye-movement abnormalities; screen for testicular and lung tumours"),
+    c("Hypothalamic stroke or haemorrhage", "vascular", ["hyperacute","acute"], "rare", true,
+      "Abrupt somnolence and loss of appetite with other hypothalamic or third-ventricular signs; the territory is small, so a tiny lesion produces a striking behavioural change"),
+    c("Anorexia nervosa (the mimic)", "mimic", ["subacute","chronic"], "common", false,
+      "Profound weight loss with amenorrhoea in a young person — but driven by deliberate restriction and body-image concern, with the drive to eat intact and actively resisted, unlike the genuine loss of hunger from a lateral hypothalamic lesion"),
   ],
   hypothalamus_suprachiasmatic: [
     c("Suprasellar tumour (craniopharyngioma, germinoma, glioma)", "neoplastic", ["subacute","chronic"], "uncommon", false,
@@ -450,6 +760,10 @@ export const CAUSES = {
       "In a patient with no light perception the circadian clock free-runs, so sleep drifts progressively later each day; melatonin or tasimelteon can entrain it"),
     c("Traumatic brain injury", "traumatic", ["subacute","chronic"], "uncommon", false,
       "Persistent circadian disruption after head injury, often compounding fatigue and cognitive symptoms"),
+    c("Pineal region tumour with hydrocephalus", "neoplastic", ["subacute"], "rare", true,
+      "Sleep-wake disruption with headache, vomiting and an UPGAZE PALSY — a pineal mass obstructing the aqueduct; the melatonin-secreting pineal and the dorsal midbrain sit together, so circadian failure and Parinaud's arrive as a pair"),
+    c("Circadian rhythm disorder from schedule or light exposure (the mimic)", "mimic", ["chronic"], "common", false,
+      "Day-night reversal fully explained by shift work, jet lag or a delayed sleep phase, with an entirely normal examination — by far the commonest cause, and it needs a sleep diary or actigraphy rather than imaging"),
   ],
   hypothalamus_mammillary: [
     c("Wernicke-Korsakoff syndrome (thiamine deficiency)", "metabolic", ["acute","subacute"], "common", true,
@@ -461,6 +775,8 @@ export const CAUSES = {
       "Abrupt amnesia with hypersomnolence and vertical gaze palsy from bilateral paramedian infarction"),
     c("Third ventricular tumour or colloid cyst", "neoplastic", ["subacute","chronic"], "rare", true,
       "Progressive amnesia with headache; a colloid cyst can cause acute obstructive hydrocephalus and sudden death"),
+    c("Transient global amnesia (the mimic)", "mimic", ["hyperacute"], "uncommon", false,
+      "Abrupt ISOLATED anterograde amnesia with repetitive questioning, in a middle-aged patient, resolving completely within 24 hours and leaving no deficit — there are no other neurological signs, and a persisting amnesia is by definition not TGA"),
     c("Herpes simplex or limbic encephalitis", "infective", ["acute","subacute"], "uncommon", true,
       "Fever, confusion and seizures with medial temporal and diencephalic change — treat with aciclovir empirically"),
   ],
@@ -474,6 +790,8 @@ export const CAUSES = {
       "Slowly progressive endocrine failure, sometimes with the diencephalic syndrome of profound emaciation despite normal intake in an infant"),
     c("Kallmann syndrome", "congenital", ["chronic"], "rare", false,
       "Failure of puberty with ANOSMIA — the olfactory and gonadotrophin-releasing neurones share a migratory origin, so testing smell makes the diagnosis"),
+    c("Pituitary macroadenoma with stalk compression", "neoplastic", ["chronic"], "uncommon", false,
+      "A MODESTLY raised prolactin alongside a large sellar mass means stalk compression disinhibiting prolactin release, not a prolactinoma — the distinction matters, because a true prolactinoma shrinks on a dopamine agonist and a compressing non-functioning adenoma needs surgery"),
     c("Neurosarcoidosis or infiltrative disease", "inflammatory", ["subacute","chronic"], "rare", true,
       "Hypopituitarism with stalk thickening on MRI and systemic inflammatory features"),
   ],
@@ -488,6 +806,8 @@ export const CAUSES = {
       "Younger patient with facial sensory symptoms evolving over days and prior demyelinating episodes"),
     c("Small metastasis or glioma", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive facial sensory disturbance over weeks with an enhancing thalamic lesion"),
+    c("Thalamic abscess or cerebral toxoplasmosis", "infective", ["subacute"], "rare", true,
+      "Fever and a progressive deep sensory deficit with a ring-enhancing lesion in the deep grey, in an immunocompromised or HIV-positive patient — toxoplasmosis favours the basal ganglia and thalamus, and it responds to treatment, so it should not be assumed to be lymphoma"),
   ],
   thalamus_vl: [
     c("Thalamic infarct or haemorrhage", "vascular", ["hyperacute","acute"], "common", false,
@@ -496,8 +816,12 @@ export const CAUSES = {
       "Younger patient with tremor and ataxia evolving over days, with prior demyelinating episodes"),
     c("Thalamic tumour or metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Progressive tremor and clumsiness over weeks with an enhancing thalamic lesion"),
-    c("Post-surgical or post-DBS change", "traumatic", ["acute","subacute"], "rare", false,
+    c("Post-surgical or post-DBS change", "iatrogenic", ["acute","subacute"], "rare", false,
       "New tremor or ataxia after thalamic surgery or electrode placement"),
+    c("Thalamic haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Abrupt onset with headache, vomiting and reduced consciousness in a hypertensive patient; it may rupture into the ventricles and cause hydrocephalus, so it needs urgent imaging rather than observation"),
+    c("Essential tremor (the mimic)", "mimic", ["chronic"], "common", false,
+      "A SYMMETRIC postural and action tremor of the hands present for years, often familial and improving with alcohol — the ventral intermediate nucleus is the DBS target for both, but a thalamic lesion gives a UNILATERAL, coarse, delayed Holmes tremor instead"),
   ],
   thalamus_pulvinar: [
     c("Posterior thalamic (pulvinar) infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -508,6 +832,11 @@ export const CAUSES = {
       "Progressive inattention and visual difficulty over weeks with an enhancing lesion"),
     c("Variant Creutzfeldt-Jakob disease", "degenerative", ["subacute","chronic"], "rare", true,
       "Progressive psychiatric change, painful sensory symptoms and ataxia in a young patient, with the 'pulvinar sign' of bilateral posterior thalamic high signal on MRI"),
+    c("Fabry disease", "congenital", ["chronic"], "rare", false,
+      "Stroke in a young adult with burning pains in the hands and feet, hypohidrosis and renal impairment — an X-linked, enzyme-replaceable cause that also produces high T1 signal in the pulvinar",
+      "angiokeratomas — clusters of small dark-red papules between the umbilicus and the knees; ask the patient to undress rather than relying on the history"),
+    c("Autoimmune or post-infectious encephalitis", "inflammatory", ["subacute"], "rare", true,
+      "Subacute inattention and confusion with seizures and bilateral thalamic signal change — treatable with immunotherapy, so send antibodies rather than accepting an unexplained encephalitis"),
   ],
   thalamus_limbic: [
     c("Artery of Percheron infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -520,6 +849,9 @@ export const CAUSES = {
       "Progressive amnesia and drowsiness over weeks with an enhancing thalamic lesion"),
     c("Limbic encephalitis", "inflammatory", ["subacute"], "uncommon", true,
       "Subacute amnesia with seizures and psychiatric change; treatable with immunotherapy, so send antibodies and screen for a tumour"),
+    c("Anti-LGI1 encephalitis", "inflammatory", ["subacute"], "rare", true,
+      "Subacute amnesia with HYPONATRAEMIA and faciobrachial dystonic seizures — brief, very frequent, unilateral jerks of the arm and face, often dismissed as tics or myoclonus. Recognising them and starting immunotherapy early is what prevents permanent amnesia",
+      "faciobrachial dystonic seizures: sub-second, stereotyped grimace-and-arm-jerk episodes occurring dozens of times a day"),
   ],
   peripheral_vestibular_posterior_canal: [
     c("Posterior-canal BPPV (canalithiasis)", "degenerative", ["acute","subacute","chronic"], "common", false,
@@ -533,11 +865,13 @@ export const CAUSES = {
       "BPPV following a head injury, often affecting more than one canal and more likely to recur"),
     c("Posterior circulation stroke", "vascular", ["hyperacute","acute"], "uncommon", true,
       "A NORMAL head impulse test with direction-changing nystagmus or skew deviation (a central HINTS pattern) means stroke, not a peripheral cause — a normal head impulse in acute vertigo is the red flag"),
+    c("Vestibular migraine", "mimic", ["acute","chronic"], "common", false,
+      "Recurrent vertigo lasting minutes to hours with headache, photophobia or visual aura, and a NORMAL Dix-Hallpike between attacks — the commonest cause of recurrent vertigo after BPPV, and it responds to migraine treatment rather than repositioning"),
   ],
   peripheral_vestibular_horizontal_canal: [
     c("Horizontal-canal BPPV", "degenerative", ["acute","subacute","chronic"], "uncommon", false,
       "Positional vertigo triggered by ROLLING OVER IN BED, diagnosed with the SUPINE ROLL (Pagnini-McClure) test rather than the Dix-Hallpike — geotropic nystagmus indicates canalithiasis and apogeotropic indicates cupulolithiasis, and it is treated with the BARBECUE (Lempert) roll or a Gufoni manoeuvre"),
-    c("Conversion after an Epley manoeuvre", "traumatic", ["acute"], "uncommon", false,
+    c("Conversion after an Epley manoeuvre", "iatrogenic", ["acute"], "uncommon", false,
       "New horizontal-canal symptoms appearing immediately after treatment of posterior-canal BPPV, as debris migrates between canals — recognise it rather than repeating the same manoeuvre"),
     c("Vestibular neuritis", "infective", ["acute"], "common", false,
       "Constant vertigo over days with an abnormal head impulse, rather than brief positional attacks"),
@@ -545,16 +879,22 @@ export const CAUSES = {
       "Post-traumatic BPPV, frequently multi-canal and more prone to recurrence"),
     c("Posterior circulation stroke", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Central positional nystagmus that does not fatigue, with other posterior-circulation signs — image rather than repeating repositioning manoeuvres"),
+    c("Alcohol-induced positional nystagmus", "metabolic", ["hyperacute","acute"], "uncommon", false,
+      "Positional nystagmus that REVERSES DIRECTION some hours after drinking, as alcohol diffuses into and then out of the cupula — a transient mimic of horizontal-canal BPPV in an intoxicated or hungover patient, needing no repositioning at all"),
   ],
   peripheral_vestibular_anterior_canal: [
     c("Central lesion causing DOWNBEAT nystagmus", "vascular", ["hyperacute","acute","chronic"], "uncommon", true,
       "Anterior-canal BPPV produces DOWNBEAT-torsional positional nystagmus — but downbeat nystagmus is far more often CENTRAL (Chiari malformation, cerebellar degeneration, drug toxicity or stroke), so a downbeat pattern warrants craniocervical imaging before it is accepted as benign"),
     c("Anterior-canal BPPV", "degenerative", ["acute","subacute","chronic"], "rare", false,
       "The rarest canal variant, because its anatomy allows spontaneous drainage; brief positional vertigo with downbeat-torsional nystagmus on positional testing"),
-    c("Conversion after repositioning of another canal", "traumatic", ["acute"], "rare", false,
+    c("Conversion after repositioning of another canal", "iatrogenic", ["acute"], "rare", false,
       "New downbeat positional nystagmus after treating posterior-canal BPPV, as debris migrates"),
     c("Head trauma", "traumatic", ["acute","subacute"], "uncommon", false,
       "Multi-canal BPPV after head injury"),
+    c("Chiari malformation or cerebellar degeneration", "congenital", ["chronic"], "uncommon", true,
+      "PERSISTENT downbeat nystagmus in primary gaze, worse on lateral and downgaze and NOT positional — this is central until craniocervical imaging says otherwise, and a cough-induced headache points to a Chiari"),
+    c("Anticonvulsant or lithium toxicity", "metabolic", ["subacute"], "uncommon", false,
+      "Downbeat nystagmus with ataxia and dysarthria in a patient on phenytoin, carbamazepine or lithium — check levels, because it is reversible and is far commoner than anterior-canal BPPV"),
   ],
   basal_ganglia_subthalamic: [
     c("Lacunar infarct of the subthalamic nucleus", "vascular", ["hyperacute","acute"], "common", false,
@@ -565,9 +905,13 @@ export const CAUSES = {
       "Abrupt hemiballismus with headache; the CT distinguishes it"),
     c("Tumour or demyelination", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive involuntary movements over weeks with a structural lesion at the subthalamic nucleus"),
+    c("Toxoplasmosis or HIV-related lesion", "infective", ["subacute"], "rare", true,
+      "Hemiballismus with fever and a ring-enhancing deep lesion in an immunocompromised or HIV-positive patient — toxoplasmosis favours the basal ganglia and responds to treatment, so test for HIV before assuming a vascular cause"),
+    c("Post-DBS or post-surgical injury", "iatrogenic", ["acute","subacute"], "rare", false,
+      "New hemiballismus or hemichorea after subthalamic electrode placement or deep surgery — the subthalamic nucleus is itself the commonest DBS target in Parkinson's disease, so the anatomy is deliberately entered"),
   ],
   basal_ganglia_striatum: [
-    c("Huntington's disease", "degenerative", ["chronic"], "common", false,
+    c("Huntington's disease", "congenital", ["chronic"], "common", false,
       "Years of progressive CHOREA with cognitive decline and psychiatric change, an autosomal dominant family history, and caudate atrophy with boxcar ventricles on imaging"),
     c("Wilson's disease", "degenerative", ["subacute","chronic"], "uncommon", true,
       "A patient UNDER 50 with movement disorder, dysarthria and psychiatric or hepatic features — TREATABLE, so check copper and caeruloplasmin and look for Kayser-Fleischer rings before anything else in a young dyskinetic patient"),
@@ -587,10 +931,12 @@ export const CAUSES = {
       "Callosal demyelination in a chronic heavy drinker, presenting with confusion, dysarthria, gait disturbance and disconnection signs — give thiamine, as it may partially reverse"),
     c("Butterfly glioma or lymphoma", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "A mass spreading across the callosum into both hemispheres in a 'butterfly' pattern, with progressive cognitive and behavioural decline"),
-    c("Corpus callosotomy (surgical)", "traumatic", ["acute","chronic"], "rare", false,
+    c("Corpus callosotomy (surgical)", "iatrogenic", ["acute","chronic"], "rare", false,
       "Deliberate disconnection performed for intractable drop attacks in severe epilepsy; the disconnection signs are an expected consequence"),
     c("Diffuse axonal injury", "traumatic", ["hyperacute","acute"], "uncommon", true,
       "Callosal shearing after significant head trauma, with a clinical state worse than the imaging suggests"),
+    c("Multiple sclerosis (callosal plaques)", "inflammatory", ["subacute","chronic"], "uncommon", false,
+      "DAWSON'S FINGERS — ovoid lesions radiating perpendicularly from the callosal-septal interface — are the most specific MRI sign of MS; callosal involvement is why interhemispheric transfer tasks fail while each hemisphere works normally on its own"),
   ],
   corpus_callosum_splenium: [
     c("PCA territory infarct with splenial involvement", "vascular", ["hyperacute","acute"], "common", false,
@@ -603,6 +949,8 @@ export const CAUSES = {
       "Younger patient with callosal lesions disseminated in time and space; the callosum is a classic site for MS plaques"),
     c("Diffuse axonal injury", "traumatic", ["hyperacute","acute"], "uncommon", true,
       "Splenial shearing after significant head trauma"),
+    c("Posterior reversible encephalopathy syndrome (PRES)", "metabolic", ["acute","subacute"], "rare", true,
+      "Headache, seizures and visual disturbance with severe hypertension, eclampsia or calcineurin-inhibitor exposure; the posterior-predominant oedema can involve the splenium and RESOLVES when the trigger is treated, so it should not be read as infarction"),
   ],
   aphasia_subcortical_thalamic: [
     c("Dominant thalamic infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -613,6 +961,10 @@ export const CAUSES = {
       "Progressive language and cognitive difficulty over weeks with an enhancing thalamic lesion"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient evolving over days with prior demyelinating episodes"),
+    c("Deep cerebral venous thrombosis", "vascular", ["acute","subacute"], "rare", true,
+      "Fluctuating language failure with headache and drowsiness, and BILATERAL thalamic change that ignores arterial territories — image the veins, because it is treatable with anticoagulation"),
+    c("Non-convulsive status epilepticus", "mimic", ["acute","subacute"], "uncommon", true,
+      "Fluctuating language failure with reduced responsiveness and imaging that shows no territory to explain it — a thalamic aphasia already fluctuates with arousal, so the two are easily confused; only an EEG separates them, and one of them is treatable"),
   ],
   aphasia_subcortical_striatocapsular: [
     c("Striatocapsular infarct from PROXIMAL MCA occlusion", "vascular", ["hyperacute","acute"], "common", true,
@@ -623,6 +975,10 @@ export const CAUSES = {
       "Progressive language and motor decline over weeks with an enhancing deep lesion"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient evolving over days with prior episodes and lesions elsewhere"),
+    c("Hypoglycaemia", "mimic", ["hyperacute","acute"], "common", true,
+      "A bedside glucose comes before the CT in any sudden aphasia with hemiparesis — hypoglycaemia reproduces the striatocapsular picture exactly and reverses completely on correction"),
+    c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache with progressive aphasia and hemiparesis and raised inflammatory markers; a ring-enhancing deep lesion — look for a source in the sinuses, teeth, heart or a right-to-left shunt"),
   ],
   sympathetic_preganglionic: [
     c("Pancoast (superior sulcus) tumour", "neoplastic", ["subacute"], "uncommon", true,
@@ -635,6 +991,8 @@ export const CAUSES = {
       "A Horner's with intrinsic hand wasting and medial forearm numbness"),
     c("Mediastinal or apical lymphadenopathy", "neoplastic", ["subacute"], "uncommon", true,
       "A Horner's with a mediastinal mass — lymphoma and metastatic nodes both compress the sympathetic chain"),
+    c("Aortic arch or subclavian artery aneurysm", "vascular", ["subacute","chronic"], "rare", true,
+      "A Horner's with chest or back pain, sometimes with hoarseness from the recurrent laryngeal nerve alongside it — the two nerves run close together at the arch, so the combination points to the mediastinum rather than the neck"),
   ],
   sympathetic_pancoast: [
     c("Apical lung (superior sulcus) carcinoma", "neoplastic", ["subacute"], "common", true,
@@ -644,8 +1002,12 @@ export const CAUSES = {
       "The same syndrome from a metastatic deposit in a patient with a known primary"),
     c("Apical infection (tuberculosis, fungal)", "infective", ["subacute","chronic"], "rare", true,
       "An apical mass with systemic features and weight loss; tuberculosis can produce a Pancoast-like picture"),
-    c("Radiation fibrosis or brachial plexopathy after treatment", "traumatic", ["chronic"], "uncommon", false,
+    c("Radiation fibrosis or brachial plexopathy after treatment", "iatrogenic", ["chronic"], "uncommon", false,
       "PAINLESS progressive arm weakness with myokymia years after apical radiotherapy — painlessness distinguishes it from recurrent tumour"),
+    c("Mesothelioma or chest wall tumour", "neoplastic", ["subacute","chronic"], "rare", true,
+      "The Pancoast picture with pleural thickening and an asbestos exposure history — often decades earlier, so it has to be asked about directly rather than waiting for it to be volunteered"),
+    c("Apical bulla, cyst or traumatic apical injury", "traumatic", ["acute","subacute"], "rare", false,
+      "A Horner's with apical shadowing after chest trauma, a chest drain or a supraclavicular procedure — the sympathetic chain crosses the lung apex, so anything there can catch it"),
   ],
   cerebrum_diffuse: [
     c("Metabolic or toxic encephalopathy", "metabolic", ["hyperacute","acute","subacute"], "common", true,
@@ -673,6 +1035,10 @@ export const CAUSES = {
       "Gaze preference developing over weeks, usually with seizures or other frontal features"),
     c("Focal seizure with versive gaze deviation", "mimic", ["hyperacute","acute"], "uncommon", false,
       "During a seizure the eyes deviate AWAY from the affected hemisphere — the OPPOSITE of the infarct pattern; the movement is brief and stereotyped, and a postictal gaze palsy may then briefly mimic a stroke"),
+    c("Non-convulsive status epilepticus", "mimic", ["acute","subacute"], "uncommon", true,
+      "Sustained gaze deviation with reduced responsiveness but no convulsion, sometimes with subtle eyelid or facial twitching — an EEG is the only way to separate it from an infarct, and it is treatable, so it must be considered in any unexplained persistent gaze deviation"),
+    c("Demyelination", "inflammatory", ["subacute"], "rare", false,
+      "A younger patient whose gaze preference evolves over days rather than seconds, with prior demyelinating episodes and lesions elsewhere on MRI"),
   ],
   cortex_dlpfc: [
     c("Frontotemporal dementia (behavioural variant)", "degenerative", ["chronic"], "common", false,
@@ -713,6 +1079,8 @@ export const CAUSES = {
       "Behavioural change over weeks to months with headache or seizures"),
     c("Neurosyphilis (general paresis)", "infective", ["chronic"], "rare", false,
       "Progressive personality change and grandiosity with an Argyll Robertson pupil — rare but treatable, so serology is worthwhile in an atypical presentation"),
+    c("Ruptured anterior communicating artery aneurysm", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Thunderclap headache followed by lasting disinhibition, apathy and confabulatory amnesia — the orbitofrontal and basal forebrain territory is supplied here, so the personality change outlasts and overshadows any motor deficit"),
   ],
   cortex_temporoparietal: [ // Wernicke's
     c("MCA inferior division infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -752,6 +1120,10 @@ export const CAUSES = {
       "Fever and confusion with insular and temporal change on MRI — a characteristic distribution; treat with aciclovir empirically"),
     c("Intracerebral haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Abrupt onset with headache and reduced consciousness"),
+    c("Insular (opercular) epilepsy", "mimic", ["chronic"], "uncommon", false,
+      "Brief stereotyped attacks of throat constriction, an unpleasant taste or laryngeal tightness with hypersalivation, and preserved awareness — insular seizures are repeatedly misdiagnosed as panic attacks, reflux or a functional disorder, and scalp EEG is often normal"),
+    c("Autoimmune / limbic encephalitis", "inflammatory", ["subacute"], "rare", true,
+      "Subacute confusion, seizures and psychiatric change over weeks with insular and medial temporal signal change — it is treatable with immunotherapy, so send antibodies rather than settling for 'encephalitis, aetiology unknown'"),
   ],
   cortex_sensory_hand: [
     c("Small cortical infarct or TIA", "vascular", ["hyperacute","acute"], "common", true,
@@ -764,6 +1136,8 @@ export const CAUSES = {
       "Progressive focal sensory disturbance over weeks, often with focal seizures"),
     c("Peripheral nerve or root lesion (the mimic)", "traumatic", ["chronic"], "common", false,
       "Hand numbness is far more often carpal tunnel or a C6/C7 root — a CORTICAL hand deficit spares crude touch but loses two-point discrimination, stereognosis and graphaesthesia"),
+    c("Cortical vein thrombosis", "vascular", ["acute","subacute"], "rare", true,
+      "Focal sensory symptoms with SEIZURES and headache in a prothrombotic state, pregnancy or the puerperium — the deficit does not fit any arterial territory, which is the clue to image the veins rather than the arteries"),
   ],
   cortex_arcuate: [
     c("MCA branch infarct (supramarginal gyrus)", "vascular", ["hyperacute","acute"], "common", false,
@@ -774,6 +1148,10 @@ export const CAUSES = {
       "Language difficulty progressing over weeks, often with seizures"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient evolving over days with prior demyelinating episodes"),
+    c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache with a rapidly progressive language deficit and raised inflammatory markers; a ring-enhancing lesion, so look for the source — sinusitis, otitis, endocarditis or a right-to-left shunt"),
+    c("Postictal (peri-ictal) aphasia", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Repetition-predominant language failure that FLUCTUATES and improves over minutes to hours after a witnessed seizure — a fixed conduction aphasia does not fluctuate, so serial examination separates them"),
   ],
   cortex_angular: [
     c("MCA (angular branch) infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -784,6 +1162,10 @@ export const CAUSES = {
       "Years of progressive naming, calculation and visuospatial failure; a Gerstmann-like picture can emerge in posterior-predominant degeneration"),
     c("Intracerebral haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Abrupt onset with headache and vomiting"),
+    c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache with progressive Gerstmann features and raised inflammatory markers; a ring-enhancing parietal lesion with a source elsewhere"),
+    c("Focal seizure with transient Gerstmann features", "mimic", ["hyperacute","acute"], "rare", false,
+      "Brief stereotyped episodes of naming and calculation failure with abrupt onset and offset, returning to normal in between — a lesion gives a fixed deficit that persists between events"),
   ],
   cortex_premotor: [
     c("MCA branch infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -794,9 +1176,13 @@ export const CAUSES = {
       "Progressive apraxia and weakness over weeks, often with focal seizures"),
     c("Corticobasal syndrome from other pathology (PSP, Alzheimer's)", "degenerative", ["chronic"], "rare", false,
       "The same clinical syndrome can arise from several pathologies, so the label describes the picture rather than the disease"),
+    c("Intracerebral haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Abrupt apraxia with headache, vomiting and reduced consciousness; a lobar bleed in an older patient suggests cerebral amyloid angiopathy"),
+    c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache with a rapidly progressive apraxia and raised inflammatory markers; a ring-enhancing frontal lesion — look for the source"),
   ],
   cortex_sma: [
-    c("SMA syndrome after tumour resection", "traumatic", ["acute","subacute"], "common", false,
+    c("SMA syndrome after tumour resection", "iatrogenic", ["acute","subacute"], "common", false,
       "Profound contralateral akinesia and MUTISM appearing immediately after resection of a medial frontal tumour — alarming but characteristically TRANSIENT, RECOVERING over days to weeks, and it should be recognised rather than mistaken for a completed stroke"),
     c("ACA territory infarct", "vascular", ["hyperacute","acute"], "common", false,
       "Sudden akinesia and reduced speech initiation with leg-predominant weakness; the SMA sits in ACA territory"),
@@ -804,6 +1190,10 @@ export const CAUSES = {
       "Months of progressive leg weakness and reduced initiation from a slowly enlarging medial frontal mass"),
     c("Glioma of the medial frontal lobe", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Seizures with progressive akinesia and speech initiation difficulty over weeks to months"),
+    c("Supplementary motor area seizure", "mimic", ["chronic"], "uncommon", false,
+      "Brief NOCTURNAL attacks of an asymmetric tonic posture — one arm abducted and externally rotated with the head turned toward it, the 'fencing' posture — with preserved awareness and rapid recovery; they are frequently misdiagnosed as a parasomnia or a functional attack because the scalp EEG is often normal"),
+    c("Superior sagittal sinus thrombosis", "vascular", ["acute","subacute"], "rare", true,
+      "Headache and seizures with akinesia and leg weakness, often with papilloedema — venous infarction crosses arterial territories and is treatable with anticoagulation, so image the veins"),
   ],
   cortex_paracentral: [
     c("Parasagittal / falx meningioma", "neoplastic", ["chronic"], "common", true,
@@ -815,6 +1205,10 @@ export const CAUSES = {
       "Headache with bilateral leg weakness and seizures, often with papilloedema — venous infarction crosses arterial territories and is TREATABLE with anticoagulation, so image the veins"),
     c("Falx metastasis or lymphoma", "neoplastic", ["subacute"], "uncommon", true,
       "Progressive paraparesis with headache in a patient with a known primary"),
+    c("Vertex extradural haematoma", "traumatic", ["hyperacute","acute"], "rare", true,
+      "Bilateral leg weakness after a blow to the top of the head — the paracentral lobules sit directly beneath, and a vertex extradural from a torn sagittal sinus is notoriously missed on axial CT slices; ask for the coronal reformats"),
+    c("Normal-pressure hydrocephalus", "mimic", ["chronic"], "uncommon", false,
+      "Months of a magnetic, apraxic gait with urinary incontinence and cognitive slowing — it reproduces the bilateral paracentral picture with no paracentral lesion at all, and the gait improves after a large-volume lumbar puncture"),
   ],
   cortex_auditory: [
     c("Bilateral temporal (Heschl's gyrus) infarcts", "vascular", ["hyperacute","acute","subacute"], "uncommon", true,
@@ -825,18 +1219,24 @@ export const CAUSES = {
       "The patient hears sounds but cannot recognise speech or environmental sounds, with preserved reading and writing — pure word deafness"),
     c("Seizure or postictal auditory disturbance", "mimic", ["hyperacute","acute"], "rare", false,
       "Brief stereotyped auditory hallucinations or transient inability to comprehend sound, with abrupt onset and offset"),
+    c("Peripheral (cochlear) deafness", "mimic", ["subacute","chronic"], "common", false,
+      "Bilateral hearing loss with an ABNORMAL audiogram and absent otoacoustic emissions — cortical deafness has a NORMAL audiogram and preserved brainstem responses, so the audiogram is what separates a cortical from a peripheral cause and should be done before imaging the brain"),
+    c("Herpes simplex encephalitis", "infective", ["acute"], "rare", true,
+      "Fever, confusion and seizures with bitemporal change — bilateral temporal involvement is one of the few processes that can produce cortical auditory failure in a single illness; treat with aciclovir empirically"),
   ],
   cortex_anterior_temporal: [
     c("Semantic dementia (semantic variant PPA)", "degenerative", ["chronic"], "common", false,
       "Years of progressive loss of word MEANING with fluent empty speech — the patient asks 'what is a fork?' — alongside preserved repetition and day-to-day memory, with asymmetric anterior temporal atrophy"),
     c("Herpes simplex encephalitis", "infective", ["acute"], "uncommon", true,
       "Fever, confusion, personality change and seizures over days with haemorrhagic anterior and medial temporal change — treat with aciclovir empirically and immediately"),
-    c("Anterior temporal lobectomy (post-surgical)", "traumatic", ["acute","chronic"], "uncommon", false,
+    c("Anterior temporal lobectomy (post-surgical)", "iatrogenic", ["acute","chronic"], "uncommon", false,
       "Naming difficulty and a superior quadrantanopia after epilepsy surgery, since Meyer's loop sweeps forward through the resection field"),
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Progressive naming difficulty with seizures over weeks to months"),
     c("Limbic encephalitis", "inflammatory", ["subacute"], "uncommon", true,
       "Subacute amnesia and seizures with medial temporal change; treatable with immunotherapy, so send antibodies and screen for an underlying tumour"),
+    c("Temporal pole contusion", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "Naming difficulty and behavioural change after a deceleration head injury — the temporal pole and orbitofrontal surface are the classic contusion sites, as the brain strikes the sphenoid ridge and the floor of the middle fossa; a contusion here can swell and cause uncal herniation"),
   ],
   cortex_fusiform: [
     c("PCA territory infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -849,6 +1249,8 @@ export const CAUSES = {
       "Progressive visual recognition difficulty over weeks with an enhancing occipitotemporal lesion"),
     c("Migraine or occipital seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
       "Transient recognition failure or visual distortion that resolves completely, rather than a fixed deficit"),
+    c("Developmental prosopagnosia", "congenital", ["chronic"], "uncommon", false,
+      "LIFELONG difficulty recognising faces — the patient relies on voice, gait or hairstyle and has always done so — with normal acuity, normal cognition and often a family history; there is no lesion to find, so the history of lifelong difficulty is the diagnosis"),
   ],
   cortex_aphasia_global: [
     c("Large MCA territory (or ICA) infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -861,6 +1263,8 @@ export const CAUSES = {
       "Fever, headache and raised inflammatory markers with a ring-enhancing lesion; look for a source"),
     c("Hypoglycaemia", "mimic", ["hyperacute","acute"], "common", true,
       "A bedside glucose is the first test in any sudden dense deficit — hypoglycaemia can reproduce global aphasia with hemiplegia and reverses completely on correction"),
+    c("Non-convulsive status epilepticus", "mimic", ["acute","subacute"], "uncommon", true,
+      "Dense language failure with reduced responsiveness that FLUCTUATES, and imaging that shows no territory to explain it — an EEG is the only way to make the diagnosis, and it is treatable, so it belongs on the list whenever a global aphasia does not fit a vascular territory"),
   ],
   cortex_aphasia_mixed_transcortical: [
     c("Global cerebral hypoperfusion (watershed 'isolation of the speech area')", "vascular", ["hyperacute","acute"], "uncommon", true,
@@ -873,6 +1277,8 @@ export const CAUSES = {
       "Headache and confusion with a compatible exposure history; ask about faulty heating and about other affected household members"),
     c("Advanced Alzheimer's or a degenerative aphasia", "degenerative", ["chronic"], "uncommon", false,
       "A similar echolalic pattern can emerge in advanced degenerative disease, but over years rather than abruptly"),
+    c("Moyamoya disease", "vascular", ["subacute","chronic"], "rare", true,
+      "Recurrent border-zone events in a child or young adult, classically PROVOKED BY HYPERVENTILATION — crying, blowing on hot food or playing a wind instrument; angiography shows the 'puff of smoke' collateral network, and revascularisation prevents further strokes"),
   ],
   // --- Region F: nerve roots + plexus (2026-08-10) ---
   // Roots share an aetiology, so the discriminator is the LEVEL. Every feature names the level's own muscle,
@@ -889,6 +1295,7 @@ export const CAUSES = {
       "Severe burning C3 dermatomal pain preceding a vesicular rash by 2-3 days"),
     c("Trauma / whiplash with facet injury", "traumatic", ["acute"], "uncommon", false,
       "Neck pain and C3 radicular symptoms after a hyperextension injury"),
+    ...rtSpine("occipital and upper neck numbness", ["abscess","lyme"]),
   ],
   root_c4: [
     c("Cervical spondylosis / foraminal stenosis", "degenerative", ["chronic"], "common", false,
@@ -901,6 +1308,7 @@ export const CAUSES = {
       "Burning pain across the C4 cape distribution days before the rash appears"),
     c("Trauma with facet or vertebral injury", "traumatic", ["acute"], "uncommon", false,
       "C4 radicular pain after a hyperextension or axial-loading injury"),
+    ...rtSpine("shoulder-cap numbness with neck pain", ["abscess","lyme"]),
   ],
   root_c5: [
     c("Cervical spondylosis / foraminal stenosis (C4/5)", "degenerative", ["chronic"], "common", false,
@@ -913,6 +1321,7 @@ export const CAUSES = {
       "Relentless night pain with progressive C5 weakness in a patient with a known primary"),
     c("Herpes zoster", "infective", ["acute"], "uncommon", false,
       "Dermatomal C5 pain preceding the vesicular rash by a few days"),
+    ...rtSpine("weak shoulder abduction with a reduced biceps jerk", ["abscess","schwannoma"]),
   ],
   root_c6: [
     c("Cervical spondylosis / foraminal stenosis (C5/6)", "degenerative", ["chronic"], "common", false,
@@ -925,6 +1334,7 @@ export const CAUSES = {
       "Burning C6 dermatomal pain into the thumb, days before the rash"),
     c("Carpal tunnel syndrome (the common mimic)", "traumatic", ["chronic"], "common", false,
       "Thumb and index numbness can look like C6 — but carpal tunnel is NOCTURNAL, spares the brachioradialis jerk, and does not cause neck pain or elbow flexion weakness"),
+    ...rtSpine("weak elbow flexion with thumb numbness", ["abscess","lyme"]),
   ],
   root_c7: [
     c("Cervical spondylosis / foraminal stenosis (C6/7)", "degenerative", ["chronic"], "common", false,
@@ -937,6 +1347,7 @@ export const CAUSES = {
       "Dermatomal C7 burning pain preceding the rash"),
     c("Neuralgic amyotrophy", "inflammatory", ["acute"], "uncommon", false,
       "Severe shoulder-girdle pain preceding patchy weakness that does not respect a single root"),
+    ...rtSpine("weak elbow extension with a lost triceps jerk", ["abscess","schwannoma"]),
   ],
   root_c8: [
     c("Pancoast (superior sulcus) tumour", "neoplastic", ["subacute"], "uncommon", true,
@@ -949,6 +1360,7 @@ export const CAUSES = {
       "Relentless night pain with progressive C8 hand weakness and wasting"),
     c("Ulnar neuropathy (the common mimic)", "traumatic", ["chronic"], "common", false,
       "Little-finger numbness can look like C8 — but ulnar neuropathy SPARES the thenar muscles (median-innervated) and the medial forearm sensation (medial cutaneous nerve, from T1), and causes no neck pain"),
+    ...rtSpine("weak finger flexion with little-finger numbness", ["abscess","lyme"]),
   ],
   root_t1: [
     c("Pancoast (superior sulcus) tumour", "neoplastic", ["subacute"], "uncommon", true,
@@ -961,6 +1373,7 @@ export const CAUSES = {
       "T1 radicular pain with hand intrinsic weakness; rare compared with the cervical levels above"),
     c("Herpes zoster", "infective", ["acute"], "rare", false,
       "Burning T1 dermatomal pain in the medial forearm preceding the rash"),
+    ...rtSpine("wasted hand intrinsics with medial forearm numbness", ["abscess","schwannoma"]),
   ],
   root_t4: [
     c("Herpes zoster", "infective", ["acute"], "common", false,
@@ -973,6 +1386,7 @@ export const CAUSES = {
       "Constant thoracic pain WORSE AT NIGHT and on lying flat, with local spinal tenderness — the classic presentation of malignant spinal disease, which may progress to cord compression"),
     c("Diabetic thoracic radiculopathy", "metabolic", ["subacute"], "uncommon", false,
       "Severe burning truncal pain with weight loss in a diabetic, often with abdominal wall bulging; it usually recovers over months"),
+    ...rtSpine("a dermatomal band at the nipple line", ["abscess","lyme"]),
   ],
   root_t10: [
     c("Herpes zoster", "infective", ["acute"], "common", false,
@@ -985,6 +1399,7 @@ export const CAUSES = {
       "T10 band pain with a sensory level; BEEVOR'S SIGN (the umbilicus moves UPWARD on lifting the head, because the lower abdominals are weak while the upper are intact) indicates a lesion around T10 and points to the cord rather than a single root"),
     c("Vertebral metastasis or myeloma", "neoplastic", ["subacute"], "uncommon", true,
       "Constant night pain with local tenderness at T10 and progressive leg symptoms — image the whole spine urgently to exclude cord compression"),
+    ...rtSpine("a dermatomal band at the umbilicus", ["abscess","leptomeningeal"]),
   ],
   root_l1: [
     c("Lumbar spondylosis / foraminal stenosis", "degenerative", ["chronic"], "uncommon", false,
@@ -997,6 +1412,7 @@ export const CAUSES = {
       "Burning L1 groin pain preceding the vesicular rash"),
     c("Ilioinguinal nerve entrapment (the mimic)", "traumatic", ["chronic"], "uncommon", false,
       "Groin numbness after hernia repair or a Pfannenstiel incision can mimic L1, but there is no back pain and no weakness"),
+    ...rtSpine("groin and upper outer thigh numbness", ["abscess","lyme"]),
   ],
   root_l2: [
     c("Lumbar spondylosis / foraminal stenosis", "degenerative", ["chronic"], "uncommon", false,
@@ -1009,6 +1425,7 @@ export const CAUSES = {
       "Relentless night-time back pain with progressive L2 weakness in a patient with malignancy"),
     c("Psoas abscess or retroperitoneal mass", "infective", ["subacute"], "rare", true,
       "Fever with back and thigh pain, a flexed hip held still, and pain on hip extension"),
+    ...rtSpine("weak hip flexion with upper thigh numbness", ["abscess","schwannoma"]),
   ],
   root_l3: [
     c("Lumbar spondylosis / foraminal stenosis (L3/4)", "degenerative", ["chronic"], "common", false,
@@ -1021,6 +1438,7 @@ export const CAUSES = {
       "Constant night pain with progressive quadriceps weakness; image the spine"),
     c("Psoas abscess or retroperitoneal haematoma", "infective", ["acute","subacute"], "uncommon", true,
       "Fever or anticoagulation with thigh pain and a fixed flexed hip"),
+    ...rtSpine("weak knee extension with a reduced knee jerk", ["abscess","lyme"]),
   ],
   root_l4: [
     c("Lumbar spondylosis / foraminal stenosis (L3/4)", "degenerative", ["chronic"], "common", false,
@@ -1033,6 +1451,7 @@ export const CAUSES = {
       "Unrelenting night pain with progressive L4 weakness — image before assuming degenerative disease"),
     c("Femoral neuropathy (the mimic)", "traumatic", ["acute","subacute"], "uncommon", false,
       "Quadriceps weakness with a lost knee jerk also occurs with a femoral nerve lesion, but that spares hip ADDUCTION (obturator) and causes no back pain"),
+    ...rtSpine("weak ankle inversion with a lost knee jerk", ["abscess","leptomeningeal"]),
   ],
   root_l5: [
     c("Lumbar disc prolapse (L4/5)", "traumatic", ["acute","subacute"], "common", false,
@@ -1045,6 +1464,7 @@ export const CAUSES = {
       "Fever with severe focal spinal pain and raised inflammatory markers; intravenous drug use, diabetes or recent spinal instrumentation"),
     c("Herpes zoster", "infective", ["acute"], "rare", false,
       "Burning L5 dermatomal pain preceding the rash"),
+    ...rtSpine("foot drop with a PRESERVED ankle jerk", ["lyme","schwannoma"]),
   ],
   root_s1: [
     c("Lumbar disc prolapse (L5/S1)", "traumatic", ["acute","subacute"], "common", false,
@@ -1057,6 +1477,7 @@ export const CAUSES = {
       "Fever, severe focal spinal pain and raised inflammatory markers with the risk factors for spinal infection"),
     c("Piriformis or gluteal compression (the mimic)", "traumatic", ["chronic"], "uncommon", false,
       "Buttock pain with sciatica but a NORMAL ankle jerk and no true dermatomal sensory loss"),
+    ...rtSpine("weak plantarflexion with a lost ankle jerk", ["lyme","leptomeningeal"]),
   ],
   root_s2: [
     c("Central lumbosacral disc prolapse", "traumatic", ["hyperacute","acute","subacute"], "common", true,
@@ -1069,6 +1490,7 @@ export const CAUSES = {
       "Posterior thigh discomfort in the S2 dermatome, worse on standing and walking"),
     c("Herpes zoster (sacral)", "infective", ["acute"], "rare", false,
       "Burning sacral pain with a vesicular rash; sacral zoster can cause urinary retention (Elsberg syndrome)"),
+    ...rtSpine("weak toe flexion with posterior thigh numbness", ["lyme","schwannoma"]),
   ],
   root_s3: [
     c("Central lumbosacral disc prolapse", "traumatic", ["hyperacute","acute","subacute"], "common", true,
@@ -1081,6 +1503,7 @@ export const CAUSES = {
       "Sacral dermatomal rash with urinary retention and perineal numbness"),
     c("Lumbosacral spondylosis / foraminal stenosis", "degenerative", ["chronic"], "rare", false,
       "S3 perineal discomfort with degenerative change; a rare isolated presentation, so exclude compression first"),
+    ...rtSpine("saddle numbness with sphincter dysfunction", ["leptomeningeal","schwannoma"]),
   ],
   // --- plexus ---
   plexus_upper_trunk: [ // Erb's — C5/6
@@ -1090,10 +1513,12 @@ export const CAUSES = {
       "A motorcyclist or fall with the head and shoulder forced apart; a PSEUDOMENINGOCELE on MRI indicates ROOT AVULSION, which will not recover spontaneously and needs EARLY surgical referral, since nerve transfer must happen within roughly 6 months before the muscle becomes unreinnervatable"),
     c("Neuralgic amyotrophy (Parsonage-Turner)", "inflammatory", ["acute"], "common", false,
       "Severe shoulder pain for days to weeks that FADES as patchy weakness and wasting appear, often after a viral illness or vaccination; recovery takes 1-3 years"),
-    c("RADIATION plexopathy", "traumatic", ["chronic"], "uncommon", false,
+    c("RADIATION plexopathy", "iatrogenic", ["chronic"], "uncommon", false,
       "Years after radiotherapy (classically for breast cancer), PAINLESS progressive weakness favouring the UPPER trunk, with MYOKYMIA on EMG — painlessness, myokymia and an upper-trunk predominance distinguish it from tumour recurrence"),
     c("Neoplastic infiltration", "neoplastic", ["subacute"], "uncommon", true,
       "Progressive weakness with SEVERE PAIN — pain is the single most useful discriminator from radiation injury, which is typically painless"),
+    c("Hereditary neuralgic amyotrophy", "congenital", ["acute"], "rare", false,
+      "The same painful patchy shoulder-girdle attacks as Parsonage-Turner but RECURRENT and familial, often triggered by pregnancy, surgery or infection; subtle dysmorphic features (hypotelorism, a cleft palate) and a SEPT9 mutation distinguish it, and it matters because further attacks can be anticipated"),
   ],
   plexus_middle_trunk: [ // C7
     c("Traction or traumatic injury", "traumatic", ["hyperacute","acute"], "uncommon", true,
@@ -1102,8 +1527,12 @@ export const CAUSES = {
       "Severe shoulder-girdle pain then patchy weakness that crosses nerve and root boundaries"),
     c("Neoplastic infiltration", "neoplastic", ["subacute"], "rare", true,
       "Progressive painful weakness in a patient with malignancy; image the plexus"),
-    c("Radiation plexopathy", "traumatic", ["chronic"], "rare", false,
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "rare", false,
       "Painless progressive weakness years after radiotherapy, with myokymia on EMG"),
+    c("Rucksack palsy / prolonged shoulder compression", "traumatic", ["subacute"], "rare", false,
+      "Painless patchy shoulder-girdle weakness after carrying a heavy pack, prolonged surgery in an awkward position, or anaesthesia — the plexus is compressed between the clavicle and first rib; it recovers once the load is removed"),
+    c("Vasculitic plexopathy", "inflammatory", ["acute","subacute"], "rare", true,
+      "Painful, stepwise weakness crossing nerve and root boundaries, with weight loss, rash or raised inflammatory markers — the plexus counterpart of mononeuritis multiplex, and it needs urgent immunosuppression"),
   ],
   plexus_lower_trunk: [ // Klumpke's — C8/T1
     c("Pancoast (superior sulcus) tumour", "neoplastic", ["subacute"], "uncommon", true,
@@ -1117,7 +1546,7 @@ export const CAUSES = {
       "Slowly progressive thenar and intrinsic wasting with medial forearm numbness in a younger patient; a cervical rib or fibrous band on imaging"),
     c("Traction injury with root avulsion", "traumatic", ["hyperacute","acute"], "uncommon", true,
       "Severe traction with a claw hand and Horner's; a pseudomeningocele on MRI means avulsion and needs early surgical referral within the reinnervation window"),
-    c("Radiation plexopathy", "traumatic", ["chronic"], "uncommon", false,
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "uncommon", false,
       "PAINLESS progressive weakness with MYOKYMIA on EMG years after radiotherapy — though radiation more often favours the upper trunk, so a painless lower-trunk picture still warrants imaging to exclude recurrence"),
   ],
   plexus_lateral_cord: [
@@ -1125,24 +1554,28 @@ export const CAUSES = {
       "Weak elbow flexion (MUSCULOCUTANEOUS) with MEDIAN sensory loss over the lateral hand but PRESERVED median-innervated intrinsics — that combination is what defines a lateral cord lesion rather than a single nerve"),
     c("Neoplastic infiltration", "neoplastic", ["subacute"], "uncommon", true,
       "Progressive painful weakness in the cord distribution, often with an axillary mass in a patient with malignancy"),
-    c("Radiation plexopathy", "traumatic", ["chronic"], "uncommon", false,
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "uncommon", false,
       "Painless progressive weakness with myokymia on EMG, years after radiotherapy"),
     c("Neuralgic amyotrophy", "inflammatory", ["acute"], "uncommon", false,
       "Severe pain preceding patchy weakness that does not respect a single nerve"),
-    c("Iatrogenic (axillary surgery, regional block)", "traumatic", ["acute"], "uncommon", false,
+    c("Iatrogenic (axillary surgery, regional block)", "iatrogenic", ["acute"], "uncommon", false,
       "Cord-pattern weakness immediately after axillary node clearance or an infraclavicular block"),
+    c("Vasculitic plexopathy", "inflammatory", ["acute","subacute"], "rare", true,
+      "Painful, stepwise weakness that crosses nerve and root boundaries, with systemic upset and raised inflammatory markers — the plexus counterpart of mononeuritis multiplex, needing urgent immunosuppression before more fascicles infarct"),
   ],
   plexus_medial_cord: [
     c("Traction or traumatic injury", "traumatic", ["hyperacute","acute"], "common", true,
       "ULNAR weakness with CLAWING plus MEDIAN-innervated thenar weakness and medial forearm numbness — median motor loss with ulnar loss, sparing elbow flexion, defines the medial cord"),
     c("Neoplastic infiltration (Pancoast, breast, lymphoma)", "neoplastic", ["subacute"], "common", true,
       "Severe pain with progressive intrinsic wasting, often with a Horner's — image the lung apex and axilla"),
-    c("Radiation plexopathy", "traumatic", ["chronic"], "uncommon", false,
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "uncommon", false,
       "Painless progressive weakness with myokymia on EMG years after radiotherapy"),
-    c("Iatrogenic (axillary surgery, regional block, median sternotomy)", "traumatic", ["acute"], "uncommon", false,
+    c("Iatrogenic (axillary surgery, regional block, median sternotomy)", "iatrogenic", ["acute"], "uncommon", false,
       "Medial cord pattern weakness following axillary or cardiac surgery"),
     c("Cervical rib / thoracic outlet syndrome", "congenital", ["chronic"], "uncommon", false,
       "Progressive intrinsic wasting with medial forearm numbness in a younger patient"),
+    c("Subclavian or axillary artery aneurysm with thrombosis", "vascular", ["acute","subacute"], "rare", true,
+      "Medial cord weakness with a COOL, pulseless or ischaemic hand and forearm claudication — a vascular thoracic outlet syndrome; feel the pulses and listen for a bruit, because this needs vascular surgery rather than neurological follow-up"),
   ],
   plexus_posterior_cord: [
     c("Traction or traumatic injury", "traumatic", ["hyperacute","acute"], "common", true,
@@ -1153,8 +1586,10 @@ export const CAUSES = {
       "Severe shoulder pain for days that fades as patchy weakness and wasting appear"),
     c("Neoplastic infiltration", "neoplastic", ["subacute"], "uncommon", true,
       "Progressive painful weakness with an axillary mass in a patient with malignancy"),
-    c("Iatrogenic (crutch use, axillary surgery)", "traumatic", ["subacute"], "uncommon", false,
+    c("Iatrogenic (crutch use, axillary surgery)", "iatrogenic", ["subacute"], "uncommon", false,
       "Posterior cord pattern weakness after prolonged axillary pressure or surgery"),
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "rare", false,
+      "PAINLESS progressive weakness with myokymia on EMG, years after axillary or chest-wall radiotherapy — painlessness is the discriminator from recurrent tumour, which hurts"),
   ],
   plexus_lumbar_plexus: [ // L2-4
     c("Retroperitoneal haematoma", "vascular", ["hyperacute","acute"], "uncommon", true,
@@ -1167,7 +1602,7 @@ export const CAUSES = {
       "Fever with back and thigh pain, the hip held flexed and pain on extension; raised inflammatory markers"),
     c("Obstetric or surgical injury", "traumatic", ["acute"], "uncommon", false,
       "Thigh weakness after prolonged labour, pelvic surgery or lithotomy positioning"),
-    c("Radiation plexopathy", "traumatic", ["chronic"], "rare", false,
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "rare", false,
       "Painless progressive leg weakness with myokymia on EMG, years after pelvic radiotherapy"),
   ],
   plexus_sacral_plexus: [ // L4-S1
@@ -1177,7 +1612,7 @@ export const CAUSES = {
       "Foot drop and posterior leg weakness after a prolonged or instrumented delivery, or pelvic surgery"),
     c("Retroperitoneal or pelvic haematoma", "vascular", ["acute"], "uncommon", true,
       "Acute pain with leg weakness on anticoagulation; urgent imaging and reversal"),
-    c("Radiation plexopathy", "traumatic", ["chronic"], "uncommon", false,
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "uncommon", false,
       "PAINLESS progressive leg weakness with MYOKYMIA on EMG years after pelvic radiotherapy — painlessness is the key discriminator from recurrent tumour"),
     c("Pelvic abscess or infection", "infective", ["acute","subacute"], "rare", true,
       "Fever with pelvic and leg pain and raised inflammatory markers"),
@@ -1196,21 +1631,23 @@ export const CAUSES = {
       "Severe shoulder or neck pain for days to weeks, which then FADES as the weakness appears — often post-viral or post-vaccination"),
     c("Cervical spondylosis or C3-5 root disease", "degenerative", ["chronic"], "uncommon", false,
       "Neck pain with diaphragm weakness — C3, 4 and 5 keep the diaphragm alive, so a high cervical lesion can present as breathlessness"),
-    c("Interscalene block or central line insertion", "traumatic", ["acute"], "uncommon", false,
+    c("Interscalene block or central line insertion", "iatrogenic", ["acute"], "uncommon", false,
       "Breathlessness immediately after a neck or shoulder regional block, usually temporary"),
+    ...nvSpine("breathlessness lying flat", ["vasculitis"]),
   ],
   nerve_pudendal: [
     c("Pudendal nerve entrapment (Alcock's canal)", "traumatic", ["chronic"], "common", false,
       "Perineal pain that is WORSE ON SITTING and relieved by standing or by sitting on a toilet seat (the perineum is unloaded) — cyclists are classically affected"),
     c("Obstetric injury", "traumatic", ["acute","subacute"], "common", false,
       "Perineal pain and sphincter symptoms following a prolonged or instrumental delivery"),
-    c("Pelvic surgery or radiotherapy", "traumatic", ["subacute","chronic"], "uncommon", false,
+    c("Pelvic surgery or radiotherapy", "iatrogenic", ["subacute","chronic"], "uncommon", false,
       "Perineal numbness and pain after pelvic surgery or irradiation"),
     c("Pelvic tumour infiltration", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "Progressive unrelenting perineal pain, worse at night and not positional — image the pelvis, since this suggests malignant infiltration rather than entrapment"),
+    ...nvSpine("perineal numbness with sphincter dysfunction", ["vasculitis","sheathTumour"]),
   ],
   nerve_saphenous: [
-    c("Iatrogenic injury (vein harvest, knee arthroscopy, varicose vein surgery)", "traumatic", ["acute"], "common", false,
+    c("Iatrogenic injury (vein harvest, knee arthroscopy, varicose vein surgery)", "iatrogenic", ["acute"], "common", false,
       "PURE SENSORY numbness and burning over the medial calf and ankle after knee or vein surgery, with NO weakness — the saphenous nerve is purely sensory"),
     c("Entrapment at the adductor (Hunter's) canal", "traumatic", ["chronic"], "uncommon", false,
       "Medial knee and calf pain worse on walking, with tenderness over the adductor canal in the medial thigh"),
@@ -1218,9 +1655,10 @@ export const CAUSES = {
       "Medial leg numbness after a laceration, fracture or prolonged external pressure"),
     c("Diabetic or entrapment-prone neuropathy", "metabolic", ["chronic"], "uncommon", false,
       "Diabetes makes any nerve more vulnerable to compression at anatomically tight points"),
+    ...nvSpine("medial calf numbness with no weakness", ["vasculitis","sheathTumour"]),
   ],
   nerve_sural: [
-    c("Iatrogenic injury (nerve biopsy, ankle surgery)", "traumatic", ["acute"], "common", false,
+    c("Iatrogenic injury (nerve biopsy, ankle surgery)", "iatrogenic", ["acute"], "common", false,
       "Numbness over the lateral foot and heel after surgery — the sural nerve is the standard site for diagnostic NERVE BIOPSY precisely because it is purely sensory"),
     c("External compression (tight boots, casts)", "traumatic", ["subacute"], "uncommon", false,
       "Lateral foot numbness after prolonged pressure from footwear or a plaster cast"),
@@ -1228,6 +1666,7 @@ export const CAUSES = {
       "Lateral foot numbness following an ankle injury or fracture fixation"),
     c("Length-dependent polyneuropathy", "metabolic", ["chronic"], "common", false,
       "Sural sensory loss is often the EARLIEST measurable abnormality in a generalised neuropathy — check for a stocking distribution rather than assuming a focal lesion"),
+    ...nvSpine("lateral foot numbness with no weakness", ["vasculitis","leprosy"]),
   ],
   nerve_axillary: [
     c("Shoulder dislocation or surgical neck fracture of the humerus", "traumatic", ["hyperacute","acute"], "common", false,
@@ -1236,8 +1675,9 @@ export const CAUSES = {
       "Severe shoulder pain for days that FADES as profound deltoid wasting and weakness appear, often post-viral"),
     c("Quadrilateral space syndrome", "traumatic", ["chronic"], "rare", false,
       "Deltoid weakness and lateral shoulder numbness in an overhead athlete, worse on abduction and external rotation"),
-    c("Iatrogenic injury (shoulder surgery, injection)", "traumatic", ["acute"], "uncommon", false,
+    c("Iatrogenic injury (shoulder surgery, injection)", "iatrogenic", ["acute"], "uncommon", false,
       "Deltoid weakness immediately after shoulder surgery or a deltoid injection"),
+    ...nvSpine("weak shoulder abduction with badge-area numbness", ["vasculitis","sheathTumour"]),
   ],
   nerve_musculocutaneous: [
     c("Direct trauma or shoulder surgery", "traumatic", ["acute"], "common", false,
@@ -1248,6 +1688,7 @@ export const CAUSES = {
       "Severe shoulder pain preceding patchy weakness that does not respect a single nerve"),
     c("Brachial plexus lateral cord lesion", "traumatic", ["acute","subacute"], "uncommon", false,
       "Biceps weakness WITH median-distribution sensory loss points to the lateral cord rather than the nerve itself"),
+    ...nvSpine("weak elbow flexion with a lost biceps jerk", ["vasculitis","sheathTumour"]),
   ],
   nerve_suprascapular: [
     c("Ganglion cyst at the spinoglenoid or suprascapular notch", "congenital", ["subacute","chronic"], "common", false,
@@ -1258,16 +1699,18 @@ export const CAUSES = {
       "Severe shoulder pain for days followed by wasting; frequently affects this nerve"),
     c("Trauma (scapular fracture, traction injury)", "traumatic", ["acute"], "uncommon", false,
       "Shoulder weakness after a scapular fracture or a traction injury to the shoulder girdle"),
+    ...nvSpine("weak external rotation with peri-scapular wasting", ["vasculitis","sheathTumour"]),
   ],
   nerve_long_thoracic: [
     c("Neuralgic amyotrophy (Parsonage-Turner)", "inflammatory", ["acute"], "common", false,
       "Severe shoulder pain for days to weeks that then fades, leaving MEDIAL scapular winging that is worse on pushing forward against a wall — medial winging is serratus anterior, whereas accessory-nerve palsy gives LATERAL winging worse on abduction"),
-    c("Iatrogenic injury (mastectomy, axillary node clearance, chest drain)", "traumatic", ["acute"], "common", false,
+    c("Iatrogenic injury (mastectomy, axillary node clearance, chest drain)", "iatrogenic", ["acute"], "common", false,
       "Winging appearing after axillary surgery — the nerve runs superficially on the chest wall and is vulnerable during node clearance"),
     c("Traction or repetitive overhead trauma", "traumatic", ["subacute","chronic"], "uncommon", false,
       "Winging in an athlete or manual worker after repetitive overhead or carrying activity"),
     c("Viral illness or vaccination", "infective", ["acute"], "uncommon", false,
       "Painful onset days to weeks after a viral illness or immunisation"),
+    ...nvSpine("medial scapular winging", ["vasculitis","hnpp"]),
   ],
   nerve_radial_axilla: [
     c("Crutch palsy / prolonged axillary compression", "traumatic", ["subacute"], "common", false,
@@ -1278,6 +1721,7 @@ export const CAUSES = {
       "Progressive radial weakness with an axillary mass or lymphadenopathy — image rather than assume compression"),
     c("Injection or surgical injury", "traumatic", ["acute"], "rare", false,
       "Radial weakness following axillary surgery or a regional block"),
+    ...nvSpine("wrist drop WITH weak triceps", ["vasculitis", "sheathTumour"]),
   ],
   nerve_radial_spiral_groove: [
     c("Saturday-night palsy (compression against the humerus)", "traumatic", ["acute"], "common", false,
@@ -1288,6 +1732,7 @@ export const CAUSES = {
       "Wrist drop after prolonged tourniquet time or a tight upper-arm cast"),
     c("Lead poisoning", "metabolic", ["chronic"], "rare", false,
       "BILATERAL painless wrist drop with anaemia and abdominal pain — classic but now rare; consider occupational exposure"),
+    ...nvSpine("wrist drop with SPARED triceps", ["vasculitis","hnpp"]),
   ],
   nerve_radial_pin: [
     c("Entrapment at the arcade of Frohse (supinator)", "traumatic", ["subacute","chronic"], "common", false,
@@ -1298,6 +1743,7 @@ export const CAUSES = {
       "Progressive finger drop with a palpable mass in the proximal forearm; image before assuming entrapment"),
     c("Rheumatoid synovitis at the elbow", "inflammatory", ["subacute","chronic"], "uncommon", false,
       "Finger drop in rheumatoid arthritis — beware, since it can be mistaken for tendon rupture; test with the tenodesis effect"),
+    ...nvSpine("finger drop with NO sensory loss", ["vasculitis","sheathTumour"]),
   ],
   nerve_median_proximal: [
     c("Pronator teres syndrome", "traumatic", ["chronic"], "uncommon", false,
@@ -1308,6 +1754,7 @@ export const CAUSES = {
       "Proximal median symptoms with an anatomical variant band or palpable mass at the distal humerus"),
     c("Diabetes or other entrapment-prone neuropathy", "metabolic", ["chronic"], "uncommon", false,
       "Diabetes lowers the threshold for compression at any anatomically tight point"),
+    ...nvSpine("thenar wasting with a weak long flexor", ["vasculitis","sheathTumour"]),
   ],
   nerve_median_ain: [
     c("Anterior interosseous entrapment / neuralgic amyotrophy", "inflammatory", ["acute","subacute"], "common", false,
@@ -1317,8 +1764,9 @@ export const CAUSES = {
       "Weak thumb and index flexion after a forearm fracture or penetrating injury"),
     c("Fibrous band or mass compression", "traumatic", ["subacute","chronic"], "uncommon", false,
       "Gradual onset of the same pure motor pattern, sometimes with proximal forearm pain"),
-    c("Iatrogenic (venepuncture, forearm surgery)", "traumatic", ["acute"], "rare", false,
+    c("Iatrogenic (venepuncture, forearm surgery)", "iatrogenic", ["acute"], "rare", false,
       "Pure motor weakness following a forearm procedure"),
+    ...nvSpine("a failed 'OK' sign with NO sensory loss", ["vasculitis","sheathTumour"]),
   ],
   nerve_median_carpal_tunnel: [
     c("Idiopathic carpal tunnel syndrome", "traumatic", ["chronic"], "common", false,
@@ -1330,6 +1778,7 @@ export const CAUSES = {
       "Carpal tunnel is far commoner in diabetes, and may coexist with a length-dependent neuropathy that muddies the nerve conduction studies"),
     c("Wrist fracture, dislocation or tenosynovitis", "traumatic", ["acute","subacute"], "uncommon", false,
       "Acute severe symptoms after wrist trauma — a rapidly progressive deficit may need urgent decompression"),
+    ...nvSpine("nocturnal hand pain with thenar wasting", ["vasculitis","leprosy"]),
   ],
   nerve_ulnar_elbow: [
     c("Cubital tunnel syndrome", "traumatic", ["chronic"], "common", false,
@@ -1341,6 +1790,7 @@ export const CAUSES = {
       "Ulnar weakness developing YEARS after a childhood supracondylar fracture, with a valgus elbow deformity"),
     c("Ganglion, osteophyte or rheumatoid synovitis at the elbow", "inflammatory", ["chronic"], "uncommon", false,
       "Progressive ulnar signs with elbow arthritis or a palpable swelling"),
+    ...nvSpine("clawing with a weak deep flexor to the little finger", ["vasculitis","leprosy"]),
   ],
   nerve_ulnar_wrist: [
     c("Guyon's canal compression (cyclist's palsy)", "traumatic", ["subacute","chronic"], "common", false,
@@ -1351,6 +1801,7 @@ export const CAUSES = {
       "Ulnar symptoms after a fall on the hand or repetitive hammering; check the Allen test for vascular involvement"),
     c("Occupational vibration or repetitive pressure", "traumatic", ["chronic"], "uncommon", false,
       "Ulnar hand symptoms in a user of vibrating tools or a manual worker"),
+    ...nvSpine("clawing with SPARED dorsal hand sensation", ["vasculitis","sheathTumour"]),
   ],
   nerve_femoral: [
     c("Retroperitoneal haematoma", "vascular", ["hyperacute","acute"], "uncommon", true,
@@ -1361,11 +1812,12 @@ export const CAUSES = {
       "Severe thigh PAIN followed by wasting and weakness of the quadriceps with weight loss in a diabetic — often asymmetric, and it tends to recover slowly"),
     c("Retroperitoneal tumour or abscess (psoas)", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "Progressive thigh weakness with back or flank pain and systemic upset; image the retroperitoneum"),
-    c("Femoral nerve block or catheterisation injury", "traumatic", ["acute"], "uncommon", false,
+    c("Femoral nerve block or catheterisation injury", "iatrogenic", ["acute"], "uncommon", false,
       "Quadriceps weakness immediately after a femoral block or arterial procedure"),
+    ...nvSpine("weak knee extension with a lost knee jerk", ["vasculitis"]),
   ],
   nerve_obturator: [
-    c("Pelvic or gynaecological surgery", "traumatic", ["acute"], "common", false,
+    c("Pelvic or gynaecological surgery", "iatrogenic", ["acute"], "common", false,
       "Weak hip ADDUCTION with numbness over the MEDIAL THIGH after pelvic, gynaecological or hernia surgery"),
     c("Obstetric injury (fetal head or forceps compression)", "traumatic", ["acute"], "uncommon", false,
       "Adductor weakness and medial thigh numbness following a difficult delivery"),
@@ -1373,6 +1825,7 @@ export const CAUSES = {
       "Progressive medial thigh pain and adductor weakness — the Howship-Romberg sign of an obturator hernia is medial thigh pain on hip extension and internal rotation"),
     c("Pelvic fracture or haematoma", "traumatic", ["acute"], "uncommon", false,
       "Adductor weakness after pelvic trauma"),
+    ...nvSpine("weak hip adduction with medial thigh numbness", ["vasculitis","sheathTumour"]),
   ],
   nerve_lat_fem_cutaneous: [
     c("Meralgia paraesthetica (inguinal ligament entrapment)", "traumatic", ["subacute","chronic"], "common", false,
@@ -1381,30 +1834,33 @@ export const CAUSES = {
       "Symptoms related to abdominal girth or external pressure at the anterior superior iliac spine; often resolves with weight loss or removing the constriction"),
     c("Diabetes mellitus", "metabolic", ["chronic"], "uncommon", false,
       "Diabetes predisposes to entrapment at this tight anatomical point"),
-    c("Iliac crest bone graft or pelvic surgery", "traumatic", ["acute"], "uncommon", false,
+    c("Iliac crest bone graft or pelvic surgery", "iatrogenic", ["acute"], "uncommon", false,
       "Lateral thigh numbness after iliac crest harvesting or anterior hip surgery"),
+    ...nvSpine("burning lateral thigh numbness with NO weakness", ["vasculitis","sheathTumour"]),
   ],
   nerve_superior_gluteal: [
-    c("Intramuscular injection injury", "traumatic", ["acute"], "uncommon", false,
+    c("Intramuscular injection injury", "iatrogenic", ["acute"], "uncommon", false,
       "A TRENDELENBURG gait with the pelvis dropping on the OPPOSITE side when standing on the affected leg, after a badly sited buttock injection — inject into the upper outer quadrant to avoid it"),
-    c("Hip arthroplasty (posterior or lateral approach)", "traumatic", ["acute","subacute"], "common", false,
+    c("Hip arthroplasty (posterior or lateral approach)", "iatrogenic", ["acute","subacute"], "common", false,
       "Abductor weakness and a waddling gait after hip replacement; distinguish nerve injury from abductor tendon failure"),
     c("Pelvic trauma or fracture", "traumatic", ["acute"], "uncommon", false,
       "Abductor weakness following pelvic or acetabular fracture"),
     c("Compression by tumour or haematoma", "neoplastic", ["subacute"], "rare", false,
       "Progressive abductor weakness with buttock pain; image the pelvis"),
+    ...nvSpine("a Trendelenburg gait with no sensory loss", ["vasculitis","sheathTumour"]),
   ],
   nerve_sciatic: [
     c("Hip dislocation, acetabular fracture or arthroplasty", "traumatic", ["hyperacute","acute"], "common", false,
       "Foot drop with hamstring weakness after hip trauma or surgery — the PERONEAL DIVISION is more vulnerable (it is more lateral, tethered and has fewer protective fascicles), so it can look exactly like a common peroneal palsy until you find the weak hamstrings or absent ankle jerk"),
     c("Prolonged compression (coma, sitting, wallet)", "traumatic", ["acute","subacute"], "uncommon", false,
       "Sciatic palsy after prolonged immobility, anaesthesia or unconsciousness"),
-    c("Intramuscular injection injury", "traumatic", ["acute"], "uncommon", false,
+    c("Intramuscular injection injury", "iatrogenic", ["acute"], "uncommon", false,
       "Immediate buttock pain radiating down the leg during or after a gluteal injection"),
     c("Pelvic or gluteal tumour", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "Progressive painful sciatic palsy with buttock pain worse at night; image the pelvis rather than assuming a disc"),
     c("Endometriosis or pelvic mass (cyclical)", "neoplastic", ["chronic"], "rare", false,
       "Sciatic pain and weakness that varies with the menstrual cycle"),
+    ...nvSpine("foot drop WITH weak plantarflexion", ["vasculitis"]),
   ],
   nerve_peroneal_common: [
     c("Compression at the fibular neck", "traumatic", ["acute","subacute"], "common", false,
@@ -1417,6 +1873,7 @@ export const CAUSES = {
       "Progressive foot drop with a palpable or imaged mass at the fibular head; a painful progressive drop deserves imaging"),
     c("Vasculitic mononeuritis multiplex", "inflammatory", ["acute","subacute"], "uncommon", true,
       "Painful foot drop with other individual nerves affected in sequence, plus systemic features and raised inflammatory markers — this is a medical emergency needing immunosuppression"),
+    ...nvSpine("foot drop with PRESERVED inversion", ["hnpp"]),
   ],
   nerve_peroneal_deep: [
     c("Anterior tarsal tunnel syndrome / tight footwear", "traumatic", ["subacute","chronic"], "common", false,
@@ -1427,6 +1884,7 @@ export const CAUSES = {
       "Dorsiflexion weakness after tibial or ankle injury"),
     c("Diabetes or entrapment-prone neuropathy", "metabolic", ["chronic"], "uncommon", false,
       "Diabetes predisposes to compression at tight points such as the extensor retinaculum"),
+    ...nvSpine("foot drop with first-web-space numbness", ["vasculitis","sheathTumour"]),
   ],
   nerve_peroneal_superficial: [
     c("Entrapment where the nerve pierces the deep fascia", "traumatic", ["subacute","chronic"], "common", false,
@@ -1439,6 +1897,7 @@ export const CAUSES = {
       "Lateral leg numbness from external pressure over the lateral calf"),
     c("Diabetes or entrapment-prone neuropathy", "metabolic", ["chronic"], "uncommon", false,
       "Diabetes lowers the threshold for compression where the nerve pierces the deep fascia; look for a stocking distribution suggesting a generalised neuropathy underneath"),
+    ...nvSpine("weak eversion with a SPARED first web space", ["vasculitis"]),
   ],
   nerve_tibial: [
     c("Tarsal tunnel syndrome", "traumatic", ["chronic"], "common", false,
@@ -1449,6 +1908,7 @@ export const CAUSES = {
       "Progressive sole symptoms with a mass on ultrasound or MRI"),
     c("Diabetes or systemic arthropathy", "metabolic", ["chronic"], "common", false,
       "Diabetes and inflammatory arthritis both narrow the tarsal tunnel and predispose to entrapment"),
+    ...nvSpine("weak toe flexion with a burning sole", ["vasculitis","leprosy"]),
   ],
   polyneuropathy_length_dependent: [
     c("Diabetes mellitus", "metabolic", ["chronic"], "common", false,
@@ -1461,7 +1921,7 @@ export const CAUSES = {
       "Symptoms beginning during or shortly after a course of treatment; often dose-dependent and may progress briefly after stopping"),
     c("Chronic kidney disease or hypothyroidism", "metabolic", ["chronic"], "common", false,
       "A slowly progressive neuropathy with the systemic features of uraemia or hypothyroidism; both are correctable"),
-    c("Charcot-Marie-Tooth (hereditary motor and sensory neuropathy)", "degenerative", ["chronic"], "uncommon", false,
+    c("Charcot-Marie-Tooth (hereditary motor and sensory neuropathy)", "congenital", ["chronic"], "uncommon", false,
       "Years of slowly progressive distal wasting with PES CAVUS, hammer toes and inverted-champagne-bottle legs, often with a family history and surprisingly few symptoms for the signs"),
     c("Paraproteinaemia / monoclonal gammopathy", "neoplastic", ["chronic"], "uncommon", false,
       "A predominantly sensory, often ataxic neuropathy; send serum electrophoresis and free light chains, since it may signal myeloma or amyloid"),
@@ -1478,6 +1938,12 @@ export const CAUSES = {
       "DESCENDING paralysis with prominent bulbar failure and FIXED DILATED PUPILS, after home-preserved food or wound contamination — respiratory failure develops fast, so it needs antitoxin and airway support urgently"),
     c("Aminoglycoside or magnesium-induced neuromuscular blockade", "metabolic", ["acute"], "rare", false,
       "Weakness developing during aminoglycoside treatment or magnesium infusion, especially with pre-existing neuromuscular disease"),
+    c("Organophosphate poisoning", "metabolic", ["hyperacute","acute"], "rare", true,
+      "Weakness with a cholinergic crisis — salivation, lacrimation, urination, defaecation, bronchorrhoea and PINPOINT pupils — after agricultural or deliberate exposure; the bronchial secretions kill first, so atropine is titrated to a dry chest"),
+    c("Congenital myasthenic syndrome", "congenital", ["chronic"], "rare", false,
+      "Fatiguable weakness and ptosis present since infancy or early childhood, with a family history and SERONEGATIVE antibodies — it is genetic, not autoimmune, so immunosuppression does not help and some subtypes are worsened by the standard treatments"),
+    c("Tick paralysis", "infective", ["acute"], "rare", true,
+      "Rapidly ascending flaccid paralysis in a CHILD after outdoor exposure, with normal sensation and normal CSF protein — search the scalp and skin folds, because removing the tick reverses it completely"),
   ],
   motor_unit_muscle: [
     c("Inflammatory myopathy (polymyositis, dermatomyositis, inclusion body myositis)", "inflammatory", ["subacute","chronic"], "common", false,
@@ -1486,11 +1952,11 @@ export const CAUSES = {
       "Proximal aching and weakness starting weeks to months after beginning or increasing a statin, with a raised creatine kinase that settles on withdrawal; persistent weakness suggests immune-mediated necrotising myopathy"),
     c("Thyroid disease or steroid myopathy", "metabolic", ["subacute","chronic"], "common", false,
       "Proximal weakness with a NORMAL creatine kinase in steroid myopathy or hypothyroidism — a normal CK does not exclude a myopathy"),
-    c("Muscular dystrophy (Duchenne, Becker, limb-girdle, myotonic)", "degenerative", ["chronic"], "uncommon", false,
+    c("Muscular dystrophy (Duchenne, Becker, limb-girdle, myotonic)", "congenital", ["chronic"], "uncommon", false,
       "Years of progressive proximal weakness with a family history; Gowers' sign in a child, or grip myotonia and frontal balding in myotonic dystrophy"),
     c("Rhabdomyolysis", "metabolic", ["hyperacute","acute"], "uncommon", true,
       "Severe muscle pain and swelling with dark cola-coloured urine after exertion, a crush injury, prolonged immobility or drugs — a very high creatine kinase with acute kidney injury and hyperkalaemia needs immediate fluids and monitoring"),
-    c("Mitochondrial or metabolic myopathy", "degenerative", ["chronic"], "rare", false,
+    c("Mitochondrial or metabolic myopathy", "congenital", ["chronic"], "rare", false,
       "Exercise intolerance with cramps and myoglobinuria, sometimes with ptosis, ophthalmoplegia, deafness or diabetes in mitochondrial disease"),
   ],
   // --- Region D: visual pathway, olfactory, pupil + ocular motor course (2026-08-10) ---
@@ -1517,6 +1983,10 @@ export const CAUSES = {
       "Younger patient with a field defect evolving over days and prior demyelinating episodes"),
     c("Aneurysm or deep haemorrhage", "vascular", ["hyperacute","acute"], "rare", true,
       "Abrupt onset with headache; image urgently"),
+    c("Pituitary macroadenoma with suprasellar extension", "neoplastic", ["chronic"], "uncommon", false,
+      "A hemianopia that began as a bitemporal defect and became homonymous as the tumour grew laterally past the chiasm onto the tract — ask about amenorrhoea, galactorrhoea, impotence or acromegalic change, and check the pituitary axis"),
+    ...sbSpine("an incongruous homonymous hemianopia", "check for a relative afferent pupillary defect in the CONTRALATERAL eye — the tract carries more crossed than uncrossed fibres, which is what makes the defect incongruous and the pupil asymmetric",
+      ["basalMeningitis"]),
   ],
   visual_pathway_lgn: [
     c("Anterior or posterior choroidal artery infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -1525,6 +1995,34 @@ export const CAUSES = {
       "Progressive field loss over weeks with an enhancing thalamic-region lesion"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient evolving over days with prior episodes"),
+    c("Deep haemorrhage or aneurysm", "vascular", ["hyperacute","acute"], "rare", true,
+      "Abrupt field loss with headache and vomiting — image urgently; the geniculate's dual supply means even a small bleed produces a strikingly geometric sectoral defect"),
+    c("Radiation or post-surgical injury", "iatrogenic", ["chronic"], "rare", false,
+      "A field defect appearing months to years after radiotherapy to the sellar or temporal region, or after deep temporal surgery"),
+    ...sbSpine("a congruous sectoral homonymous field defect", "the lateral geniculate is the only place that produces wedge-shaped or horizontal-sector defects, so the SHAPE of the field is what localises it",
+      ["basalMeningitis"]),
+  ],
+  // The RETINA — a central retinal artery occlusion is a STROKE OF THE EYE, not an eye complaint. The whole
+  // differential is therefore the differential of an embolic or arteritic stroke, and the tempo is minutes.
+  visual_pathway_retina: [
+    c("Giant cell arteritis", "inflammatory", ["hyperacute", "acute"], "common", true,
+      "Sudden painless monocular visual loss in a patient OVER 50 with jaw claudication, scalp tenderness, headache or shoulder-girdle ache and a raised ESR/CRP — START STEROIDS IMMEDIATELY on suspicion, because the FELLOW eye can be lost within days and that loss is preventable",
+      "a thickened, tender, PULSELESS temporal artery, with scalp tenderness when combing the hair and jaw claudication on chewing"),
+    c("Carotid atherosclerosis with artery-to-artery embolism", "vascular", ["hyperacute"], "common", true,
+      "Abrupt painless loss in one eye, often preceded by episodes of a curtain descending over the vision (amaurosis fugax) — the embolus comes from the ipsilateral carotid, so this is a warning of hemispheric stroke and needs urgent carotid imaging",
+      "a visible bright refractile embolus lodged at a retinal arteriolar bifurcation (a Hollenhorst plaque) on fundoscopy"),
+    c("Cardioembolism (atrial fibrillation, valve disease, endocarditis)", "vascular", ["hyperacute"], "common", true,
+      "Abrupt monocular loss with an irregular pulse, a prosthetic valve, recent myocardial infarction or fever with a murmur — the same work-up as any embolic stroke, so it needs an ECG, telemetry and an echocardiogram"),
+    c("Carotid or ophthalmic artery dissection", "vascular", ["hyperacute", "acute"], "uncommon", true,
+      "Monocular visual loss with NECK OR FACE PAIN and sometimes a painful Horner's, in a younger patient after trauma or neck manipulation — image the vessels rather than treating it as an isolated eye problem"),
+    c("Retinal vasculitis or a hypercoagulable state", "inflammatory", ["acute", "subacute"], "uncommon", true,
+      "Retinal arterial occlusion in a YOUNGER patient with no vascular risk factors — look for antiphospholipid syndrome, lupus, Behçet's or an inherited thrombophilia, and ask about miscarriage and prior thrombosis"),
+    c("Sickle cell disease or hyperviscosity", "congenital", ["acute", "subacute"], "rare", true,
+      "Retinal vascular occlusion in a young patient of African, Mediterranean or Middle Eastern background, or with myeloma or a leukaemia — the blood itself is the problem, so a film and a viscosity screen matter as much as the vessels"),
+    c("Retinal migraine (vasospasm)", "mimic", ["hyperacute"], "uncommon", false,
+      "REPEATED, fully reversible episodes of monocular visual loss lasting minutes in a younger migraineur, with a completely normal fundus between attacks — a fixed deficit or a whitened retina is not migraine, and a first episode still needs the embolic work-up"),
+    c("Non-arteritic AION (the mimic)", "mimic", ["hyperacute", "acute"], "common", false,
+      "Also sudden and painless and also monocular — but AION swells the DISC and gives an ALTITUDINAL field cut, whereas a retinal artery occlusion whitens the RETINA and leaves a cherry-red spot; look at the fundus, because the two have different work-ups"),
   ],
   skull_base_optic_canal: [
     c("Traumatic optic neuropathy", "traumatic", ["hyperacute","acute"], "common", true,
@@ -1535,6 +2033,8 @@ export const CAUSES = {
       "Gradual visual loss from bony narrowing of the canal, often with facial asymmetry"),
     c("Optic nerve glioma", "neoplastic", ["chronic"], "rare", false,
       "A child with progressive visual loss and proptosis; strongly associated with neurofibromatosis type 1"),
+    ...sbSpine("painless visual loss in one eye with a relative afferent pupillary defect", "colour desaturation to a red target appears BEFORE acuity drops — compare the two eyes with anything red and the asymmetry is obvious at the bedside",
+      ["perineural", "basalMeningitis"]),
   ],
   olfactory_olfactory_groove: [
     c("Olfactory groove meningioma", "neoplastic", ["chronic"], "common", false,
@@ -1547,6 +2047,8 @@ export const CAUSES = {
       "Anosmia can PRECEDE the motor or cognitive features by years, so it is an early marker rather than an incidental finding"),
     c("Chronic rhinosinusitis / nasal polyps", "inflammatory", ["chronic"], "common", false,
       "Nasal obstruction with smell loss that fluctuates — a conductive cause, and the commonest overall; examine the nose before blaming the brain"),
+    c("Esthesioneuroblastoma or sinonasal malignancy", "neoplastic", ["subacute","chronic"], "rare", true,
+      "Anosmia with UNILATERAL nasal obstruction and epistaxis — a sinonasal tumour eroding up through the cribriform plate; unilateral nasal symptoms with anosmia need nasendoscopy, not a course of steroid spray"),
   ],
   pupil_cn3_compressive: [
     c("Posterior communicating artery aneurysm", "vascular", ["hyperacute","acute"], "common", true,
@@ -1558,6 +2060,10 @@ export const CAUSES = {
       "Progressive third-nerve palsy over weeks, often with other cranial nerves involved"),
     c("Cavernous sinus lesion", "vascular", ["subacute"], "uncommon", false,
       "Third-nerve palsy with other ocular motor nerves and V1 sensory loss — the combination localises to the cavernous sinus"),
+    c("Pituitary apoplexy", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Thunderclap headache with ophthalmoplegia and visual loss, from haemorrhage into a known or occult pituitary adenoma — give HYDROCORTISONE before imaging, because the adrenal crisis kills faster than the mass"),
+    c("Cavernous sinus thrombosis", "infective", ["acute","subacute"], "rare", true,
+      "Painful ophthalmoplegia with proptosis, chemosis and fever spreading from facial, dental or sinus infection — it crosses to the OTHER eye within days, which is what distinguishes it from an orbital process"),
   ],
   pupil_cn3_ischaemic: [
     c("Microvascular (diabetic / hypertensive) third-nerve palsy", "vascular", ["hyperacute","acute"], "common", false,
@@ -1568,6 +2074,10 @@ export const CAUSES = {
       "A younger patient with painless ophthalmoplegia evolving over days and prior demyelinating episodes"),
     c("Partially or late-presenting compressive lesion", "neoplastic", ["subacute"], "uncommon", true,
       "Pupil sparing is reassuring but NOT absolute — if the palsy fails to recover by three months, progresses, or involves other nerves, image for a compressive cause"),
+    c("Myasthenia gravis", "mimic", ["subacute"], "uncommon", false,
+      "Fatiguable, variable ptosis and ophthalmoplegia that can imitate any pattern of third-nerve palsy but NEVER involves the pupil — an entirely normal pupil with a variable deficit is the discriminator, and the ice-pack test can be done at the bedside"),
+    c("Ophthalmoplegic migraine (recurrent painful ophthalmoplegic neuropathy)", "mimic", ["acute"], "rare", false,
+      "A young patient with recurrent, stereotyped headache followed by a third-nerve palsy that resolves completely between attacks — a diagnosis of exclusion, so the FIRST episode still needs vessel imaging"),
   ],
   pupil_ciliary_ganglion: [
     c("Holmes-Adie (tonic) pupil", "degenerative", ["subacute","chronic"], "common", false,
@@ -1579,6 +2089,10 @@ export const CAUSES = {
       "A tonic pupil following herpes zoster ophthalmicus or another viral illness"),
     c("Autonomic neuropathy (diabetes, amyloid, Sjogren's)", "metabolic", ["chronic"], "uncommon", false,
       "A tonic pupil as part of a wider autonomic neuropathy with postural hypotension and sudomotor failure"),
+    c("Orbital tumour or metastasis", "neoplastic", ["subacute","chronic"], "rare", true,
+      "A tonic pupil WITH proptosis, restricted eye movements or reduced acuity — an isolated benign tonic pupil has none of these, so any of them mandates orbital imaging rather than reassurance"),
+    c("Paraneoplastic autonomic neuropathy", "neoplastic", ["subacute"], "rare", true,
+      "Tonic pupils alongside widespread autonomic failure — gastroparesis, severe orthostatic hypotension, dry mouth — in a smoker; look for small-cell lung cancer and send anti-Hu or ganglionic acetylcholine-receptor antibodies"),
   ],
   skull_base_iii_orbit_sup: [
     c("Orbital trauma or fracture", "traumatic", ["hyperacute","acute"], "common", false,
@@ -1589,6 +2103,10 @@ export const CAUSES = {
       "Progressive proptosis with restricted elevation over weeks to months"),
     c("Microvascular infarct of the superior division", "vascular", ["acute"], "uncommon", false,
       "Abrupt isolated ptosis and elevation failure in a diabetic or hypertensive patient, expected to recover"),
+    c("Thyroid eye disease", "inflammatory", ["subacute","chronic"], "common", false,
+      "Proptosis with LID RETRACTION and failure of elevation — but this RESTRICTS rather than paralyses, so forced duction is abnormal and the lid is retracted, not ptotic; the muscle bellies enlarge and the tendons are spared on CT"),
+    c("Carotid-cavernous fistula", "vascular", ["subacute"], "rare", true,
+      "PULSATILE proptosis with a bruit the patient can hear, dilated 'corkscrew' conjunctival vessels and raised intraocular pressure, weeks after head trauma — auscultate the orbit"),
   ],
   skull_base_iii_orbit_inf: [
     c("Orbital trauma or fracture", "traumatic", ["hyperacute","acute"], "common", false,
@@ -1599,6 +2117,10 @@ export const CAUSES = {
       "Progressive proptosis with restricted movement and a dilated pupil"),
     c("Microvascular infarct of the inferior division", "vascular", ["acute"], "rare", false,
       "Abrupt onset in a diabetic or hypertensive patient, expected to recover over about three months"),
+    c("Orbital floor (blow-out) fracture", "traumatic", ["hyperacute","acute"], "common", true,
+      "Diplopia on UPGAZE with numbness of the cheek and upper lip after blunt orbital trauma — the inferior rectus is tethered in the fracture, so this restricts rather than paralyses; entrapment in a child with bradycardia is a surgical emergency"),
+    ...sbSpine("failure of adduction and depression with a dilated pupil", "the inferior division carries the parasympathetics, so a dilated pupil with PRESERVED lid elevation localises below the division of the third nerve",
+      ["perineural"]),
   ],
   skull_base_vi_cisternal: [
     c("Raised intracranial pressure (false localising sign)", "neoplastic", ["acute","subacute"], "common", true,
@@ -1611,6 +2133,8 @@ export const CAUSES = {
       "Headache, fever and neck stiffness with cranial-nerve palsies; consider tuberculous and carcinomatous meningitis"),
     c("Head trauma", "traumatic", ["hyperacute","acute"], "uncommon", false,
       "Horizontal diplopia after head injury; the long course makes it vulnerable"),
+    c("Wernicke's encephalopathy", "metabolic", ["acute","subacute"], "uncommon", true,
+      "BILATERAL sixth-nerve palsies with nystagmus, ataxia and confusion in an at-risk patient — bilateral VI palsies mean raised pressure or thiamine deficiency until proven otherwise; give thiamine BEFORE any glucose"),
   ],
   skull_base_vi_petrous_apex: [
     c("Petrous apicitis (Gradenigo's syndrome)", "infective", ["acute","subacute"], "uncommon", true,
@@ -1621,6 +2145,8 @@ export const CAUSES = {
       "A false localising sign from stretch over the petrous ridge; look for headache and papilloedema"),
     c("Head trauma with petrous fracture", "traumatic", ["hyperacute","acute"], "uncommon", false,
       "Diplopia after temporal bone injury, often with hearing loss or CSF otorrhoea"),
+    ...sbSpine("a sixth-nerve palsy with deep retro-orbital or facial pain", "Gradenigo's triad — VI palsy, deep facial pain and a discharging ear — is what pins it to the petrous apex rather than to raised pressure",
+      ["npc", "basalMeningitis"]),
   ],
   skull_base_trochlear_cisternal: [
     c("Head trauma", "traumatic", ["hyperacute","acute"], "common", false,
@@ -1631,6 +2157,8 @@ export const CAUSES = {
       "A long-standing head tilt visible in old photographs, with a large vertical fusion range — it decompensates in adulthood and can masquerade as new"),
     c("Tumour or raised intracranial pressure", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "Progressive diplopia with headache or other cranial-nerve signs; image if it fails to recover or gains company"),
+    ...sbSpine("vertical diplopia worse on downgaze, with a compensatory head tilt away from the affected side", "the fourth nerve is the only one to leave the brainstem dorsally and has the longest intracranial course, so it is the first casualty of any diffuse basal process",
+      ["basalMeningitis", "mass"]),
   ],
   skull_base_sup_orbital_fissure: [
     c("Tumour / metastasis / perineural spread", "neoplastic", ["subacute","chronic"], "common", true,
@@ -1643,6 +2171,8 @@ export const CAUSES = {
       "Pulsatile proptosis with a bruit, chemosis and dilated conjunctival vessels, often after trauma"),
     c("Infection (fungal, mucormycosis)", "infective", ["acute"], "rare", true,
       "A diabetic or immunocompromised patient with rapidly progressive painful ophthalmoplegia — look in the nose for a black eschar and treat as a surgical emergency"),
+    ...sbSpine("ophthalmoplegia with V1 numbness but NORMAL vision", "the superior orbital fissure spares the optic nerve — if acuity or colour vision is down, the lesion has reached the orbital apex instead, so always check vision as well as movement",
+      ["npc"]),
   ],
   // --- Region D: trigeminal course, facial segments, lower cranial nerves (2026-08-10) ---
   skull_base_v_ganglion: [
@@ -1656,6 +2186,8 @@ export const CAUSES = {
       "Slowly progressive multi-divisional facial numbness with an enhancing mass at the petrous apex"),
     c("Skull base metastasis or nasopharyngeal carcinoma", "neoplastic", ["subacute"], "uncommon", true,
       "Facial numbness with other cranial-nerve palsies, ear symptoms or neck nodes"),
+    ...sbSpine("facial numbness across two or three divisions with an absent corneal reflex", "the corneal reflex is the most sensitive bedside test of the trigeminal ganglion and goes before the patient notices numbness — test it before deciding the sensory exam is normal",
+      ["basalMeningitis"]),
   ],
   skull_base_v1_division: [
     c("Herpes zoster ophthalmicus", "infective", ["acute"], "common", true,
@@ -1666,6 +2198,8 @@ export const CAUSES = {
       "Progressive forehead numbness in a patient with previous facial skin cancer"),
     c("Trauma (supraorbital nerve injury)", "traumatic", ["acute"], "common", false,
       "Numbness over the forehead after a brow laceration or fracture, in a sharply demarcated territory"),
+    ...sbSpine("forehead numbness with an absent corneal reflex", "V1 almost never goes alone — the corneal reflex plus whatever else has failed is what localises the corridor, so examine the other cranial nerves before calling it isolated",
+      ["mass", "basalMeningitis"]),
   ],
   skull_base_v1_petrous: [
     c("Petrous apex lesion (Gradenigo's, cholesteatoma, tumour)", "infective", ["acute","subacute"], "uncommon", true,
@@ -1674,6 +2208,8 @@ export const CAUSES = {
       "Progressive facial pain and numbness with other cranial nerves over weeks to months"),
     c("Skull base trauma (petrous fracture)", "traumatic", ["hyperacute","acute"], "rare", false,
       "Facial numbness and pain after temporal bone injury, often with hearing loss"),
+    ...sbSpine("deep retro-orbital pain with facial numbness beside a sixth-nerve palsy", "the trigeminal ganglion lies on the petrous apex right next to the abducens nerve, so pain plus horizontal diplopia is the combination that localises here",
+      ["mass", "osteomyelitis", "basalMeningitis"]),
   ],
   skull_base_foramen_rotundum: [
     c("Perineural tumour spread along V2", "neoplastic", ["subacute","chronic"], "common", true,
@@ -1684,6 +2220,8 @@ export const CAUSES = {
       "Brief, electric-shock pains in the cheek triggered by touch, chewing or cold, usually from vascular compression at the root entry zone"),
     c("Trauma or dental / sinus surgery", "traumatic", ["acute"], "uncommon", false,
       "Cheek and gum numbness after a maxillary fracture or dental procedure"),
+    ...sbSpine("numbness of the cheek, upper lip and upper teeth", "map the numbness precisely — V2 stops at the lower eyelid above and the upper lip below, and a patch that crosses those borders is not a V2 lesion",
+      ["mass", "basalMeningitis"]),
   ],
   skull_base_v3_ovale: [
     c("Perineural tumour spread / skull base malignancy", "neoplastic", ["subacute","chronic"], "common", true,
@@ -1696,18 +2234,22 @@ export const CAUSES = {
       "Brief electric-shock pains in the jaw triggered by chewing, touch or cold"),
     c("Mandibular trauma or dental surgery", "traumatic", ["acute"], "common", false,
       "Chin numbness after a mandibular fracture, third-molar extraction or dental implant"),
+    ...sbSpine("numbness of the jaw and chin with weakness of the muscles of mastication", "V3 is the only division with a MOTOR component — feel the masseter bulk on clenching and watch the jaw deviate toward the weak side, which no other trigeminal lesion does",
+      ["basalMeningitis"]),
   ],
   skull_base_vii_tympanic: [
     c("Cholesteatoma", "neoplastic", ["chronic"], "common", true,
       "Facial weakness with a long history of foul-smelling ear discharge and conductive hearing loss — an expanding keratin sac eroding the facial canal; it needs surgery, not antibiotics alone"),
     c("Acute or chronic otitis media", "infective", ["acute","subacute"], "common", true,
       "Facial palsy with a painful discharging ear and fever — an emergency complication requiring urgent ENT review, drainage and antibiotics"),
-    c("Iatrogenic injury at middle-ear surgery", "traumatic", ["acute"], "uncommon", false,
+    c("Iatrogenic injury at middle-ear surgery", "iatrogenic", ["acute"], "uncommon", false,
       "Facial weakness immediately after mastoid or middle-ear surgery"),
     c("Temporal bone fracture", "traumatic", ["hyperacute","acute"], "uncommon", true,
       "Facial palsy after head injury with haemotympanum or CSF otorrhoea; immediate-onset palsy suggests transection and needs urgent assessment"),
     c("Glomus tympanicum tumour", "neoplastic", ["chronic"], "rare", false,
       "Pulsatile tinnitus with a red retrotympanic mass and slowly progressive facial weakness"),
+    ...sbSpine("facial weakness with conductive hearing loss and a discharging ear", "look IN the ear in every facial palsy — the tympanic segment runs through the middle ear, so otoscopy is part of the neurological examination here",
+      ["osteomyelitis"]),
   ],
   skull_base_vii_mastoid: [
     c("Cholesteatoma", "neoplastic", ["chronic"], "common", true,
@@ -1716,21 +2258,25 @@ export const CAUSES = {
       "A tender, boggy, protruding ear with fever and facial weakness — urgent ENT review, imaging and intravenous antibiotics"),
     c("Temporal bone fracture", "traumatic", ["hyperacute","acute"], "uncommon", true,
       "Facial palsy after head injury; immediate complete palsy suggests nerve transection and may need surgical exploration"),
-    c("Iatrogenic injury at mastoid surgery", "traumatic", ["acute"], "uncommon", false,
+    c("Iatrogenic injury at mastoid surgery", "iatrogenic", ["acute"], "uncommon", false,
       "Facial weakness immediately following mastoidectomy"),
     c("Hearing loss with facial weakness from tumour", "neoplastic", ["chronic"], "rare", false,
       "Slowly progressive facial weakness with conductive hearing loss and a mass on imaging"),
+    ...sbSpine("facial weakness with mastoid tenderness and ear discharge", "press over the mastoid and look behind the pinna — a boggy, tender, protruding ear turns a facial palsy into a surgical emergency",
+      ["osteomyelitis"]),
   ],
   skull_base_vii_parotid: [
     c("Parotid malignancy", "neoplastic", ["subacute","chronic"], "common", true,
       "A facial palsy WITH A PAROTID LUMP is malignant infiltration until proven otherwise — this is NOT Bell's palsy, and the combination of a parotid mass and facial weakness mandates urgent imaging and biopsy rather than steroids",
       "palpate the parotid and examine the neck in EVERY facial palsy — a mass, or weakness confined to one or two branches, points away from Bell's"),
-    c("Parotid surgery or trauma", "traumatic", ["acute"], "common", false,
+    c("Parotid surgery or trauma", "iatrogenic", ["acute"], "common", false,
       "Weakness confined to individual branches after parotidectomy or a facial laceration — a branch lesion gives PATCHY weakness, unlike the complete hemifacial weakness of a proximal lesion"),
     c("Parotitis or parotid abscess", "infective", ["acute"], "uncommon", false,
       "A painful, swollen, tender parotid with fever; facial weakness is unusual and should still prompt imaging"),
     c("Benign parotid tumour with mass effect", "neoplastic", ["chronic"], "uncommon", false,
       "A slowly enlarging painless parotid lump; facial weakness is uncommon in benign disease, so its presence suggests malignancy"),
+    ...sbSpine("patchy facial weakness confined to one or two branches", "branch-level weakness spares the other branches — a complete hemifacial palsy is proximal, so map WHICH branches have failed before deciding the level",
+      ["perineural", "mass"]),
   ],
   skull_base_ix_jugular: [
     c("Glomus jugulare tumour (paraganglioma)", "neoplastic", ["chronic"], "uncommon", false,
@@ -1741,6 +2287,8 @@ export const CAUSES = {
       "Slowly progressive isolated lower cranial-nerve involvement with a smooth enhancing mass"),
     c("Skull base infection / osteomyelitis", "infective", ["subacute"], "rare", true,
       "Severe ear pain with granulation tissue in an elderly diabetic — malignant otitis externa, usually pseudomonal, spreading to the skull base"),
+    ...sbSpine("a depressed gag with loss of taste on the posterior tongue", "the gag reflex has a IX afferent and a X efferent limb — touching each side separately and watching which way the palate moves separates the two nerves at the bedside",
+      ["basalMeningitis", "perineural"]),
   ],
   skull_base_x_jugular: [
     c("Glomus jugulare tumour (paraganglioma)", "neoplastic", ["chronic"], "uncommon", false,
@@ -1751,11 +2299,13 @@ export const CAUSES = {
       "Neck pain with lower cranial-nerve palsies; consider a prothrombotic state or recent instrumentation"),
     c("Schwannoma", "neoplastic", ["chronic"], "rare", false,
       "Slowly progressive hoarseness with a smooth enhancing mass at the jugular foramen"),
+    ...sbSpine("hoarseness and dysphagia with the palate pulled AWAY from the weak side", "a high vagal lesion weakens the PALATE as well as the cord — if the palate is normal and only the voice is affected, the lesion is at the recurrent laryngeal nerve instead",
+      ["osteomyelitis", "basalMeningitis"]),
   ],
   skull_base_x_recurrent_laryngeal: [
     c("Lung malignancy (left recurrent laryngeal)", "neoplastic", ["subacute","chronic"], "common", true,
       "Hoarseness with a bovine cough in a smoker — the LEFT nerve loops under the AORTIC ARCH, so it has a long intrathoracic course and can be caught by a left hilar or mediastinal tumour; imaging must therefore cover the whole course down into the chest, not just the neck"),
-    c("Thyroid or neck surgery (iatrogenic)", "traumatic", ["acute"], "common", false,
+    c("Thyroid or neck surgery (iatrogenic)", "iatrogenic", ["acute"], "common", false,
       "Hoarseness immediately after thyroidectomy, parathyroid, carotid or anterior cervical spine surgery — the commonest iatrogenic cause"),
     c("Thyroid malignancy or large goitre", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "Hoarseness with a neck mass; new voice change in a thyroid lump suggests invasion rather than compression"),
@@ -1763,6 +2313,10 @@ export const CAUSES = {
       "Hoarseness from stretching of the left nerve by an enlarged aorta, left atrium or pulmonary artery"),
     c("Viral or idiopathic neuropathy", "infective", ["acute","subacute"], "uncommon", false,
       "Hoarseness after a viral illness, a diagnosis of exclusion once imaging of the full nerve course is clear"),
+    c("Oesophageal or mediastinal malignancy", "neoplastic", ["subacute","chronic"], "uncommon", true,
+      "Hoarseness with progressive dysphagia and weight loss — a mediastinal mass or nodes catching the left nerve; the voice change can be the FIRST symptom, before the swallowing"),
+    c("Cardiac, aortic or oesophageal surgery", "iatrogenic", ["acute"], "uncommon", false,
+      "Hoarseness after a mediastinal procedure — the left nerve loops under the arch and is at risk in any operation there, not only in neck surgery"),
   ],
   skull_base_xi_jugular: [
     c("Skull base tumour or metastasis", "neoplastic", ["subacute","chronic"], "common", true,
@@ -1773,16 +2327,22 @@ export const CAUSES = {
       "Shoulder and head-turning weakness after significant head or neck injury"),
     c("Skull base infection / osteomyelitis", "infective", ["subacute"], "rare", true,
       "Severe ear pain with cranial-nerve palsies in an elderly diabetic"),
+    ...sbSpine("weakness of both head-turning and shoulder shrug", "test sternocleidomastoid AND trapezius separately — both failing means a proximal jugular-foramen lesion, whereas trapezius alone means the posterior triangle",
+      ["basalMeningitis", "perineural"]),
   ],
   skull_base_xi_posterior_triangle: [
-    c("Iatrogenic injury at cervical lymph node biopsy", "traumatic", ["acute"], "common", true,
+    c("Iatrogenic injury at cervical lymph node biopsy", "iatrogenic", ["acute"], "common", true,
       "Shoulder droop, winging and difficulty lifting the arm above the head, appearing after a lymph node biopsy or excision in the posterior triangle — the nerve is superficial here and is the classic surgical casualty; SCM is SPARED because its branches leave more proximally"),
     c("Penetrating trauma to the posterior triangle", "traumatic", ["hyperacute","acute"], "uncommon", false,
       "Trapezius weakness after a stab or laceration to the side of the neck"),
-    c("Neck dissection or carotid surgery", "traumatic", ["acute"], "common", false,
+    c("Neck dissection or carotid surgery", "iatrogenic", ["acute"], "common", false,
       "Trapezius weakness following radical or selective neck dissection"),
     c("Tumour infiltration or radiotherapy", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Progressive shoulder weakness in a treated head-and-neck cancer patient; distinguish recurrence from radiation injury"),
+    c("Metastatic cervical lymphadenopathy", "neoplastic", ["subacute"], "uncommon", true,
+      "Shoulder droop and winging with a HARD, FIXED node in the posterior triangle — the node is the diagnosis; a level V node alongside an accessory nerve palsy is malignant until proven otherwise, so image and biopsy rather than watch"),
+    c("Idiopathic or post-viral accessory neuropathy", "inflammatory", ["acute","subacute"], "rare", false,
+      "Shoulder weakness with pain days after a viral illness or immunisation, with no operation or mass to explain it — a diagnosis of exclusion once the neck has been imaged"),
   ],
   skull_base_hypoglossal_canal: [
     c("Skull base metastasis", "neoplastic", ["subacute"], "common", true,
@@ -1793,16 +2353,22 @@ export const CAUSES = {
       "Tongue weakness with ear fullness, epistaxis or neck nodes"),
     c("Skull base trauma or occipital condyle fracture", "traumatic", ["hyperacute","acute"], "rare", false,
       "Tongue weakness after significant craniocervical injury"),
+    ...sbSpine("tongue wasting with deviation toward the weak side", "look at the tongue IN THE MOUTH at rest for wasting and fasciculation before asking the patient to protrude it — a protruded tongue hides the atrophy that localises the lesion",
+      ["basalMeningitis", "osteomyelitis"]),
   ],
   skull_base_xii_neck: [
     c("Carotid dissection or aneurysm", "vascular", ["acute","subacute"], "uncommon", true,
       "Tongue weakness with neck pain and possibly a Horner's — the hypoglossal nerve runs beside the carotid, so isolated tongue weakness with neck pain demands vessel imaging"),
-    c("Iatrogenic injury (carotid endarterectomy, neck surgery)", "traumatic", ["acute"], "common", false,
+    c("Iatrogenic injury (carotid endarterectomy, neck surgery)", "iatrogenic", ["acute"], "common", false,
       "Tongue deviation immediately after carotid or submandibular surgery"),
     c("Neck malignancy or lymphadenopathy", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "Progressive tongue wasting with a neck mass; image the whole course from skull base to tongue"),
     c("Penetrating neck trauma", "traumatic", ["hyperacute","acute"], "rare", false,
       "Tongue weakness after a stab or laceration to the upper neck"),
+    c("Radiotherapy-induced neuropathy", "iatrogenic", ["chronic"], "rare", false,
+      "Tongue wasting appearing YEARS after neck radiotherapy, often with a woody, fibrotic neck; it mimics recurrence closely enough that PET or biopsy is usually needed to separate them"),
+    ...sbSpine("isolated tongue wasting and deviation with neck pain", "an isolated twelfth-nerve palsy is never benign — the nerve runs beside the carotid, so the neck and skull base must both be imaged before it is called idiopathic",
+      ["mass"]),
   ],
   skull_base_carotid_space: [
     c("Carotid artery dissection", "vascular", ["hyperacute","acute"], "common", true,
@@ -1811,10 +2377,12 @@ export const CAUSES = {
       "A slowly enlarging pulsatile neck mass at the carotid bifurcation, mobile side to side but not up and down, with a Horner's or lower cranial-nerve palsies"),
     c("Neck malignancy or lymphadenopathy", "neoplastic", ["subacute","chronic"], "uncommon", true,
       "A Horner's with a neck mass or known head-and-neck primary; image from skull base to thorax"),
-    c("Iatrogenic (carotid surgery, central line, interscalene block)", "traumatic", ["acute"], "uncommon", false,
+    c("Iatrogenic (carotid surgery, central line, interscalene block)", "iatrogenic", ["acute"], "uncommon", false,
       "A Horner's appearing immediately after a neck procedure or regional block"),
     c("Cluster headache", "vascular", ["acute","chronic"], "common", false,
       "A transient partial Horner's during severe unilateral periorbital pain attacks with lacrimation and nasal congestion; it may become permanent after many attacks"),
+    c("Radiation fibrosis of the carotid sheath", "iatrogenic", ["chronic"], "rare", false,
+      "Slowly accumulating lower cranial neuropathies with a woody, fibrotic neck years after head-and-neck radiotherapy — it mimics tumour recurrence, and PET or biopsy is often the only way to separate them"),
   ],
   skull_base_collet_sicard: [
     c("Skull base metastasis", "neoplastic", ["subacute"], "common", true,
@@ -1827,6 +2395,8 @@ export const CAUSES = {
       "Severe ear pain with granulation tissue in an elderly diabetic — malignant otitis externa spreading to the skull base"),
     c("Occipital condyle fracture or craniocervical trauma", "traumatic", ["hyperacute","acute"], "rare", false,
       "Multiple lower cranial-nerve palsies after significant craniocervical injury"),
+    ...sbSpine("palsies of IX, X, XI and XII together with a NORMAL pupil", "check the pupil and the eyelid — adding a Horner's moves the lesion out of the bone and into the retroparotid space (Villaret's), so the sympathetic examination is what separates the two syndromes",
+      ["basalMeningitis"]),
   ],
   skull_base_villaret: [
     c("Skull base or retroparotid metastasis", "neoplastic", ["subacute"], "common", true,
@@ -1839,46 +2409,92 @@ export const CAUSES = {
       "Progressive palsies with a parotid or neck mass; biopsy is needed"),
     c("Retropharyngeal abscess or deep neck infection", "infective", ["acute"], "rare", true,
       "Fever with neck pain, stiffness and dysphagia; urgent imaging and drainage"),
+    ...sbSpine("palsies of IX, X, XI and XII together WITH a Horner's", "the Horner's is the whole point — the sympathetic chain runs in the retroparotid space but not through the jugular foramen, so its presence moves the lesion outside the bone",
+      ["basalMeningitis"]),
   ],
   // --- skull base / cranial nerves ---
   skull_base_cavernous_sinus: [
-    c("Cavernous sinus thrombosis", "vascular", ["acute","subacute"], "uncommon", true),
-    c("Septic cavernous sinus thrombosis", "infective", ["acute"], "rare", true),
-    c("Carotid-cavernous fistula", "vascular", ["subacute"], "uncommon"),
-    c("Meningioma / pituitary / metastasis / perineural spread", "neoplastic", ["chronic"], "common"),
-    c("Tolosa-Hunt (granulomatous)", "inflammatory", ["subacute"], "uncommon"),
-    c("Carotid aneurysm", "vascular", ["chronic"], "rare"),
+    c("Cavernous sinus thrombosis", "vascular", ["acute","subacute"], "uncommon", true,
+      "Painful ophthalmoplegia with proptosis and chemosis in a prothrombotic state, pregnancy or dehydration — it spreads to the OTHER eye through the intercavernous sinuses within days, and bilateral involvement is what distinguishes it from an orbital process"),
+    c("Septic cavernous sinus thrombosis", "infective", ["acute"], "rare", true,
+      "The same picture WITH fever and a source — a facial furuncle, sinusitis or dental abscess in the 'danger triangle' of the face; it needs urgent antibiotics and anticoagulation, and mortality remains high"),
+    c("Carotid-cavernous fistula", "vascular", ["subacute"], "uncommon", false,
+      "PULSATILE proptosis with a bruit the patient can hear and dilated 'corkscrew' conjunctival vessels, weeks to months after head trauma; auscultate over the closed eye, because the bruit is the diagnosis"),
+    c("Meningioma / pituitary / metastasis / perineural spread", "neoplastic", ["chronic"], "common", false,
+      "Slowly progressive ophthalmoplegia with V1 and V2 numbness but a QUIET eye — no proptosis, no chemosis, no pain; a painless cavernous syndrome is compressive until imaged"),
+    c("Tolosa-Hunt (granulomatous)", "inflammatory", ["subacute"], "uncommon", false,
+      "Painful ophthalmoplegia that resolves dramatically within 48 hours of steroids — but lymphoma and infection do the same at first, so it stays a diagnosis of exclusion and needs follow-up imaging"),
+    c("Carotid aneurysm", "vascular", ["chronic"], "rare", true,
+      "A slowly progressive painful ophthalmoplegia with a pupil-involving third-nerve palsy; an intracavernous aneurysm can rupture into the sinus and produce a fistula, so it needs vessel imaging rather than observation"),
   ],
   skull_base_jugular_foramen: [ // Vernet
-    c("Glomus jugulare (paraganglioma)", "neoplastic", ["chronic"], "common"),
-    c("Schwannoma / meningioma", "neoplastic", ["chronic"], "common"),
-    c("Metastasis / skull-base infiltration", "neoplastic", ["subacute","chronic"], "uncommon"),
-    c("Jugular vein thrombosis", "vascular", ["subacute"], "rare", true),
+    c("Glomus jugulare (paraganglioma)", "neoplastic", ["chronic"], "common", false,
+      "Years of pulsatile tinnitus the patient hears in time with their heartbeat, with progressive hoarseness and dysphagia; a vascular red mass behind the drum, and it is highly vascular so biopsy is dangerous"),
+    c("Schwannoma / meningioma", "neoplastic", ["chronic"], "common", false,
+      "Slowly progressive IX, X and XI palsies together — the three nerves share the foramen, which is why the combination localises so precisely"),
+    c("Metastasis / skull-base infiltration", "neoplastic", ["subacute","chronic"], "uncommon", true,
+      "Rapid progression over weeks with occipital pain in a patient with a known primary — breast, lung and prostate favour the skull base"),
+    c("Jugular vein thrombosis", "vascular", ["subacute"], "rare", true,
+      "Neck pain and swelling with lower cranial nerve palsies after a central line, deep neck infection (Lemierre's) or in malignancy"),
+    ...sbSpine("hoarseness and dysphagia with a depressed gag and shoulder weakness", "test the gag, the voice AND the shoulder shrug together — all three failing at once is what pins it to the jugular foramen rather than to the individual nerves",
+      ["osteomyelitis", "basalMeningitis"]),
   ],
   skull_base_cpa: [
-    c("Vestibular schwannoma", "neoplastic", ["chronic"], "common"),
-    c("Meningioma", "neoplastic", ["chronic"], "uncommon"),
-    c("Epidermoid cyst", "congenital", ["chronic"], "rare"),
+    c("Vestibular schwannoma", "neoplastic", ["chronic"], "common", false,
+      "Months to years of progressive UNILATERAL hearing loss with tinnitus, then unsteadiness; asymmetric sensorineural loss needs an MRI of the internal auditory meatus, because audiometry alone will not exclude it"),
+    c("Meningioma", "neoplastic", ["chronic"], "uncommon", false,
+      "A cerebellopontine angle mass with facial numbness or weakness EARLIER and hearing loss later than a schwannoma — it sits broad-based on the dura rather than in the canal"),
+    c("Epidermoid cyst", "congenital", ["chronic"], "rare", false,
+      "Years of insidious cranial nerve signs, sometimes with hemifacial spasm or trigeminal neuralgia in a younger patient; it insinuates around structures rather than displacing them, and restricts on DWI"),
+    c("Neurofibromatosis type 2", "congenital", ["chronic"], "uncommon", true,
+      "BILATERAL vestibular schwannomas are diagnostic — in any young patient with a cerebellopontine angle mass, examine the other ear, look for cutaneous schwannomas and cataracts, and image the whole neuraxis"),
+    ...sbSpine("unilateral hearing loss with facial numbness and ataxia", "the earliest objective sign is an ABSENT CORNEAL REFLEX — test it before the mass is large enough to cause ataxia",
+      ["basalMeningitis", "perineural"]),
   ],
   skull_base_petrous_apex: [ // Gradenigo
-    c("Petrous apicitis (complicated otitis media)", "infective", ["acute","subacute"], "uncommon", true),
-    c("Chondrosarcoma", "neoplastic", ["chronic"], "rare"),
-    c("Metastasis / cholesterol granuloma", "neoplastic", ["chronic"], "rare"),
+    c("Petrous apicitis (complicated otitis media)", "infective", ["acute","subacute"], "uncommon", true,
+      "Gradenigo's triad — a sixth-nerve palsy, deep retro-orbital pain and a discharging ear; a complication of middle-ear infection that needs urgent imaging and intravenous antibiotics"),
+    c("Chondrosarcoma", "neoplastic", ["chronic"], "rare", false,
+      "Years of progressive cranial neuropathies with a lesion centred on the petro-occipital fissure; it arises off the midline, which distinguishes it from a chordoma"),
+    c("Metastasis / cholesterol granuloma", "neoplastic", ["chronic"], "rare", false,
+      "A cholesterol granuloma expands slowly with hearing loss and facial pain and is bright on BOTH T1 and T2 — an appearance that is characteristic enough to spare a biopsy"),
+    ...sbSpine("deep retro-orbital pain with a sixth-nerve palsy and hearing loss", "pain out of proportion to the visible ear findings is the warning — the petrous apex is deep, so external examination looks unimpressive while the bone is being destroyed",
+      ["osteomyelitis", "basalMeningitis", "npc"]),
   ],
   skull_base_orbital_apex: [
-    c("Invasive fungal sinusitis (mucormycosis)", "infective", ["acute"], "rare", true),
-    c("Tumour / perineural spread", "neoplastic", ["chronic"], "common"),
-    c("Granulomatosis with polyangiitis / sarcoid", "inflammatory", ["subacute"], "uncommon"),
+    c("Invasive fungal sinusitis (mucormycosis)", "infective", ["acute"], "rare", true,
+      "A DIABETIC in ketoacidosis or a neutropenic patient with rapidly progressive painful ophthalmoplegia and visual loss — this is measured in hours; it needs emergency ENT debridement and amphotericin",
+      "a black necrotic eschar on the hard palate or nasal mucosa — look in the mouth and nose, because the skin can appear normal"),
+    c("Tumour / perineural spread", "neoplastic", ["chronic"], "common", true,
+      "Progressive ophthalmoplegia WITH visual loss over weeks to months, often with facial pain, in someone treated for a facial skin cancer or nasopharyngeal tumour years earlier"),
+    c("Granulomatosis with polyangiitis / sarcoid", "inflammatory", ["subacute"], "uncommon", true,
+      "Orbital inflammation with sinus disease, nasal crusting or a saddle-nose deformity, and renal or pulmonary involvement; check ANCA and ACE before committing to steroids alone"),
+    ...sbSpine("visual loss together with a complete ophthalmoplegia", "the orbital apex differs from the superior orbital fissure by INVOLVING THE OPTIC NERVE — always check acuity and colour vision, not just eye movements, because that one test separates the two corridors",
+      ["mass", "basalMeningitis", "fracture"]),
   ],
   skull_base_optic_neuritis: [
     c("Multiple sclerosis", "inflammatory", ["subacute"], "common", false, "Young adult, painful on eye movement, central scotoma, RAPD; recovers over weeks"),
     c("Idiopathic optic neuritis", "inflammatory", ["subacute"], "common", false, "Isolated, painful, unilateral; normal brain MRI"),
     c("NMO / MOG-associated", "inflammatory", ["subacute"], "uncommon", true, "Severe/bilateral or poor recovery; check aquaporin-4 & MOG antibodies"),
     c("Infective / para-infectious", "infective", ["subacute"], "rare", false, "Recent infection/vaccination; may be bilateral in children"),
+    c("Compressive optic neuropathy masquerading as neuritis", "neoplastic", ["subacute","chronic"], "uncommon", true,
+      "Visual loss that is PAINLESS, steadily progressive, and has NOT begun to recover by four to six weeks — 'optic neuritis' that fails to improve on schedule is compressive until imaged, and the window to save vision closes"),
+    c("Chronic relapsing inflammatory optic neuropathy (CRION)", "inflammatory", ["subacute","chronic"], "rare", false,
+      "Recurrent painful visual loss that relapses every time steroids are reduced or stopped — steroid-dependence is the defining feature, and it needs long-term immunosuppression rather than repeated short courses"),
   ],
   skull_base_optic_aion: [
-    c("Arteritic AION — giant-cell arteritis", "vascular", ["acute"], "uncommon", true, "Age >50, jaw claudication, scalp tenderness, raised ESR/CRP — sight- and life-threatening"),
+    c("Arteritic AION — giant-cell arteritis", "vascular", ["acute"], "uncommon", true,
+      "Age over 50 with jaw claudication, scalp tenderness and raised ESR/CRP — sight- and life-threatening, and the fellow eye is at risk within days, so START STEROIDS ON SUSPICION rather than waiting for the temporal artery biopsy",
+      "a thickened, tender, PULSELESS temporal artery, with scalp tenderness when combing the hair and jaw claudication on chewing"),
     c("Non-arteritic AION (vasculopathic)", "vascular", ["acute"], "common", false, "Painless altitudinal loss, 'disc at risk', vascular risk factors; ESR/CRP normal"),
+    c("Nocturnal hypotension", "metabolic", ["acute"], "uncommon", false,
+      "Visual loss NOTICED ON WAKING, in a patient taking antihypertensives at night — perfusion pressure at the disc dips overnight; ask when the drugs are taken, because moving them to the morning is the intervention"),
+    c("Perioperative ischaemic optic neuropathy", "iatrogenic", ["hyperacute","acute"], "rare", true,
+      "Visual loss after prolonged PRONE spinal surgery or cardiac surgery, with hypotension, anaemia and facial oedema; often bilateral and largely irreversible, so the risk is discussed beforehand"),
+    c("Severe anaemia or haemorrhagic shock", "metabolic", ["acute"], "rare", true,
+      "Bilateral visual loss after major haemorrhage or profound anaemia — the disc is watershed territory, so it fails when oxygen delivery falls even without local vascular disease"),
+    c("Optic disc drusen / congenitally crowded disc", "congenital", ["chronic"], "uncommon", false,
+      "A small, crowded disc with no physiological cup — the 'disc at risk' — which both predisposes to non-arteritic AION and can itself be mistaken for papilloedema"),
   ],
   skull_base_vii_stylomastoid: [ // Bell's palsy site
     c("Bell's palsy (idiopathic / HSV)", "inflammatory", ["acute"], "common", false, "Isolated LMN facial weakness (forehead involved), over hours–days; diagnosis of exclusion"),
@@ -1886,25 +2502,60 @@ export const CAUSES = {
     c("Lyme disease", "infective", ["subacute"], "uncommon", false, "Endemic area/tick exposure; may be bilateral facial palsy", "an expanding erythema migrans rash at a tick-bite site"),
     c("Parotid tumour / malignant infiltration", "neoplastic", ["chronic"], "uncommon", true, "Slowly progressive or a parotid mass — not a true 'Bell's'"),
     c("Sarcoidosis", "inflammatory", ["subacute"], "rare", false, "May be bilateral; consider with uveitis/hilar lymphadenopathy"),
+    c("Guillain-Barré syndrome", "inflammatory", ["acute","subacute"], "rare", true,
+      "BILATERAL facial weakness is never Bell's palsy — think Guillain-Barré, Lyme, sarcoid or leukaemic infiltration, and examine the limb reflexes and vital capacity before discharging"),
   ],
   skull_base_vii_geniculate: [ // Ramsay Hunt
-    c("Herpes zoster oticus (Ramsay Hunt)", "infective", ["acute"], "common", false, "Ear pain + facial palsy, ± taste/hearing/vertigo", "vesicles in the external auditory meatus or on the pinna"),
-    c("Geniculate schwannoma", "neoplastic", ["chronic"], "rare"),
+    c("Herpes zoster oticus (Ramsay Hunt)", "infective", ["acute"], "common", true, "Ear pain + facial palsy, ± taste/hearing/vertigo; recovery is worse than Bell's palsy, so antivirals and steroids should start early", "vesicles in the external auditory meatus or on the pinna"),
+    c("Geniculate schwannoma", "neoplastic", ["chronic"], "rare", false,
+      "Facial weakness progressing over MONTHS rather than hours, often with hearing loss — a facial palsy that creeps rather than strikes is a tumour until imaged"),
+    c("Temporal bone fracture", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "Facial weakness after head injury with haemotympanum or Battle's sign — an IMMEDIATE complete palsy suggests transection and needs urgent ENT assessment, whereas a delayed palsy usually recovers"),
+    c("Facial nerve haemangioma", "neoplastic", ["chronic"], "rare", false,
+      "Slowly progressive facial weakness with hearing loss from a lesion that is small out of proportion to the deficit — easily overlooked unless the geniculate region is examined closely on thin-slice imaging"),
+    ...sbSpine("facial weakness with loss of taste on the anterior tongue AND hyperacusis", "the geniculate is what adds taste loss and hyperacusis — a stylomastoid lesion has facial weakness alone, so those two questions localise the level without imaging",
+      ["mass", "basalMeningitis"]),
   ],
   skull_base_iam: [
-    c("Vestibular schwannoma (intracanalicular)", "neoplastic", ["chronic"], "common"),
-    c("Meningioma / facial schwannoma", "neoplastic", ["chronic"], "uncommon"),
+    c("Vestibular schwannoma (intracanalicular)", "neoplastic", ["chronic"], "common", false,
+      "Progressive unilateral hearing loss with tinnitus and poor speech discrimination out of proportion to the pure-tone loss; the canal is narrow, so symptoms start early while the tumour is still small"),
+    c("Meningioma / facial schwannoma", "neoplastic", ["chronic"], "uncommon", false,
+      "Hearing loss with EARLY facial weakness — the facial nerve shares the canal, and weakness before deafness points away from a vestibular schwannoma"),
+    c("Labyrinthine artery infarct (AICA territory)", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "SUDDEN unilateral deafness with vertigo — sudden sensorineural hearing loss can be the herald of an AICA-territory stroke, so examine for other brainstem signs rather than treating it as idiopathic"),
+    c("Neurofibromatosis type 2", "congenital", ["chronic"], "rare", true,
+      "Bilateral intracanalicular schwannomas in a young patient — examine the other ear and look for cutaneous schwannomas and cataracts before treating one side as sporadic"),
+    ...sbSpine("unilateral sensorineural hearing loss with tinnitus", "asymmetric sensorineural hearing loss with unilateral tinnitus is the presentation, and an MRI of the internal auditory meatus is the test — audiometry alone cannot exclude it",
+      ["basalMeningitis", "perineural"]),
   ],
   // --- vestibular ---
   peripheral_vestibular_labyrinth: [
-    c("Vestibular neuritis", "inflammatory", ["acute"], "common"),
-    c("Labyrinthitis (viral / bacterial)", "infective", ["acute"], "common"),
-    c("Ménière's disease", "degenerative", ["subacute"], "uncommon"),
+    c("Vestibular neuritis", "inflammatory", ["acute"], "common", false,
+      "CONSTANT vertigo lasting days with nausea and unsteadiness but NORMAL HEARING, an abnormal head impulse toward the affected side, and unidirectional horizontal nystagmus that does not change direction on gaze — a peripheral HINTS pattern"),
+    c("Labyrinthitis (viral / bacterial)", "infective", ["acute"], "common", false,
+      "The same constant vertigo as neuritis but WITH HEARING LOSS — the labyrinth carries both; a bacterial labyrinthitis complicating otitis media needs urgent ENT review, because it can progress to meningitis"),
+    c("Ménière's disease", "degenerative", ["subacute"], "uncommon", false,
+      "Discrete attacks of 20 minutes to several hours with FLUCTUATING low-frequency hearing loss, tinnitus and aural fullness, well between attacks — the fluctuation of hearing is what distinguishes it, so serial audiograms matter more than a single one"),
+    c("Posterior circulation stroke (the must-not-miss)", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Acute vertigo with a NORMAL head impulse test, direction-changing nystagmus or skew deviation — a central HINTS pattern outperforms early MRI, and a normal head impulse in a patient with acute constant vertigo means stroke until proven otherwise"),
+    c("Ototoxicity (aminoglycosides, cisplatin)", "metabolic", ["subacute"], "uncommon", true,
+      "BILATERAL vestibular failure with oscillopsia — the world bounces when walking — and a positive head impulse to BOTH sides, after gentamicin or cisplatin; it is painless and often unnoticed until the patient cannot walk in the dark"),
+    c("Labyrinthine concussion or perilymph fistula", "traumatic", ["acute","subacute"], "rare", false,
+      "Vertigo and hearing loss after head injury, barotrauma or straining, sometimes provoked by pressure or loud sound (Tullio phenomenon)"),
   ],
   central_vestibular_nucleus: [
-    c("Cerebellar / brainstem stroke (PICA / AICA)", "vascular", ["hyperacute","acute"], "common", true),
-    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon"),
-    c("Vertebrobasilar TIA", "vascular", ["acute"], "uncommon", true),
+    c("Cerebellar / brainstem stroke (PICA / AICA)", "vascular", ["hyperacute","acute"], "common", true,
+      "Acute vertigo with a NORMAL head impulse test, direction-changing gaze-evoked nystagmus or skew deviation — the central HINTS pattern. Truncal ataxia severe enough that the patient cannot sit unsupported is the other giveaway, and it is often the ONLY sign"),
+    c("Demyelination (MS)", "inflammatory", ["subacute"], "uncommon", false,
+      "A younger patient whose vertigo and nystagmus evolve over days, often with an internuclear ophthalmoplegia alongside, and with prior demyelinating episodes"),
+    c("Vertebrobasilar TIA", "vascular", ["acute"], "uncommon", true,
+      "Recurrent brief episodes of vertigo WITH other posterior-circulation symptoms — diplopia, dysarthria, ataxia or bilateral visual disturbance; isolated recurrent vertigo is rarely a TIA, but vertigo plus any of those needs urgent vascular assessment"),
+    c("Wernicke's encephalopathy", "metabolic", ["acute","subacute"], "uncommon", true,
+      "Nystagmus with ataxia and confusion in an at-risk patient — alcohol, hyperemesis, bariatric surgery or prolonged vomiting; give parenteral thiamine BEFORE any glucose"),
+    c("Posterior fossa tumour", "neoplastic", ["subacute","chronic"], "rare", false,
+      "Progressive vertigo and nystagmus over weeks to months with headache, worse on waking, and other brainstem or cerebellar signs"),
+    c("Vestibular migraine", "mimic", ["acute","chronic"], "common", false,
+      "Recurrent vertigo lasting minutes to hours with headache, photophobia or aura, and a normal examination between attacks — common enough that it is the leading alternative once stroke has been excluded"),
   ],
   // --- cortex / subcortex ---
   subcortex_internal_capsule: [
@@ -1916,6 +2567,10 @@ export const CAUSES = {
       "A bedside glucose is the first test in any sudden focal deficit — it can reproduce a pure motor hemiparesis exactly and reverses on correction"),
     c("Focal seizure with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
       "A witnessed convulsion or stereotyped aura, with weakness improving over minutes to hours rather than persisting"),
+    c("Demyelinating plaque", "inflammatory", ["subacute"], "rare", false,
+      "A younger patient whose pure motor hemiparesis evolves over days rather than seconds; a capsular plaque is uncommon, but MS can reproduce a lacunar syndrome exactly"),
+    c("Small metastasis / glioma", "neoplastic", ["subacute","chronic"], "rare", false,
+      "Progressive hemiparesis over weeks, often with headache or seizures; an enhancing deep lesion whose oedema is out of proportion to its size"),
   ],
   // --- Region B: deep grey / lacunar + cord emergencies ---
   subcortex_corona_radiata: [
@@ -1929,6 +2584,10 @@ export const CAUSES = {
       "Progression over weeks with headache or seizures; an enhancing lesion with surrounding oedema"),
     c("Hypoglycaemia", "mimic", ["hyperacute","acute"], "common", true,
       "Check a bedside glucose before anything else — it reproduces a pure motor deficit and reverses completely on correction"),
+    c("Cerebral small-vessel disease (confluent leukoaraiosis)", "degenerative", ["chronic"], "common", false,
+      "Years of a widening, magnetic gait with urinary urgency and cognitive slowing — the ACCUMULATED white-matter burden rather than any one lacune; each new lacune lands on an already-compromised network"),
+    c("Diffuse axonal injury", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "Immediate and prolonged loss of consciousness after a high-speed deceleration injury, out of all proportion to a near-normal CT; the petechial lesions at the grey-white junction show only on GRE or SWI"),
   ],
   subcortex_thalamus: [ // VPL — pure sensory lacune / Déjerine-Roussy
     c("Thalamic lacunar infarct (VPL)", "vascular", ["hyperacute","acute"], "common", false,
@@ -1941,6 +2600,11 @@ export const CAUSES = {
       "Younger patient with sensory symptoms evolving over days and prior demyelinating episodes"),
     c("Small metastasis / glioma", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive sensory symptoms over weeks; an enhancing thalamic lesion"),
+    c("Deep cerebral venous thrombosis (internal cerebral veins / straight sinus)", "vascular", ["acute","subacute"], "rare", true,
+      "BILATERAL thalamic swelling with headache, drowsiness and a course that deteriorates over days in a younger patient — a venous rather than arterial pattern that crosses arterial territories, so image the venous sinuses and look for a prothrombotic state"),
+    c("Fabry disease", "congenital", ["chronic"], "rare", false,
+      "Stroke in a young adult with burning acroparaesthesiae of the hands and feet, hypohidrosis and renal impairment — an X-linked, enzyme-replaceable cause of early stroke that goes unrecognised for years; the 'pulvinar sign' (symmetrical high T1 signal in the posterior thalamus) supports it on MRI",
+      "angiokeratomas — clusters of small dark-red papules in a 'bathing-trunk' distribution between the umbilicus and the knees; ask the patient to undress rather than taking the history alone"),
   ],
   subcortex_anterior_choroidal: [
     c("Anterior choroidal artery infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -1949,6 +2613,14 @@ export const CAUSES = {
       "Headache, vomiting and reduced consciousness with very high blood pressure; the CT distinguishes it"),
     c("Tumour / metastasis", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progression over weeks rather than seconds; an enhancing deep lesion with oedema"),
+    c("Cardioembolism", "vascular", ["hyperacute","acute"], "common", true,
+      "A deficit maximal at onset in a patient with atrial fibrillation, recent myocardial infarction or endocarditis — the anterior choroidal territory is small enough that a single embolus produces the whole triad at once"),
+    c("Anterior choroidal or carotid-origin atherosclerosis", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "A stuttering or stepwise onset with known carotid disease — the artery arises from the internal carotid just above the posterior communicating, so it is vulnerable both to carotid atheroma and to clipping of a PComm aneurysm"),
+    c("Demyelinating plaque", "inflammatory", ["subacute"], "rare", false,
+      "A younger patient whose triad evolves over days with prior demyelinating episodes — a single plaque here can imitate the whole anterior choroidal syndrome"),
+    c("Focal seizure with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "A witnessed convulsion or stereotyped aura, with the deficit improving over minutes to hours rather than persisting"),
   ],
   subcortex_sensorimotor: [ // thalamocapsular lacune
     c("Thalamocapsular lacunar infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -1957,28 +2629,55 @@ export const CAUSES = {
       "Headache, vomiting, reduced consciousness and very high blood pressure — image before assuming a lacune"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
       "Younger patient, evolving over days, with prior episodes and other lesions on MRI"),
+    c("Branch atheromatous disease of the lenticulostriate origin", "vascular", ["hyperacute","acute"], "common", true,
+      "A lacunar syndrome that PROGRESSES over the first 24–72 hours, stuttering or worsening stepwise — the plaque sits at the ORIGIN of the perforator rather than within it, so expect early neurological deterioration and warn the patient and family in advance"),
+    c("Small metastasis / glioma", "neoplastic", ["subacute","chronic"], "rare", false,
+      "Progression over weeks with headache or seizures; an enhancing deep lesion with surrounding oedema"),
+    c("Focal sensorimotor seizure with Todd's phenomenon", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Combined weakness and numbness following a witnessed seizure or a Jacksonian march, recovering over minutes to hours rather than persisting"),
+    c("Hypoglycaemia", "mimic", ["hyperacute","acute"], "common", true,
+      "A bedside glucose comes before the CT — hypoglycaemia reproduces a deep sensorimotor deficit exactly and reverses completely on correction"),
   ],
   subcortex_optic_radiation: [
     c("MCA or PCA branch infarct of the optic radiation", "vascular", ["hyperacute","acute"], "common", false,
       "An isolated homonymous field defect; Meyer's loop in the temporal lobe gives a SUPERIOR quadrantanopia ('pie in the sky'), the parietal fibres an inferior one"),
     c("Tumour (glioma / metastasis)", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Field loss progressing over weeks, often with seizures; an enhancing deep white-matter mass"),
-    c("Post-surgical injury (anterior temporal lobectomy)", "traumatic", ["acute"], "uncommon", false,
+    c("Post-surgical injury (anterior temporal lobectomy)", "iatrogenic", ["acute"], "uncommon", false,
       "A superior quadrantanopia appearing after epilepsy surgery — Meyer's loop sweeps forward into the temporal lobe and is in the resection path"),
     c("Demyelination", "inflammatory", ["subacute"], "uncommon", false,
       "Younger patient with a field defect evolving over days and prior demyelinating episodes"),
     c("Deep haemorrhage", "vascular", ["hyperacute","acute"], "rare", true,
       "Headache and vomiting with the field loss; the CT distinguishes it from infarct"),
+    c("Herpes simplex encephalitis", "infective", ["acute","subacute"], "uncommon", true,
+      "Fever, confusion and seizures with a temporal focus — Meyer's loop runs through the temporal lobe, so a superior quadrantanopia may be the only field sign. Start aciclovir on suspicion; do not wait for the PCR"),
+    c("Posterior reversible encephalopathy syndrome (PRES)", "metabolic", ["acute","subacute"], "rare", true,
+      "Headache, seizures and visual disturbance with severe hypertension, eclampsia or calcineurin-inhibitor exposure; posterior-predominant oedema that reverses once the trigger is treated"),
   ],
   cortex_hand_knob: [
-    c("Small precentral (hand-knob) infarct", "vascular", ["acute"], "common"),
-    c("Cortical vein thrombosis", "vascular", ["subacute"], "rare", true),
-    c("Small metastasis / demyelination", "neoplastic", ["subacute"], "rare"),
+    c("Small precentral (hand-knob) infarct", "vascular", ["acute"], "common", false,
+      "Abrupt isolated hand weakness that looks exactly like an ulnar or median nerve palsy — the PSEUDO-PERIPHERAL cortical hand. What gives it away is that the weakness does not respect any single nerve or root, and a brisk reflex or subtle pronator drift betrays its cortical origin"),
+    c("Cortical vein thrombosis", "vascular", ["acute","subacute"], "rare", true,
+      "Focal hand weakness with SEIZURES and headache in a prothrombotic state, pregnancy or the puerperium — the deficit fits no arterial territory, which is the clue to image the veins"),
+    c("Small metastasis or demyelinating plaque", "neoplastic", ["subacute"], "rare", false,
+      "Hand weakness progressing over weeks, often announced by focal motor seizures of the hand; a small enhancing precentral lesion with oedema out of proportion to its size"),
+    c("Focal motor seizure of the hand with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Hand weakness immediately after a witnessed focal seizure or a Jacksonian march up the arm, RECOVERING over minutes to hours — a stroke is maximal at onset and does not improve that fast"),
+    c("Ulnar or median neuropathy (the mimic)", "mimic", ["subacute","chronic"], "common", false,
+      "Far more hand weakness is peripheral than cortical — but a nerve lesion gives sensory loss in that nerve's territory and NO reflex change, whereas the cortical hand spares any single nerve's sensory pattern and may show a brisk reflex"),
+    c("Intracerebral haemorrhage", "vascular", ["hyperacute","acute"], "rare", true,
+      "Abrupt hand weakness with headache and vomiting; a small lobar bleed in an older patient suggests cerebral amyloid angiopathy"),
   ],
   cortex_operculum: [ // Broca
     c("MCA (superior division) infarct", "vascular", ["hyperacute","acute"], "common", false, "Abrupt non-fluent aphasia with face/arm weakness and gaze deviation toward the lesion"),
     c("Haemorrhage", "vascular", ["acute"], "uncommon", true, "Headache and vomiting with a deficit that worsens over minutes to hours rather than being maximal at onset"),
     c("Tumour (glioma / metastasis)", "neoplastic", ["chronic"], "uncommon", false, "Weeks of progressive speech difficulty, often announced by a focal seizure"),
+    c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache with a rapidly progressive non-fluent aphasia and raised inflammatory markers; a ring-enhancing frontal lesion — hunt for the source in the sinuses, teeth, heart or a right-to-left shunt"),
+    c("Focal seizure with speech arrest", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Brief, stereotyped, repeated episodes of speech arrest with PRESERVED comprehension and awareness, resolving in seconds to minutes — an opercular seizure rather than a fixed aphasia, which persists between events"),
+    c("Demyelination", "inflammatory", ["subacute"], "rare", false,
+      "A younger patient whose non-fluent speech difficulty evolves over days, with prior demyelinating episodes and lesions disseminated in time and space"),
   ],
   // --- cortex: anterior & posterior circulation territories (Region A) ---
   // The phonebook keys these dominant/nondominant (no flat `ddx`), so before curation they fell through to
@@ -2041,6 +2740,10 @@ export const CAUSES = {
       "Thunderclap headache followed by leg weakness, abulia and amnesia — subarachnoid haemorrhage with ACA-territory ischaemia from vasospasm"),
     c("Azygos (unpaired) ACA supplying both hemispheres", "congenital", ["hyperacute","acute"], "rare", true,
       "A single occlusion causes bilateral leg weakness with abulia and incontinence — easily mistaken for a cord lesion or a psychiatric presentation"),
+    c("Interhemispheric (falx) subdural haematoma or parasagittal contusion", "traumatic", ["acute","subacute"], "uncommon", true,
+      "Leg-predominant weakness after a fall or deceleration injury, especially in an older or anticoagulated patient; blood tracking along the falx sits parallel to the axial plane and is easily missed — ask for the coronal reformats"),
+    c("Normal-pressure hydrocephalus", "mimic", ["chronic"], "uncommon", false,
+      "Months of a magnetic, apraxic gait with urinary incontinence and cognitive slowing, BILATERAL and without true weakness — it reproduces the medial frontal picture with no ACA lesion at all"),
   ],
   cortex_pca: [
     c("PCA infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -2069,6 +2772,8 @@ export const CAUSES = {
       "Field loss progressing over weeks, often with headache or seizures; an enhancing mass on MRI"),
     c("Migraine with visual aura", "mimic", ["hyperacute","acute"], "common", false,
       "A POSITIVE, moving, scintillating scotoma building over 20–30 minutes then resolving, often followed by headache — an infarct gives NEGATIVE, static field loss, maximal instantly"),
+    c("Creutzfeldt-Jakob disease (Heidenhain variant)", "degenerative", ["subacute"], "rare", false,
+      "Rapidly progressive visual failure over weeks — distorted colours, difficulty judging distance, then cortical blindness — with myoclonus and dementia following; it presents to ophthalmology first, and repeatedly normal eye examinations in a patient losing vision fast should redirect attention to the cortex"),
   ],
   cortex_watershed_anterior: [ // ACA-MCA border zone
     c("Border-zone (watershed) infarct from hypoperfusion", "vascular", ["hyperacute","acute"], "common", true,
@@ -2079,6 +2784,12 @@ export const CAUSES = {
       "Follows cardiac arrest, drowning or profound hypoglycaemia; the deficits are bilateral and accompanied by impaired consciousness"),
     c("Tumour of the SMA / medial frontal region", "neoplastic", ["subacute","chronic"], "rare", false,
       "Weeks of progressive non-fluent speech with preserved repetition, rather than the abrupt onset of a border-zone infarct"),
+    c("Moyamoya disease", "vascular", ["hyperacute","acute","subacute"], "rare", true,
+      "Recurrent border-zone infarcts or TIAs in a child or young adult, classically PROVOKED BY HYPERVENTILATION — crying, blowing on hot food, or playing a wind instrument drops the CO₂ and the collateral supply fails; angiography shows the 'puff of smoke' basal collateral network"),
+    c("CNS vasculitis (primary angiitis or secondary)", "inflammatory", ["subacute"], "rare", true,
+      "Headache and encephalopathy with infarcts crossing MORE THAN ONE arterial territory, raised inflammatory markers, and no cardiac or carotid source to explain them"),
+    c("Sickle cell disease", "congenital", ["acute","subacute"], "rare", true,
+      "Border-zone infarction in a child or young adult with known sickle cell disease — chronic anaemia plus a stenotic arteriopathy makes the border zone the first territory to fail; transcranial Doppler velocities identify those at risk"),
   ],
   cortex_watershed_posterior: [ // MCA-PCA border zone
     c("Border-zone (watershed) infarct from hypoperfusion", "vascular", ["hyperacute","acute"], "common", true,
@@ -2089,6 +2800,13 @@ export const CAUSES = {
       "Years rather than seconds: the semantic variant loses word meaning with fluent, empty speech and preserved repetition; the logopenic variant sits in the same territory but impairs sentence repetition"),
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Progressive over weeks, often with seizures; an enhancing temporoparietal mass"),
+    c("Cardiac arrest / profound global hypoperfusion", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Bilateral posterior border-zone infarction after arrest, cardiac surgery or major haemorrhage — cortical blindness with NORMAL pupillary reactions, because the lesion sits behind the geniculate; some patients deny the blindness outright (Anton's syndrome)",
+      "Bálint's syndrome — the triad of simultanagnosia (seeing only one object at a time), optic ataxia (mis-reaching for a target under vision) and oculomotor apraxia (unable to shift gaze to command), from bilateral parieto-occipital border-zone damage"),
+    c("Posterior reversible encephalopathy syndrome (PRES)", "metabolic", ["acute","subacute"], "uncommon", true,
+      "Headache, seizures and cortical visual loss with severe hypertension, eclampsia or calcineurin-inhibitor exposure; the oedema is posterior-predominant and reverses when the trigger is corrected — so treat the blood pressure rather than assuming infarction"),
+    c("CNS vasculitis", "inflammatory", ["subacute"], "rare", true,
+      "A subacute encephalopathy with headache and infarcts that cross arterial territories in a patient with no vascular risk factors; angiography shows beading, and the diagnosis is often only made on biopsy"),
   ],
   cortex_motor_facearm: [ // precentral strip, MCA
     c("MCA superior division infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -2113,6 +2831,12 @@ export const CAUSES = {
       "Headache and seizures with bilateral leg weakness; look for pregnancy or the puerperium, the combined oral contraceptive, dehydration or malignancy"),
     c("Parasagittal metastasis", "neoplastic", ["subacute"], "uncommon", false,
       "Weeks of progressive leg weakness in a patient with a known primary; often multiple enhancing lesions with surrounding oedema"),
+    c("Focal motor seizure of the leg with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Leg monoplegia immediately after a witnessed seizure that began with rhythmic jerking of the foot, RECOVERING over minutes to hours rather than persisting — a stroke is maximal at onset and does not improve that fast"),
+    c("Vertex extradural haematoma / parasagittal contusion", "traumatic", ["hyperacute","acute"], "uncommon", true,
+      "Leg weakness after a blow to the top of the head — the paracentral lobule sits directly beneath, and a vertex extradural from a torn sagittal sinus is notoriously missed on axial CT slices"),
+    c("Juxtacortical demyelinating plaque", "inflammatory", ["subacute"], "rare", false,
+      "A younger patient whose leg weakness evolves over days with prior demyelinating episodes; a paracentral plaque mimics a cord lesion, so image the brain when the cord MRI is clear"),
   ],
   cortex_sensory_facearm: [ // postcentral strip, MCA
     c("MCA infarct (postcentral / parietal branch)", "vascular", ["hyperacute","acute"], "common", true,
@@ -2137,6 +2861,12 @@ export const CAUSES = {
       "Headache and seizures with bilateral leg symptoms; look for a prothrombotic state such as pregnancy, the combined oral contraceptive or malignancy"),
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Weeks of progressive leg numbness, often with focal sensory seizures of the leg"),
+    c("Focal sensory seizure of the leg", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "POSITIVE tingling marching up the leg over seconds to minutes and then stopping, leaving nothing behind — a lesion gives NEGATIVE, static numbness that is maximal at onset"),
+    c("ACA vasospasm after subarachnoid haemorrhage", "vascular", ["acute","subacute"], "uncommon", true,
+      "Leg numbness and weakness appearing 4–14 DAYS after a thunderclap headache, as vasospasm narrows the ACA — this is delayed cerebral ischaemia, not a re-bleed, and it needs transcranial Doppler and haemodynamic management rather than a repeat clipping"),
+    c("Juxtacortical demyelinating plaque", "inflammatory", ["subacute"], "rare", false,
+      "A younger patient with leg numbness over days; a paracentral plaque gives CORTICAL sensory loss — impaired stereognosis and joint position with crude touch preserved — rather than the dense sensory level of a cord plaque"),
   ],
   cortex_parietal: [
     c("MCA inferior division infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -2160,35 +2890,74 @@ export const CAUSES = {
     c("Cerebellar haemorrhage", "vascular", ["acute"], "uncommon", true, "Headache, vomiting, reduced consciousness — may need urgent decompression"),
     c("Metastasis / haemangioblastoma", "neoplastic", ["chronic"], "uncommon", false, "Progressive; haemangioblastoma linked to von Hippel–Lindau"),
     c("Alcohol / toxic / paraneoplastic degeneration", "degenerative", ["subacute","chronic"], "uncommon", false, "Subacute midline/truncal ataxia; check history and anti-neuronal antibodies"),
+    c("Cerebellar abscess", "infective", ["acute","subacute"], "rare", true,
+      "Fever and headache with ipsilateral limb ataxia, classically seeded from otitis media or mastoiditis — a posterior-fossa mass in a small space, so it obstructs the fourth ventricle early"),
+    c("Demyelination", "inflammatory", ["subacute"], "uncommon", false,
+      "A younger patient whose limb ataxia and dysarthria evolve over days, with prior demyelinating episodes and lesions elsewhere on MRI"),
+    c("Spinocerebellar ataxia (hereditary)", "congenital", ["chronic"], "uncommon", false,
+      "Years of slowly progressive ataxia with a family history — SCA3 adds bulging eyes and dystonia, SCA6 a near-pure late-onset cerebellar syndrome; genetic testing confirms the subtype"),
   ],
   basal_ganglia_substantia_nigra: [
     c("Parkinson's disease", "degenerative", ["chronic"], "common", false, "Asymmetric onset, rest tremor, bradykinesia, good levodopa response"),
     c("Drug-induced parkinsonism", "metabolic", ["subacute"], "common", false, "Dopamine-blocker exposure (antipsychotics, metoclopramide); usually symmetric"),
     c("Atypical parkinsonism (PSP / MSA)", "degenerative", ["chronic"], "uncommon", false, "Early falls/vertical gaze palsy (PSP) or autonomic failure (MSA); poor levodopa response"),
     c("Wilson's disease (young-onset)", "metabolic", ["subacute","chronic"], "uncommon", false, "Patient <40 with mixed parkinsonism/tremor/dystonia, ± liver disease or psychiatric change", "Kayser-Fleischer rings at the corneal limbus (slit-lamp; a wing-beating tremor is also characteristic)"),
+    c("Vascular parkinsonism", "vascular", ["subacute","chronic"], "uncommon", false,
+      "LOWER-BODY predominant parkinsonism — a wide-based shuffling gait with early falls but relatively normal arm swing and no rest tremor — with a stepwise history, extensive white-matter disease and a poor levodopa response"),
+    c("Manganese or carbon monoxide toxicity", "metabolic", ["subacute","chronic"], "rare", true,
+      "SYMMETRIC parkinsonism with early gait and speech involvement, dystonia and a poor levodopa response, after welding, mining, chronic liver disease or carbon monoxide exposure; a 'cock-walk' on the toes is characteristic of manganism"),
+    c("Normal-pressure hydrocephalus (the mimic)", "mimic", ["chronic"], "uncommon", false,
+      "A magnetic, apraxic gait with urinary incontinence and cognitive slowing but NO rest tremor and no levodopa response — the gait improves after a large-volume lumbar puncture, which is both the test and the argument for shunting"),
   ],
   basal_ganglia_globus_pallidus: [ // dystonia
     c("Wilson's disease (young-onset)", "metabolic", ["subacute","chronic"], "uncommon", false, "Young patient with dystonia ± parkinsonism/tremor and liver/psychiatric features", "Kayser-Fleischer rings at the corneal limbus"),
-    c("Primary / genetic dystonia (e.g. DYT1)", "degenerative", ["chronic"], "common", false, "Younger onset, may be task-specific, no other neurological signs"),
+    c("Primary / genetic dystonia (e.g. DYT1)", "congenital", ["chronic"], "common", false, "Younger onset, may be task-specific, no other neurological signs"),
     c("Tardive dystonia (dopamine-blocker exposure)", "metabolic", ["subacute","chronic"], "common", false, "History of antipsychotic / antiemetic use"),
     c("Bilateral pallidal injury (hypoxia / kernicterus / manganese)", "metabolic", ["subacute","chronic"], "uncommon", false, "Perinatal jaundice, hypoxic insult, or chronic manganese/liver failure"),
+    c("Acute dystonic reaction", "metabolic", ["hyperacute","acute"], "common", true,
+      "Abrupt oculogyric crisis, torticollis or trismus HOURS after a dopamine blocker — metoclopramide, prochlorperazine or an antipsychotic, often given for nausea. It reverses within minutes of intravenous procyclidine or benztropine, so it is a treat-immediately diagnosis and is frequently mistaken for a seizure or a functional episode"),
+    c("Pantothenate kinase-associated neurodegeneration (PKAN)", "congenital", ["chronic"], "rare", true,
+      "Childhood or adolescent-onset dystonia with retinopathy, spasticity and cognitive decline; the 'EYE OF THE TIGER' sign — a central pallidal hyperintensity within a hypointense rim — is characteristic on MRI"),
+    c("Status dystonicus", "metabolic", ["hyperacute","acute"], "rare", true,
+      "Relentless, generalised dystonic spasms in a patient with known dystonia, often triggered by infection or a change in medication — it causes rhabdomyolysis and respiratory compromise, so it is an intensive-care emergency rather than a medication review"),
   ],
   guillain_mollaret_triangle: [
-    c("Brainstem stroke / cavernoma (with hypertrophic olivary degeneration)", "vascular", ["chronic"], "common"),
-    c("Trauma / surgery", "traumatic", ["chronic"], "uncommon"),
-    c("Demyelination / neurodegeneration", "inflammatory", ["chronic"], "rare"),
+    c("Brainstem stroke / cavernoma (with hypertrophic olivary degeneration)", "vascular", ["chronic"], "common", false,
+      "Rhythmic PALATAL TREMOR appearing MONTHS AFTER the original brainstem insult — the delay is the diagnostic clue, because hypertrophic olivary degeneration takes weeks to months to develop and the olive ENLARGES rather than atrophying"),
+    c("Trauma / surgery", "traumatic", ["chronic"], "uncommon", false,
+      "Palatal tremor emerging weeks to months after head injury or posterior-fossa surgery that interrupted the dentato-rubro-olivary pathway"),
+    c("Demyelination / neurodegeneration", "inflammatory", ["chronic"], "rare", false,
+      "A younger patient with prior demyelinating episodes and a plaque within the triangle; the tremor persists in sleep, unlike most movement disorders"),
+    c("Progressive ataxia with palatal tremor (PAPT)", "degenerative", ["chronic"], "rare", false,
+      "Palatal tremor with progressive ataxia but NO preceding brainstem lesion — the sporadic degenerative form; the absence of a causative lesion is exactly what separates it from symptomatic palatal tremor"),
+    c("Brainstem abscess or tuberculoma", "infective", ["subacute"], "rare", true,
+      "Fever with brainstem signs over days to weeks, the palatal tremor emerging later once the lesion has healed; a ring-enhancing lesion within the triangle"),
+    c("Cavernous malformation with recurrent bleeds", "vascular", ["subacute","chronic"], "rare", false,
+      "A stuttering, accumulating course from repeated small bleeds within the triangle; a 'popcorn' lesion with a haemosiderin rim on GRE explains why deficits build in steps"),
   ],
   // --- motor unit ---
   motor_unit_anterior_horn: [
     c("Motor neurone disease / ALS", "degenerative", ["chronic"], "common", false, "Progressive painless mixed UMN+LMN, no sensory loss; fasciculations, wasting", "tongue wasting with fasciculations plus brisk reflexes in a wasted limb (mixed UMN+LMN)"),
-    c("Spinal muscular atrophy", "degenerative", ["chronic"], "common", false, "Pure LMN, hereditary; younger onset by type"),
+    c("Spinal muscular atrophy", "congenital", ["chronic"], "common", false, "Pure LMN, hereditary; younger onset by type"),
     c("Poliomyelitis / West Nile virus", "infective", ["acute"], "rare", false, "Acute febrile asymmetric flaccid paralysis"),
-    c("Kennedy's disease (SBMA)", "degenerative", ["chronic"], "rare", false, "X-linked, bulbar involvement, gynaecomastia; CAG repeat"),
+    c("Kennedy's disease (SBMA)", "congenital", ["chronic"], "rare", false, "X-linked, bulbar involvement, gynaecomastia; CAG repeat"),
+    c("Multifocal motor neuropathy with conduction block", "inflammatory", ["subacute","chronic"], "uncommon", true,
+      "Asymmetric, PURELY LOWER motor neurone weakness in individual NERVE territories — wrist or finger drop — with wasting but NO upper motor neurone signs and no sensory loss; anti-GM1 antibodies and conduction block on nerve conduction studies. It is the treatable mimic of motor neurone disease, so it must be excluded before that diagnosis is given"),
+    c("Cervical spondylotic amyotrophy / structural cord lesion", "degenerative", ["chronic"], "uncommon", true,
+      "Wasting and fasciculation in the arms with brisk legs — this reproduces the mixed picture of motor neurone disease exactly, and a compressive cervical cord lesion is surgically treatable, so image the cord before accepting an untreatable diagnosis"),
+    c("Benign fasciculation syndrome", "mimic", ["chronic"], "common", false,
+      "Widespread fasciculations, often in a health-anxious patient who has been reading about motor neurone disease, but with entirely NORMAL power, bulk and reflexes — fasciculation WITHOUT weakness or wasting is not motor neurone disease"),
   ],
   motor_unit_nmj_postsynaptic: [
     c("Myasthenia gravis (autoimmune)", "inflammatory", ["subacute","chronic"], "common", false, "Fatigable weakness, ptosis/diplopia worse through the day", "ptosis that improves after an ice-pack is held on the eye for 2 minutes (ice-pack test); Cogan's lid twitch"),
     c("Myasthenic crisis (respiratory)", "inflammatory", ["acute"], "uncommon", true, "Bulbar + respiratory weakness — monitor FVC, may need ventilation"),
     c("Lambert-Eaton myasthenic syndrome", "inflammatory", ["subacute"], "rare", false, "Small-cell lung cancer association", "power and reflexes that AUGMENT (improve) after a few seconds of sustained contraction"),
+    c("Thymoma", "neoplastic", ["subacute","chronic"], "uncommon", true,
+      "Around one in ten myasthenics has a thymoma — CT the chest in EVERY new diagnosis, because removing it changes both the treatment and the prognosis, and it can be present with mild neurological disease"),
+    c("Drug-induced myasthenia or unmasking", "metabolic", ["acute","subacute"], "uncommon", true,
+      "Weakness appearing or worsening days after starting a new drug — penicillamine, checkpoint inhibitors, fluoroquinolones, macrolides, beta-blockers or magnesium; check the drug chart before escalating immunosuppression, because stopping the culprit may be the whole treatment"),
+    c("Congenital myasthenic syndrome", "congenital", ["chronic"], "rare", false,
+      "Fatiguable weakness from infancy or early childhood with a family history and NEGATIVE antibodies — genetic rather than autoimmune, so it does not respond to immunosuppression and some subtypes are made worse by it"),
   ],
 };
 
@@ -2242,7 +3011,7 @@ const PATHOGNOMONIC = [
   [/kennedy|\bsbma\b/i,                           "perioral and tongue fasciculations with gynaecomastia"],
   [/olfactory.groove|subfrontal meningioma/i,     "Foster-Kennedy syndrome — ipsilateral optic atrophy with contralateral papilloedema on fundoscopy, plus anosmia"],
   [/botulism/i,                                   "symmetric descending flaccid paralysis with fixed dilated pupils and a dry mouth, no fever or sensory loss"],
-  [/giant.cell|arteritic aion/i,                  "a tender, thickened, pulseless temporal artery with jaw claudication and scalp tenderness (raised ESR/CRP confirms)"],
+  [/giant.cell|arteritic aion/i,                  "a tender, thickened, pulseless temporal artery with jaw claudication and scalp tenderness"],
   [/normal.pressure hydrocephalus/i,              "the triad of a magnetic/apraxic gait, urinary incontinence and cognitive decline; the gait improves after a large-volume LP (tap test)"],
   [/cluster headache/i,                           "strictly unilateral attacks with ipsilateral cranial autonomic features (lacrimation, conjunctival injection, ptosis/miosis) and marked restlessness"],
   [/numb.chin/i,                                  "isolated numbness of the chin (mental neuropathy) — a red flag for malignant infiltration"],
@@ -2297,7 +3066,7 @@ function derive(site) {
   return out;
 }
 
-// ---- sieve completion: region-tuned generic causes for the plausible-but-missing categories ----
+// ---- region classifier: groups sites into the families the curated cause builders key off ----
 export function regionOf(site) {
   const L = site.level, part = site.part || "";
   if (L === "visual_pathway" || /optic/.test(part)) return "optic";
@@ -2306,37 +3075,6 @@ export function regionOf(site) {
   if (L === "motor_unit") return "motor_unit";
   return "parenchyma";
 }
-const SIEVE_GENERICS = {
-  parenchyma: [
-    c("Demyelination (e.g. MS plaque)", "inflammatory", ["subacute"], "uncommon"),
-    c("Tumour / metastasis", "neoplastic", ["chronic"], "uncommon"),
-    c("Abscess / focal infection", "infective", ["acute", "subacute"], "rare"),
-    c("Ischaemic or haemorrhagic stroke", "vascular", ["hyperacute", "acute"], "uncommon"),
-  ],
-  peripheral: [
-    c("Compression / entrapment", "traumatic", ["subacute", "chronic"], "uncommon"),
-    c("Vasculitic / inflammatory neuropathy", "inflammatory", ["subacute"], "uncommon"),
-    c("Diabetic / metabolic", "metabolic", ["subacute", "chronic"], "uncommon"),
-    c("Nerve-sheath tumour", "neoplastic", ["chronic"], "rare"),
-  ],
-  skull_base: [
-    c("Compressive mass (schwannoma / meningioma / metastasis)", "neoplastic", ["chronic"], "uncommon"),
-    c("Skull-base infection (osteomyelitis / fungal)", "infective", ["subacute"], "rare", true),
-    c("Granulomatous / inflammatory (sarcoid / Tolosa-Hunt)", "inflammatory", ["subacute"], "rare"),
-  ],
-  motor_unit: [
-    c("Autoimmune (myasthenia / myositis)", "inflammatory", ["subacute", "chronic"], "uncommon"),
-    c("Toxic / drug-induced", "metabolic", ["subacute"], "uncommon"),
-    c("Degenerative / hereditary", "degenerative", ["chronic"], "uncommon"),
-  ],
-  optic: [
-    c("Optic neuritis / demyelination", "inflammatory", ["subacute"], "uncommon"),
-    c("Compressive (pituitary / meningioma)", "neoplastic", ["chronic"], "uncommon"),
-    c("Ischaemic (AION)", "vascular", ["acute"], "uncommon"),
-  ],
-};
-export function sieveGenerics(site) { return SIEVE_GENERICS[regionOf(site)] || SIEVE_GENERICS.parenchyma; }
-
 // ---- public API ----
 // Three sources, in priority: (1) hand-curated CAUSES (best); (2) the phonebook ddx, categorised live so all
 // ~185 named sites get structured causes from one source of truth; (3) attribute-derived fallback so a site
@@ -2357,18 +3095,10 @@ export function causesFor(site, { onset } = {}) {
   const derived = source === "derived";
   const filtered = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice())
     .sort((a, b) => LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood));
+  // A sieve category with no plausible cause at this site simply does not appear. The sieve is an
+  // authoring checklist, not an output format — it must never manufacture content to fill itself.
   const byCategory = CATEGORIES
     .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: filtered.filter(x => x.cat === cat.id) }))
     .filter(g => g.causes.length);
-  // sieve completion — region generics for the plausible categories not already present, tempo-filtered.
-  // presentCats uses the UNfiltered list so a tempo-hidden specific category is not re-added generically.
-  const presentCats = new Set(list.map(x => x.cat));
-  const compAll = sieveGenerics(site)
-    .filter(g => !presentCats.has(g.cat))
-    .filter(g => !onset || g.tempo.includes(onset))
-    .map(x => ({ ...x, generic: true }));
-  const completion = CATEGORIES
-    .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: compAll.filter(x => x.cat === cat.id) }))
-    .filter(g => g.causes.length);
-  return { byCategory, all: filtered, onset: onset || null, derived, source, completion };
+  return { byCategory, all: filtered, onset: onset || null, derived, source };
 }

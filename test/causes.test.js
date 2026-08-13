@@ -159,22 +159,22 @@ const wallenberg = { id: "left_medulla_lateral", level: "medulla", part: "latera
   ok("a red-flag cause is marked (dissection)", r.all.some(c => c.red === true));
 }
 
-// --- sieve completion (Sub-project C) ---
+// --- no gap-fill: only categories with a real curated cause are shown ---
+// The sieve-completion mechanism (region-typical generics padding the empty categories) was removed by the
+// depth sweep — see docs/superpowers/specs/2026-08-11-differential-depth-design.md and test/causes-depth.test.js.
 const icSite = SITES.find(s => s.id === "right_subcortex_internal_capsule");
 const icRes = causesFor(icSite, {});
 const icSpecificCats = new Set(icRes.byCategory.map(g => g.cat));
-const icCompCats = new Set(icRes.completion.map(g => g.cat));
-// `mimic` is deliberately OUTSIDE the surgical sieve, so it is excluded here: this assertion is about the
-// sieve gap-fill demonstration (curated vascular specifics + generics for the sieve categories left empty).
+// `mimic` is deliberately OUTSIDE the surgical sieve, so it is excluded when asking what the sieve holds.
 const icSieveCats = new Set([...icSpecificCats].filter(x => x !== "mimic"));
-ok("internal capsule sieve specifics are vascular-only", icSieveCats.size === 1 && icSieveCats.has("vascular"));
+// Was "vascular-only" — a fact about the thin pre-sweep list, used to demonstrate the gap-fill. The depth
+// sweep deliberately broadened it (a capsular lesion really can be a plaque or a small tumour), so the
+// assertion now pins what actually matters: vascular LEADS here, and the breadth is curated, not padded.
+ok("internal capsule sieve is led by vascular", icSieveCats.has("vascular"));
+ok("internal capsule vascular causes come first in the list", icRes.byCategory[0].cat === "vascular");
 ok("internal capsule also carries mimics, outside the sieve", icSpecificCats.has("mimic"));
-ok("internal capsule completion is unaffected by the mimics", !icCompCats.has("mimic"));
-ok("internal capsule completion adds inflammatory", icCompCats.has("inflammatory"));
-ok("internal capsule completion adds neoplastic", icCompCats.has("neoplastic"));
-ok("internal capsule completion adds infective", icCompCats.has("infective"));
-ok("internal capsule completion does NOT repeat vascular", !icCompCats.has("vascular"));
-ok("every completion cause is flagged generic", icRes.completion.every(g => g.causes.every(x => x.generic === true)));
+ok("no completion key is returned at all", icRes.completion === undefined);
+ok("categories with no curated cause are absent, not padded", !icSpecificCats.has("infective"));
 
 // regionOf classification (constructed sites avoid part-specific gotchas like optic_aion)
 ok("regionOf: nerve → peripheral", regionOf({ level: "nerve", part: "median" }) === "peripheral");
@@ -183,20 +183,19 @@ ok("regionOf: cortex → parenchyma", regionOf({ level: "cortex", part: "mca" })
 ok("regionOf: visual_pathway → optic", regionOf({ level: "visual_pathway", part: "chiasm" }) === "optic");
 ok("regionOf: an optic-named part overrides to optic", regionOf({ level: "skull_base", part: "optic_aion" }) === "optic");
 
-// gap-fill invariant: completion categories are disjoint from specific categories, for every candidate site
+// no-generic invariant: no candidate site emits padded content, anywhere
 const allSites = [...SITES];
 for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") { try { allSites.push(...sitesMod[k]()); } catch {} }
-let disjointHolds = true, offender = null;
+let noGeneric = true, offender = null;
 for (const s of allSites) {
   const r = causesFor(s, {});
-  const spec = new Set(r.byCategory.map(g => g.cat));
-  if (r.completion.some(g => spec.has(g.cat))) { disjointHolds = false; offender = s.id; break; }
+  if (r.completion !== undefined || r.all.some(x => x.generic)) { noGeneric = false; offender = s.id; break; }
 }
-ok("gap-fill invariant: completion never repeats a present category (all sites)", disjointHolds, offender);
+ok("no-generic invariant: no site emits padded/generic causes (all sites)", noGeneric, offender);
 
-// tempo filter applies to the completion
-const icHyper = causesFor(icSite, { onset: "hyperacute" }).completion.flatMap(g => g.causes);
-ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes("hyperacute")));
+// tempo filter still applies to the curated list
+const icHyper = causesFor(icSite, { onset: "hyperacute" }).all;
+ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x => x.tempo.includes("hyperacute")));
 
 // --- 8: Region A — anterior/posterior circulation cortex (curated, was the generic derived fallback) ---
 // These are the highest-traffic sites in the app. The phonebook keys them with dominant/nondominant
@@ -287,12 +286,12 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   ok("causesFor groups mimics separately", supRes.byCategory.some(g => g.cat === "mimic" && g.causes.length));
   ok("the mimic group sorts after the real pathology groups",
      supRes.byCategory.findIndex(g => g.cat === "mimic") === supRes.byCategory.length - 1);
-  // the sieve gap-fill must NEVER invent a generic mimic — mimics are site-specific or absent
+  // mimics are site-specific or absent — nothing may ever fabricate a generic one
   const allS = [...SITES];
   for (const k of Object.keys(sitesMod)) if (k.startsWith("compose") && typeof sitesMod[k] === "function") { try { allS.push(...sitesMod[k]()); } catch {} }
   let genericMimic = null;
-  for (const s of allS) { const r = causesFor(s, {}); if (r.completion.some(g => g.cat === "mimic")) { genericMimic = s.id; break; } }
-  ok(`sieve completion never fabricates a generic mimic (offender: ${genericMimic})`, genericMimic === null);
+  for (const s of allS) { const r = causesFor(s, {}); if (r.all.some(x => x.cat === "mimic" && x.generic)) { genericMimic = s.id; break; } }
+  ok(`no site fabricates a generic mimic (offender: ${genericMimic})`, genericMimic === null);
   // the live phonebook categoriser recognises mimic language too
   const cat1 = causesFor({ id: "z1", level: "cortex", part: "zz", side: "left", territory: "" });
   ok("derived fallback introduces no mimics", cat1.all.every(c => c.cat !== "mimic"));
@@ -333,8 +332,15 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   ok("cauda equina includes spinal epidural haematoma (anticoagulation)", has("cauda_equina", /haematoma|hematoma/i));
   ok("cauda equina haematoma feature names anticoagulation / recent procedure", /anticoagul|warfarin|doac|spinal|epidural (injection|anaesth)/i.test(find("cauda_equina", /haematoma|hematoma/i).feature || ""));
   ok("cauda equina includes metastatic compression, red-flagged", (CAUSES.cauda_equina || []).some(c => /metasta|malignan|tumour/i.test(c.name) && c.red === true));
-  ok("every cauda equina cause is red-flagged or explicitly time-critical",
-     (CAUSES.cauda_equina || []).filter(c => c.cat !== "mimic").every(c => c.red === true));
+  // The safety intent is "anything that presents ACUTELY at the cauda equina is an emergency". The depth
+  // sweep added lumbar canal stenosis — a genuinely chronic, positional differential that is NOT an
+  // emergency and must not be red-flagged — so the rule is qualified by tempo rather than dropped.
+  ok("every ACUTE cauda equina cause is red-flagged",
+     (CAUSES.cauda_equina || []).filter(c => c.cat !== "mimic")
+       .filter(c => c.tempo.some(t => t === "hyperacute" || t === "acute"))
+       .every(c => c.red === true));
+  ok("the chronic cauda equina differential is present and NOT red-flagged",
+     (CAUSES.cauda_equina || []).some(c => /stenosis|claudication/i.test(c.name) && c.red === false));
 
   // conus vs cauda — the discrimination that changes which level gets imaged
   ok("conus teaches the early symmetric sphincter + UMN discriminator",
@@ -376,11 +382,16 @@ ok("completion is tempo-filtered by onset", icHyper.every(x => x.tempo.includes(
   ok("thalamic haemorrhage flags the forced-downgaze / small-pupil sign",
      th.all.some(x => /haemorrhage/i.test(x.name) && /downward|down.gaze|tip of the nose|pupil/i.test(x.pathognomonic || "")));
 
-  // tempo realism for the emergencies
-  ok("cord + cauda vascular/traumatic causes are acute-or-faster",
+  // Tempo realism for the emergencies. Categories alone are too coarse now: a spinal dural AV fistula is
+  // `vascular` yet genuinely CHRONIC — that slow, exertion-worsened course is the whole clinical point, and
+  // it is why the fistula is mistaken for degenerative stenosis for years. So the rule pins the entities
+  // that are by definition sudden — infarct, haemorrhage/haematoma, injury, fracture — rather than the bucket.
+  ok("cord + cauda infarcts / bleeds / injuries are tagged acute-or-faster",
      ["cord_transverse","cord_hemi","cauda_equina","conus_medullaris"].every(k =>
-       (CAUSES[k] || []).filter(c => c.cat === "vascular" || c.cat === "traumatic")
+       (CAUSES[k] || []).filter(c => /infarct|ha?ematoma|ha?emorrhage|injury|fracture/i.test(c.name))
          .every(c => c.tempo.some(t => t === "hyperacute" || t === "acute"))));
+  ok("the conus carries a CHRONIC vascular cause (dural AV fistula), not just the sudden ones",
+     (CAUSES.conus_medullaris || []).some(c => c.cat === "vascular" && c.tempo.includes("chronic")));
 }
 
 // --- 11: Region C — remaining brainstem + cerebellum ---

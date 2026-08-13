@@ -4,6 +4,7 @@
 import { nextStepsFor } from "../src/data/nextSteps.js";
 import { causesFor } from "../src/data/causes.js";
 import { candidateSites } from "../src/engine/inverse.js";
+import { expectedFindings } from "../src/engine/forward.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -615,6 +616,54 @@ for (const [lvl, part] of REGION_H_SITES) {
     if (n.curated && !(n.immediate.length && n.investigations.length && n.confirmatory.length && n.monitoring.length)) thin.push(lp);
   }
   ok(`INVARIANT: every curated workup fills all four tiers (${thin.length} thin: ${thin.slice(0, 5).join(", ")})`, thin.length === 0);
+}
+
+// --- fundal photography + OCT, derived (2026-08-11) ---
+// Owner request: fundal photos and OCT must come up as a "what next" prompt wherever the picture involves
+// PAPILLOEDEMA or a VISUAL FIELD DEFECT. Both triggers are DERIVED, not hand-listed per site:
+//   * field defect  — the site's expectedFindings contain a visual field / optic-nerve finding
+//   * papilloedema  — the site's curated causes raise papilloedema, raised ICP or obstructive hydrocephalus
+// NB normal-pressure hydrocephalus must NOT trigger it: the pressure is normal, so there is no disc swelling.
+{
+  const OPHTH = /fundal photograph|optical coherence|OCT/i;
+  // Use REAL sites from candidateSites(): expectedFindings() needs site.structures, so a hand-built
+  // {id, level, part} literal silently throws and the derived trigger can never fire.
+  const all = candidateSites();
+  const pick = re => all.find(s => re.test(s.id));
+  const prompts = s => {
+    const n = nextStepsFor(s);
+    return [...n.investigations, ...n.confirmatory, ...n.monitoring, ...n.immediate].some(x => OPHTH.test(x));
+  };
+
+  ok("chiasm (bitemporal hemianopia) prompts fundal photography / OCT", prompts(pick(/^visual_pathway_chiasm$/)));
+  ok("AION (altitudinal defect) prompts fundal photography / OCT", prompts(pick(/skull_base_optic_aion$/)));
+  // raised-ICP / papilloedema sites with no field defect of their own
+  ok("paracentral (sagittal sinus thrombosis, papilloedema) prompts fundal photography / OCT", prompts(pick(/cortex_paracentral$/)));
+  ok("VI palsy (raised ICP, false localising) prompts fundal photography / OCT", prompts(pick(/skull_base_vi_cisternal$/)));
+  // and it must NOT appear where there is no visual or pressure issue — the prompt has to stay signal
+  ok("ulnar neuropathy does NOT prompt fundal photography / OCT", !prompts(pick(/nerve_ulnar_elbow$/)));
+  ok("cauda equina does NOT prompt fundal photography / OCT", !prompts(pick(/cauda_equina$/)));
+  // normal-pressure hydrocephalus must NOT trigger it — the pressure is normal, so there is no papilloedema
+  {
+    const npOnly = all.find(s => {
+      const l = causesFor(s, {}).all;
+      return l.some(c => /normal.pressure hydrocephalus/i.test(c.name))
+        && !l.some(c => /papilloedema|raised intracranial|sinus thrombosis|hydrocephalus/i.test(`${c.name} ${c.feature || ""}`) && !/normal.pressure/i.test(c.name));
+    });
+    ok("a normal-pressure-hydrocephalus site is not treated as raised pressure", !npOnly || !prompts(npOnly));
+  }
+
+  // global: EVERY site expecting a visual field / optic finding gets the prompt
+  const missing = [];
+  for (const s of candidateSites()) {
+    let exp; try { exp = [...expectedFindings(s)]; } catch { continue; }
+    const visual = exp.some(t => /^(homonymous_hemianopia|bitemporal_hemianopia|superior_quadrantanopia|inferior_quadrantanopia|optic_neuropathy|altitudinal_defect|central_scotoma|cortical_blindness)@/.test(t));
+    if (!visual) continue;
+    const n = nextStepsFor(s);
+    const all = [...n.investigations, ...n.confirmatory, ...n.monitoring, ...n.immediate];
+    if (!all.some(x => OPHTH.test(x))) missing.push(s.id);
+  }
+  ok(`INVARIANT: every site with a visual field/optic finding prompts fundal photography + OCT (${missing.length} missing: ${missing.slice(0, 5).join(", ")})`, missing.length === 0);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

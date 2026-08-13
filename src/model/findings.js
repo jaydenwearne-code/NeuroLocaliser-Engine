@@ -217,6 +217,16 @@ export const FINDINGS = {
   macular_sparing:         { desc: "Macular sparing (occipital / PCA hallmark of a homonymous hemianopia)", group: "Visual pathway" },
   superior_quadrantanopia: { desc: "Superior homonymous quadrantanopia", group: "Cortical" },
   inferior_quadrantanopia: { desc: "Inferior homonymous quadrantanopia", group: "Cortical" },
+  // --- fundoscopy + acuity (2026-08-11) — what the eye actually shows at the bedside ---
+  // papilloedema is deliberately NON_LATERALISED and emitted at EVERY intra-axial intracranial site: it is a
+  // sign of RAISED PRESSURE, not of a place, and anything intracranial that blocks CSF, swells or exerts mass
+  // produces it. Emitting it everywhere intracranial is what makes it behave correctly — it narrows to
+  // "inside the skull" and excludes cord, root, plexus, nerve and motor unit, which is its real bedside value.
+  papilloedema:    { desc: "Swollen optic discs with blurred margins (papilloedema) — raised intracranial pressure; bilateral, and acuity is preserved until late", group: "Fundus" },
+  optic_atrophy:   { desc: "Pale, atrophic optic disc (disc pallor) — established optic nerve damage; the chronic end-state of any optic neuropathy", group: "Fundus" },
+  retinal_pallor:  { desc: "Whitened, pale retina with a cherry-red spot — retinal ARTERY occlusion (a stroke of the eye, not an optic nerve lesion)", group: "Fundus" },
+  va_reduced_no_pinhole:       { desc: "Reduced visual acuity that does NOT improve with a pinhole — organic: media, retina or optic nerve", group: "Fundus" },
+  va_reduced_pinhole_corrects: { desc: "Reduced visual acuity that DOES improve with a pinhole — refractive, not neurological", group: "Fundus" },
   // Cortical — non-lateralised higher-cortical / behavioural (emitted @none)
   // Aphasia is decomposed into four language FEATURES; the 8 classic aphasia types EMERGE from which
   // features co-occur at a site (repetition is the perisylvian-vs-transcortical discriminator).
@@ -339,6 +349,10 @@ export const CROSSES = {
   // peripheral skull-base CN signs — all ipsilateral
   optic_neuropathy: false, v1_sensory: false, v2_sensory: false, v3_sensory: false, hearing_loss: false,
   altitudinal_defect: false, central_scotoma: false, // optic-nerve field patterns — monocular, ipsilateral eye
+  // fundus + acuity — monocular signs sit in the ipsilateral eye; papilloedema and the pinhole-correcting
+  // acuity are NON_LATERALISED (values here are moot but declared for completeness)
+  optic_atrophy: false, retinal_pallor: false, va_reduced_no_pinhole: false,
+  papilloedema: false, va_reduced_pinhole_corrects: false,
   lacrimation_loss: false, hyperacusis: false, taste_loss: false, facial_weak_branch: false,
   gag_afferent_loss: false, taste_posterior: false, palatal_weakness: false, vocal_cord_palsy: false,
   weak_scm: false, weak_trapezius: false,
@@ -404,6 +418,8 @@ export const CROSSES = {
 
 // Findings with no body side — emitted `@none` by the forward model (higher-cortical / behavioural).
 export const NON_LATERALISED = new Set([
+  // raised intracranial pressure has no side, and neither does a refractive error
+  "papilloedema","va_reduced_pinhole_corrects",
   "speech_nonfluent","comprehension_impaired","repetition_impaired","naming_impaired",
   "agraphia","acalculia","finger_agnosia","left_right_disorientation","motor_dysprosody","sensory_dysprosody",
   "anosognosia","constructional_apraxia","prosopagnosia","executive_dysfunction","abulia",

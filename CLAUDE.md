@@ -156,6 +156,47 @@ E named nerves/motor unit → F roots/plexus → G remaining cortex → H closin
 - **Base branch:** everything is on `main` — branch off it. The `feat/expand-pathologies-workup` branch that
   built this layer is merged and safe to delete.
 
+## Differential-depth sweep + fundoscopy findings (DONE 2026-08-11) — ⚠ STILL AWAITING CLINICAL REVIEW
+
+**The generic sieve gap-fill is GONE.** `SIEVE_GENERICS` / `sieveGenerics()` / the `completion` key are
+deleted; `causesFor()` returns `{byCategory, all, onset, derived, source}`. A sieve category with no
+plausible cause at a site simply does not appear. **The sieve is an authoring checklist, not an output
+format — it must never manufacture content to fill itself.** (349 of 375 sites used to fire the filler.)
+
+**All 201 keys swept to a depth bar**, enforced by `test/causes-depth.test.js` over `CAUSES` directly:
+≥6 causes per site, every cause carries a discriminating `feature`, every site names ≥1 red must-not-miss,
+no two sites emit an identical cause list, `pathognomonic` may not name an investigation, and no feature
+repeats a word at a builder join. **900 → 1286 cause entries.**
+
+**Three family builders** live above `export const CAUSES` in `causes.js` — `sbSpine()` (skull-base
+corridors), `nvSpine()` (named nerves), `rtSpine()` (roots). Each interpolates the site's own SHORT deficit
+phrase into shared text, so common red flags stay phrased identically by construction while no two sites
+emit the same list. Two phrasing rules are written into their comments: join with an em-dash clause, never
+a relative pronoun; keep the deficit short enough to sit mid-sentence. A site PICKS only the spine items
+that genuinely reach it — never to pad a list to length. Plexus elements and cord cross-sections are
+deliberately NOT families.
+
+**Fundoscopy + acuity findings** (`test/fundus.test.js`): `papilloedema`, `optic_atrophy`, `retinal_pallor`,
+`va_reduced_no_pinhole`, `va_reduced_pinhole_corrects`, plus a new `visual_pathway|retina` site (CRAO).
+Two of them are produced by NO structure, by design:
+- **`papilloedema` is an ORTHOGONAL COMPARTMENT AXIS**, not a site finding — `raisedPressureAxis()` +
+  `INTRACRANIAL_LEVELS` in `inverse.js`, the same shape as the sensory level. It says *inside the skull*,
+  not where. Modelling it per-site claims it as part of every cortical syndrome and penalises every
+  intracranial site for over-prediction when it is absent (tried it; five suites correctly rejected it).
+  **The token must be stripped in `solve()` as well as `differential()`**, or every scored path counts it
+  as permanently unexplained.
+- **`va_reduced_pinhole_corrects`** raises `refractiveFlag()` in `patterns.js`, modelled on `functionalFlag`
+  including the safety suppression: any organic visual sign suppresses it, because a pinhole improvement
+  never excludes disease behind it.
+
+**Fundal photography + OCT** are appended to the workup by `ophthalmicImaging()` in `nextSteps.js`, DERIVED
+from either a visual-field/optic finding in the site's `expectedFindings` or a papilloedema/raised-ICP cause.
+Normal-pressure hydrocephalus is excluded by name — the pressure is normal, so there is no disc swelling.
+
+> **⚠ NONE OF THIS CLINICAL CONTENT HAS BEEN REVIEWED.** All eight regions remain unsigned, as does the
+> 2026-08-10 layer beneath it. Treat it as draft teaching content. Spec + outcome table:
+> `docs/superpowers/specs/2026-08-11-differential-depth-design.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`

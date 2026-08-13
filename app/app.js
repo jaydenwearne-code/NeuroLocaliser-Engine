@@ -1,10 +1,10 @@
 // app.js — NeuroLocaliser prototype UI. Pure consumer of the engine + causes layer (no model changes).
-import { solve, candidateSites } from "../src/engine/inverse.js";
+import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { causesFor, CATEGORIES, TEMPO } from "../src/data/causes.js";
-import { umnLmnPattern, functionalFlag } from "../src/engine/patterns.js";
+import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
 import { nextStepsFor } from "../src/data/nextSteps.js";
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
@@ -151,15 +151,26 @@ function renderResults() {
   const el = document.getElementById("results");
   if (!S.tokens.size) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`; return; }
   try {
-  const total = S.tokens.size;
+  // Papilloedema is an AXIS, not a site finding (see raisedPressureAxis): no site's expected findings
+  // contain it, so it must not be counted in the "explains n/total" denominator or every intracranial site
+  // would look as if it had failed to account for it. The full token set still drives the flags below.
+  const total = [...S.tokens].filter(t => !t.startsWith("papilloedema@")).length;
+  // solve() still receives the FULL set — differential() needs the pressure token to apply the compartment
+  // filter, and strips it internally before matching.
   const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
   const cands = r.differential;
+  const refr = refractiveFlag(S.tokens);
+  const rmsg = refr.refractive
+    ? `<div class="multi" style="border-color:var(--gold)"><b>👓 Refractive, not neurological.</b> ${esc(refr.note)}</div>` : "";
+  const press = raisedPressureAxis(S.tokens);
+  const pmsg = press.present
+    ? `<div class="multi" style="border-color:var(--red);background:var(--red-bg)"><b>⚑ Raised intracranial pressure.</b> ${esc(press.note)}</div>` : "";
   if (!cands.length) {
     const fnd = functionalFlag(S.tokens);
     const fmsg = fnd.functional
       ? `<div class="multi" style="border-color:var(--gold)"><b>⚠ Consider functional.</b> ${esc(fnd.note)}</div>`
       : "";
-    el.innerHTML = `<h3>Possible lesions</h3>${fmsg}<div class="empty">No site produces any of these findings on the sides given — re-check a side${fnd.functional?", or this is likely non-organic (see above)":", or this may be non-organic"}.</div>`;
+    el.innerHTML = `<h3>Possible lesions</h3>${rmsg}${fmsg}<div class="empty">No site produces any of these findings on the sides given — re-check a side${refr.refractive?", or this is refractive rather than neurological (see above)":fnd.functional?", or this is likely non-organic (see above)":", or this may be non-organic"}.</div>`;
     return;
   }
   const list = r.display;
@@ -169,6 +180,7 @@ function renderResults() {
   syncURL();
   const tf = tractsFor(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
   el.innerHTML = resultHeader(sel, list, total, r)
+    + pmsg + rmsg
     + whereCard(list, cands, total, r)
     + whyCard(tf, sel, total)
     + whatCard(sel.site)
@@ -320,7 +332,8 @@ function whyCard(tf, sel, total) {
   return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`);
 }
 
-// ③ What — the full surgical sieve of causes (curated + phonebook + region generics), shown inline.
+// ③ What — the curated differential for this site. Categories with no plausible cause are omitted,
+// never padded with region generics (see the depth spec, 2026-08-11).
 function whatCard(site) {
   return card("What", whatBlock(site));
 }
@@ -328,18 +341,17 @@ function whatCard(site) {
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
 function renderCause(c) {
   const path = c.pathognomonic ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(c.pathognomonic)}</span></div>` : "";
-  return `<div class="cause${c.generic?" generic":""}"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
+  return `<div class="cause"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
 }
 
 function whatBlock(site) {
   const res = causesFor(site, { onset: S.onset || undefined });
   const ph = nameForSite(site);
   const red = ph.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(ph.red)}</div>` : "";
-  // Full sieve inline: for each category, the site's specific causes first, then region generics (marked).
+  // Curated causes only — a category with nothing plausible at this site is simply not shown.
   const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));
-  const byComp = Object.fromEntries((res.completion || []).map(g => [g.cat, g]));
   const groups = CATEGORIES.map(cat => {
-    const causes = [...(bySpec[cat.id]?.causes || []), ...(byComp[cat.id]?.causes || [])];
+    const causes = bySpec[cat.id]?.causes || [];
     if (!causes.length) return "";
     return `<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${cat.tint})"></span>${esc(cat.label)}</div>${causes.map(renderCause).join("")}</div>`;
   }).join("");
@@ -349,9 +361,12 @@ function whatBlock(site) {
     ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
   const cap = (S.onset || res.derived)
     ? `<p class="what-cap">${S.onset ? `<span style="color:var(--terra)">${esc(S.onset)}</span> onset` : ""}${res.derived ? ` <span class="derived">(derived from site type — not individually curated)</span>` : ""}</p>` : "";
-  return `${cap}${lead}${red}
-    ${groups || `<div class="empty">No causes for this onset — try a different tempo.</div>`}
-    <p class="derived">The full surgical sieve is shown; “generic” items are region-typical categories, not vetted per site.</p>`;
+  // Empty state teaches the NEGATIVE rather than sending the user away: a site that genuinely never
+  // presents at this tempo should say so, not have a cause invented to fill the gap.
+  const empty = `<div class="empty">A lesion here does not typically present with
+    <b>${esc(S.onset || "this")}</b> onset — the mismatch between tempo and site is itself informative.
+    Change the onset filter to see this site's differential.</div>`;
+  return `${cap}${lead}${red}${groups || empty}`;
 }
 
 // ④ Next steps — its own card, tiered (immediate → first-line → confirmatory → monitoring) + urgency/referral.
