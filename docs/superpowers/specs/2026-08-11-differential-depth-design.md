@@ -200,5 +200,9 @@ The `DEEPENED` region registry that let a half-finished sweep run green has been
 invariants now assert directly over every key in `CAUSES`, so anything added from here must clear the bar
 on arrival.
 
-**The clinical content across all eight regions remains unreviewed** — the per-region sign-off gate in §5
-has not happened for any region.
+**Clinical sign-off: COMPLETE (2026-08-11).** The gate in §5 was not taken region by region as designed —
+the owner chose to run A→H continuously and sign off once at the end, covering all 1286 cause entries, the
+fundoscopy/acuity findings and the new retina site. That also closes the gate left open by the 2026-08-10
+pathologies/workup layer beneath it. Worth noting for the next increment of this kind: batching the review
+to the end worked here, but it meant a systematic authoring error would not have surfaced until every region
+was written — the per-region gate exists to bound that risk, not to slow the work down.

@@ -133,10 +133,9 @@ E named nerves/motor unit → F roots/plexus → G remaining cortex → H closin
   (`zz_never_curated`) or, for the phonebook path, delete-probe-restore. Don't reintroduce hard-coded
   site ids as proxies for curation status.
 
-> **⚠ THE CLINICAL CONTENT IS NOT YET REVIEWED.** It was authored to the agreed norms (discriminating
-> features, red flags, bedside-only pathognomonic signs, no doses) but the owner's per-region clinical
-> sign-off — the agreed review gate — has NOT happened for any of the eight regions. Treat it as draft
-> teaching content until it has.
+> **✅ REVIEWED AND SIGNED OFF (2026-08-11).** Authored to the agreed norms (discriminating features, red
+> flags, bedside-only pathognomonic signs, no doses) and subsequently deepened by the 2026-08-11 sweep
+> below; the owner's clinical sign-off covers all eight regions. The review gate is closed.
 
 **Where & how (for extending it further):**
 - **Pathologies:** add/extend a curated `CAUSES["<site.id or level_part>"]` entry — a list of
@@ -193,8 +192,10 @@ Two of them are produced by NO structure, by design:
 from either a visual-field/optic finding in the site's `expectedFindings` or a papilloedema/raised-ICP cause.
 Normal-pressure hydrocephalus is excluded by name — the pressure is normal, so there is no disc swelling.
 
-> **⚠ NONE OF THIS CLINICAL CONTENT HAS BEEN REVIEWED.** All eight regions remain unsigned, as does the
-> 2026-08-10 layer beneath it. Treat it as draft teaching content. Spec + outcome table:
+> **✅ CLINICALLY SIGNED OFF (2026-08-11) by the owner (a clinician), covering all eight regions — all
+> 1286 cause entries, the fundoscopy/acuity findings and the new retina site.** The review gate that had
+> been open since 2026-08-10 is now closed. Content added from here should be held to the same bar and
+> flagged for review if uncertain. Spec + outcome table:
 > `docs/superpowers/specs/2026-08-11-differential-depth-design.md`.
 
 ## Commands
