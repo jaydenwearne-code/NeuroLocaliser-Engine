@@ -2,6 +2,7 @@
 // pinned pair when there is one still live, else the engine's own minimal cover. The one behaviour that
 // matters most: a pin that has fallen out of the current candidate list must NOT be reported as "pinned".
 import { combinedSites } from "../app/combined-sites.js";
+import { readFileSync } from "node:fs";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -49,6 +50,21 @@ const list = [{ site: siteA, n: 3 }, { site: siteB, n: 2 }, { site: siteC, n: 1 
   const res = combinedSites({ multi: null }, list, new Set());
   ok("no pins and no cover -> source is null", res.source === null);
   ok("no pins and no cover -> sites is empty", res.sites.length === 0);
+}
+
+// ---- EVERY call site must pass the pinned Set ----
+// combinedSites(r, list, pinned) silently falls back to the engine's cover when `pinned` is omitted. That is
+// correct behaviour for the argument, but a CALLER that forgets it makes the Together card show the user's
+// pinned pair while the What / Next cards show the engine's — two cards describing DIFFERENT sites on the
+// same screen, with nothing to signal it. That shipped once (whatCard and nextCard both omitted it) and is
+// invisible to any test that calls the function directly, so the guard has to be over the call sites.
+{
+  const src = readFileSync(new URL("../app/app.js", import.meta.url), "utf8");
+  const calls = [...src.matchAll(/combinedSites\(([^)]*)\)/g)].map(m => m[1]);
+  const arity = calls.map(a => a.split(",").length);
+  ok(`every combinedSites() call site passes 3 args (found ${arity.join("/")})`,
+     calls.length >= 3 && arity.every(n => n === 3),
+     calls.map((c, i) => `${arity[i]}: ${c}`).join(" | "));
 }
 
 console.log("\nNeuroLocaliser — combinedSites() (Task 12 support)\n" + "=".repeat(52));

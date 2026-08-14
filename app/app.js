@@ -418,7 +418,9 @@ function scopeToggle(n) {
 // never padded with region generics (see the depth spec, 2026-08-11). Branches to the cross-site shared-
 // causes view when the scope toggle is set to "all" and the combined view actually has ≥2 sites.
 function whatCard(site, r, list) {
-  const { sites } = combinedSites(r, list);
+  // S.pinned MUST be passed: without it this resolves the engine's cover while the Together card resolves
+  // the user's pinned pair, and the two cards silently describe DIFFERENT sites on the same screen.
+  const { sites } = combinedSites(r, list, S.pinned);
   const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
   if (sites.length >= 2 && S.scope === "all") {
     const cc = combinedCauses(sites, { onset: S.onset || undefined });
@@ -468,7 +470,8 @@ function whatBlock(site) {
 // returns the same field names/types as nextStepsFor() (minus `curated`) precisely so this works without a
 // second four-tier renderer.
 function nextCard(site, r, list) {
-  const { sites } = combinedSites(r, list);
+  // S.pinned MUST be passed — see the note in whatCard().
+  const { sites } = combinedSites(r, list, S.pinned);
   const combined = sites.length >= 2 && S.scope === "all";
   const nx = combined ? combinedNextSteps(sites) : nextStepsFor(site);
   const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
