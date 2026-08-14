@@ -59,6 +59,24 @@ export const LEVEL_COMPARTMENT = {
 // which is also not in this set), and a Pancoast tumour must not become intracranial by accident.
 export const INTRACRANIAL_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "optic", "pupil"]);
 
+// A site's LEVEL is a bony/anatomical grouping (which corridor or fossa it sits in); its COMPARTMENT is a
+// functional grouping (which system it belongs to for cross-site pathology purposes). The two can
+// legitimately disagree. Three PARTS at level `skull_base` are exactly this case: `optic_neuritis`,
+// `optic_aion` and `optic_canal` share the skull-base BONY corridor with the cranial nerves, but they ARE
+// the optic nerve — functionally CNS/visual-pathway, not a cranial neuropathy. Left at `skull_base`, they
+// satisfied Neurosarcoidosis's/NF2's skull-base cranial-neuropathy clause instead of NMOSD's `optic`+`cord`
+// clause, so "optic neuritis + a cord lesion" — the archetypal NMOSD presentation — could never name NMOSD
+// (owner ruling, 2026-08-14). This table is a per-(level,part) OVERRIDE consulted before the level table;
+// every other skull_base site (and the level table entry for `skull_base` itself, which INTRACRANIAL_LEVELS
+// in inverse.js reads directly) is untouched — see test/compartments.test.js for the regression guard.
+const COMPARTMENT_OVERRIDE = {
+  "skull_base|optic_neuritis": "optic",
+  "skull_base|optic_aion": "optic",
+  "skull_base|optic_canal": "optic",
+};
+
 export function compartmentOf(site) {
+  const override = COMPARTMENT_OVERRIDE[`${site.level}|${site.part}`];
+  if (override) return override;
   return LEVEL_COMPARTMENT[site.level] || null;
 }

@@ -279,6 +279,25 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   }
 }
 
+// --- 15: RULING 1 (owner, 2026-08-14) — optic neuritis + a cord lesion must return NMOSD, and must NOT
+// return Neurosarcoidosis or NF2. Before the fix, the three optic-nerve PARTS (optic_neuritis/optic_aion/
+// optic_canal) sat in the `skull_base` compartment because that is their bony corridor, so they satisfied
+// Neurosarcoidosis's/NF2's skull-base cranial-neuropathy clause `{compartment:"skull_base"}` instead of
+// NMOSD's `optic`+`cord` clause. This is the archetypal NMOSD presentation — it must be able to name NMOSD.
+{
+  const opticNeuritisSite = siteById("left_skull_base_optic_neuritis");
+  const cordSite = siteById("left_cord_hemi");
+  ok("fixture sites exist (skull_base optic_neuritis + cord)", !!opticNeuritisSite && !!cordSite);
+  const toks = tokensFor(opticNeuritisSite.id, cordSite.id);
+  const r = unifyingDiagnoses([opticNeuritisSite, cordSite], toks, {});
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("optic neuritis + a cord lesion returns NMOSD", names.some(n => /NMOSD|neuromyelitis/i.test(n)), names.join(", "));
+  ok("optic neuritis + a cord lesion no longer returns Neurosarcoidosis",
+     !names.some(n => /sarcoid/i.test(n)), names.join(", "));
+  ok("optic neuritis + a cord lesion no longer returns NF2",
+     !names.some(n => /neurofibromatosis|\bNF2\b/i.test(n)), names.join(", "));
+}
+
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

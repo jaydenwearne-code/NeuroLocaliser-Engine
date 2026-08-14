@@ -98,6 +98,58 @@ const SITES = candidateSites();
      !INTRACRANIAL_COMPARTMENTS.has("sympathetic"));
 }
 
+// --- 5: RULING 1 (owner, 2026-08-14) — optic-nerve sites are misfiled at level `skull_base` ---
+// Six sites (left/right x optic_neuritis/optic_aion/optic_canal) sit at level `skull_base` because that
+// is their bony corridor, but functionally they ARE the optic nerve. Left unfixed, "optic neuritis + a
+// cord lesion" satisfies Neurosarcoidosis's/NF2's skull-base cranial-neuropathy clause and NEVER NMOSD's
+// `optic` + `cord` clause — the archetypal NMOSD presentation cannot name NMOSD. A per-(level,part)
+// override must resolve these three PARTS to the `optic` compartment while leaving every other
+// skull_base site (and the LEVEL table itself) untouched. See test/multifocal.test.js for the
+// emergence-level regression guard (optic neuritis + cord -> NMOSD, not Neurosarcoidosis/NF2).
+{
+  const opticNeuritis = SITES.find(s => s.level === "skull_base" && s.part === "optic_neuritis");
+  const opticAion = SITES.find(s => s.level === "skull_base" && s.part === "optic_aion");
+  const opticCanal = SITES.find(s => s.level === "skull_base" && s.part === "optic_canal");
+  ok("fixture sites exist (optic_neuritis/optic_aion/optic_canal at level skull_base)",
+     !!opticNeuritis && !!opticAion && !!opticCanal);
+  ok("optic_neuritis resolves to the `optic` compartment despite its skull_base LEVEL",
+     compartmentOf(opticNeuritis) === "optic");
+  ok("optic_aion resolves to the `optic` compartment despite its skull_base LEVEL",
+     compartmentOf(opticAion) === "optic");
+  ok("optic_canal resolves to the `optic` compartment despite its skull_base LEVEL",
+     compartmentOf(opticCanal) === "optic");
+  // A site's LEVEL is unaffected — it is still bony/anatomical (skull_base), only the functional
+  // COMPARTMENT differs. The two axes can legitimately disagree.
+  ok("the site's LEVEL itself is still `skull_base` (only the COMPARTMENT is overridden)",
+     opticNeuritis.level === "skull_base");
+  // A genuine skull_base site with no override must still resolve to `skull_base` — the override is
+  // per-(level,part), not a blanket reclassification of the whole level.
+  const genuineSkullBase = SITES.find(s => s.level === "skull_base" && !["optic_neuritis", "optic_aion", "optic_canal"].includes(s.part));
+  ok("fixture: a genuine (non-optic) skull_base site exists", !!genuineSkullBase);
+  ok("a genuine skull_base site is UNCHANGED — still the `skull_base` compartment",
+     compartmentOf(genuineSkullBase) === "skull_base");
+}
+
+// --- 6: RULING 1 — the override must NOT change the raised-pressure (INTRACRANIAL_LEVELS) axis ---
+// INTRACRANIAL_LEVELS derives from LEVEL_COMPARTMENT (by LEVEL, not compartmentOf()), so overriding the
+// COMPARTMENT of three PARTS must be invisible to it. This is the critical regression guard: the derived
+// set must contain exactly the same 25 levels as before the override existed.
+{
+  const EXPECTED = ["midbrain", "pons", "medulla", "pontomesencephalic", "dorsal_midbrain",
+    "parinaud", "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular", "cortex",
+    "subcortex", "cerebrum", "corpus_callosum", "aphasia_subcortical", "thalamus", "thalamus_arousal",
+    "hypothalamus", "basal_ganglia", "cerebellum", "visual_pathway", "olfactory", "craniocervical_junction",
+    "brainstem_aras", "pupil"];
+  const missing = EXPECTED.filter(l => !INTRACRANIAL_LEVELS.has(l));
+  const extra = [...INTRACRANIAL_LEVELS].filter(l => !EXPECTED.includes(l));
+  ok(`INTRACRANIAL_LEVELS is STILL exactly the same 25 levels after the Ruling-1 override (${missing.length} missing, ${extra.length} extra)`,
+     missing.length === 0 && extra.length === 0 && INTRACRANIAL_LEVELS.size === EXPECTED.length,
+     `missing: ${missing.join(", ")}; extra: ${extra.join(", ")}`);
+  // `skull_base` is NOT an intracranial compartment (unchanged) — the override reassigns three PARTS to
+  // `optic`, but the LEVEL table entry for `skull_base` itself (used by INTRACRANIAL_LEVELS) is untouched.
+  ok("`skull_base` level is still NOT intracranial", !INTRACRANIAL_LEVELS.has("skull_base"));
+}
+
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
