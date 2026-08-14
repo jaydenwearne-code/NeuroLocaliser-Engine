@@ -41,7 +41,7 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null,
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(),
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
@@ -59,6 +59,7 @@ function restoreFromURL() {
   if (st.dominant) S.dominant = st.dominant;
   if (st.sensoryLevel) S.sensoryLevel = st.sensoryLevel;
   if (st.distalReach) S.distalReach = st.distalReach;
+  if (st.pinned) S.pinned = st.pinned;
 }
 
 function syncURL() {
@@ -194,7 +195,19 @@ function renderResults() {
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
   const dl = document.getElementById("difflist");
-  if (dl) dl.onclick = e => { const row = e.target.closest(".drow"); if (!row) return; S.selected = row.dataset.k; renderResults(); };
+  if (dl) dl.onclick = e => {
+    const pin = e.target.closest("[data-pin]");
+    if (pin) {                      // pin toggle — must not fall through to row selection
+      const id = pin.dataset.pin;
+      S.pinned.has(id) ? S.pinned.delete(id) : S.pinned.add(id);
+      renderResults();
+      return;
+    }
+    const row = e.target.closest(".drow");
+    if (!row) return;
+    S.selected = row.dataset.k;
+    renderResults();
+  };
 }
 
 function siteName(site){ const e = nameForSite(site); return e.name; }
@@ -242,6 +255,17 @@ function resultHeader(sel, list, total, r) {
     <p class="oh-status">${status}</p>${funcFlag}</div>`;
 }
 
+// What does the combined view describe — the user's pinned pair, or the engine's minimal cover? The label
+// matters: the user must always know which they are looking at.
+function combinedSites(r, list) {
+  if (S.pinned.size >= 2) {
+    const sites = list.filter(c => S.pinned.has(c.site.id)).map(c => c.site);
+    if (sites.length >= 2) return { sites, source: "pinned" };
+  }
+  if (r.multi && r.multi.sites.length > 1) return { sites: r.multi.sites, source: "cover" };
+  return { sites: [], source: null };
+}
+
 // ① Where — the differential list + localisation annotations + (collapsed) ruled-out
 function whereCard(list, cands, total, r) {
   const nAll = r.explainAll.length;
@@ -257,7 +281,8 @@ function whereCard(list, cands, total, r) {
     const on = c.site.id === S.selected ? " on" : "";
     const w = Math.round((c.n/total)*54);
     const fit = c.n===total ? `<span class="dall">✓ all</span>` : `<span class="dfrac">${c.n}/${total}</span>`;
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteLoc(c.site))}${c.site.territory?` · ${esc(c.site.territory)}`:""}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div></div>`;
+    const pinned = S.pinned.has(c.site.id) ? " pinned" : "";
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteLoc(c.site))}${c.site.territory?` · ${esc(c.site.territory)}`:""}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site to compare across lesions">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? `<details class="ruledout" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Ruled out by a normal finding <span class="c">${r.ruledOut.length}</span></summary>

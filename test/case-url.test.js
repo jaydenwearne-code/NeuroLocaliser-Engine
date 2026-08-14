@@ -42,5 +42,16 @@ ok("accepts the stroke mode", decodeCase("#m=stroke", {}).mode === "stroke");
   ok("no course means no key", !encodeCase({ tokens: new Set(["weak_arm@left"]) }).includes("c="));
 }
 
+// --- pinned sites in the shareable case (spec 2026-08-14 §8) ---
+{
+  const enc = encodeCase({ tokens: new Set(["weak_arm@left"]), pinned: new Set(["left_cord_hemi", "right_root_l5"]) });
+  ok("pins are serialised as p=", /p=left_cord_hemi%2Cright_root_l5|p=left_cord_hemi,right_root_l5/.test(enc));
+  const back = decodeCase("#" + enc, { validSites: new Set(["left_cord_hemi", "right_root_l5"]) });
+  ok("pins round-trip as a Set", back.pinned instanceof Set && back.pinned.size === 2);
+  const filtered = decodeCase("#p=left_cord_hemi,not_a_site", { validSites: new Set(["left_cord_hemi"]) });
+  ok("unknown pinned site ids are dropped, never thrown on",
+     filtered.pinned instanceof Set && filtered.pinned.size === 1);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -16,6 +16,8 @@ export function encodeCase(state) {
   if (state.dominant && state.dominant !== "left") p.set("dom", state.dominant);
   if (state.sensoryLevel) p.set("sl", state.sensoryLevel);
   if (state.distalReach) p.set("dr", state.distalReach);
+  const pins = [...(state.pinned || [])];
+  if (pins.length) p.set("p", pins.join(","));
   return p.toString();
 }
 
@@ -42,5 +44,10 @@ export function decodeCase(hash, opts = {}) {
   const dom = p.get("dom"); if (dom === "left" || dom === "right") out.dominant = dom;
   const sl = p.get("sl"); if (sl) out.sensoryLevel = sl;
   const dr = p.get("dr"); if (dr) out.distalReach = dr;
+  const pn = p.get("p");
+  if (pn) {
+    const ids = pn.split(",").map(t => t.trim()).filter(Boolean).filter(id => !validSites || validSites.has(id));
+    if (ids.length) out.pinned = new Set(ids);
+  }
   return out;
 }
