@@ -3,9 +3,7 @@
 // junction, or muscle? These are generalized/symmetric, so each is a BILATERAL site (reuses the cord's
 // bilateral emission) — no new mechanism. Key modelling calls (settled with the user):
 //   * the anterior horn is PURE LMN (no umn_signs) — ALS is a pathology-layer entity, not a site;
-//   * fasciculations is confined to the anterior horn in this model, so the 2026-08-14 LOCALISING audit
-//     (test/localising-audit.test.js) promoted it to localising — it pins the anterior horn, unlike the
-//     genuinely multi-level lmn_weakness/proximal_weakness patterns which stay non-localising.
+//   * fasciculations is a GENERAL, NON-LOCALISING lower-motor-neurone sign (any LMN level).
 // Run: node test/motor-unit.test.js
 import { FINDINGS, CROSSES, NON_LATERALISED, isFinding } from "../src/model/findings.js";
 
@@ -25,7 +23,7 @@ for (const id of NEW) {
 import { LOCALISING } from "../src/engine/score.js";
 for (const id of ["fatigable_weakness","fatigable_ocular","facilitating_weakness","autonomic_features"])
   ok(`${id} IS localising (pins the diagnosis)`, LOCALISING.has(id));
-ok("fasciculations IS localising (2026-08-14 audit — confined to the anterior horn)", LOCALISING.has("fasciculations"));
+ok("fasciculations is NOT localising (general LMN sign — any level)", !LOCALISING.has("fasciculations"));
 ok("proximal_weakness is NOT localising (shared → myopathy emerges by parsimony)", !LOCALISING.has("proximal_weakness"));
 
 // --- Task 3: structure catalogue ---

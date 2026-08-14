@@ -2,9 +2,7 @@
 //   * UMN release signs (Babinski leg / Hoffmann arm) across the WHOLE corticospinal tract — non-
 //     localising (they run the length of the tract; they confirm UMN and feed the future ALS layer);
 //   * sacral superficial reflexes (anal wink / bulbocavernosus, S2-4) at the conus + cauda — localising;
-//   * frontal release signs (grasp / palmomental) at the frontal cortex — both localising (palmomental
-//     promoted by the 2026-08-14 LOCALISING audit: it is confined to orbitofrontal cortex in this model,
-//     unlike babinski/hoffmann which genuinely run the length of the tract).
+//   * frontal release signs (grasp / palmomental) at the frontal cortex.
 // FND signs (Hoover's, give-way) are deliberately NOT here — they belong to a later non-organic layer.
 // Run: node test/reflexes.test.js
 import { FINDINGS, CROSSES, isFinding } from "../src/model/findings.js";
@@ -24,9 +22,7 @@ ok("grasp_reflex crosses (contralateral frontal)", CROSSES.grasp_reflex === true
 // --- Task 2: localising policy ---
 import { LOCALISING } from "../src/engine/score.js";
 for (const id of ["anal_wink_loss","bulbocavernosus_loss","grasp_reflex"]) ok(`${id} IS localising`, LOCALISING.has(id));
-for (const id of ["babinski","hoffmann"]) ok(`${id} is NOT localising`, !LOCALISING.has(id));
-ok("palmomental IS localising (2026-08-14 audit — confined to orbitofrontal cortex, not a whole-tract sign like babinski/hoffmann)",
-   LOCALISING.has("palmomental"));
+for (const id of ["babinski","hoffmann","palmomental"]) ok(`${id} is NOT localising`, !LOCALISING.has(id));
 
 // --- Task 3: structures — Babinski across the whole corticospinal tract ---
 import { STRUCTURES } from "../src/model/structures.js";

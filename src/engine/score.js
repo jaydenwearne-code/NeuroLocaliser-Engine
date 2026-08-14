@@ -81,8 +81,7 @@ const LOCALISING = new Set([
   // (weak_forearm_pronation / weak_thumb_adduction) stay NON-localising, like every other movement.
   "deep_peroneal_sensory","ulnar_dorsal_sensory","median_palmar_sensory","ulnar_claw",
   // non-muscle reflexes: sacral arc + frontal grasp localise. Babinski/Hoffmann are NON-localising (they
-  // run the length of the corticospinal tract, like hemiparesis). Palmomental was promoted below
-  // (2026-08-14 audit) — it is a frontal release sign, not non-specific.
+  // run the length of the corticospinal tract, like hemiparesis); palmomental is non-specific.
   "anal_wink_loss","bulbocavernosus_loss","grasp_reflex",
   // consciousness / arousal — the ARAS/coma localisers + the locked-in hallmark + decerebrate posturing
   "reduced_consciousness","preserved_vertical_gaze","extensor_posturing",
@@ -93,19 +92,17 @@ const LOCALISING = new Set([
   // Findings confined to a single level that were never added to this set. The fundoscopy pair arrived
   // with the 2026-08-11 increment and was missed; the rest predate it. Promoting a finding raises its
   // match weight 1 -> 3 and lets it force a second lesion, so each of these is a clinical judgement that
-  // the sign genuinely pins a place.
+  // the sign genuinely pins a place. (Owner review, 2026-08-14: fasciculations, palmomental and rigidity
+  // were REJECTED from this batch — see NOT_LOCALISING_BY_DESIGN for why.)
   "retinal_pallor",            // CRAO retinal whitening — pins the retina
   "optic_atrophy",             // disc pallor — pins the optic nerve / anterior visual pathway
-  "fasciculations",            // anterior horn
   "cortical_sensory_arm", "cortical_sensory_leg", "cortical_sensory_hand", // cortical sensory loss pins parietal cortex
   "weak_hand",                 // cortical hand-knob (pseudo-peripheral cortical hand)
   "weak_scapular_stabilisation", // long thoracic / scapular winging
   "lid_retraction",            // Collier's sign — dorsal midbrain
   "verbal_memory_impairment", "nonverbal_memory_impairment", // dominant vs non-dominant temporal/thalamic
-  "rigidity",                  // basal ganglia
   "disinhibition",             // orbitofrontal
   "executive_dysfunction",     // dorsolateral prefrontal
-  "palmomental",               // frontal release
 ]);
 
 // Findings that are confined to a single level in the MODEL but are deliberately NOT localising, each with
@@ -119,6 +116,10 @@ export const NOT_LOCALISING_BY_DESIGN = {
   distal_motor_weakness: "A length-dependent PATTERN shared by every distal neuropathy; the level comes from the accompanying sensory findings, not from this sign.",
   hallucinations: "Far commoner in delirium, drug effect and psychiatric illness than in focal lesions — a poor localiser at the bedside despite being modelled at one level.",
   mood_change: "Non-specific; produced by diffuse, systemic and psychiatric processes as readily as by a focal lesion.",
+  // --- Owner ruling, 2026-08-14: rejected from the LOCALISING audit promotion batch ---
+  fasciculations: "Occur at ANY lower-motor-neurone level — root, plexus, peripheral nerve, and in benign fasciculation syndrome. Single-producer in this model only because the model does not emit them elsewhere; that is a modelling limit, not a clinical fact. Same reasoning as lmn_weakness.",
+  palmomental: "A frontal release sign: non-specific, common in normal elderly and in diffuse disease, so it does not pin a territory.",
+  rigidity: "Sits on the TONE axis with spasticity and hypotonia. Increased tone may be UMN or extrapyramidal, so rigidity does not pin a place. (Owner's ruling, 2026-08-14.)",
 };
 
 function findingIdOf(signed) { return signed.split("@")[0]; }

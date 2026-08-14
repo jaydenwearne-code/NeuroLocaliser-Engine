@@ -59,7 +59,8 @@ const singleLevel = Object.keys(levelsOf).filter(id => levelsOf[id].size === 1);
 {
   ok("retinal_pallor is localising", LOCALISING.has("retinal_pallor"));
   ok("optic_atrophy is localising", LOCALISING.has("optic_atrophy"));
-  ok("fasciculations is localising (anterior horn)", LOCALISING.has("fasciculations"));
+  ok("fasciculations is excused, not localising (owner ruling 2026-08-14 — occurs at any LMN level)",
+     !LOCALISING.has("fasciculations") && !!NOT_LOCALISING_BY_DESIGN.fasciculations);
 }
 
 // --- 5: multi-level SYSTEM signs are untouched — proof the rule was not applied as a count threshold ---

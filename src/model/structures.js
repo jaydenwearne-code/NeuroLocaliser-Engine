@@ -367,7 +367,7 @@ export const STRUCTURES = [
   { id: "snc_tremor", level: "basal_ganglia", part: "substantia_nigra", produces: "rest_tremor",
     note: "substantia nigra pars compacta — contralateral rest tremor" },
   { id: "snc_rigid",      level: "basal_ganglia", part: "substantia_nigra", produces: "rigidity",
-    note: "substantia nigra — extrapyramidal rigidity (tone-axis companion, localising)" },
+    note: "substantia nigra — extrapyramidal rigidity (tone-axis companion, non-localising)" },
   { id: "striatum_chorea",level: "basal_ganglia", part: "striatum",         produces: "chorea",
     note: "striatum (caudate + putamen) — contralateral chorea / choreoathetosis" },
   { id: "gp_dystonia",    level: "basal_ganglia", part: "globus_pallidus",  produces: "dystonia",
@@ -708,12 +708,11 @@ export const STRUCTURES = [
   // The anterior horn is modelled as PURE LOWER MOTOR NEURONE: it carries NO umn_signs. ALS's UMN
   // component comes from the corticospinal tract (above the motor unit); ALS is a PATHOLOGY that fires
   // on UMN+LMN co-occurrence across two sites — the future pathology layer, not a site here.
-  // Fasciculations are confined to this one part in the model (anterior horn cell irritability), so the
-  // 2026-08-14 LOCALISING audit promoted them — see score.js.
+  // Fasciculations are a GENERAL LMN sign (any LMN level) and are non-localising in score.js.
   { id: "ah_lmn",    level: "motor_unit", part: "anterior_horn", produces: "lmn_weakness",
     note: "anterior horn cell — flaccid, areflexic (LMN) weakness (PMA/SMA/polio/Kennedy)" },
   { id: "ah_fascic", level: "motor_unit", part: "anterior_horn", produces: "fasciculations",
-    note: "anterior horn cell irritability — fasciculations (pins the anterior horn)" },
+    note: "anterior horn cell irritability — fasciculations (general LMN sign, not localising)" },
   { id: "ah_bulbar_dysph", level: "motor_unit", part: "anterior_horn", produces: "dysphagia",
     note: "bulbar motor neurones (progressive bulbar palsy) — dysphagia (LMN)" },
   { id: "ah_bulbar_dysar", level: "motor_unit", part: "anterior_horn", produces: "dysarthria",
@@ -947,10 +946,9 @@ export const STRUCTURES = [
   { id: "conus_bulbo", level: "conus", part: "medullaris", produces: "bulbocavernosus_loss", crosses: false, note: "S2–4 sacral arc — bulbocavernosus lost" },
   { id: "cauda_anal", level: "cauda", part: "equina", produces: "anal_wink_loss", crosses: false, note: "S2–4 sacral roots — anal wink lost" },
   { id: "cauda_bulbo", level: "cauda", part: "equina", produces: "bulbocavernosus_loss", crosses: false, note: "S2–4 sacral roots — bulbocavernosus lost" },
-  // Frontal release signs — contralateral (grasp) / orbitofrontal (palmomental), frontal cortex. Both
-  // confined to a single part in this model, so both are localising (score.js).
+  // Frontal release signs — contralateral (grasp) / non-specific (palmomental), frontal cortex.
   { id: "ctx_grasp", level: "cortex", part: "medial_pfc", produces: "grasp_reflex", note: "medial frontal — contralateral grasp reflex" },
-  { id: "ctx_palmomental", level: "cortex", part: "orbitofrontal", produces: "palmomental", note: "frontal release — palmomental (orbitofrontal)" },
+  { id: "ctx_palmomental", level: "cortex", part: "orbitofrontal", produces: "palmomental", note: "frontal release — palmomental (non-specific)" },
 
   // ---- TONE & WASTING (UMN-vs-LMN axis; anatomy-layer companions, non-localising) ----
   // spasticity: increased tone — a corticospinal (UMN) companion at EVERY level the tract is modelled,
@@ -972,8 +970,7 @@ export const STRUCTURES = [
   { id: "poly_hypotonia", level: "polyneuropathy", part: "length_dependent", produces: "hypotonia", note: "length-dependent polyneuropathy — distal hypotonia (generalised LMN)" },
 
   // wasting: muscle atrophy — the broad LMN set. Requires innervated muscle, so it EXCLUDES pure-sensory
-  // lat_fem_cutaneous, and (already LMN-excluded) NMJ + muscle. Non-localising — it spans several levels
-  // (anterior horn, cauda, polyneuropathy, individual roots), unlike fasciculations (anterior horn only).
+  // lat_fem_cutaneous, and (already LMN-excluded) NMJ + muscle. Non-localising, like fasciculations.
   { id: "ah_wasting", level: "motor_unit", part: "anterior_horn", produces: "wasting", note: "anterior horn — denervation wasting (generalised LMN)" },
   { id: "cauda_wasting", level: "cauda", part: "equina", produces: "wasting", crosses: false, note: "cauda equina — denervation wasting, midline" },
   { id: "poly_wasting", level: "polyneuropathy", part: "length_dependent", produces: "wasting", note: "polyneuropathy — distal denervation wasting" },
