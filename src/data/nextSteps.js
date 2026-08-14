@@ -2289,3 +2289,24 @@ export function nextStepsFor(site) {
     curated: base.curated,
   };
 }
+
+// ---- CROSS-SITE WORKUP (spec 2026-08-14 §6) ----
+// One plan for a multifocal picture. The urgency is the MOST urgent across the set, never an average —
+// a cord site plus a nerve site is a cord-urgency workup, and averaging would under-call it.
+const URGENCY_ORDER = ["emergency", "urgent", "routine"];
+
+export function combinedNextSteps(sites) {
+  const all = sites.map(nextStepsFor);
+  const union = key => [...new Set(all.flatMap(n => n[key] || []))];
+  const urgency = URGENCY_ORDER.find(u => all.some(n => n.urgency === u)) || "routine";
+  const referral = [...new Set(all.map(n => n.referral).filter(Boolean))].join(" · ");
+  return {
+    immediate: union("immediate"),
+    investigations: union("investigations"),
+    confirmatory: union("confirmatory"),
+    monitoring: union("monitoring"),
+    urgency,
+    referral,
+    sites: sites.map(s => s.id),
+  };
+}
