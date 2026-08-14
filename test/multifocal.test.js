@@ -298,6 +298,15 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
      !names.some(n => /neurofibromatosis|\bNF2\b/i.test(n)), names.join(", "));
 }
 
+// --- 17: RULING 2 (owner, 2026-08-14) — MS carries a red flag for a first presentation disseminated in
+// space. MS's only clause is `spread:{distinctCompartments:2}`, so the flag applies whenever it fires.
+{
+  const ms = MULTIFOCAL.find(e => e.name === "Multiple sclerosis");
+  ok("Multiple sclerosis declares a `red` string (not false)", typeof ms.red === "string" && ms.red.trim().length > 0);
+  ok("the red flag does not name a specific disease-modifying drug",
+     !/interferon|glatiramer|natalizumab|ocrelizumab|fingolimod|dimethyl fumarate|alemtuzumab|cladribine|siponimod|ofatumumab|rituximab/i.test(ms.red));
+}
+
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

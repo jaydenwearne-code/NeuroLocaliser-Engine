@@ -48,7 +48,9 @@ export const MULTIFOCAL = [
     // Excludes osmotic demyelination (central/extrapontine myelinolysis) — a distinct osmotic/metabolic
     // entity that otherwise matches `demyelinat` and gets wrongly canonicalised onto MS (2026-08-14 review).
     matches: /^(?!.*(?:osmotic demyelinat|myelinolysis|extrapontine)).*(?:demyelinat|multiple sclerosis|\bMS plaque\b)/i,
-    red: false,
+    // Owner ruling 2 (2026-08-14): flag a first presentation disseminated in space. MS's only clause is
+    // `spread:{distinctCompartments:2}`, so this flag applies to every case that fires at all.
+    red: "A first presentation already disseminated in space is not a one-off — confirm the diagnosis formally, because it changes long-term management",
     feature: "Lesions separated in space AND time, typically optic nerve, brainstem, cord or periventricular white matter; young adult, symptoms evolving over days then partly recovering",
     confirm: "Uhthoff's phenomenon — the deficit reappears or worsens with heat or exercise",
   }),
