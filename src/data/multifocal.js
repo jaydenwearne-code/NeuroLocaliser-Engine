@@ -45,7 +45,9 @@ export const MULTIFOCAL = [
   mf("Multiple sclerosis", "inflammatory", {
     spread: { minSites: 2, distinctCompartments: 2 },
     course: ["relapsing", "progressive", "stepwise"], tempo: ["subacute"], likelihood: "common",
-    matches: /demyelinat|multiple sclerosis|\bMS plaque\b/i,
+    // Excludes osmotic demyelination (central/extrapontine myelinolysis) — a distinct osmotic/metabolic
+    // entity that otherwise matches `demyelinat` and gets wrongly canonicalised onto MS (2026-08-14 review).
+    matches: /^(?!.*(?:osmotic demyelinat|myelinolysis|extrapontine)).*(?:demyelinat|multiple sclerosis|\bMS plaque\b)/i,
     red: false,
     feature: "Lesions separated in space AND time, typically optic nerve, brainstem, cord or periventricular white matter; young adult, symptoms evolving over days then partly recovering",
     confirm: "Uhthoff's phenomenon — the deficit reappears or worsens with heat or exercise",

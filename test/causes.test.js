@@ -1008,6 +1008,51 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
      wronglyCanonicalised.length === 0);
 }
 
+// --- canonicalKey: osmotic demyelination must NOT canonicalise onto Multiple sclerosis (Fix 1) ---
+// Osmotic demyelination syndrome (central pontine / extrapontine myelinolysis) is a distinct osmotic/
+// metabolic entity, not multiple sclerosis. It matches the MS roster regex (/demyelinat|.../) and ONLY
+// that regex, so the existing "2+ matches -> uncanonicalised" guard does not catch it — it silently
+// canonicalises onto entity "Multiple sclerosis". Reviewer-verified consequence: for left_pons_medial +
+// locked_in, the merged card's most prominent shared row reads "Demyelination (MS) — at 2 of 2 sites"
+// (and inherits the RED flag) when the actual contributing cause at both sites is central pontine
+// myelinolysis, not MS.
+{
+  const { canonicalKey, CAUSES } = await import("../src/data/causes.js");
+
+  const osmoticNames = [
+    "Osmotic demyelination syndrome (central pontine myelinolysis)",
+    "Central pontine myelinolysis (osmotic demyelination)",
+    "Extrapontine osmotic demyelination",
+  ];
+  for (const name of osmoticNames) {
+    const ck = canonicalKey(name);
+    ok(`"${name}" does not canonicalise onto Multiple sclerosis`, ck.entity !== "Multiple sclerosis");
+  }
+
+  // Genuine MS variants must still canonicalise onto the entity — the narrowed regex must not overshoot.
+  const msNames = [
+    "Demyelination",
+    "Demyelination (MS)",
+    "Multiple sclerosis",
+    "Demyelination (multiple sclerosis)",
+    "Multiple sclerosis (callosal plaques)",
+  ];
+  for (const name of msNames) {
+    ok(`"${name}" still canonicalises onto Multiple sclerosis`, canonicalKey(name).entity === "Multiple sclerosis");
+  }
+
+  // Regression via combinedCauses: the shared entry across left_pons_medial + locked_in must not be a
+  // Multiple-sclerosis-entity bucket contaminated by the osmotic-demyelination cause's own RED flag.
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const pons = candidateSites().find(s => s.id === "left_pons_medial");
+  const locked = candidateSites().find(s => s.id === "locked_in");
+  ok("fixture sites exist (left_pons_medial, locked_in)", !!pons && !!locked);
+  const r = combinedCauses([pons, locked], {});
+  const msBucket = r.shared.find(s => s.entity === "Multiple sclerosis");
+  ok("if a Multiple-sclerosis shared bucket exists for this pair, it is not RED-flagged by the osmotic cause",
+     !msBucket || msBucket.red === false);
+}
+
 // --- combinedCauses: `cat` must stay consistent with the displayed `name` (Finding 2) ---
 // When a shorter name wins and replaces the display label, its `cat` (and `feature`) must be carried
 // across from that SAME source cause, not left over from whichever cause created the bucket first.
