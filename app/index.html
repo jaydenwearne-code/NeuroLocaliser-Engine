@@ -49,9 +49,15 @@
   .bar{height:5px;border-radius:3px;background:var(--terra);opacity:.7;min-width:3px;}
   .narrow{font-size:12px;color:var(--muted);margin:0 0 8px;} .narrow b{color:var(--terra);}
   .difflist{max-height:44vh;overflow:auto;border:1px solid var(--line);border-radius:9px;}
-  .drow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;font-size:12px;padding:6px 9px;border-bottom:1px solid var(--line-2,var(--line));cursor:pointer;} .drow:last-child{border-bottom:0;} .drow:hover{background:var(--band);} .drow.on{background:color-mix(in srgb,var(--terra) 12%,transparent);}
+  .drow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;font-size:12px;padding:6px 9px;border-bottom:1px solid var(--line-2,var(--line));cursor:pointer;} .drow:last-child{border-bottom:0;} .drow:hover{background:var(--band);} .drow.on{background:color-mix(in srgb,var(--terra) 12%,transparent);}
   .drow .dn{min-width:0;} .drow .dn b{font-weight:600;} .drow .dloc{font-family:var(--mono);font-size:10px;color:var(--faint);display:block;}
   .drow .dfit{text-align:right;white-space:nowrap;} .drow .dfrac{font-family:var(--mono);font-size:10px;color:var(--muted);} .drow .dbar{height:4px;border-radius:2px;background:var(--terra);opacity:.65;margin-top:3px;margin-left:auto;} .drow .dall{font-size:9px;font-weight:800;color:var(--ipsi);}
+  .pin { background:none; border:0; cursor:pointer; opacity:.25; font-size:13px; padding:0 4px; line-height:1; }
+  .pin:hover { opacity:.6; }
+  .pin.pinned { opacity:1; }
+  .scope { display:flex; gap:4px; margin-bottom:6px; }
+  .sc { font-size:11px; padding:2px 8px; border:1px solid var(--line); background:none; border-radius:10px; cursor:pointer; color:var(--muted); }
+  .sc.on { background:var(--navy-2); color:#fff; border-color:var(--navy-2); }
   .why-list{display:flex;flex-direction:column;gap:4px;} .why-item{display:flex;gap:8px;align-items:baseline;font-size:12px;} .why-item .k{width:16px;text-align:center;} .ok{color:var(--ipsi);} .no{color:var(--contra);} .warn{color:var(--gold);}
   .why-item .t{font-family:var(--mono);font-size:11px;} .why-item .d{color:var(--muted);font-size:11px;}
   .annot{font-size:12px;color:var(--muted);background:var(--band);border-radius:8px;padding:7px 9px;margin-top:8px;} .annot b{color:var(--ink);}

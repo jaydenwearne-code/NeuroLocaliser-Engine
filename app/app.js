@@ -3,10 +3,11 @@ import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
-import { causesFor, CATEGORIES, TEMPO } from "../src/data/causes.js";
+import { causesFor, combinedCauses, canonicalKey, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
-import { nextStepsFor } from "../src/data/nextSteps.js";
+import { nextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
+import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
 import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
@@ -14,6 +15,9 @@ import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { encodeCase, decodeCase } from "./case-url.js";
 import { feedbackHref } from "./feedback.js";
 import { renderCodeStroke, stopStrokeClock } from "./code-stroke.js";
+import { combinedSites } from "./combined-sites.js";
+import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
+import { togetherGuardState } from "./together-guard.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -40,7 +44,7 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", sensoryLevel:"", distalReach:"", atlas:null,
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
@@ -52,11 +56,13 @@ function restoreFromURL() {
   const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES });
   if (st.tokens) S.tokens = st.tokens;
   if (st.onset) S.onset = st.onset;
+  if (st.course) S.course = st.course;
   if (st.mode) S.mode = st.mode;
   if (st.selected) S.selected = st.selected;
   if (st.dominant) S.dominant = st.dominant;
   if (st.sensoryLevel) S.sensoryLevel = st.sensoryLevel;
   if (st.distalReach) S.distalReach = st.distalReach;
+  if (st.pinned) S.pinned = st.pinned;
 }
 
 function syncURL() {
@@ -70,6 +76,7 @@ function renderLocalise() {
   <div class="ctrls">
     <label>Dominant hemisphere <select id="dom"><option value="left">left</option><option value="right">right</option></select></label>
     <label>Onset (for causes) <select id="onset"><option value="">all</option>${TEMPO.map(t=>`<option value="${t.id}">${esc(t.label)}</option>`).join("")}</select></label>
+    <label>Course (for cross-site diagnoses) <select id="course"><option value="">all</option>${COURSES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join("")}</select></label>
     <label>Sensory level <input type="text" id="slevel" placeholder="e.g. T10" size="6"></label>
     <label>Distal reach <input type="text" id="reach" placeholder="e.g. knees" size="7"></label>
   </div>
@@ -84,6 +91,7 @@ function renderLocalise() {
   </div>`;
   document.getElementById("dom").value = S.dominant;
   document.getElementById("onset").value = S.onset;
+  document.getElementById("course").value = S.course;
   wireLocalise();
   renderChips(); renderResults();
 }
@@ -118,6 +126,7 @@ function frow(f) {
 function wireLocalise() {
   document.getElementById("dom").onchange = e => { S.dominant = e.target.value; renderResults(); markSides(); };
   document.getElementById("onset").onchange = e => { S.onset = e.target.value; renderResults(); };
+  document.getElementById("course").onchange = e => { S.course = e.target.value; renderResults(); };
   document.getElementById("slevel").oninput = e => { S.sensoryLevel = e.target.value.trim(); renderResults(); };
   document.getElementById("reach").oninput = e => { S.distalReach = e.target.value.trim(); renderResults(); };
   document.getElementById("search").oninput = e => filterFindings(e.target.value.toLowerCase());
@@ -182,14 +191,31 @@ function renderResults() {
   el.innerHTML = resultHeader(sel, list, total, r)
     + pmsg + rmsg
     + whereCard(list, cands, total, r)
+    + togetherCard(r, list)
     + whyCard(tf, sel, total)
-    + whatCard(sel.site)
-    + nextCard(sel.site);
+    + whatCard(sel.site, r, list)
+    + nextCard(sel.site, r, list);
   const nx = el.querySelector(".neuraxis");
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
   const dl = document.getElementById("difflist");
-  if (dl) dl.onclick = e => { const row = e.target.closest(".drow"); if (!row) return; S.selected = row.dataset.k; renderResults(); };
+  if (dl) dl.onclick = e => {
+    const pin = e.target.closest("[data-pin]");
+    if (pin) {                      // pin toggle — must not fall through to row selection
+      const id = pin.dataset.pin;
+      S.pinned.has(id) ? S.pinned.delete(id) : S.pinned.add(id);
+      renderResults();
+      return;
+    }
+    const row = e.target.closest(".drow");
+    if (!row) return;
+    S.selected = row.dataset.k;
+    renderResults();
+  };
+  const el2 = document.getElementById("results");
+  el2.querySelectorAll("[data-scope]").forEach(b => {
+    b.onclick = () => { S.scope = b.dataset.scope; renderResults(); };
+  });
 }
 
 function siteName(site){ const e = nameForSite(site); return e.name; }
@@ -252,7 +278,8 @@ function whereCard(list, cands, total, r) {
     const on = c.site.id === S.selected ? " on" : "";
     const w = Math.round((c.n/total)*54);
     const fit = c.n===total ? `<span class="dall">✓ all</span>` : `<span class="dfrac">${c.n}/${total}</span>`;
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteLoc(c.site))}${c.site.territory?` · ${esc(c.site.territory)}`:""}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div></div>`;
+    const pinned = S.pinned.has(c.site.id) ? " pinned" : "";
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteLoc(c.site))}${c.site.territory?` · ${esc(c.site.territory)}`:""}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site to compare across lesions">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? `<details class="ruledout" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Ruled out by a normal finding <span class="c">${r.ruledOut.length}</span></summary>
@@ -263,6 +290,96 @@ function whereCard(list, cands, total, r) {
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
   return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`);
+}
+
+// A `spread`/`motor` clause has no single site — it is satisfied by the SET of sites, or by the observed
+// findings, so `satisfiedBy` is null for those (see multifocal.js). The clause object still carries its
+// own descriptive text (`{spread:"2 sites"}` / `{spread:"2 compartments"}` / `{motor:"mixed"}`); render
+// THAT rather than discarding it, or the entity shows no derivation at all — spec: "never a bare disease
+// name". `sites` is the full combined-site set the Together card is comparing, so a spread clause can name
+// exactly which sites it disseminated across.
+function clauseText(clause, sites) {
+  if (clause.spread) return `disseminated in space — ${esc(clause.spread)}: ${sites.map(s => esc(siteName(s))).join(" + ")}`;
+  if (clause.motor) return "mixed upper + lower motor neurone signs on examination";
+  return "";
+}
+
+// One entry in the Together card's disease list — same visual language as renderCause() ("What") so the
+// two cards read as one system, plus a `.dloc` line naming why each entry fits (a real site name where a
+// clause resolved to one, the clause's own descriptive text otherwise) and, when the roster names a red
+// flag, the actual SENTENCE (not just the badge) — see review Task 14 fixes B/C.
+function unifyingRow(e, sites) {
+  const whyLine = e.why
+    .map(w => (w.satisfiedBy && w.satisfiedBy.id) ? esc(siteName(w.satisfiedBy)) : clauseText(w.clause, sites))
+    .filter(Boolean).join(" · ");
+  const path = e.confirm ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(e.confirm)}</span></div>` : "";
+  const red = e.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(e.red)}</div>` : "";
+  return `<div class="cause"><div class="cline"><span class="cn">${esc(e.name)}</span><span class="lk">${esc(e.likelihood)}</span>${e.red ? `<span class="rf">RED</span>` : ""}</div>${e.feature ? `<div class="cfeat">${esc(e.feature)}</div>` : ""}${whyLine ? `<div class="dloc">${whyLine}</div>` : ""}${red}${path}</div>`;
+}
+
+// forcingFindings() runs one solve() per LOCALISING finding — ~190 ms on a two-lesion case, and it grew
+// when the 2026-08-14 LOCALISING audit promoted 12 more findings. renderResults() re-runs on EVERY input
+// event, including each keystroke in the sensory-level and distal-reach fields — and those fields do not
+// change the finding set, so the guard was recomputing an identical answer per keystroke.
+//
+// The memo is keyed on the finding set plus the dominant hemisphere ONLY. `sensoryLevel` and `distalReach`
+// are deliberately excluded: they are ANNOTATION axes (see CLAUDE.md — the sensory level annotates the
+// winner, it never changes it), and this was verified rather than assumed — 7 sensoryLevel variants and a
+// distalReach variant all produce a byte-identical forcingFindings result.
+//
+// Kept in the app layer on purpose: the engine function stays simple and cache-free; the repeated
+// identical calls are an app-render concern, so the fix belongs where the repetition is.
+let _ffKey = null, _ffVal = null;
+function forcingFindingsMemo() {
+  const key = [...S.tokens].sort().join("|") + "#" + S.dominant;
+  if (key !== _ffKey) { _ffKey = key; _ffVal = forcingFindings(S.tokens, { dominantSide: S.dominant }); }
+  return _ffVal;
+}
+
+// ② Together — the cross-site view. PARSIMONY FIRST: the card's first job is to try to talk you out of a
+// multifocal claim, because a localising sign entered on the wrong side is the one real path to
+// over-calling. The disease list comes second, framed conditionally. Order matters and must not change:
+// guard → which sites → disease list (concordant open, tempo/course mismatches collapsed).
+function togetherCard(r, list) {
+  const { sites, source } = combinedSites(r, list, S.pinned);
+  if (sites.length < 2) return "";
+
+  const ff = forcingFindingsMemo();
+  // The card can render on the PINNED path even when a single lesion already explains everything (the
+  // card's own copy invites exactly this: "Pin two sites in the list above to test a different pair") — so
+  // the guard must check that FIRST, or it falls into the "several findings" branch and asserts a
+  // multifocal claim that is flatly false. togetherGuardState() (app/together-guard.js) is the pure,
+  // directly-tested decision; see review Task 14 Fix A / test/together-guard.test.js.
+  const gState = togetherGuardState(r, ff);
+  // Each forcing finding carries ITS OWN collapse target (see multifocal.js) — different findings can
+  // collapse the picture onto different sites, so they are named in pairs, never under one shared claim.
+  const guard = gState.kind === "single"
+    ? `<div class="annot"><b>A single lesion already explains every finding here.</b> You've pinned a second site to compare anyway — this is a hypothetical "what if" comparison, not a claim that the picture is actually multifocal.</div>`
+    : gState.kind === "forcing"
+    ? `<div class="multi" style="border-color:var(--gold)"><b>Check this first.</b> This is multifocal only because of: ${gState.findings.map(f =>
+        `<code>${esc(f.token)}</code>${f.collapsesTo ? ` — drop it and a single ${esc(siteName(f.collapsesTo))} lesion explains everything` : ""}`
+      ).join("; ")}. If any of these signs is uncertain, re-check it before accepting a multifocal picture.</div>`
+    : `<div class="annot"><b>Several findings independently require a second site</b> — no single observation is carrying the multifocal claim.</div>`;
+
+  const srcLine = `<div class="annot">Showing <b>${source === "pinned" ? "your selection" : "the engine's minimal cover"}</b>: ${sites.map(s => esc(siteName(s))).join(" + ")}.${source === "cover" ? " Pin two sites in the list above to test a different pair." : ""}</div>`;
+
+  const u = unifyingDiagnoses(sites, S.tokens, { onset: S.onset || undefined, course: S.course || undefined });
+  const fits = u.concordant.length
+    ? u.concordant.map(e => unifyingRow(e, sites)).join("")
+    : `<div class="empty">No catalogued cross-site process fits this combination — which is itself informative: consider two unrelated lesions.</div>`;
+
+  // Soft-axis mismatches DEMOTE, they never drop (owner ruling). The band names WHICH axis missed and what
+  // would have to be true.
+  const axisLabel = es => {
+    const axes = [...new Set(es.flatMap(e => e.demotions.map(d => d.axis)))];
+    return axes.length === 2 ? "tempo and course" : axes[0] === "course" ? "the course" : "the tempo";
+  };
+  const disc = u.discordant.length
+    ? `<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given ${esc(axisLabel(u.discordant))} <span class="c">${u.discordant.length}</span></summary>
+        ${u.discordant.map(e => `${unifyingRow(e, sites)}<div class="annot">${e.demotions.map(d => `You entered <b>${esc(d.entered)}</b>; this is typically ${d.expected.map(esc).join(" / ")}.`).join(" ")}</div>`).join("")}</details>`
+    : "";
+
+  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, guard + srcLine + fits + disc);
 }
 
 const sideName = s => s === "left" ? "left" : s === "right" ? "right" : s === "bilateral" ? "both sides" : "the affected side";
@@ -332,10 +449,77 @@ function whyCard(tf, sel, total) {
   return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`);
 }
 
+// Merged causes/workup render through the cards that already OWN that presentation, rather than a third
+// rendering of the category dots that could drift out of sync.
+function scopeToggle(n) {
+  return `<div class="scope"><button class="sc${S.scope==="site"?" on":""}" data-scope="site">This site</button><button class="sc${S.scope==="all"?" on":""}" data-scope="all">All ${n} sites</button></div>`;
+}
+
+// One shared cause row, in the merged What card. `dem` adds the "usually X onset" line the demoted band
+// needs — the concordant list omits it, since a concordant entry needs no such caveat.
+function sharedCauseRow(s, nSites, dem) {
+  const loc = dem
+    ? `at ${s.count} of ${nSites} sites · usually ${s.demotion.expected.map(esc).join(" / ")} onset`
+    : `at ${s.count} of ${nSites} sites`;
+  return `<div class="cause${s.red?" red":""}"><b>${esc(s.name)}</b>${s.red?` <span class="rf">RED</span>`:""} <span class="dloc">${loc}</span>${s.feature?` — ${esc(s.feature)}`:""}</div>`;
+}
+
+// perSite = the remainder — every per-site cause that did NOT make the shared bucket (spec: "so nothing is
+// hidden"). combinedCauses() doesn't pre-strip these (`perSite` carries every cause per site, shared or
+// not), so the shared/non-shared split is redone here with the SAME canonicalKey() the engine used to
+// build the shared bucket in the first place, rather than a second alias table that could drift from it.
+//
+// A row is suppressed only when its OWN verbatim name is the one actually shown in the shared list — not
+// merely when it canonicalises onto the same shared entity. The shared bucket displays ONE label (the
+// shortest name) per entity, so a same-entity cause worded differently (e.g. "Central pontine
+// myelinolysis" when the shared row shows "Demyelination (MS)") must stay in the remainder under its own
+// name, or the true name is hidden along with the duplicate — measured over 4,032 pair-views: 23.7% hid at
+// least one distinctly-named cause this way. Visually secondary to `shared`: grouped by site, collapsed by
+// default.
+function perSiteRemainderHTML(cc, sites) {
+  const shownNameFor = new Map(cc.shared.map(s => [s.entity ? `entity:${s.entity}` : `name:${s.name}`, s.name]));
+  const bySite = cc.perSite
+    .map(({ site, causes }) => ({ site, remainder: causes.filter(c => shownNameFor.get(canonicalKey(c.name).key) !== c.name) }))
+    .filter(x => x.remainder.length);
+  if (!bySite.length) return "";
+  const n = bySite.reduce((sum, x) => sum + x.remainder.length, 0);
+  const body = bySite.map(({ site, remainder }) =>
+    `<div class="catgrp"><div class="cathead">${esc(siteName(site))}</div>${remainder.map(renderCause).join("")}</div>`
+  ).join("");
+  return `<details class="ruledout" style="margin-top:8px"><summary style="font-size:11.5px;color:var(--muted)">Only plausible at one site <span class="c">${n}</span></summary><div style="margin-top:4px">${body}</div></details>`;
+}
+
 // ③ What — the curated differential for this site. Categories with no plausible cause are omitted,
-// never padded with region generics (see the depth spec, 2026-08-11).
-function whatCard(site) {
-  return card("What", whatBlock(site));
+// never padded with region generics (see the depth spec, 2026-08-11). Branches to the cross-site shared-
+// causes view when the scope toggle is set to "all" and the combined view actually has ≥2 sites.
+function whatCard(site, r, list) {
+  // S.pinned MUST be passed: without it this resolves the engine's cover while the Together card resolves
+  // the user's pinned pair, and the two cards silently describe DIFFERENT sites on the same screen.
+  const { sites } = combinedSites(r, list, S.pinned);
+  const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
+  if (sites.length >= 2 && S.scope === "all") {
+    const cc = combinedCauses(sites, { onset: S.onset || undefined });
+    // Tempo mismatches DEMOTE, never drop (owner ruling) — a shared cause is demoted iff EVERY contributing
+    // site's own source was demoted. The "no shared cause" message must only fire when there is truly
+    // nothing shared, never merely because everything that IS shared got demoted — that's a different,
+    // narrower claim ("no cause is plausible at more than one site" is false when one is, just at the wrong
+    // tempo) and the code cannot support the stronger one.
+    const concordantShared = cc.shared.filter(s => !s.demoted);
+    const demotedShared = cc.shared.filter(s => s.demoted);
+    const shared = concordantShared.length
+      ? concordantShared.map(s => sharedCauseRow(s, sites.length, false)).join("")
+      : demotedShared.length
+      ? `<div class="empty">Every shared cause is demoted given <b>${esc(S.onset)}</b> onset — see "Less likely given the tempo" below.</div>`
+      : `<div class="empty">No cause is plausible at more than one of these sites — which argues for two unrelated processes.</div>`;
+    const dem = demotedShared.length
+      ? `<details class="demoted" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given <b>${esc(S.onset)}</b> onset <span class="c">${demotedShared.length}</span></summary>
+          <div class="annot" style="margin-top:4px">A cause shared here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
+          ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}</details>`
+      : "";
+    const remainder = perSiteRemainderHTML(cc, sites);
+    return card(`What <span class="oc-n">(all sites)</span>`, toggle + shared + dem + remainder);
+  }
+  return card("What", toggle + whatBlock(site));
 }
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
@@ -361,32 +545,49 @@ function whatBlock(site) {
     ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
   const cap = (S.onset || res.derived)
     ? `<p class="what-cap">${S.onset ? `<span style="color:var(--terra)">${esc(S.onset)}</span> onset` : ""}${res.derived ? ` <span class="derived">(derived from site type — not individually curated)</span>` : ""}</p>` : "";
-  // Empty state teaches the NEGATIVE rather than sending the user away: a site that genuinely never
-  // presents at this tempo should say so, not have a cause invented to fill the gap.
-  const empty = `<div class="empty">A lesion here does not typically present with
-    <b>${esc(S.onset || "this")}</b> onset — the mismatch between tempo and site is itself informative.
-    Change the onset filter to see this site's differential.</div>`;
-  return `${cap}${lead}${red}${groups || empty}`;
+  // Tempo mismatches are demoted, never deleted — the teaching line that used to REPLACE the content now
+  // heads the disclosure. Spec 2026-08-14 §7.
+  const dem = res.demoted && res.demoted.length
+    ? `<details class="demoted" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given <b>${esc(S.onset)}</b> onset <span class="c">${res.demoted.length}</span></summary>
+        <div class="annot" style="margin-top:4px">A lesion here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
+        ${res.demoted.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">usually ${x.demotion.expected.map(esc).join(" / ")}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}</details>`
+    : "";
+  return `${cap}${lead}${red}${groups}${dem}`;
 }
 
 // ④ Next steps — its own card, tiered (immediate → first-line → confirmatory → monitoring) + urgency/referral.
-function nextCard(site) {
-  return card("Next steps", nextBlock(site));
+// Branches only on which workup OBJECT is fed to the one shared renderer (nextBlock) — combinedNextSteps()
+// returns the same field names/types as nextStepsFor() (minus `curated`) precisely so this works without a
+// second four-tier renderer.
+function nextCard(site, r, list) {
+  // S.pinned MUST be passed — see the note in whatCard().
+  const { sites } = combinedSites(r, list, S.pinned);
+  const combined = sites.length >= 2 && S.scope === "all";
+  const nx = combined ? combinedNextSteps(sites) : nextStepsFor(site);
+  const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
+  const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
+  return card(cap, toggle + nextBlock(nx, combined));
 }
 
-function nextBlock(site) {
-  const nx = nextStepsFor(site);
+// `combined` distinguishes the two shapes nextBlock is fed: nextStepsFor()'s single-site plan (which carries
+// a real `curated` flag) vs combinedNextSteps()'s union-of-plans (which never sets `curated` — the merged
+// tiers may mix curated and derived sites, so neither true nor false would be honest). Do not read
+// nx.curated for the combined case; say what actually happened instead — see review Task 14 A1.
+function nextBlock(nx, combined) {
   const urgTint = nx.urgency === "emergency" ? "--red" : nx.urgency === "urgent" ? "--gold" : "--faint";
   const urgLabel = nx.urgency === "emergency" ? "EMERGENCY" : nx.urgency === "urgent" ? "URGENT" : "routine";
   const tier = (title, items) => (items && items.length)
     ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
+  const provenance = combined
+    ? `<p class="derived">Merged from each site's individual workup plan — see "This site" for any one site's own tiers.</p>`
+    : (nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`);
   return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
     ${tier("Immediate / bedside", nx.immediate)}
     ${tier("First-line investigations", nx.investigations)}
     ${tier("Confirmatory / specialist", nx.confirmatory)}
     ${tier("Monitoring / safety-netting", nx.monitoring)}
-    ${nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`}`;
+    ${provenance}`;
 }
 
 // ================= ATLAS =================

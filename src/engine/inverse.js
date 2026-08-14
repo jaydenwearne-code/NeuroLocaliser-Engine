@@ -16,6 +16,7 @@ import { expectedFindings } from "./forward.js";
 import { normaliseLevel, regionOf, landmarkOf } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
+import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS } from "../model/compartments.js";
 
 // One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
 // the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
@@ -76,13 +77,13 @@ export function knownNegatives(observedSet) {
 // Excluded deliberately: cord, roots, plexus, peripheral nerves, polyneuropathy, motor unit, combined
 // degenerations, the peripheral vestibular apparatus and the sympathetic chain — and the skull-base
 // CORRIDORS, which are extra-axial nerve-in-a-canal lesions rather than mass within the compartment.
-export const INTRACRANIAL_LEVELS = new Set([
-  "midbrain", "pons", "medulla", "brainstem", "pontomesencephalic", "dorsal_midbrain", "parinaud",
-  "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular",
-  "cortex", "subcortex", "cerebrum", "corpus_callosum", "aphasia_subcortical",
-  "thalamus", "thalamus_arousal", "hypothalamus", "basal_ganglia", "cerebellum",
-  "visual_pathway", "olfactory", "craniocervical_junction",
-]);
+// DERIVED from the compartment table (compartments.js) so there is exactly one definition of "inside the
+// skull". Previously a hand-listed set here, which was a second source of truth waiting to drift.
+export const INTRACRANIAL_LEVELS = new Set(
+  Object.entries(LEVEL_COMPARTMENT)
+    .filter(([, cmp]) => INTRACRANIAL_COMPARTMENTS.has(cmp))
+    .map(([level]) => level)
+);
 const PRESSURE_TOKEN = /^papilloedema@/;
 
 // Is papilloedema among the observations, and what does that mean for the candidate list?

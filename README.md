@@ -90,6 +90,8 @@ node test/tier2-deferred.test.js # Tier 2 — brachial plexus cords, optic field
 node test/causes.test.js         # aetiology layer — tempo-aware surgical-sieve causesFor(site, {onset})
 node test/causes-depth.test.js   # differential-depth invariants — no generic filler; >=6 causes, each with a feature
 node test/fundus.test.js         # fundoscopy + acuity findings; papilloedema as a compartment axis
+node test/compartments.test.js  # level -> compartment axis; INTRACRANIAL_LEVELS derives from it
+node test/localising-audit.test.js # every single-level finding is LOCALISING or explicitly excused (NOT_LOCALISING_BY_DESIGN)
 node test/app-smoke.test.js      # exam-map integrity (every finding real; lobe/brainstem/fatiguability taxonomy)
 node test/raw-observations.test.js # raw-observations refactor acceptance (clusters emerge from raw primitives)
 node test/patterns.test.js       # cross-cutting synthesis — UMN vs LMN (mixed → MND) + functional (FND) flag
@@ -104,6 +106,8 @@ node test/feedback-url.test.js   # ED prototype — feedback prefill-URL builder
 node test/gate.test.js           # ED prototype — passphrase gate hash-and-compare
 node test/stroke-data.test.js    # Code-stroke mode — clinical content integrity (NIHSS 42, cites)
 node test/stroke-logic.test.js   # Code-stroke mode — NIHSS/localiser bridge, windows, LVO, eligibility, handover
+node test/multifocal.test.js     # cross-site (multi-location) entity roster — content-only invariants
+node test/combined-sites.test.js # Together card — pinned-pair vs engine-cover resolution (pure, DOM-free)
 ```
 
 ## Status

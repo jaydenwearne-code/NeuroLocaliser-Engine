@@ -473,8 +473,14 @@ localises the lesion:
   the site *pair*; this layer adds the naming + the "one process, many sites" weighting. Other pathology
   objects follow the same shape (the cortex increment set the anatomy-first / pathology-as-annotation
   precedent).
-- **Multifocal**: already works via minimal-set cover; extend to weigh "one disease hitting many
-  sites" (MS, mets, sarcoid, vasculitis) by tempo + dissemination in space/time.
+- **Multifocal (DONE 2026-08-14):** now weighs "one disease hitting many sites" — a 13-entity cross-site
+  roster (`src/data/multifocal.js`) matched by `unifyingDiagnoses()` (`src/engine/multifocal.js`) against
+  hard anatomical constraints (spread/specific compartments/motor pattern), with tempo + course (a new
+  "how it unfolded" axis, `src/model/course.js`) as soft demotions rather than filters. A parsimony guard
+  (`forcingFindings()`) names which finding is actually forcing the second lesion before any disease list
+  is shown. See `CLAUDE.md` §"Multi-location DDx layer" and
+  `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md` for the full design — the roster is new
+  clinical content still awaiting the owner's sign-off.
 - **Tempo**: port the sudden/subacute/chronic differential-weighting from the old prototype.
 - **Non-organic**: FND as *positive* findings (Hoover's, entrainment, inconsistency) that no
   anatomical site predicts — surfaced when localising findings are functional, never as a

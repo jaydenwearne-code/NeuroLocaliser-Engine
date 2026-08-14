@@ -86,8 +86,41 @@ const LOCALISING = new Set([
   // consciousness / arousal — the ARAS/coma localisers + the locked-in hallmark + decerebrate posturing
   "reduced_consciousness","preserved_vertical_gaze","extensor_posturing",
   // trigeminal complex (pontine main sensory + motor V)
-  "face_touch_loss","jaw_weakness"
+  "face_touch_loss","jaw_weakness",
+
+  // --- 2026-08-14 LOCALISING audit (spec §9) ---
+  // Findings confined to a single level that were never added to this set. The fundoscopy pair arrived
+  // with the 2026-08-11 increment and was missed; the rest predate it. Promoting a finding raises its
+  // match weight 1 -> 3 and lets it force a second lesion, so each of these is a clinical judgement that
+  // the sign genuinely pins a place. (Owner review, 2026-08-14: fasciculations, palmomental and rigidity
+  // were REJECTED from this batch — see NOT_LOCALISING_BY_DESIGN for why.)
+  "retinal_pallor",            // CRAO retinal whitening — pins the retina
+  "optic_atrophy",             // disc pallor — pins the optic nerve / anterior visual pathway
+  "cortical_sensory_arm", "cortical_sensory_leg", "cortical_sensory_hand", // cortical sensory loss pins parietal cortex
+  "weak_hand",                 // cortical hand-knob (pseudo-peripheral cortical hand)
+  "weak_scapular_stabilisation", // long thoracic / scapular winging
+  "lid_retraction",            // Collier's sign — dorsal midbrain
+  "verbal_memory_impairment", "nonverbal_memory_impairment", // dominant vs non-dominant temporal/thalamic
+  "disinhibition",             // orbitofrontal
+  "executive_dysfunction",     // dorsolateral prefrontal
 ]);
+
+// Findings that are confined to a single level in the MODEL but are deliberately NOT localising, each with
+// the reason. This replaces prose comments that a future edit can miss: test/localising-audit.test.js
+// asserts that every single-level finding is either in LOCALISING or here, so nothing can fall through
+// silently the way the fundoscopy findings did.
+export const NOT_LOCALISING_BY_DESIGN = {
+  lmn_weakness: "A GENERAL lower-motor-neurone sign — anterior horn, root, plexus and nerve all cause flaccid areflexic weakness, so it marks LMN-ness, not level. Demoted in the PNS increment.",
+  naming_impaired: "Present in EVERY aphasia, so it identifies aphasia rather than which language area is hit. The localisers are speech_nonfluent / comprehension_impaired / repetition_impaired.",
+  proximal_weakness: "A PATTERN, not a level — myopathy, NMJ disease and some neuropathies all produce it. Same reasoning as lmn_weakness.",
+  distal_motor_weakness: "A length-dependent PATTERN shared by every distal neuropathy; the level comes from the accompanying sensory findings, not from this sign.",
+  hallucinations: "Far commoner in delirium, drug effect and psychiatric illness than in focal lesions — a poor localiser at the bedside despite being modelled at one level.",
+  mood_change: "Non-specific; produced by diffuse, systemic and psychiatric processes as readily as by a focal lesion.",
+  // --- Owner ruling, 2026-08-14: rejected from the LOCALISING audit promotion batch ---
+  fasciculations: "Occur at ANY lower-motor-neurone level — root, plexus, peripheral nerve, and in benign fasciculation syndrome. Single-producer in this model only because the model does not emit them elsewhere; that is a modelling limit, not a clinical fact. Same reasoning as lmn_weakness.",
+  palmomental: "A frontal release sign: non-specific, common in normal elderly and in diffuse disease, so it does not pin a territory.",
+  rigidity: "Sits on the TONE axis with spasticity and hypotonia. Increased tone may be UMN or extrapyramidal, so rigidity does not pin a place. (Owner's ruling, 2026-08-14.)",
+};
 
 function findingIdOf(signed) { return signed.split("@")[0]; }
 

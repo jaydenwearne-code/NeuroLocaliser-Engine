@@ -7,6 +7,7 @@ import { CATEGORIES, TEMPO, LIKELIHOOD, CAUSES, causesFor, regionOf } from "../s
 import { BY_SITE } from "../src/data/syndromes.js";
 import { SITES } from "../src/model/sites.js";
 import * as sitesMod from "../src/model/sites.js";
+import { candidateSites } from "../src/engine/inverse.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -865,6 +866,235 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
      has("cerebrum_diffuse", /non.convulsive|status epilepticus|\bncse\b/i));
   ok("diffuse cerebrum teaches that focal signs argue AGAINST a diffuse cause",
      feat("cerebrum_diffuse", /focal|lateralis|lateraliz|asymmetr/i));
+}
+
+// --- tempo DEMOTES, never DROPS (2026-08-14, owner ruling) ---
+// A tempo mismatch used to delete the cause from the output. Content vanishing without saying why is the
+// same failure the sieve sweep fixed, in reverse — so a mismatch now demotes into a labelled band.
+{
+  const site = candidateSites().find(s => s.id === "left_medulla_lateral");
+  const all = causesFor(site, {});
+  const chronic = causesFor(site, { onset: "chronic" });
+  const shown = chronic.byCategory.reduce((n, g) => n + g.causes.length, 0);
+  ok("no cause is lost to a tempo filter — shown + demoted equals the unfiltered total",
+     shown + chronic.demoted.length === all.all.length,
+     `${shown} + ${chronic.demoted.length} vs ${all.all.length}`);
+  ok("a tempo mismatch lands in `demoted`, not in byCategory", chronic.demoted.length > 0);
+  ok("every demoted cause names the axis and what was entered",
+     chronic.demoted.every(c => c.demotion && c.demotion.axis === "tempo" && c.demotion.entered === "chronic"));
+  ok("every demoted cause states the tempo it DOES fit",
+     chronic.demoted.every(c => Array.isArray(c.demotion.expected) && c.demotion.expected.length > 0));
+  ok("nothing tempo-concordant is demoted",
+     chronic.demoted.every(c => !c.tempo.includes("chronic")));
+  ok("with no onset entered, nothing is demoted", causesFor(site, {}).demoted.length === 0);
+}
+
+// --- combinedCauses: the cross-site merge (spec 2026-08-14 §6) ---
+// Naive name intersection DOES NOT WORK and this is the assertion that proves it stays fixed: MS appears
+// as >=8 different strings across the layer ("Demyelination", "Demyelination (MS)", "Multiple sclerosis"),
+// so canonicalisation via the roster's `matches` regex is what makes the flagship case surface at all.
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const optic = candidateSites().find(s => s.level === "visual_pathway" && /optic/.test(s.part));
+  const cord = candidateSites().find(s => s.id === "left_cord_hemi");
+  const r = combinedCauses([optic, cord], {});
+  ok("combinedCauses returns shared and perSite", Array.isArray(r.shared) && Array.isArray(r.perSite));
+  ok("every shared cause names >= 2 sites", r.shared.every(s => s.sites.length >= 2));
+  ok("every shared cause reports its count", r.shared.every(s => s.count === s.sites.length));
+  ok("demyelination surfaces across differently-worded sites (canonicalisation works)",
+     r.shared.some(s => /demyelinat|sclerosis/i.test(s.name) || s.entity === "Multiple sclerosis"));
+  ok("perSite covers every site passed in", r.perSite.length === 2);
+  // A single site can share nothing with itself-as-a-pair.
+  ok("one site yields no shared causes", combinedCauses([optic], {}).shared.length === 0);
+}
+
+// --- combinedCauses: TEMPO/COURSE DEMOTE, THEY NEVER DROP — the ruling must survive the merge ---
+// causesFor() already honours this for a single site (a tempo-mismatched cause moves to `demoted`, it is
+// never deleted). Before this fix, combinedCauses() intersected over `.all` (the concordant list) ONLY,
+// so a cause shared exclusively via demoted sources vanished from the merge the moment an onset was
+// entered — the ruling honoured on the single-site card and silently reversed on the merged one.
+// Reviewer-verified regression case: left_medulla_lateral + left_root_l5 share "Vertebral metastasis or
+// myeloma" with no onset entered, and share NOTHING once onset=acute is entered (pre-fix).
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const medulla = candidateSites().find(s => s.id === "left_medulla_lateral");
+  const l5 = candidateSites().find(s => s.id === "left_root_l5");
+  ok("fixture sites exist", !!medulla && !!l5);
+  const noOnset = combinedCauses([medulla, l5], {});
+  const withOnset = combinedCauses([medulla, l5], { onset: "acute" });
+  ok("the regression case shares at least one cause with no onset entered", noOnset.shared.length >= 1);
+  ok("(a) entering an onset does not reduce the SHARED count below the no-onset case (regression pair)",
+     withOnset.shared.length >= noOnset.shared.length);
+  ok("the previously-lost shared entry survives, now marked demoted",
+     withOnset.shared.some(s => /metastasis|myeloma/i.test(s.name) && s.demoted === true));
+
+  // (b) a shared entry sourced ONLY from tempo-mismatched causes is marked as demoted, and carries a
+  // demotion object naming the axis and the tempi it DOES fit.
+  const demotedEntries = withOnset.shared.filter(s => s.demoted);
+  ok("(b) at least one shared entry is demoted once onset is entered", demotedEntries.length >= 1);
+  ok("(b) every demoted shared entry carries a demotion object naming the tempi it fits",
+     demotedEntries.every(s => s.demotion && s.demotion.axis === "tempo" &&
+       Array.isArray(s.demotion.expected) && s.demotion.expected.length > 0 &&
+       !s.demotion.expected.includes("acute")));
+
+  // (c) a shared entry with a concordant source at at least one site is NOT demoted. The regression pair
+  // above happens to share only ONE cause (entirely demoted at onset=acute), so a second fixture pair —
+  // found to genuinely mix concordant and demoted shared entries at one onset — carries this assertion.
+  const midbrainL = candidateSites().find(s => s.id === "left_midbrain_medial");
+  const midbrainR = candidateSites().find(s => s.id === "right_midbrain_medial");
+  ok("second fixture sites exist", !!midbrainL && !!midbrainR);
+  const mixed = combinedCauses([midbrainL, midbrainR], { onset: "hyperacute" });
+  const concordantEntries = mixed.shared.filter(s => !s.demoted);
+  const demotedMixedEntries = mixed.shared.filter(s => s.demoted);
+  ok("(c) fixture pair genuinely mixes concordant and demoted shared entries at this onset",
+     concordantEntries.length >= 1 && demotedMixedEntries.length >= 1);
+  ok("(c) concordant shared entries carry no demotion object",
+     concordantEntries.every(s => s.demotion === null));
+  ok("(b) (repeat, on the mixed fixture) demoted shared entries carry a demotion object",
+     demotedMixedEntries.every(s => s.demotion && s.demotion.axis === "tempo"));
+
+  // (a) as a PROPERTY, swept over every candidate site pair and every declared tempo — entering an onset
+  // must never reduce the shared count below the no-onset baseline for that pair, anywhere in the roster.
+  const allSites = candidateSites();
+  const onsets = TEMPO.map(t => t.id ?? t);
+  let regressions = 0, checked = 0;
+  for (let i = 0; i < allSites.length; i++) {
+    for (let j = i + 1; j < allSites.length; j += 11) { // stride keeps the sweep fast while covering every site at least once
+      if (j <= i) continue;
+      const base = combinedCauses([allSites[i], allSites[j]], {}).shared.length;
+      for (const onset of onsets) {
+        checked++;
+        const n = combinedCauses([allSites[i], allSites[j]], { onset }).shared.length;
+        if (n < base) regressions++;
+      }
+    }
+  }
+  ok(`(a) property sweep: onset never shrinks the shared count below no-onset (${checked} pair×onset combos checked, ${regressions} regressions)`,
+     regressions === 0);
+}
+
+// --- canonicalKey: an AMBIGUOUS name (matches >=2 roster regexes) must not be forced onto one entity ---
+// Regression for a real false merge found by the reviewer: "Small metastasis or demyelinating plaque"
+// (the neoplastic cause at cortex_hand_knob) used to canonicalise onto "Multiple sclerosis" purely
+// because the MS regex sits earlier than the metastasis regex in MULTIFOCAL — array order silently
+// picked the winner for a name that explicitly hedges between two different diseases.
+{
+  const { canonicalKey, CAUSES } = await import("../src/data/causes.js");
+  const { MULTIFOCAL } = await import("../src/data/multifocal.js");
+
+  const ambiguousName = "Small metastasis or demyelinating plaque";
+  const ck = canonicalKey(ambiguousName);
+  ok("a name matching two roster regexes does not canonicalise onto either entity",
+     ck.entity === null);
+  ok("a name matching two roster regexes falls back to the verbatim-name key",
+     ck.key === `name:${ambiguousName}`);
+  ok("in particular it does not canonicalise onto Multiple sclerosis",
+     ck.entity !== "Multiple sclerosis");
+
+  // General invariant, swept over every distinct cause name in CAUSES: whenever a name matches 2+
+  // roster regexes, canonicalKey must never resolve it to an entity. This is the guard that stops a
+  // future roster regex widening from silently reintroducing the bug.
+  const allNames = new Set();
+  for (const k of Object.keys(CAUSES)) for (const c of CAUSES[k]) allNames.add(c.name);
+  let multiMatchCount = 0, wronglyCanonicalised = [];
+  for (const name of allNames) {
+    const hitCount = MULTIFOCAL.filter(e => e.matches && e.matches.test(name)).length;
+    if (hitCount >= 2) {
+      multiMatchCount++;
+      if (canonicalKey(name).entity !== null) wronglyCanonicalised.push(name);
+    }
+  }
+  ok(`no cause name matching 2+ roster regexes canonicalises onto an entity (${multiMatchCount} such names found)`,
+     wronglyCanonicalised.length === 0);
+}
+
+// --- canonicalKey: osmotic demyelination must NOT canonicalise onto Multiple sclerosis (Fix 1) ---
+// Osmotic demyelination syndrome (central pontine / extrapontine myelinolysis) is a distinct osmotic/
+// metabolic entity, not multiple sclerosis. It matches the MS roster regex (/demyelinat|.../) and ONLY
+// that regex, so the existing "2+ matches -> uncanonicalised" guard does not catch it — it silently
+// canonicalises onto entity "Multiple sclerosis". Reviewer-verified consequence: for left_pons_medial +
+// locked_in, the merged card's most prominent shared row reads "Demyelination (MS) — at 2 of 2 sites"
+// (and inherits the RED flag) when the actual contributing cause at both sites is central pontine
+// myelinolysis, not MS.
+{
+  const { canonicalKey, CAUSES } = await import("../src/data/causes.js");
+
+  const osmoticNames = [
+    "Osmotic demyelination syndrome (central pontine myelinolysis)",
+    "Central pontine myelinolysis (osmotic demyelination)",
+    "Extrapontine osmotic demyelination",
+  ];
+  for (const name of osmoticNames) {
+    const ck = canonicalKey(name);
+    ok(`"${name}" does not canonicalise onto Multiple sclerosis`, ck.entity !== "Multiple sclerosis");
+  }
+
+  // Genuine MS variants must still canonicalise onto the entity — the narrowed regex must not overshoot.
+  const msNames = [
+    "Demyelination",
+    "Demyelination (MS)",
+    "Multiple sclerosis",
+    "Demyelination (multiple sclerosis)",
+    "Multiple sclerosis (callosal plaques)",
+  ];
+  for (const name of msNames) {
+    ok(`"${name}" still canonicalises onto Multiple sclerosis`, canonicalKey(name).entity === "Multiple sclerosis");
+  }
+
+  // Regression via combinedCauses: the shared entry across left_pons_medial + locked_in must not be a
+  // Multiple-sclerosis-entity bucket contaminated by the osmotic-demyelination cause's own RED flag.
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const pons = candidateSites().find(s => s.id === "left_pons_medial");
+  const locked = candidateSites().find(s => s.id === "locked_in");
+  ok("fixture sites exist (left_pons_medial, locked_in)", !!pons && !!locked);
+  const r = combinedCauses([pons, locked], {});
+  const msBucket = r.shared.find(s => s.entity === "Multiple sclerosis");
+  ok("if a Multiple-sclerosis shared bucket exists for this pair, it is not RED-flagged by the osmotic cause",
+     !msBucket || msBucket.red === false);
+}
+
+// --- combinedCauses: `cat` must stay consistent with the displayed `name` (Finding 2) ---
+// When a shorter name wins and replaces the display label, its `cat` (and `feature`) must be carried
+// across from that SAME source cause, not left over from whichever cause created the bucket first.
+// Real instance: at motor_unit_nmj_presynaptic, "Small cell lung carcinoma (paraneoplastic LEMS)"
+// (cat neoplastic) is processed before the shorter "Autoimmune (non-paraneoplastic) LEMS" (cat
+// inflammatory) — both canonicalise to entity "Paraneoplastic syndrome" alongside cerebellum_vermis's
+// "Paraneoplastic cerebellar degeneration". Pre-fix, the bucket ends up displaying the inflammatory
+// cause's name tagged with the neoplastic cause's cat.
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const nmj = candidateSites().find(s => s.id === "motor_unit_nmj_presynaptic");
+  const vermis = candidateSites().find(s => s.id === "cerebellum_vermis");
+  const r = combinedCauses([nmj, vermis], {});
+  const checkConsistency = entry => {
+    const sourceCauses = r.perSite
+      .filter(p => entry.sites.includes(p.site.id))
+      .flatMap(p => p.causes)
+      .filter(c => c.name === entry.name);
+    return sourceCauses.length > 0 && sourceCauses.some(c => c.cat === entry.cat);
+  };
+  ok("every shared entry's cat matches a cause that actually carries that entry's name at one of its sites",
+     r.shared.every(checkConsistency));
+  ok("specifically: the Autoimmune LEMS / paraneoplastic entry keeps a cat consistent with its own name",
+     r.shared.some(e => e.name === "Autoimmune (non-paraneoplastic) LEMS") &&
+     r.shared.filter(e => e.entity === "Paraneoplastic syndrome").every(checkConsistency));
+}
+
+// Same consistency invariant, but swept over EVERY shared entry combinedCauses can produce across all
+// candidate sites — the general guard against Finding 2 recurring anywhere in the roster.
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const all = candidateSites();
+  const r = combinedCauses(all, {});
+  const inconsistent = r.shared.filter(entry => {
+    const sourceCauses = r.perSite
+      .filter(p => entry.sites.includes(p.site.id))
+      .flatMap(p => p.causes)
+      .filter(c => c.name === entry.name);
+    return !(sourceCauses.length > 0 && sourceCauses.some(c => c.cat === entry.cat));
+  });
+  ok(`no shared entry across the full site roster has a cat orphaned from its own name (${r.shared.length} shared entries checked)`,
+     inconsistent.length === 0);
 }
 
 // ---- report ----

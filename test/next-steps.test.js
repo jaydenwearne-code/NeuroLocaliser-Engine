@@ -666,5 +666,24 @@ for (const [lvl, part] of REGION_H_SITES) {
   ok(`INVARIANT: every site with a visual field/optic finding prompts fundal photography + OCT (${missing.length} missing: ${missing.slice(0, 5).join(", ")})`, missing.length === 0);
 }
 
+// --- combinedNextSteps: one plan for a multifocal picture (spec 2026-08-14 §6) ---
+{
+  const { combinedNextSteps } = await import("../src/data/nextSteps.js");
+  const cord = candidateSites().find(s => s.id === "left_cord_hemi");
+  const nerve = candidateSites().find(s => s.level === "nerve");
+  const r = combinedNextSteps([cord, nerve]);
+  const cordN = nextStepsFor(cord), nerveN = nextStepsFor(nerve);
+
+  ok("all four tiers are present", ["immediate","investigations","confirmatory","monitoring"].every(k => Array.isArray(r[k])));
+  ok("tiers are de-duplicated", r.investigations.length === new Set(r.investigations).size);
+  ok("the MOST urgent urgency wins, never an average",
+     r.urgency === (["emergency","urgent","routine"].find(u => u === cordN.urgency || u === nerveN.urgency)));
+  ok("every investigation from each site survives the union",
+     [...cordN.investigations, ...nerveN.investigations].every(i => r.investigations.includes(i)));
+  ok("referrals from both sites are unioned",
+     r.referral.includes(cordN.referral) && r.referral.includes(nerveN.referral));
+  ok("the site list is carried", r.sites.length === 2);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

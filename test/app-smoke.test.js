@@ -2,8 +2,11 @@
 // every finding is reachable (tree ∪ "Other"); structure is well-formed; taxonomy spot-checks hold.
 import { EXAM_TREE, flattenFindings } from "../app/exam-map.js";
 import { FINDINGS } from "../src/model/findings.js";
-import { solve } from "../src/engine/inverse.js";
+import { solve, candidateSites } from "../src/engine/inverse.js";
+import { expectedFindings } from "../src/engine/forward.js";
 import { nameForSite } from "../src/data/syndromes.js";
+
+const siteById = id => candidateSites().find(s => s.id === id);
 
 let pass = 0, fail = 0;
 const log = [];
@@ -72,6 +75,15 @@ ok("Tone is its own top-level leaf", EXAM_TREE.some(n => n.id === "tone") && !!t
   const nf = solve(new Set(["weak_arm@left","weak_leg@left","aphasia@none"])).nearFit;
   ok("r.nearFit is a {site,missing} wrapper (NOT a raw site)", !nf || (!!nf.site && typeof nf.site.id === "string"));
   ok("nameForSite() works on r.nearFit.site", !nf || !!nameForSite(nf.site).name);
+}
+
+// The combined view resolves to the pinned pair when there is one, else the engine's cover. This pins the
+// SHAPES the app consumes: minimalSet() yields RAW site objects, unlike r.nearFit which is a {site,missing}
+// wrapper — two adjacent solve() fields with opposite shapes, which has already caused one crash.
+{
+  const r = solve(new Set([...expectedFindings(siteById("left_medulla_lateral")), ...expectedFindings(siteById("right_root_l5"))]));
+  ok("r.multi.sites are RAW site objects with an id", !!r.multi && r.multi.sites.every(s => s && typeof s.id === "string"));
+  ok("r.multi.sites are NOT {site} wrappers", !!r.multi && r.multi.sites.every(s => s.site === undefined));
 }
 
 console.log("\nNeuroLocaliser — EXAM TREE integrity (Sub-project D)\n" + "=".repeat(52));

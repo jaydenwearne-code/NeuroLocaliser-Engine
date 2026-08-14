@@ -3,7 +3,12 @@
 // CATEGORIES correlate with site attributes and with the TEMPO of onset. This module is the structured,
 // tempo-aware layer over the same knowledge the phonebook (syndromes.js) holds as free-text ddx.
 //
-//   causesFor(site, { onset }) -> { byCategory, all, onset, derived, source }
+//   causesFor(site, { onset }) -> { byCategory, demoted, all, onset, derived, source }
+//
+// A tempo mismatch DEMOTES a cause, it never drops it: `byCategory` holds only causes concordant with
+// the entered onset, `demoted` holds the rest (each carrying `demotion: { axis, entered, expected }`),
+// and `all` stays tempo-concordant so existing callers keep their current meaning — the full unfiltered
+// list is `byCategory` ∪ `demoted` (owner ruling, 2026-08-14).
 //
 // Curated per-site entries (bootstrapped from the phonebook ddx) take precedence; a derived category
 // fallback seeds plausible categories from site attributes so EVERY site returns something.
@@ -12,6 +17,8 @@
 // forgetting a category — it must never manufacture content to fill itself. Where a category has no
 // plausible cause at a site, the honest output is silence, so `byCategory` simply omits it.
 // See docs/superpowers/specs/2026-08-11-differential-depth-design.md.
+
+import { MULTIFOCAL } from "./multifocal.js";
 
 // ---- the surgical sieve ----
 export const CATEGORIES = [
@@ -3093,12 +3100,97 @@ export function causesFor(site, { onset } = {}) {
   // that has no inline flag yet (covers curated, phonebook and derived from one source of truth).
   list = list.map(x => x.pathognomonic ? x : { ...x, pathognomonic: pathognomonicFor(x.name) });
   const derived = source === "derived";
-  const filtered = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice())
-    .sort((a, b) => LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood));
+  // TEMPO DEMOTES, IT DOES NOT DROP (owner ruling, 2026-08-14). A cause whose tempo does not match the
+  // entered onset is still a real cause at this site — hiding it entirely is the same failure the sieve
+  // sweep fixed, in reverse. It moves to `demoted`, carrying WHICH axis missed and what it does fit, so
+  // the app can show it behind a "less likely given the tempo" disclosure.
+  const byLikelihood = (a, b) => LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood);
+  const concordant = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice()).sort(byLikelihood);
+  const demoted = (onset ? list.filter(x => !x.tempo.includes(onset)) : [])
+    .map(x => ({ ...x, demotion: { axis: "tempo", entered: onset, expected: x.tempo } }))
+    .sort(byLikelihood);
   // A sieve category with no plausible cause at this site simply does not appear. The sieve is an
   // authoring checklist, not an output format — it must never manufacture content to fill itself.
   const byCategory = CATEGORIES
-    .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: filtered.filter(x => x.cat === cat.id) }))
+    .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: concordant.filter(x => x.cat === cat.id) }))
     .filter(g => g.causes.length);
-  return { byCategory, all: filtered, onset: onset || null, derived, source };
+  return { byCategory, demoted, all: concordant, onset: onset || null, derived, source };
+}
+
+// ---- CROSS-SITE MERGE (spec 2026-08-14 §6) ----
+// Which causes are plausible at MORE THAN ONE of these sites? Measured before designing: 856 distinct
+// cause names, only 147 repeat verbatim. The family builders (sbSpine/nvSpine/rtSpine) produce identical
+// names by construction and intersect perfectly; HAND-AUTHORED entities fragment badly — MS alone appears
+// as "Demyelination", "Demyelination (MS)", "Multiple sclerosis", "Demyelination (multiple sclerosis)".
+//
+// So: canonicalise through the roster's `matches` regexes FIRST (one table doing double duty — it names
+// the cross-site entity AND supplies the intersection key, so there is no second alias map to drift),
+// then fall back to the verbatim name, which already works for the builder families.
+//
+// An AMBIGUOUS name — one that matches TWO OR MORE roster regexes — must not be forced onto either
+// entity. `MULTIFOCAL.find()` used to just take the first regex hit, so array order silently decided
+// the winner: "Small metastasis or demyelinating plaque" (the neoplastic cause at cortex_hand_knob)
+// canonicalised onto "Multiple sclerosis" purely because the MS regex sits earlier in the roster than
+// the metastasis regex, and would then be reported as shared with any site carrying a real MS-labelled
+// cause. A name that explicitly hedges between two different diseases names two different diseases —
+// collapsing it onto either one misrepresents it. The honest behaviour for a hedged differential is to
+// leave it uncanonicalised (fall back to the verbatim-name key) rather than to guess, exactly as for a
+// name matching zero entities. Roster order must never be load-bearing.
+export function canonicalKey(name) {
+  const hits = MULTIFOCAL.filter(e => e.matches && e.matches.test(name));
+  return hits.length === 1
+    ? { key: `entity:${hits[0].name}`, entity: hits[0].name }
+    : { key: `name:${name}`, entity: null };
+}
+
+// TEMPO/COURSE DEMOTE, THEY NEVER DROP (owner ruling, 2026-08-14) — and that ruling applies here exactly
+// as it applies to the single-site card. `causesFor()` already honours it by moving a tempo-mismatched
+// cause into `demoted` rather than deleting it; this merge must do the same, over the FULL list
+// (`all` concordant PLUS `demoted`), or the ruling is silently reversed the moment two sites are combined
+// (reviewer-verified: 31% of a 190-site-pair sweep lost their only shared cause once an onset was entered,
+// because the old code intersected over `.all` alone and threw every demoted cause away first).
+//
+// A shared entry is demoted iff EVERY site that contributes it does so via a demoted (tempo-mismatched)
+// cause — one concordant source anywhere is enough to keep the merged entry out of the demoted band,
+// exactly as a single site's own concordant/demoted split works.
+export function combinedCauses(sites, { onset } = {}) {
+  const perSite = sites.map(site => {
+    const r = causesFor(site, { onset });
+    return { site, causes: r.all.concat(r.demoted) };
+  });
+  const buckets = new Map();
+  for (const { site, causes } of perSite) {
+    for (const c of causes) {
+      const { key, entity } = canonicalKey(c.name);
+      const b = buckets.get(key) ||
+        { name: c.name, cat: c.cat, red: false, feature: c.feature, entity, sites: [], hasConcordant: false, demotion: null };
+      // Prefer the SHORTEST name as the display label — the canonical form is nearly always the plainest
+      // ("Multiple sclerosis" over "Demyelination (multiple sclerosis)"). `name`, `cat` and `feature` must
+      // always describe the SAME source cause `c` — carry all three across together, or a bucket can end
+      // up displaying one cause's name tagged with a different cause's category.
+      if (c.name.length < b.name.length) { b.name = c.name; b.cat = c.cat; b.feature = c.feature || b.feature; }
+      b.red = b.red || !!c.red;               // the strongest red flag among the sites wins
+      if (!b.sites.includes(site.id)) b.sites.push(site.id);
+      if (c.demotion) {
+        // Only record a demotion while nothing concordant has been seen yet for this entry — once a
+        // concordant source is seen (below) the entry is permanently not-demoted, and must not carry a
+        // stale demotion object from an earlier, since-superseded source.
+        if (!b.hasConcordant && !b.demotion) b.demotion = c.demotion;
+      } else {
+        b.hasConcordant = true;
+        b.demotion = null;
+      }
+      buckets.set(key, b);
+    }
+  }
+  const shared = [...buckets.values()]
+    .filter(b => b.sites.length >= 2)
+    .map(({ hasConcordant, demotion, ...rest }) => ({
+      ...rest,
+      count: rest.sites.length,
+      demoted: !hasConcordant,
+      demotion: hasConcordant ? null : demotion,
+    }))
+    .sort((a, b) => b.count - a.count || Number(b.red) - Number(a.red));
+  return { shared, perSite };
 }
