@@ -40,15 +40,27 @@ const SITES = candidateSites();
 // --- 3: INTRACRANIAL_LEVELS is now DERIVED, and did not change ---
 // This is the regression guard on the refactor: the raised-pressure axis must behave identically.
 {
-  const EXPECTED = ["midbrain", "pons", "medulla", "brainstem", "pontomesencephalic", "dorsal_midbrain",
+  // "brainstem" itself is dropped from this list — no site ever uses that level (see
+  // src/model/compartments.js). brainstem_aras and pupil are ADDED: they were never in the old
+  // hand-written INTRACRANIAL_LEVELS, but they belong there and the derivation now correctly includes them.
+  const EXPECTED = ["midbrain", "pons", "medulla", "pontomesencephalic", "dorsal_midbrain",
     "parinaud", "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular", "cortex",
     "subcortex", "cerebrum", "corpus_callosum", "aphasia_subcortical", "thalamus", "thalamus_arousal",
-    "hypothalamus", "basal_ganglia", "cerebellum", "visual_pathway", "olfactory", "craniocervical_junction"];
+    "hypothalamus", "basal_ganglia", "cerebellum", "visual_pathway", "olfactory", "craniocervical_junction",
+    "brainstem_aras", "pupil"];
   const missing = EXPECTED.filter(l => !INTRACRANIAL_LEVELS.has(l));
-  ok(`derived INTRACRANIAL_LEVELS still contains all 24 original levels (${missing.length} missing)`,
+  ok(`derived INTRACRANIAL_LEVELS still contains all 25 real levels (${missing.length} missing)`,
      missing.length === 0, missing.join(", "));
   ok("cord is NOT intracranial", !INTRACRANIAL_LEVELS.has("cord"));
   ok("nerve is NOT intracranial", !INTRACRANIAL_LEVELS.has("nerve"));
+  // The old hand-written INTRACRANIAL_LEVELS list omitted brainstem_aras, so a papilloedema/raised-ICP
+  // finding wrongly filtered the ARAS/consciousness site out of the candidate list under raised pressure.
+  ok("brainstem_aras IS intracranial (the ARAS/consciousness site under raised pressure)",
+     INTRACRANIAL_LEVELS.has("brainstem_aras"));
+  // pupil IS intracranial: this keeps the CN III compressive sites (the blown pupil of uncal herniation)
+  // as candidates when raised pressure is entered.
+  ok("pupil IS intracranial (keeps CN III compressive/uncal-herniation sites as candidates)",
+     INTRACRANIAL_LEVELS.has("pupil"));
   ok("INTRACRANIAL_COMPARTMENTS is a Set of declared compartments",
      [...INTRACRANIAL_COMPARTMENTS].every(cmp => COMPARTMENTS.includes(cmp)));
 }

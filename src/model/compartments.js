@@ -21,11 +21,10 @@ export const LEVEL_COMPARTMENT = {
   aphasia_subcortical: "brain", thalamus: "brain", thalamus_arousal: "brain",
   hypothalamus: "brain", basal_ganglia: "brain", olfactory: "brain",
   // --- brainstem (incl. the composite/functional brainstem levels) ---
-  // `brainstem` itself is not a level any current site uses — it is kept here only so the derived
-  // INTRACRANIAL_LEVELS set matches the original hand-maintained set exactly (regression parity; see
-  // test/compartments.test.js's EXPECTED list, which still names it). `parinaud` is the same: no site
-  // uses it as a level today, but the original set named it and the regression guard still expects it.
-  brainstem: "brainstem",
+  // NB: there is no "brainstem" level — the old hand-written INTRACRANIAL_LEVELS listed one, but no
+  // site uses it. The real level is brainstem_aras, which that list omitted. `parinaud` is kept even
+  // though no site uses it as a level today, because the original set named it and the regression
+  // guard still expects it.
   midbrain: "brainstem", pons: "brainstem", medulla: "brainstem", brainstem_aras: "brainstem",
   pontomesencephalic: "brainstem", dorsal_midbrain: "brainstem", parinaud: "brainstem",
   locked_in: "brainstem", pseudobulbar: "brainstem", guillain_mollaret: "brainstem",
