@@ -25,29 +25,44 @@ function siteMatches(site, clause) {
   return true;
 }
 
-// Each clause must be satisfied by a DISTINCT site. Greedy assignment is sufficient here: clause counts
-// are 2-3 and clauses are near-disjoint, so there is no meaningful backtracking to do.
-function assignClauses(sites, clauses) {
-  const used = new Set();
-  const why = [];
-  for (const clause of clauses) {
-    const hit = sites.find(s => !used.has(s.id) && siteMatches(s, clause));
-    if (!hit) return null;
-    used.add(hit.id);
-    why.push({ clause, satisfiedBy: hit });
+// Each clause must be satisfied by a DISTINCT site. This is bipartite matching (clauses <-> sites), so a
+// greedy "first match wins" walk is order-dependent: a permissive clause evaluated before a specific one
+// can consume the only site the specific clause needed, wrongly rejecting an entity that DOES have a
+// valid assignment. Exhaustive backtracking removes that dependency — clause order cannot affect whether
+// an assignment is found, only the search path taken to find one. Clause counts are 2-3 against a handful
+// of sites, so exhaustive search is trivially cheap; there is no case here worth optimising.
+export function assignClauses(sites, clauses) {
+  const used = new Array(sites.length).fill(false);
+  const why = new Array(clauses.length).fill(null);
+
+  function assign(clauseIndex) {
+    if (clauseIndex === clauses.length) return true;
+    const clause = clauses[clauseIndex];
+    for (let i = 0; i < sites.length; i++) {
+      if (used[i] || !siteMatches(sites[i], clause)) continue;
+      used[i] = true;
+      why[clauseIndex] = { clause, satisfiedBy: sites[i] };
+      if (assign(clauseIndex + 1)) return true;
+      used[i] = false;
+      why[clauseIndex] = null;
+    }
+    return false;
   }
-  return why;
+
+  return assign(0) ? why : null;
 }
 
+// `spread` is satisfied by the SET of sites, not by any one of them — there is no single site to name,
+// so `satisfiedBy` is null. The clause object still carries the descriptive count/compartment text.
 function spreadSatisfied(sites, spread) {
   const minSites = spread.minSites || 2;
   if (sites.length < minSites) return null;
   if (spread.distinctCompartments) {
     const cmps = new Set(sites.map(compartmentOf).filter(Boolean));
     if (cmps.size < spread.distinctCompartments) return null;
-    return [{ clause: { spread: `${cmps.size} compartments` }, satisfiedBy: sites[0] }];
+    return [{ clause: { spread: `${cmps.size} compartments` }, satisfiedBy: null }];
   }
-  return [{ clause: { spread: `${sites.length} sites` }, satisfiedBy: sites[0] }];
+  return [{ clause: { spread: `${sites.length} sites` }, satisfiedBy: null }];
 }
 
 export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
@@ -74,7 +89,8 @@ export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
     }
     // --- hard: motor pattern, delegated to the existing synthesis so the two can never disagree ---
     if (entity.motor && motor.verdict !== entity.motor) continue;
-    if (entity.motor) why.push({ clause: { motor: entity.motor }, satisfiedBy: sites[0] });
+    // `motor` is determined by umnLmnPattern() over ALL observed findings, not by any one site.
+    if (entity.motor) why.push({ clause: { motor: entity.motor }, satisfiedBy: null });
 
     // --- hard: forbidden finding CLASSES ---
     if (entity.forbids && entity.forbids.some(cls => (FINDING_CLASSES[cls] || []).some(f => observedIds.has(f)))) continue;

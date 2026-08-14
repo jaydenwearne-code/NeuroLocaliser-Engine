@@ -10,9 +10,10 @@
 import { MULTIFOCAL, FINDING_CLASSES } from "../src/data/multifocal.js";
 import { CATEGORIES, CAUSES, TEMPO, LIKELIHOOD } from "../src/data/causes.js";
 import { COURSE_IDS } from "../src/model/course.js";
-import { unifyingDiagnoses } from "../src/engine/multifocal.js";
+import { unifyingDiagnoses, assignClauses } from "../src/engine/multifocal.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
+import { compartmentOf } from "../src/model/compartments.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -109,8 +110,12 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   ok("MS emerges on optic + cord (two compartments)",
      r.concordant.some(e => /multiple sclerosis/i.test(e.name)));
   const ms = r.concordant.find(e => /multiple sclerosis/i.test(e.name));
-  ok("MS carries its derivation (`why` names the satisfying sites)",
-     ms && Array.isArray(ms.why) && ms.why.length > 0 && ms.why.every(w => w.satisfiedBy));
+  // MS's only clause is `spread` (satisfied by the SET, not any one site) — `satisfiedBy` is null by
+  // design (FINDING 2); the derivation is carried in the clause's descriptive text instead.
+  ok("MS carries its derivation (`why` names the satisfying spread)",
+     ms && Array.isArray(ms.why) && ms.why.length > 0 &&
+     ms.why.every(w => w.satisfiedBy === null) &&
+     ms.why.some(w => w.clause && typeof w.clause.spread === "string"));
 }
 
 // --- 6: SOFT AXES DEMOTE, THEY DO NOT DROP (the owner's ruling — the assertion that guards it) ---
@@ -136,6 +141,42 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   const toks = tokensFor("left_cortex_motor_facearm");
   const r = unifyingDiagnoses(one, toks, {});
   ok("a single site yields NO cross-site entities", r.concordant.length === 0 && r.discordant.length === 0);
+}
+
+// --- 8: ORDER-INDEPENDENCE — the regression guard for the FINDING 1 fix ---
+// `assignClauses` must find a valid distinct-site assignment regardless of the order the entity lists
+// its clauses in. Build a site set where ONE site satisfies a specific clause (skull_base) and the other
+// only the wildcard `{}` — with the specific-satisfying site listed FIRST in the sites array, a greedy
+// "first match wins" walker consumes it on the wildcard clause when the wildcard is evaluated first,
+// leaving nothing for the specific clause that needed it.
+{
+  const skullSite = candidateSites().find(s => compartmentOf(s) === "skull_base");
+  const otherSite = candidateSites().find(s => compartmentOf(s) && compartmentOf(s) !== "skull_base");
+  const sites = [skullSite, otherSite];
+  const specificFirst = assignClauses(sites, [{ compartment: "skull_base" }, {}]);
+  const wildcardFirst = assignClauses(sites, [{}, { compartment: "skull_base" }]);
+  ok("assignClauses finds an assignment with the specific clause first",
+     !!specificFirst);
+  ok("assignClauses finds an assignment with the wildcard clause first (order-independence)",
+     !!wildcardFirst);
+}
+
+// --- 9: NMOSD emerges on optic + cord ---
+{
+  const sites = [siteById("left_visual_pathway_optic_tract"), siteById("left_cord_hemi")].filter(Boolean);
+  const toks = tokensFor(...sites.map(s => s.id));
+  const r = unifyingDiagnoses(sites, toks, { course: "relapsing", onset: "acute" });
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("NMOSD emerges on optic + cord", names.some(n => /NMOSD|neuromyelitis/i.test(n)));
+}
+
+// --- 10: Mononeuritis multiplex emerges on two named-nerve sites ---
+{
+  const sites = [siteById("left_nerve_radial_axilla"), siteById("left_nerve_median_proximal")].filter(Boolean);
+  const toks = tokensFor(...sites.map(s => s.id));
+  const r = unifyingDiagnoses(sites, toks, { course: "stepwise", onset: "acute" });
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("Mononeuritis multiplex emerges on two named-nerve sites", names.some(n => /mononeuritis multiplex/i.test(n)));
 }
 
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
