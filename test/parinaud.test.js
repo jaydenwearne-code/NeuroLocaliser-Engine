@@ -23,7 +23,8 @@ for (const id of ["vertical_gaze_palsy", "nystagmus_convergence_retraction", "li
 }
 ok("vertical_gaze_palsy is LOCALISING", LOCALISING.has("vertical_gaze_palsy"));
 ok("nystagmus_convergence_retraction is LOCALISING", LOCALISING.has("nystagmus_convergence_retraction"));
-ok("lid_retraction is NOT LOCALISING (companion sign)", !LOCALISING.has("lid_retraction"));
+ok("lid_retraction IS LOCALISING (2026-08-14 audit — Collier's sign, confined to the tectum like its vertical_gaze_palsy/nystagmus_convergence_retraction co-producers)",
+   LOCALISING.has("lid_retraction"));
 
 // --- Task 2: tectal structures, sites, forward ---
 const DM = Object.fromEntries(composeDorsalMidbrainSites().map(s => [s.id, s]));

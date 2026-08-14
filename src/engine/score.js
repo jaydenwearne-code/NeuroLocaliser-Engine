@@ -81,13 +81,45 @@ const LOCALISING = new Set([
   // (weak_forearm_pronation / weak_thumb_adduction) stay NON-localising, like every other movement.
   "deep_peroneal_sensory","ulnar_dorsal_sensory","median_palmar_sensory","ulnar_claw",
   // non-muscle reflexes: sacral arc + frontal grasp localise. Babinski/Hoffmann are NON-localising (they
-  // run the length of the corticospinal tract, like hemiparesis); palmomental is non-specific.
+  // run the length of the corticospinal tract, like hemiparesis). Palmomental was promoted below
+  // (2026-08-14 audit) — it is a frontal release sign, not non-specific.
   "anal_wink_loss","bulbocavernosus_loss","grasp_reflex",
   // consciousness / arousal — the ARAS/coma localisers + the locked-in hallmark + decerebrate posturing
   "reduced_consciousness","preserved_vertical_gaze","extensor_posturing",
   // trigeminal complex (pontine main sensory + motor V)
-  "face_touch_loss","jaw_weakness"
+  "face_touch_loss","jaw_weakness",
+
+  // --- 2026-08-14 LOCALISING audit (spec §9) ---
+  // Findings confined to a single level that were never added to this set. The fundoscopy pair arrived
+  // with the 2026-08-11 increment and was missed; the rest predate it. Promoting a finding raises its
+  // match weight 1 -> 3 and lets it force a second lesion, so each of these is a clinical judgement that
+  // the sign genuinely pins a place.
+  "retinal_pallor",            // CRAO retinal whitening — pins the retina
+  "optic_atrophy",             // disc pallor — pins the optic nerve / anterior visual pathway
+  "fasciculations",            // anterior horn
+  "cortical_sensory_arm", "cortical_sensory_leg", "cortical_sensory_hand", // cortical sensory loss pins parietal cortex
+  "weak_hand",                 // cortical hand-knob (pseudo-peripheral cortical hand)
+  "weak_scapular_stabilisation", // long thoracic / scapular winging
+  "lid_retraction",            // Collier's sign — dorsal midbrain
+  "verbal_memory_impairment", "nonverbal_memory_impairment", // dominant vs non-dominant temporal/thalamic
+  "rigidity",                  // basal ganglia
+  "disinhibition",             // orbitofrontal
+  "executive_dysfunction",     // dorsolateral prefrontal
+  "palmomental",               // frontal release
 ]);
+
+// Findings that are confined to a single level in the MODEL but are deliberately NOT localising, each with
+// the reason. This replaces prose comments that a future edit can miss: test/localising-audit.test.js
+// asserts that every single-level finding is either in LOCALISING or here, so nothing can fall through
+// silently the way the fundoscopy findings did.
+export const NOT_LOCALISING_BY_DESIGN = {
+  lmn_weakness: "A GENERAL lower-motor-neurone sign — anterior horn, root, plexus and nerve all cause flaccid areflexic weakness, so it marks LMN-ness, not level. Demoted in the PNS increment.",
+  naming_impaired: "Present in EVERY aphasia, so it identifies aphasia rather than which language area is hit. The localisers are speech_nonfluent / comprehension_impaired / repetition_impaired.",
+  proximal_weakness: "A PATTERN, not a level — myopathy, NMJ disease and some neuropathies all produce it. Same reasoning as lmn_weakness.",
+  distal_motor_weakness: "A length-dependent PATTERN shared by every distal neuropathy; the level comes from the accompanying sensory findings, not from this sign.",
+  hallucinations: "Far commoner in delirium, drug effect and psychiatric illness than in focal lesions — a poor localiser at the bedside despite being modelled at one level.",
+  mood_change: "Non-specific; produced by diffuse, systemic and psychiatric processes as readily as by a focal lesion.",
+};
 
 function findingIdOf(signed) { return signed.split("@")[0]; }
 

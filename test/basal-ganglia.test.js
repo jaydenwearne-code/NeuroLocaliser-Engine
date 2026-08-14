@@ -3,7 +3,9 @@
 // Adds NO new forward-model mechanism: movement findings are contralateral (above all decussations),
 // the bilateral degenerative picture reuses the motor-unit bilateral-site pattern, and the
 // hemi-vs-disease naming reuses the nameForSite variant mechanism. `rigidity` completes the tone axis
-// (spasticity=UMN / hypotonia=LMN / rigidity=extrapyramidal).
+// (spasticity=UMN / hypotonia=LMN / rigidity=extrapyramidal) but, unlike its multi-level tone-axis
+// companions, is confined to substantia_nigra — so the 2026-08-14 LOCALISING audit promoted it,
+// consistent with its co-producers bradykinesia/rest_tremor.
 // Run: node test/basal-ganglia.test.js
 import { FINDINGS, CROSSES, NON_LATERALISED, isFinding } from "../src/model/findings.js";
 import { LOCALISING } from "../src/engine/score.js";
@@ -31,8 +33,8 @@ for (const id of ["bradykinesia", "rest_tremor", "chorea", "dystonia", "rigidity
 ok("bradykinesia + rest_tremor are LOCALISING", LOCALISING.has("bradykinesia") && LOCALISING.has("rest_tremor"));
 ok("chorea is LOCALISING", LOCALISING.has("chorea"));
 ok("dystonia is LOCALISING", LOCALISING.has("dystonia"));
-ok("rigidity is NOT localising (tone-axis companion, like spasticity/hypotonia)",
-   !LOCALISING.has("rigidity"));
+ok("rigidity IS localising (2026-08-14 audit — confined to substantia_nigra, like its bradykinesia/rest_tremor co-producers; unlike spasticity/hypotonia it is not a multi-level tone-axis companion)",
+   LOCALISING.has("rigidity"));
 ok("tone axis is complete: spasticity + hypotonia + rigidity all exist",
    isFinding("spasticity") && isFinding("hypotonia") && isFinding("rigidity"));
 
