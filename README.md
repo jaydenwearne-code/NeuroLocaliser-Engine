@@ -90,6 +90,7 @@ node test/tier2-deferred.test.js # Tier 2 — brachial plexus cords, optic field
 node test/causes.test.js         # aetiology layer — tempo-aware surgical-sieve causesFor(site, {onset})
 node test/causes-depth.test.js   # differential-depth invariants — no generic filler; >=6 causes, each with a feature
 node test/fundus.test.js         # fundoscopy + acuity findings; papilloedema as a compartment axis
+node test/compartments.test.js  # level -> compartment axis; INTRACRANIAL_LEVELS derives from it
 node test/app-smoke.test.js      # exam-map integrity (every finding real; lobe/brainstem/fatiguability taxonomy)
 node test/raw-observations.test.js # raw-observations refactor acceptance (clusters emerge from raw primitives)
 node test/patterns.test.js       # cross-cutting synthesis — UMN vs LMN (mixed → MND) + functional (FND) flag
