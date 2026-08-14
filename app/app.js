@@ -3,9 +3,9 @@ import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
-import { causesFor, CATEGORIES, TEMPO } from "../src/data/causes.js";
+import { causesFor, combinedCauses, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
-import { nextStepsFor } from "../src/data/nextSteps.js";
+import { nextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
 import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
@@ -43,7 +43,7 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(),
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
@@ -192,8 +192,8 @@ function renderResults() {
     + whereCard(list, cands, total, r)
     + togetherCard(r, list)
     + whyCard(tf, sel, total)
-    + whatCard(sel.site)
-    + nextCard(sel.site);
+    + whatCard(sel.site, r, list)
+    + nextCard(sel.site, r, list);
   const nx = el.querySelector(".neuraxis");
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
@@ -211,6 +211,10 @@ function renderResults() {
     S.selected = row.dataset.k;
     renderResults();
   };
+  const el2 = document.getElementById("results");
+  el2.querySelectorAll("[data-scope]").forEach(b => {
+    b.onclick = () => { S.scope = b.dataset.scope; renderResults(); };
+  });
 }
 
 function siteName(site){ const e = nameForSite(site); return e.name; }
@@ -404,10 +408,26 @@ function whyCard(tf, sel, total) {
   return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`);
 }
 
+// Merged causes/workup render through the cards that already OWN that presentation, rather than a third
+// rendering of the category dots that could drift out of sync.
+function scopeToggle(n) {
+  return `<div class="scope"><button class="sc${S.scope==="site"?" on":""}" data-scope="site">This site</button><button class="sc${S.scope==="all"?" on":""}" data-scope="all">All ${n} sites</button></div>`;
+}
+
 // ③ What — the curated differential for this site. Categories with no plausible cause are omitted,
-// never padded with region generics (see the depth spec, 2026-08-11).
-function whatCard(site) {
-  return card("What", whatBlock(site));
+// never padded with region generics (see the depth spec, 2026-08-11). Branches to the cross-site shared-
+// causes view when the scope toggle is set to "all" and the combined view actually has ≥2 sites.
+function whatCard(site, r, list) {
+  const { sites } = combinedSites(r, list);
+  const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
+  if (sites.length >= 2 && S.scope === "all") {
+    const cc = combinedCauses(sites, { onset: S.onset || undefined });
+    const shared = cc.shared.length
+      ? cc.shared.map(s => `<div class="cause${s.red?" red":""}"><b>${esc(s.name)}</b>${s.red?` <span class="rf">RED</span>`:""} <span class="dloc">at ${s.count} of ${sites.length} sites</span>${s.feature?` — ${esc(s.feature)}`:""}</div>`).join("")
+      : `<div class="empty">No cause is plausible at more than one of these sites — which argues for two unrelated processes.</div>`;
+    return card(`What <span class="oc-n">(all sites)</span>`, toggle + shared);
+  }
+  return card("What", toggle + whatBlock(site));
 }
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
@@ -444,12 +464,19 @@ function whatBlock(site) {
 }
 
 // ④ Next steps — its own card, tiered (immediate → first-line → confirmatory → monitoring) + urgency/referral.
-function nextCard(site) {
-  return card("Next steps", nextBlock(site));
+// Branches only on which workup OBJECT is fed to the one shared renderer (nextBlock) — combinedNextSteps()
+// returns the same field names/types as nextStepsFor() (minus `curated`) precisely so this works without a
+// second four-tier renderer.
+function nextCard(site, r, list) {
+  const { sites } = combinedSites(r, list);
+  const combined = sites.length >= 2 && S.scope === "all";
+  const nx = combined ? combinedNextSteps(sites) : nextStepsFor(site);
+  const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
+  const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
+  return card(cap, toggle + nextBlock(nx));
 }
 
-function nextBlock(site) {
-  const nx = nextStepsFor(site);
+function nextBlock(nx) {
   const urgTint = nx.urgency === "emergency" ? "--red" : nx.urgency === "urgent" ? "--gold" : "--faint";
   const urgLabel = nx.urgency === "emergency" ? "EMERGENCY" : nx.urgency === "urgent" ? "URGENT" : "routine";
   const tier = (title, items) => (items && items.length)
