@@ -32,5 +32,15 @@ ok("drops an unknown selected site", badSite.selected === undefined);
 ok("rejects an unknown mode", decodeCase("#m=wat", {}).mode === undefined);
 ok("accepts the stroke mode", decodeCase("#m=stroke", {}).mode === "stroke");
 
+// --- course axis in the shareable case (spec 2026-08-14 §8) ---
+{
+  const enc = encodeCase({ tokens: new Set(["weak_arm@left"]), course: "stepwise" });
+  ok("course is serialised as c=", enc.includes("c=stepwise"));
+  ok("course round-trips", decodeCase("#" + enc).course === "stepwise");
+  ok("an invalid hand-edited course is DROPPED, never thrown on",
+     decodeCase("#c=notacourse").course === undefined);
+  ok("no course means no key", !encodeCase({ tokens: new Set(["weak_arm@left"]) }).includes("c="));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -7,6 +7,7 @@ import { causesFor, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
 import { nextStepsFor } from "../src/data/nextSteps.js";
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
+import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
 import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
@@ -40,7 +41,7 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", sensoryLevel:"", distalReach:"", atlas:null,
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null,
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
@@ -52,6 +53,7 @@ function restoreFromURL() {
   const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES });
   if (st.tokens) S.tokens = st.tokens;
   if (st.onset) S.onset = st.onset;
+  if (st.course) S.course = st.course;
   if (st.mode) S.mode = st.mode;
   if (st.selected) S.selected = st.selected;
   if (st.dominant) S.dominant = st.dominant;
@@ -70,6 +72,7 @@ function renderLocalise() {
   <div class="ctrls">
     <label>Dominant hemisphere <select id="dom"><option value="left">left</option><option value="right">right</option></select></label>
     <label>Onset (for causes) <select id="onset"><option value="">all</option>${TEMPO.map(t=>`<option value="${t.id}">${esc(t.label)}</option>`).join("")}</select></label>
+    <label>Course (for causes) <select id="course"><option value="">all</option>${COURSES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join("")}</select></label>
     <label>Sensory level <input type="text" id="slevel" placeholder="e.g. T10" size="6"></label>
     <label>Distal reach <input type="text" id="reach" placeholder="e.g. knees" size="7"></label>
   </div>
@@ -84,6 +87,7 @@ function renderLocalise() {
   </div>`;
   document.getElementById("dom").value = S.dominant;
   document.getElementById("onset").value = S.onset;
+  document.getElementById("course").value = S.course;
   wireLocalise();
   renderChips(); renderResults();
 }
@@ -118,6 +122,7 @@ function frow(f) {
 function wireLocalise() {
   document.getElementById("dom").onchange = e => { S.dominant = e.target.value; renderResults(); markSides(); };
   document.getElementById("onset").onchange = e => { S.onset = e.target.value; renderResults(); };
+  document.getElementById("course").onchange = e => { S.course = e.target.value; renderResults(); };
   document.getElementById("slevel").oninput = e => { S.sensoryLevel = e.target.value.trim(); renderResults(); };
   document.getElementById("reach").oninput = e => { S.distalReach = e.target.value.trim(); renderResults(); };
   document.getElementById("search").oninput = e => filterFindings(e.target.value.toLowerCase());
