@@ -53,6 +53,11 @@ const SITES = candidateSites();
      missing.length === 0, missing.join(", "));
   ok("cord is NOT intracranial", !INTRACRANIAL_LEVELS.has("cord"));
   ok("nerve is NOT intracranial", !INTRACRANIAL_LEVELS.has("nerve"));
+  // Both directions matter: subset check catches dropped levels, exact-set check catches silently added ones.
+  // This set decides which sites survive papilloedema/raised-ICP filtering, so mutations go undetected at peril.
+  const extra = [...INTRACRANIAL_LEVELS].filter(l => !EXPECTED.includes(l));
+  ok(`derived INTRACRANIAL_LEVELS contains NOTHING beyond the expected ${EXPECTED.length} (${extra.length} extra)`,
+     extra.length === 0 && INTRACRANIAL_LEVELS.size === EXPECTED.length, extra.join(", "));
   // The old hand-written INTRACRANIAL_LEVELS list omitted brainstem_aras, so a papilloedema/raised-ICP
   // finding wrongly filtered the ARAS/consciousness site out of the candidate list under raised pressure.
   ok("brainstem_aras IS intracranial (the ARAS/consciousness site under raised pressure)",
