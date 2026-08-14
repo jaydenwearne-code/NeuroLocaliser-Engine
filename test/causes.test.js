@@ -908,6 +908,85 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
   ok("one site yields no shared causes", combinedCauses([optic], {}).shared.length === 0);
 }
 
+// --- canonicalKey: an AMBIGUOUS name (matches >=2 roster regexes) must not be forced onto one entity ---
+// Regression for a real false merge found by the reviewer: "Small metastasis or demyelinating plaque"
+// (the neoplastic cause at cortex_hand_knob) used to canonicalise onto "Multiple sclerosis" purely
+// because the MS regex sits earlier than the metastasis regex in MULTIFOCAL — array order silently
+// picked the winner for a name that explicitly hedges between two different diseases.
+{
+  const { canonicalKey, CAUSES } = await import("../src/data/causes.js");
+  const { MULTIFOCAL } = await import("../src/data/multifocal.js");
+
+  const ambiguousName = "Small metastasis or demyelinating plaque";
+  const ck = canonicalKey(ambiguousName);
+  ok("a name matching two roster regexes does not canonicalise onto either entity",
+     ck.entity === null);
+  ok("a name matching two roster regexes falls back to the verbatim-name key",
+     ck.key === `name:${ambiguousName}`);
+  ok("in particular it does not canonicalise onto Multiple sclerosis",
+     ck.entity !== "Multiple sclerosis");
+
+  // General invariant, swept over every distinct cause name in CAUSES: whenever a name matches 2+
+  // roster regexes, canonicalKey must never resolve it to an entity. This is the guard that stops a
+  // future roster regex widening from silently reintroducing the bug.
+  const allNames = new Set();
+  for (const k of Object.keys(CAUSES)) for (const c of CAUSES[k]) allNames.add(c.name);
+  let multiMatchCount = 0, wronglyCanonicalised = [];
+  for (const name of allNames) {
+    const hitCount = MULTIFOCAL.filter(e => e.matches && e.matches.test(name)).length;
+    if (hitCount >= 2) {
+      multiMatchCount++;
+      if (canonicalKey(name).entity !== null) wronglyCanonicalised.push(name);
+    }
+  }
+  ok(`no cause name matching 2+ roster regexes canonicalises onto an entity (${multiMatchCount} such names found)`,
+     wronglyCanonicalised.length === 0);
+}
+
+// --- combinedCauses: `cat` must stay consistent with the displayed `name` (Finding 2) ---
+// When a shorter name wins and replaces the display label, its `cat` (and `feature`) must be carried
+// across from that SAME source cause, not left over from whichever cause created the bucket first.
+// Real instance: at motor_unit_nmj_presynaptic, "Small cell lung carcinoma (paraneoplastic LEMS)"
+// (cat neoplastic) is processed before the shorter "Autoimmune (non-paraneoplastic) LEMS" (cat
+// inflammatory) — both canonicalise to entity "Paraneoplastic syndrome" alongside cerebellum_vermis's
+// "Paraneoplastic cerebellar degeneration". Pre-fix, the bucket ends up displaying the inflammatory
+// cause's name tagged with the neoplastic cause's cat.
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const nmj = candidateSites().find(s => s.id === "motor_unit_nmj_presynaptic");
+  const vermis = candidateSites().find(s => s.id === "cerebellum_vermis");
+  const r = combinedCauses([nmj, vermis], {});
+  const checkConsistency = entry => {
+    const sourceCauses = r.perSite
+      .filter(p => entry.sites.includes(p.site.id))
+      .flatMap(p => p.causes)
+      .filter(c => c.name === entry.name);
+    return sourceCauses.length > 0 && sourceCauses.some(c => c.cat === entry.cat);
+  };
+  ok("every shared entry's cat matches a cause that actually carries that entry's name at one of its sites",
+     r.shared.every(checkConsistency));
+  ok("specifically: the Autoimmune LEMS / paraneoplastic entry keeps a cat consistent with its own name",
+     r.shared.some(e => e.name === "Autoimmune (non-paraneoplastic) LEMS") &&
+     r.shared.filter(e => e.entity === "Paraneoplastic syndrome").every(checkConsistency));
+}
+
+// Same consistency invariant, but swept over EVERY shared entry combinedCauses can produce across all
+// candidate sites — the general guard against Finding 2 recurring anywhere in the roster.
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const all = candidateSites();
+  const r = combinedCauses(all, {});
+  const inconsistent = r.shared.filter(entry => {
+    const sourceCauses = r.perSite
+      .filter(p => entry.sites.includes(p.site.id))
+      .flatMap(p => p.causes)
+      .filter(c => c.name === entry.name);
+    return !(sourceCauses.length > 0 && sourceCauses.some(c => c.cat === entry.cat));
+  });
+  ok(`no shared entry across the full site roster has a cat orphaned from its own name (${r.shared.length} shared entries checked)`,
+     inconsistent.length === 0);
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);

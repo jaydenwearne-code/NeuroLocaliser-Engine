@@ -3126,9 +3126,21 @@ export function causesFor(site, { onset } = {}) {
 // So: canonicalise through the roster's `matches` regexes FIRST (one table doing double duty — it names
 // the cross-site entity AND supplies the intersection key, so there is no second alias map to drift),
 // then fall back to the verbatim name, which already works for the builder families.
-function canonicalKey(name) {
-  const hit = MULTIFOCAL.find(e => e.matches && e.matches.test(name));
-  return hit ? { key: `entity:${hit.name}`, entity: hit.name } : { key: `name:${name}`, entity: null };
+//
+// An AMBIGUOUS name — one that matches TWO OR MORE roster regexes — must not be forced onto either
+// entity. `MULTIFOCAL.find()` used to just take the first regex hit, so array order silently decided
+// the winner: "Small metastasis or demyelinating plaque" (the neoplastic cause at cortex_hand_knob)
+// canonicalised onto "Multiple sclerosis" purely because the MS regex sits earlier in the roster than
+// the metastasis regex, and would then be reported as shared with any site carrying a real MS-labelled
+// cause. A name that explicitly hedges between two different diseases names two different diseases —
+// collapsing it onto either one misrepresents it. The honest behaviour for a hedged differential is to
+// leave it uncanonicalised (fall back to the verbatim-name key) rather than to guess, exactly as for a
+// name matching zero entities. Roster order must never be load-bearing.
+export function canonicalKey(name) {
+  const hits = MULTIFOCAL.filter(e => e.matches && e.matches.test(name));
+  return hits.length === 1
+    ? { key: `entity:${hits[0].name}`, entity: hits[0].name }
+    : { key: `name:${name}`, entity: null };
 }
 
 export function combinedCauses(sites, { onset } = {}) {
@@ -3139,8 +3151,10 @@ export function combinedCauses(sites, { onset } = {}) {
       const { key, entity } = canonicalKey(c.name);
       const b = buckets.get(key) || { name: c.name, cat: c.cat, red: false, feature: c.feature, entity, sites: [] };
       // Prefer the SHORTEST name as the display label — the canonical form is nearly always the plainest
-      // ("Multiple sclerosis" over "Demyelination (multiple sclerosis)").
-      if (c.name.length < b.name.length) { b.name = c.name; b.feature = c.feature || b.feature; }
+      // ("Multiple sclerosis" over "Demyelination (multiple sclerosis)"). `name`, `cat` and `feature` must
+      // always describe the SAME source cause `c` — carry all three across together, or a bucket can end
+      // up displaying one cause's name tagged with a different cause's category.
+      if (c.name.length < b.name.length) { b.name = c.name; b.cat = c.cat; b.feature = c.feature || b.feature; }
       b.red = b.red || !!c.red;               // the strongest red flag among the sites wins
       if (!b.sites.includes(site.id)) b.sites.push(site.id);
       buckets.set(key, b);
