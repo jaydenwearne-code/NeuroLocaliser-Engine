@@ -449,11 +449,18 @@ function sharedCauseRow(s, nSites, dem) {
 // hidden"). combinedCauses() doesn't pre-strip these (`perSite` carries every cause per site, shared or
 // not), so the shared/non-shared split is redone here with the SAME canonicalKey() the engine used to
 // build the shared bucket in the first place, rather than a second alias table that could drift from it.
-// Visually secondary to `shared`: grouped by site, collapsed by default.
+//
+// A row is suppressed only when its OWN verbatim name is the one actually shown in the shared list — not
+// merely when it canonicalises onto the same shared entity. The shared bucket displays ONE label (the
+// shortest name) per entity, so a same-entity cause worded differently (e.g. "Central pontine
+// myelinolysis" when the shared row shows "Demyelination (MS)") must stay in the remainder under its own
+// name, or the true name is hidden along with the duplicate — measured over 4,032 pair-views: 23.7% hid at
+// least one distinctly-named cause this way. Visually secondary to `shared`: grouped by site, collapsed by
+// default.
 function perSiteRemainderHTML(cc, sites) {
-  const sharedKeys = new Set(cc.shared.map(s => s.entity ? `entity:${s.entity}` : `name:${s.name}`));
+  const shownNameFor = new Map(cc.shared.map(s => [s.entity ? `entity:${s.entity}` : `name:${s.name}`, s.name]));
   const bySite = cc.perSite
-    .map(({ site, causes }) => ({ site, remainder: causes.filter(c => !sharedKeys.has(canonicalKey(c.name).key)) }))
+    .map(({ site, causes }) => ({ site, remainder: causes.filter(c => shownNameFor.get(canonicalKey(c.name).key) !== c.name) }))
     .filter(x => x.remainder.length);
   if (!bySite.length) return "";
   const n = bySite.reduce((sum, x) => sum + x.remainder.length, 0);
