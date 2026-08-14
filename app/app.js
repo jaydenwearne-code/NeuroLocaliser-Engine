@@ -317,6 +317,25 @@ function unifyingRow(e, sites) {
   return `<div class="cause"><div class="cline"><span class="cn">${esc(e.name)}</span><span class="lk">${esc(e.likelihood)}</span>${e.red ? `<span class="rf">RED</span>` : ""}</div>${e.feature ? `<div class="cfeat">${esc(e.feature)}</div>` : ""}${whyLine ? `<div class="dloc">${whyLine}</div>` : ""}${red}${path}</div>`;
 }
 
+// forcingFindings() runs one solve() per LOCALISING finding — ~190 ms on a two-lesion case, and it grew
+// when the 2026-08-14 LOCALISING audit promoted 12 more findings. renderResults() re-runs on EVERY input
+// event, including each keystroke in the sensory-level and distal-reach fields — and those fields do not
+// change the finding set, so the guard was recomputing an identical answer per keystroke.
+//
+// The memo is keyed on the finding set plus the dominant hemisphere ONLY. `sensoryLevel` and `distalReach`
+// are deliberately excluded: they are ANNOTATION axes (see CLAUDE.md — the sensory level annotates the
+// winner, it never changes it), and this was verified rather than assumed — 7 sensoryLevel variants and a
+// distalReach variant all produce a byte-identical forcingFindings result.
+//
+// Kept in the app layer on purpose: the engine function stays simple and cache-free; the repeated
+// identical calls are an app-render concern, so the fix belongs where the repetition is.
+let _ffKey = null, _ffVal = null;
+function forcingFindingsMemo() {
+  const key = [...S.tokens].sort().join("|") + "#" + S.dominant;
+  if (key !== _ffKey) { _ffKey = key; _ffVal = forcingFindings(S.tokens, { dominantSide: S.dominant }); }
+  return _ffVal;
+}
+
 // ② Together — the cross-site view. PARSIMONY FIRST: the card's first job is to try to talk you out of a
 // multifocal claim, because a localising sign entered on the wrong side is the one real path to
 // over-calling. The disease list comes second, framed conditionally. Order matters and must not change:
@@ -325,7 +344,7 @@ function togetherCard(r, list) {
   const { sites, source } = combinedSites(r, list, S.pinned);
   if (sites.length < 2) return "";
 
-  const ff = forcingFindings(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
+  const ff = forcingFindingsMemo();
   // The card can render on the PINNED path even when a single lesion already explains everything (the
   // card's own copy invites exactly this: "Pin two sites in the list above to test a different pair") — so
   // the guard must check that FIRST, or it falls into the "several findings" branch and asserts a
