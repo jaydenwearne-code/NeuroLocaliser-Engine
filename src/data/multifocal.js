@@ -68,7 +68,10 @@ export const MULTIFOCAL = [
     confirm: "Uhthoff's phenomenon — the deficit reappears or worsens with heat or exercise",
   }),
   mf("Metastases", "neoplastic", {
-    // No `compartments` allow-list (owner ruling 4, 2026-08-14) — metastases genuinely go anywhere.
+    // Owner ruling (2026-08-15), TYPICALITY not possibility: metastases can reach a peripheral nerve or
+    // plexus, but it almost never happens, and listing it there is noise. Constrained to where secondary
+    // deposits actually land.
+    compartments: ["brain", "brainstem", "cerebellum", "cord"],
     spread: { minSites: 2 },
     course: ["progressive", "stepwise"], tempo: ["subacute", "chronic"], likelihood: "common",
     matches: /metasta/i,
@@ -77,6 +80,10 @@ export const MULTIFOCAL = [
     confirm: "Examine the breasts, chest, skin and lymph nodes — the primary is often findable at the bedside",
   }),
   mf("Vasculitis (CNS or systemic)", "inflammatory", {
+    // Deliberately the BROADEST allow-list — hitting both CNS and PNS is the point of systemic vasculitis
+    // (that is what mononeuritis multiplex IS). But it does not typically pick off the neuromuscular
+    // junction/muscle, the pupillary efferent, the sympathetic chain or the cauda, so those are excluded.
+    compartments: ["brain", "brainstem", "cerebellum", "cord", "optic", "skull_base", "root", "plexus", "nerve"],
     spread: { minSites: 2 },
     course: ["stepwise", "progressive"], tempo: ["acute", "subacute"], likelihood: "uncommon",
     matches: /vasculit/i,
@@ -88,7 +95,9 @@ export const MULTIFOCAL = [
     sites: [{ compartment: "skull_base" }, {}],
     // Owner ruling 4 (2026-08-14) draft allow-list — granulomatous disease along the neuraxis and its
     // cranial/spinal nerve exits; excludes cerebellum, plexus, motor_unit, pupil and sympathetic.
-    compartments: ["brain", "brainstem", "cord", "cauda", "root", "nerve", "optic", "skull_base"],
+    // `cauda` dropped 2026-08-15 (typicality review): cranial neuropathy, basal meningitis, optic
+    // neuropathy and myelopathy are the typical neurosarcoid presentations; a cauda syndrome is not.
+    compartments: ["brain", "brainstem", "cord", "root", "nerve", "optic", "skull_base"],
     course: ["progressive", "relapsing"], tempo: ["subacute", "chronic"], likelihood: "uncommon",
     matches: /sarcoid/i,
     red: false,
@@ -107,7 +116,11 @@ export const MULTIFOCAL = [
     spread: { minSites: 2 },
     // Owner ruling 4 (2026-08-14) draft allow-list — CSF-bathed surfaces and the nerves/roots that run
     // through them; excludes plexus, nerve (distal to the CSF space), motor_unit, pupil, sympathetic.
-    compartments: ["brain", "brainstem", "cerebellum", "cord", "cauda", "root", "skull_base"],
+    // `root` and `cauda` KEPT deliberately (2026-08-15): leptomeningeal carcinomatosis classically presents
+    // with cranial neuropathies PLUS radiculopathy, and cauda equina polyradiculopathy is a recognised
+    // presentation — this entity's own `feature` names radiculopathy. `cerebellum` dropped: spread over the
+    // cerebellar surface is real but is not what makes anyone think of the diagnosis.
+    compartments: ["brain", "brainstem", "cord", "cauda", "root", "skull_base"],
     course: ["progressive", "stepwise"], tempo: ["subacute"], likelihood: "uncommon",
     matches: /leptomeningeal|carcinomatous meningitis|meningeal carcinomatosis/i,
     red: "Multiple cranial neuropathies with radicular pain and headache — needs CSF, and repeat cytology if the first is negative",
@@ -125,7 +138,9 @@ export const MULTIFOCAL = [
   mf("Primary CNS lymphoma", "neoplastic", {
     spread: { minSites: 2 },
     // Owner ruling 4 (2026-08-14) draft allow-list — a CNS-parenchymal disease (the name says so).
-    compartments: ["brain", "brainstem", "cerebellum", "cord", "optic"],
+    // `cord` dropped 2026-08-15 (typicality review): periventricular/deep brain and vitreoretinal disease
+    // are typical; primary spinal cord lymphoma is rare enough to be noise.
+    compartments: ["brain", "brainstem", "cerebellum", "optic"],
     course: ["progressive"], tempo: ["subacute"], likelihood: "rare",
     matches: /lymphoma/i,
     red: "Do NOT give steroids before biopsy — the lesion melts away and the diagnosis is lost",
@@ -170,7 +185,9 @@ export const MULTIFOCAL = [
   mf("Embolic shower (cardiac or aortic source)", "vascular", {
     spread: { minSites: 2 },
     // Owner ruling 4 (2026-08-14) draft allow-list — arterial territories a shower of emboli can reach.
-    compartments: ["brain", "brainstem", "cerebellum", "cord", "optic"],
+    // `cord` dropped 2026-08-15 (typicality review): retinal emboli are typical, but embolic cord
+    // infarction from a cardiac shower is vanishingly rare.
+    compartments: ["brain", "brainstem", "cerebellum", "optic"],
     course: ["simultaneous"], tempo: ["hyperacute", "acute"], likelihood: "common",
     matches: /embol/i,
     red: "Multiple territories at once means a PROXIMAL source — needs urgent cardiac and aortic imaging to prevent the next shower",

@@ -357,6 +357,43 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   ok("two peripheral nerve sites STILL return Vasculitis", names.some(n => /vasculit/i.test(n)), names.join(", "));
 }
 
+// --- 20: TYPICALITY, not possibility (owner ruling, 2026-08-15) ---
+// The allow-lists were tightened from "could this reach here" to "does this typically present here".
+// The owner's example: metastases CAN reach a peripheral nerve, but it almost never happens, so listing
+// it there is noise. These pin the specific judgements so a later widening is a deliberate act.
+{
+  const nerveA = siteById("left_nerve_radial_axilla");
+  const nerveB = siteById("left_nerve_median_proximal");
+  const namesFor = (...ids) => {
+    const sites = ids.map(siteById);
+    const r = unifyingDiagnoses(sites, tokensFor(...ids), {});
+    return [...r.concordant, ...r.discordant].map(e => e.name);
+  };
+
+  ok("metastases do NOT fire on two peripheral nerves (possible, but not typical)",
+     !namesFor(nerveA.id, nerveB.id).some(n => /metasta/i.test(n)),
+     namesFor(nerveA.id, nerveB.id).join(", "));
+
+  // Embolic shower and CNS lymphoma both lost `cord`: retinal emboli are typical, embolic cord infarction
+  // is not; deep/periventricular and vitreoretinal lymphoma are typical, primary cord lymphoma is not.
+  const cordPair = namesFor("left_cord_lateral", "right_cord_lateral");
+  ok("embolic shower does NOT fire on a cord-only picture", !cordPair.some(n => /embol/i.test(n)), cordPair.join(", "));
+  ok("primary CNS lymphoma does NOT fire on a cord-only picture", !cordPair.some(n => /lymphoma/i.test(n)), cordPair.join(", "));
+
+  // Leptomeningeal disease KEPT root + cauda deliberately — cranial neuropathy PLUS radiculopathy is the
+  // classic presentation, and this entity's own `feature` names radiculopathy.
+  const lepto = namesFor("left_skull_base_vii_geniculate", "cauda_equina");
+  ok("leptomeningeal disease STILL fires on a cranial nerve + cauda picture",
+     lepto.some(n => /leptomeningeal/i.test(n)), lepto.join(", "));
+  const leptoRoot = namesFor("left_skull_base_vii_geniculate", "left_root_c3");
+  ok("leptomeningeal disease STILL fires on a cranial nerve + root picture",
+     leptoRoot.some(n => /leptomeningeal/i.test(n)), leptoRoot.join(", "));
+
+  // Neurosarcoidosis lost `cauda` but keeps the cranial-nerve + nerve/root presentations.
+  ok("neurosarcoidosis does NOT fire on a cranial nerve + cauda picture",
+     !lepto.some(n => /sarcoid/i.test(n)), lepto.join(", "));
+}
+
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
