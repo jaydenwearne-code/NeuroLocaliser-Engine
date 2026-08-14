@@ -116,20 +116,25 @@ export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
 //
 // So rather than relaxing it automatically, we NAME it and hand the judgement to the clinician — which is
 // that rule's intent. For each localising finding, does removing it collapse the picture to one site?
+//
+// Returns `{ findings: [{ token, collapsesTo }] }` — each element pairs a forcing finding with the SITE
+// THAT TOKEN collapses to. This is deliberately per-finding rather than a single shared field: different
+// forcing findings can collapse the picture to different sites (e.g. two mirrored lesions, each one's
+// contralateral vertigo token forcing collapse onto the OTHER side's site), and a shared field can only
+// ever report one of them, silently misnaming the rest.
 export function forcingFindings(observedSet, opts = {}) {
   const current = solve(observedSet, opts);
-  if (current.singleExplainsAll) return { findings: [], collapsesTo: null };
+  if (current.singleExplainsAll) return { findings: [] };
 
   const findings = [];
-  let collapsesTo = null;
   for (const tok of observedSet) {
     if (!LOCALISING.has(idOf(tok))) continue; // a soft sign can never be what forces a second lesion
     const without = new Set([...observedSet].filter(t => t !== tok));
     const r = solve(without, opts);
     if (r.singleExplainsAll) {
-      findings.push(tok);
-      collapsesTo = collapsesTo || (r.display && r.display[0] ? r.display[0].site : r.best && r.best.site) || null;
+      const collapsesTo = (r.display && r.display[0] ? r.display[0].site : r.best && r.best.site) || null;
+      findings.push({ token: tok, collapsesTo });
     }
   }
-  return { findings, collapsesTo };
+  return { findings };
 }

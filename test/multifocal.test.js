@@ -190,8 +190,8 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   ok("a genuinely multifocal case names at least one forcing finding", f.findings.length > 0);
 
   const { solve } = await import("../src/engine/inverse.js");
-  const allCollapse = f.findings.every(tok => {
-    const without = new Set([...toks].filter(t => t !== tok));
+  const allCollapse = f.findings.every(({ token }) => {
+    const without = new Set([...toks].filter(t => t !== token));
     return solve(without).singleExplainsAll === true;
   });
   ok("EVERY named forcing finding provably collapses the picture when removed", allCollapse);
@@ -200,6 +200,35 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   // A single-lesion case has nothing forcing a second site.
   const toks = new Set(expectedFindings(siteById("left_medulla_lateral")));
   ok("a single-lesion case names no forcing findings", forcingFindings(toks, {}).findings.length === 0);
+}
+
+// --- 13: PER-FINDING collapsesTo — the regression guard for the shared-field bug ---
+// Two mirrored labyrinth lesions (left + right) each contribute their own forcing finding
+// (cn8_vertigo@left / cn8_vertigo@right). Removing the LEFT one collapses to the RIGHT labyrinth, and
+// removing the RIGHT one collapses to the LEFT labyrinth — two DIFFERENT sites. A single shared
+// `collapsesTo` field can only ever name one of them; the per-entry shape must name each correctly.
+{
+  const { solve } = await import("../src/engine/inverse.js");
+  const left = siteById("left_peripheral_vestibular_labyrinth");
+  const right = siteById("right_peripheral_vestibular_labyrinth");
+  const toks = new Set([...expectedFindings(left), ...expectedFindings(right)]);
+  const f = forcingFindings(toks, {});
+  ok("both mirrored labyrinth lesions produce two forcing findings", f.findings.length === 2,
+     JSON.stringify(f.findings));
+
+  const distinctTargets = new Set(f.findings.map(e => e.collapsesTo && e.collapsesTo.id));
+  ok("the two forcing findings collapse to two DIFFERENT sites", distinctTargets.size === 2,
+     [...distinctTargets].join(", "));
+
+  // Verify EACH entry's collapsesTo against an independent re-run of solve() on the reduced set —
+  // this is the assertion that fails against the old shared single-field shape.
+  const eachEntryCorrect = f.findings.every(({ token, collapsesTo }) => {
+    const without = new Set([...toks].filter(t => t !== token));
+    const r = solve(without);
+    return r.singleExplainsAll && collapsesTo && collapsesTo.id === r.display[0].site.id;
+  });
+  ok("EVERY entry's collapsesTo matches an independent re-run of solve() on its own reduced set",
+     eachEntryCorrect);
 }
 
 // --- 12: MURKY-INPUT REGRESSION SET — these must NEVER produce a combined view ---
