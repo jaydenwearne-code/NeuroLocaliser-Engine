@@ -10,6 +10,9 @@
 import { MULTIFOCAL, FINDING_CLASSES } from "../src/data/multifocal.js";
 import { CATEGORIES, CAUSES, TEMPO, LIKELIHOOD } from "../src/data/causes.js";
 import { COURSE_IDS } from "../src/model/course.js";
+import { unifyingDiagnoses } from "../src/engine/multifocal.js";
+import { candidateSites } from "../src/engine/inverse.js";
+import { expectedFindings } from "../src/engine/forward.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -67,6 +70,72 @@ const TEMPO_IDS = new Set(TEMPO.map(t => t.id));
   const dead = MULTIFOCAL.filter(e => e.matches && names.filter(n => e.matches.test(n)).length < 1);
   ok(`every \`matches\` regex still matches at least one curated cause (${dead.length} dead)`,
      dead.length === 0, dead.map(e => e.name).join(", "));
+}
+
+// --- 5: EMERGENCE — build every probe from expectedFindings() of a REAL site, never hand-typed tokens ---
+const siteById = id => candidateSites().find(s => s.id === id);
+const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(siteById(id))]));
+
+{
+  // MND: a UMN site and an LMN site, with UMN + LMN signs and NO sensory involvement.
+  const umnSite = siteById("left_cortex_motor_facearm");
+  const lmnSite = siteById("motor_unit_anterior_horn");
+  const sites = [umnSite, lmnSite];
+  const toks = new Set([...expectedFindings(umnSite), ...expectedFindings(lmnSite), "babinski@left", "fasciculations@left"]);
+  const r = unifyingDiagnoses(sites, toks, { course: "progressive", onset: "chronic" });
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("MND emerges on a mixed UMN + LMN picture", names.some(n => /motor neurone/i.test(n)));
+
+  // ...and DISAPPEARS once sensory involvement is present. This is the whole diagnosis.
+  const withSensory = new Set([...toks, "spinothalamic@right"]);
+  const r2 = unifyingDiagnoses(sites, withSensory, { course: "progressive", onset: "chronic" });
+  const names2 = [...r2.concordant, ...r2.discordant].map(e => e.name);
+  ok("MND does NOT fire once a sensory finding is present", !names2.some(n => /motor neurone/i.test(n)));
+}
+
+{
+  // MS: optic + cord = two distinct compartments.
+  // Substitution: the brief's `left_visual_pathway_optic_neuritis` / `left_visual_pathway_optic_nerve` do
+  // not exist as candidate site ids (verified via candidateSites()). The real optic-compartment sites are
+  // the visual_pathway level parts (optic_tract / lgn / retina / chiasm); `left_visual_pathway_optic_tract`
+  // is used here as the closest real site satisfying the test's anatomical intent — a lesion in the optic
+  // compartment, distinct from the cord compartment. The MS entity's clause is a generic
+  // `spread:{distinctCompartments:2}`, not an optic-specific clause, so any two distinct compartments
+  // satisfy it; this substitution preserves that intent exactly.
+  const sites = [siteById("left_visual_pathway_optic_tract"),
+                 siteById("left_cord_hemi")].filter(Boolean);
+  const toks = tokensFor(...sites.map(s => s.id));
+  const r = unifyingDiagnoses(sites, toks, { course: "relapsing", onset: "subacute" });
+  ok("MS emerges on optic + cord (two compartments)",
+     r.concordant.some(e => /multiple sclerosis/i.test(e.name)));
+  const ms = r.concordant.find(e => /multiple sclerosis/i.test(e.name));
+  ok("MS carries its derivation (`why` names the satisfying sites)",
+     ms && Array.isArray(ms.why) && ms.why.length > 0 && ms.why.every(w => w.satisfiedBy));
+}
+
+// --- 6: SOFT AXES DEMOTE, THEY DO NOT DROP (the owner's ruling — the assertion that guards it) ---
+{
+  const sites = [siteById("left_cortex_motor_facearm"), siteById("motor_unit_anterior_horn")];
+  const toks = new Set([...expectedFindings(sites[0]), ...expectedFindings(sites[1]), "babinski@left", "fasciculations@left"]);
+  const fits = unifyingDiagnoses(sites, toks, { course: "progressive" });
+  const clashes = unifyingDiagnoses(sites, toks, { course: "relapsing" });
+  const nFits = fits.concordant.length + fits.discordant.length;
+  const nClash = clashes.concordant.length + clashes.discordant.length;
+  ok("a course mismatch changes the BAND, not the total count", nFits === nClash, `${nFits} vs ${nClash}`);
+  const mnd = clashes.discordant.find(e => /motor neurone/i.test(e.name));
+  ok("MND is demoted (not deleted) by a relapsing course", !!mnd);
+  ok("the demotion names the axis and what was entered",
+     mnd && mnd.demotions.some(d => d.axis === "course" && d.entered === "relapsing"));
+  ok("nothing in the concordant band carries a demotion",
+     clashes.concordant.every(e => e.demotions.length === 0));
+}
+
+// --- 7: hard constraints DO filter ---
+{
+  const one = [siteById("left_cortex_motor_facearm")];
+  const toks = tokensFor("left_cortex_motor_facearm");
+  const r = unifyingDiagnoses(one, toks, {});
+  ok("a single site yields NO cross-site entities", r.concordant.length === 0 && r.discordant.length === 0);
 }
 
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
