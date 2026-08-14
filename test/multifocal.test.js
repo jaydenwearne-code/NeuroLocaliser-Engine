@@ -231,6 +231,37 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
      eachEntryCorrect);
 }
 
+// --- 14: FIX 2/3 (final fix wave, 2026-08-14) — `pupil` and `sympathetic` must NOT be reached via
+// `optic`/`skull_base` any more. Reviewer-verified false matches: left_pupil_cn3_compressive (a
+// posterior-communicating-artery aneurysm) + a cord site used to return NMOSD (its clause is
+// `{compartment:"optic"}`, and `pupil` used to BE `optic`); left_sympathetic_pancoast (an apical lung
+// tumour) + a cord site used to return Neurosarcoidosis and NF2 (their clause is `{compartment:"skull_base"}`,
+// and `sympathetic` used to BE `skull_base`). Both are anatomically wrong: an efferent pupillary lesion is
+// not the afferent visual pathway, and an apical lung lesion is not a skull-base lesion. Every probe here
+// is built from expectedFindings() of a real site, never hand-typed tokens. ---
+{
+  const pupilSite = siteById("left_pupil_cn3_compressive");
+  const cordSite = siteById("left_cord_hemi");
+  ok("fixture sites exist (pupil + cord)", !!pupilSite && !!cordSite);
+  const toks = tokensFor(pupilSite.id, cordSite.id);
+  const r = unifyingDiagnoses([pupilSite, cordSite], toks, {});
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("a pupil site + a cord site does NOT return NMOSD",
+     !names.some(n => /NMOSD|neuromyelitis/i.test(n)), names.join(", "));
+}
+{
+  const pancoastSite = siteById("left_sympathetic_pancoast");
+  const cordSite = siteById("left_cord_hemi");
+  ok("fixture sites exist (sympathetic/Pancoast + cord)", !!pancoastSite && !!cordSite);
+  const toks = tokensFor(pancoastSite.id, cordSite.id);
+  const r = unifyingDiagnoses([pancoastSite, cordSite], toks, {});
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("a sympathetic (Pancoast) site + a cord site does NOT return Neurosarcoidosis",
+     !names.some(n => /sarcoid/i.test(n)), names.join(", "));
+  ok("a sympathetic (Pancoast) site + a cord site does NOT return NF2",
+     !names.some(n => /neurofibromatosis|\bNF2\b/i.test(n)), names.join(", "));
+}
+
 // --- 12: MURKY-INPUT REGRESSION SET — these must NEVER produce a combined view ---
 // Probes from the design session. They are the guard against a future loosening of the trigger.
 {

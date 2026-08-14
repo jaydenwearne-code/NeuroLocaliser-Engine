@@ -70,6 +70,34 @@ const SITES = candidateSites();
      [...INTRACRANIAL_COMPARTMENTS].every(cmp => COMPARTMENTS.includes(cmp)));
 }
 
+// --- 4: `pupil` and `sympathetic` are EACH THEIR OWN compartment (final fix wave, 2026-08-14) ---
+// Folding `pupil` into `optic` and `sympathetic` into `skull_base` was a real bug, reviewer-verified:
+//   - `pupil` inside `optic` made an efferent pupillary lesion (e.g. left_pupil_cn3_compressive, a
+//     posterior-communicating-artery aneurysm) satisfy NMOSD's afferent-visual-pathway clause
+//     `{compartment:"optic"}` — a blown pupil + a cord lesion returned NMOSD as the top concordant entity.
+//   - `sympathetic` inside `skull_base` made an apical lung (Pancoast) lesion satisfy Neurosarcoidosis's
+//     and NF2's skull-base cranial-neuropathy clause — an apical lung tumour + a cord lesion returned
+//     both, putting a Pancoast tumour in the skull base.
+// Do not re-merge either compartment back into `optic`/`skull_base` — that reintroduces both false matches
+// (see test/multifocal.test.js for the emergence-level regression guards).
+{
+  const pupilSite = SITES.find(s => s.level === "pupil");
+  const sympatheticSite = SITES.find(s => s.level === "sympathetic");
+  const opticSite = SITES.find(s => s.level === "visual_pathway");
+  const skullBaseSite = SITES.find(s => s.level === "skull_base");
+  ok("fixture sites exist for pupil/sympathetic/optic/skull_base", !!pupilSite && !!sympatheticSite && !!opticSite && !!skullBaseSite);
+  ok("`pupil` is declared as its own compartment", COMPARTMENTS.includes("pupil"));
+  ok("`sympathetic` is declared as its own compartment", COMPARTMENTS.includes("sympathetic"));
+  ok("a pupil site's compartment is `pupil`", compartmentOf(pupilSite) === "pupil");
+  ok("a sympathetic site's compartment is `sympathetic`", compartmentOf(sympatheticSite) === "sympathetic");
+  ok("pupil is NOT grouped with optic", compartmentOf(pupilSite) !== compartmentOf(opticSite));
+  ok("sympathetic is NOT grouped with skull_base", compartmentOf(sympatheticSite) !== compartmentOf(skullBaseSite));
+  ok("pupil remains intracranial (its own compartment, added to INTRACRANIAL_COMPARTMENTS)",
+     INTRACRANIAL_COMPARTMENTS.has("pupil"));
+  ok("sympathetic is NOT intracranial (unchanged from its old skull_base mapping)",
+     !INTRACRANIAL_COMPARTMENTS.has("sympathetic"));
+}
+
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -11,7 +11,7 @@
 
 export const COMPARTMENTS = [
   "brain", "brainstem", "cerebellum", "cord", "cauda",
-  "optic", "skull_base", "root", "plexus", "nerve", "motor_unit",
+  "optic", "pupil", "sympathetic", "skull_base", "root", "plexus", "nerve", "motor_unit",
 ];
 
 // Every level produced by candidateSites() must appear here (asserted in test/compartments.test.js).
@@ -35,8 +35,15 @@ export const LEVEL_COMPARTMENT = {
   cord: "cord", combined_degeneration: "cord", conus: "cord",
   cauda: "cauda",
   // --- visual + pupil + sympathetic axes ---
-  visual_pathway: "optic", pupil: "optic",
-  sympathetic: "skull_base",
+  // `pupil` and `sympathetic` are EACH THEIR OWN compartment, deliberately not folded into `optic` or
+  // `skull_base`. Folding them in was a real bug (reviewer-verified, 2026-08-14 final fix wave): with
+  // `pupil` inside `optic`, an efferent pupillary lesion (e.g. left_pupil_cn3_compressive, a PCOM
+  // aneurysm) satisfied NMOSD's afferent-visual-pathway clause `{compartment:"optic"}` alongside a cord
+  // site, so a blown pupil + a cord lesion returned NMOSD. With `sympathetic` inside `skull_base`, an
+  // apical lung (Pancoast) lesion satisfied Neurosarcoidosis's and NF2's skull-base cranial-neuropathy
+  // clause alongside a cord site, putting a lung tumour in the skull base. Do not re-merge either.
+  visual_pathway: "optic", pupil: "pupil",
+  sympathetic: "sympathetic",
   // --- skull base / peripheral vestibular ---
   skull_base: "skull_base", peripheral_vestibular: "skull_base",
   // --- peripheral nervous system ---
@@ -46,7 +53,11 @@ export const LEVEL_COMPARTMENT = {
 
 // Which compartments sit inside the skull. `cord` and everything distal are excluded — that is exactly
 // what the raised-pressure (papilloedema) axis means when it says "inside the skull".
-export const INTRACRANIAL_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "optic"]);
+// `pupil` is included so the derived INTRACRANIAL_LEVELS set is UNCHANGED by giving pupil its own
+// compartment (it was reached via `optic` before the split; see the comment above LEVEL_COMPARTMENT).
+// `sympathetic` is deliberately NOT included — it was never intracranial (it mapped to `skull_base`,
+// which is also not in this set), and a Pancoast tumour must not become intracranial by accident.
+export const INTRACRANIAL_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "optic", "pupil"]);
 
 export function compartmentOf(site) {
   return LEVEL_COMPARTMENT[site.level] || null;
