@@ -106,6 +106,7 @@ node test/feedback-url.test.js   # ED prototype — feedback prefill-URL builder
 node test/gate.test.js           # ED prototype — passphrase gate hash-and-compare
 node test/stroke-data.test.js    # Code-stroke mode — clinical content integrity (NIHSS 42, cites)
 node test/stroke-logic.test.js   # Code-stroke mode — NIHSS/localiser bridge, windows, LVO, eligibility, handover
+node test/multifocal.test.js     # cross-site (multi-location) entity roster — content-only invariants
 ```
 
 ## Status
