@@ -337,6 +337,26 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
      names3.some(n => /multiple sclerosis/i.test(n)), names3.join(", "));
 }
 
+// --- 19: RULING 4 (owner, 2026-08-14) — entities must only fire in compartments where they make
+// anatomical sense. "Two separate peripheral nerves should not fire really any of the multifocal diseases
+// except mononeuritis multiplex, vasculitis, etc. — NOT CNS lymphoma, embolic shower etc." Every probe is
+// built from expectedFindings() of REAL sites, never hand-typed finding tokens.
+{
+  const nerveA = siteById("left_nerve_radial_axilla");
+  const nerveB = siteById("left_nerve_median_proximal");
+  ok("fixture sites exist (two named peripheral nerves)", !!nerveA && !!nerveB);
+  const toks = tokensFor(nerveA.id, nerveB.id);
+  const r = unifyingDiagnoses([nerveA, nerveB], toks, {});
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("two peripheral nerve sites do NOT return Primary CNS lymphoma", !names.some(n => /lymphoma/i.test(n)), names.join(", "));
+  ok("two peripheral nerve sites do NOT return Embolic shower", !names.some(n => /embol/i.test(n)), names.join(", "));
+  ok("two peripheral nerve sites do NOT return Motor neurone disease (ALS)", !names.some(n => /motor neurone/i.test(n)), names.join(", "));
+  ok("two peripheral nerve sites do NOT return Multiple sclerosis", !names.some(n => /multiple sclerosis/i.test(n)), names.join(", "));
+  ok("two peripheral nerve sites do NOT return Leptomeningeal disease", !names.some(n => /leptomeningeal/i.test(n)), names.join(", "));
+  ok("two peripheral nerve sites STILL return Mononeuritis multiplex", names.some(n => /mononeuritis multiplex/i.test(n)), names.join(", "));
+  ok("two peripheral nerve sites STILL return Vasculitis", names.some(n => /vasculit/i.test(n)), names.join(", "));
+}
+
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

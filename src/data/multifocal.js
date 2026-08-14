@@ -41,6 +41,8 @@ const mf = (name, cat, opts) => ({ name, cat, red: false, confirm: "", ...opts }
 export const MULTIFOCAL = [
   mf("Motor neurone disease (ALS)", "degenerative", {
     spread: { minSites: 2 }, motor: "mixed", forbids: ["sensory"],
+    // Owner ruling 4 (2026-08-14) draft allow-list — the anterior horn/corticospinal disease process.
+    compartments: ["brain", "brainstem", "cord", "motor_unit"],
     course: ["progressive"], tempo: ["subacute", "chronic"], likelihood: "common",
     matches: /motor neurone|motor neuron|\bALS\b|amyotrophic/i,
     red: "Progressive bulbar or respiratory involvement — assess FVC early, before symptoms of hypoventilation appear",
@@ -66,6 +68,7 @@ export const MULTIFOCAL = [
     confirm: "Uhthoff's phenomenon — the deficit reappears or worsens with heat or exercise",
   }),
   mf("Metastases", "neoplastic", {
+    // No `compartments` allow-list (owner ruling 4, 2026-08-14) — metastases genuinely go anywhere.
     spread: { minSites: 2 },
     course: ["progressive", "stepwise"], tempo: ["subacute", "chronic"], likelihood: "common",
     matches: /metasta/i,
@@ -83,6 +86,9 @@ export const MULTIFOCAL = [
   }),
   mf("Neurosarcoidosis", "inflammatory", {
     sites: [{ compartment: "skull_base" }, {}],
+    // Owner ruling 4 (2026-08-14) draft allow-list — granulomatous disease along the neuraxis and its
+    // cranial/spinal nerve exits; excludes cerebellum, plexus, motor_unit, pupil and sympathetic.
+    compartments: ["brain", "brainstem", "cord", "cauda", "root", "nerve", "optic", "skull_base"],
     course: ["progressive", "relapsing"], tempo: ["subacute", "chronic"], likelihood: "uncommon",
     matches: /sarcoid/i,
     red: false,
@@ -99,6 +105,9 @@ export const MULTIFOCAL = [
   }),
   mf("Leptomeningeal disease", "neoplastic", {
     spread: { minSites: 2 },
+    // Owner ruling 4 (2026-08-14) draft allow-list — CSF-bathed surfaces and the nerves/roots that run
+    // through them; excludes plexus, nerve (distal to the CSF space), motor_unit, pupil, sympathetic.
+    compartments: ["brain", "brainstem", "cerebellum", "cord", "cauda", "root", "skull_base"],
     course: ["progressive", "stepwise"], tempo: ["subacute"], likelihood: "uncommon",
     matches: /leptomeningeal|carcinomatous meningitis|meningeal carcinomatosis/i,
     red: "Multiple cranial neuropathies with radicular pain and headache — needs CSF, and repeat cytology if the first is negative",
@@ -115,6 +124,8 @@ export const MULTIFOCAL = [
   }),
   mf("Primary CNS lymphoma", "neoplastic", {
     spread: { minSites: 2 },
+    // Owner ruling 4 (2026-08-14) draft allow-list — a CNS-parenchymal disease (the name says so).
+    compartments: ["brain", "brainstem", "cerebellum", "cord", "optic"],
     course: ["progressive"], tempo: ["subacute"], likelihood: "rare",
     matches: /lymphoma/i,
     red: "Do NOT give steroids before biopsy — the lesion melts away and the diagnosis is lost",
@@ -123,6 +134,10 @@ export const MULTIFOCAL = [
   }),
   mf("Neurofibromatosis type 2", "congenital", {
     sites: [{ compartment: "skull_base" }, {}],
+    // Owner ruling 4 (2026-08-14) draft allow-list — schwannomas/meningiomas along CNS surfaces and
+    // nerve roots; excludes cerebellum (the vestibular schwannoma itself is a skull_base/CPA site),
+    // cauda, plexus, motor_unit, optic, pupil, sympathetic.
+    compartments: ["brain", "cord", "root", "nerve", "skull_base"],
     course: ["progressive"], tempo: ["chronic"], likelihood: "rare",
     matches: /neurofibromatosis|\bNF2\b/i,
     red: false,
@@ -131,6 +146,9 @@ export const MULTIFOCAL = [
   }),
   mf("Paraneoplastic syndrome", "inflammatory", {
     spread: { minSites: 2 },
+    // Owner ruling 4 (2026-08-14) draft allow-list — antibody-mediated attack on neurons/nerves/junction
+    // across the neuraxis (limbic, cerebellar, brainstem, dorsal root ganglia, NMJ per its own `feature`).
+    compartments: ["brain", "brainstem", "cerebellum", "cord", "root", "nerve", "motor_unit"],
     course: ["progressive", "stepwise"], tempo: ["subacute"], likelihood: "rare",
     matches: /paraneoplastic|anti-Hu|anti-Ma2|anti-Yo/i,
     red: "A subacute multifocal syndrome may precede the tumour by months — the cancer search is the investigation",
@@ -139,6 +157,10 @@ export const MULTIFOCAL = [
   }),
   mf("Neurosyphilis or HIV", "infective", {
     spread: { minSites: 2 },
+    // Owner ruling 4 (2026-08-14) draft allow-list — "any combination of cognitive change, myelopathy,
+    // neuropathy and cranial neuropathy" per its own `feature`; excludes cerebellum, cauda, plexus,
+    // motor_unit, pupil, sympathetic.
+    compartments: ["brain", "brainstem", "cord", "root", "nerve", "skull_base", "optic"],
     course: ["progressive", "stepwise"], tempo: ["subacute", "chronic"], likelihood: "rare",
     matches: /syphilis|\bHIV\b|tabes/i,
     red: "Treatable and routinely missed — test whenever a multifocal picture has no better explanation",
@@ -147,6 +169,8 @@ export const MULTIFOCAL = [
   }),
   mf("Embolic shower (cardiac or aortic source)", "vascular", {
     spread: { minSites: 2 },
+    // Owner ruling 4 (2026-08-14) draft allow-list — arterial territories a shower of emboli can reach.
+    compartments: ["brain", "brainstem", "cerebellum", "cord", "optic"],
     course: ["simultaneous"], tempo: ["hyperacute", "acute"], likelihood: "common",
     matches: /embol/i,
     red: "Multiple territories at once means a PROXIMAL source — needs urgent cardiac and aortic imaging to prevent the next shower",
