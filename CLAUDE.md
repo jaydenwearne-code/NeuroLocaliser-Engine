@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**53 test suites / 3258 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**59 test suites / 3432 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -102,15 +102,16 @@ Branch `feat/code-stroke-mode` is merged (safe to delete). Everything — code-s
 layer — is on `main`, so the "expand pathologies + workup" work below branches off `main`.
 
 **Parked follow-ups (not yet done):**
-1. **Multi-location DDx synthesis** — causes / next-steps / why are shown for the *one* selected lesion only;
-   a genuinely multifocal picture has no combined cross-site view.
-2. **Further pathways** — **10 pathways now modelled** (all in `src/model/tracts.js`, same declarative shape):
+1. **Further pathways** — **10 pathways now modelled** (all in `src/model/tracts.js`, same declarative shape):
    the 4 core tracts (corticospinal, spinothalamic, dorsal-column, corticobulbar) + 3 non-classical
    (oculosympathetic/Horner, MLF/INO, visual) + 3 fast-follows added 2026-07-28 (cerebellar/spinocerebellar,
    central tegmental/palatal tremor, trigeminothalamic/face sensation). Non-tract findings get the rich Why
    (Course + why-not + diagram). No major pathway gaps remain.
-3. **Pathology layer (optional)** — `umnLmnPattern()` already flags mixed UMN+LMN → MND; a fuller declarative
-   cross-site pathology layer (ALS/MND, SCD, etc.) was scoped in `CONTRIBUTING.md` but is not built.
+2. **Pathology layer (optional)** — `umnLmnPattern()` already flags mixed UMN+LMN → MND; a fuller declarative
+   cross-site pathology layer (ALS/MND, SCD, etc.) was scoped in `CONTRIBUTING.md` but is not built. **Partly
+   superseded:** the multi-location DDx layer below now names MND (and 12 other cross-site entities) when a
+   picture spans sites, so the motivating case for this item is covered — what remains is anything that would
+   fire on a SINGLE site's UMN+LMN co-occurrence alone, which is out of scope for a cross-site layer.
 
 ## Pathologies + workup expansion (DONE 2026-08-10) — ⚠ AWAITING CLINICAL REVIEW
 
@@ -198,6 +199,99 @@ Normal-pressure hydrocephalus is excluded by name — the pressure is normal, so
 > flagged for review if uncertain. Spec + outcome table:
 > `docs/superpowers/specs/2026-08-11-differential-depth-design.md`.
 
+## Multi-location DDx layer (DONE 2026-08-14) — ⚠ NEW CLINICAL CONTENT AWAITING SIGN-OFF
+
+**What it answers:** when a picture genuinely needs more than one lesion, *what single disease hits both
+of these places?* Previously causes/next-steps/why were shown for the one selected site only; a multifocal
+picture had no combined cross-site view at all.
+
+**Four new files keep content and logic apart**, the same split the rest of the engine uses:
+- `src/model/compartments.js` — a level→compartment axis (`COMPARTMENTS`, `LEVEL_COMPARTMENT`,
+  `compartmentOf(site)`). Finer than `regionOf()` in `causes.js` (which lumps brain and cord together as
+  `parenchyma`) — the roster needs brain and cord apart, because "disseminated in space" for MS means
+  brain **and** cord. `INTRACRANIAL_LEVELS` in `inverse.js` now **derives** from this table
+  (`INTRACRANIAL_COMPARTMENTS`) instead of being a second, hand-listed set that could drift from it.
+- `src/model/course.js` — the `COURSES` vocabulary (single/simultaneous/stepwise/relapsing/progressive):
+  *how the illness unfolded*, orthogonal to onset tempo and much the stronger discriminator for the
+  cross-site roster (vasculitis is stepwise, MS relapsing, MND progressive, an embolic shower simultaneous
+  — without it, MS/mets/MND all present as "two CNS sites, subacute").
+- `src/data/multifocal.js` — **content only, no logic**, so it can be clinically reviewed on its own: the
+  13-entity `MULTIFOCAL` roster (see below) plus `FINDING_CLASSES` (named finding classes, e.g. `sensory`,
+  for entities that `forbid` a class rather than an individual finding id).
+- `src/engine/multifocal.js` — **logic only, no content**: `unifyingDiagnoses(sites, observed, {onset,
+  course})` matches the roster against a site set, and `forcingFindings(observed, opts)` — the parsimony
+  guard (below). Plus `combinedCauses()` in `causes.js` (cross-site cause intersection) and
+  `combinedNextSteps()` in `nextSteps.js` (unioned workup, urgency = the MOST urgent site, never an
+  average), and `app/combined-sites.js` (resolves what the Together/What/Next cards show: the user's
+  pinned pair if still valid, else the engine's own minimal cover — pure/DOM-free, directly testable).
+
+**Hard anatomical constraints FILTER; tempo and course only DEMOTE** into a labelled, collapsed band — an
+owner ruling. A tempo or course mismatch is informative, not disqualifying: a stepwise course argues
+against MS without erasing it from the list. This ruling **extends to `causesFor()` itself**, which
+*previously hard-filtered by tempo* — a cause whose tempo didn't match the entered onset used to vanish
+entirely. It now moves to a `demoted` bucket (same shape as the roster's discordant band) instead of being
+dropped, so the single-site What card and the cross-site Together card demote consistently.
+
+**The parsimony rule:** multifocality is a claim that must be earned, so the Together card's first job is
+to try to talk you out of it. Order matters and is fixed: (1) the **forcing-finding guard** — for each
+`LOCALISING` finding in the observed set, does removing it collapse the picture to one site? Each forcing
+finding is named together with the site the picture collapses to *if* that finding is dropped (different
+forcing findings can collapse to different sites, e.g. two mirrored lesions each pinned by the other side's
+vertigo token — reporting under one shared field would misname the rest); (2) **which sites** are being
+compared (the user's pinned pair, if two-plus pins are still present in the current differential, else the
+engine's own minimal-set cover — `app/combined-sites.js`); (3) **the disease list** — concordant entities
+open, tempo/course-discordant ones collapsed behind a "less likely given…" disclosure. A guard, then sites,
+then diseases — never diseases first.
+
+**The `LOCALISING` audit** (`src/engine/score.js`): **12 findings promoted** into `LOCALISING` (raising
+their match weight 1→3 and letting them force a second lesion) — the fundoscopy pair
+(`retinal_pallor`/`optic_atrophy`) that arrived with the 2026-08-11 sweep and was missed, plus
+`cortical_sensory_{arm,leg,hand}`, `weak_hand`, `weak_scapular_stabilisation`, `lid_retraction`,
+`verbal_memory_impairment`, `nonverbal_memory_impairment`, `disinhibition`, `executive_dysfunction`.
+**9 findings excused** with a stated reason in the new `NOT_LOCALISING_BY_DESIGN` map (e.g.
+`lmn_weakness`, `naming_impaired`, `proximal_weakness`, `hallucinations`) — a new invariant
+(`test/localising-audit.test.js`) asserts every finding the forward model produces at exactly one level is
+either in `LOCALISING` or in `NOT_LOCALISING_BY_DESIGN`, so nothing can fall through silently again. **The
+owner rejected three proposed promotions from the batch:** `fasciculations` (occurs at any LMN level; a
+single producer in this model is a modelling limit, not a clinical fact — same reasoning as
+`lmn_weakness`), `palmomental` (a non-specific frontal release sign) and `rigidity` (rigidity sits on the
+tone axis with spasticity/hypotonia — it can be UMN or extrapyramidal, so it does not itself pin a place).
+**A producer-count rule alone is the wrong test either way:** `limb_ataxia` spans 7 levels / 24 sites and
+is nonetheless correctly `LOCALISING`, because it pins a **system** (the cerebellar/proprioceptive
+pathway), not a level — the audit is a judgement about what a sign means clinically, not a count threshold.
+
+**Canonicalisation.** Naive verbatim cause-name intersection across sites does not work — measured before
+building `combinedCauses()`: **856 distinct cause names, only 147 repeat verbatim**, and MS alone appears
+under 8-plus spellings ("Demyelination", "Demyelination (MS)", "Multiple sclerosis", …). So
+`combinedCauses()` canonicalises through the roster's own `matches` regex first (`canonicalKey()` in
+`causes.js`) — one table doing double duty, naming the cross-site entity and supplying the intersection
+key, so there is no second alias map to drift — and falls back to the verbatim name (which already works
+for the family-builder sites) when no regex matches. **A name matching TWO OR MORE roster regexes is left
+uncanonicalised rather than guessed**, exactly like a name matching zero: a hedged differential ("small
+metastasis or demyelinating plaque") names two different diseases, and collapsing it onto whichever
+regex happens to sit earlier in the roster array would silently misrepresent it and make roster order
+load-bearing.
+
+**Pinning + course control (app-layer only, no model changes):** a 📌 button on each differential row lets
+the user pin exactly two sites to compare a specific pair instead of the engine's own minimal cover; a
+course `<select>` feeds `S.course` into `unifyingDiagnoses()`; both round-trip through the case-URL (`p=`
+pinned-ids, `c=` course). A scope toggle ("This site" / "All N sites") switches the What/Next cards between
+the single-site view and the merged cross-site view — **every call site of `combinedSites()` must pass the
+pinned Set explicitly**, or the Together card and the What/Next cards can silently describe different sites
+on the same screen (this shipped once; `test/combined-sites.test.js` guards the call sites, comment-aware).
+
+> **⚠ The 13-entity `MULTIFOCAL` roster (Motor neurone disease, Multiple sclerosis, Metastases,
+> Vasculitis, Neurosarcoidosis, Mononeuritis multiplex, Leptomeningeal disease, NMOSD, Primary CNS
+> lymphoma, Neurofibromatosis type 2, Paraneoplastic syndrome, Neurosyphilis/HIV, Embolic shower) and the
+> `LOCALISING` promote/excuse split above are NEW CLINICAL CONTENT AWAITING THE OWNER'S (a clinician's)
+> SIGN-OFF — do not describe either as reviewed.** The plan's review gate requires both be offered before
+> merge to `main`: the roster as a table (name · what makes it fire · discriminating feature · red flag),
+> and the promote/excuse split as two lists with reasons — the LOCALISING change carries more risk because
+> it alters scoring/ranking behaviour, not just added content. New suites: `test/compartments.test.js`,
+> `test/localising-audit.test.js`, `test/multifocal.test.js`, `test/combined-sites.test.js`. Spec/plan:
+> `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md`,
+> `docs/superpowers/plans/2026-08-14-multi-location-ddx.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -233,10 +327,18 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
   prevalence.js  prevalenceOf(site) -> 2|1|0 (common/uncommon/rare) coarse per-site prior; TIEBREAK only
   tracts.js      the long tracts (corticospinal/spinothalamic/dorsal-column/corticobulbar): findings,
                  rostro-caudal course (level + detail + supply), decussation, direction; + NEURAXIS ordering
+  compartments.js  level -> COMPARTMENT axis (brain/brainstem/cerebellum/cord/cauda/optic/skull_base/
+                 root/plexus/nerve/motor_unit); compartmentOf(site). Finer than regionOf() in causes.js —
+                 keeps brain and cord apart, which the multifocal roster needs. INTRACRANIAL_LEVELS in
+                 inverse.js DERIVES from this table (single source of truth for "inside the skull")
+  course.js      COURSES vocabulary (single/simultaneous/stepwise/relapsing/progressive) — HOW an illness
+                 unfolded, orthogonal to onset tempo. Annotates/demotes only, like the sensory level
 src/engine/    generic solver code (rarely changes when adding a region)
   forward.js     site -> expected signed findings; emits `${finding}@${side}` tokens
   score.js       scoreSite(): reward matches (LOCALISING findings weigh 3x), penalise unexplained
-                 + over-prediction. Exports LOCALISING
+                 + over-prediction. Exports LOCALISING and NOT_LOCALISING_BY_DESIGN (finding id -> reason
+                 it's deliberately excused; test/localising-audit.test.js asserts every single-level
+                 finding is one or the other)
   inverse.js     THE single localiser. candidateSites() (reflection over compose*, drops buildingBlock);
                  differential() = the broad count/superset narrowing list (known-negative exclusion +
                  prevalence tiebreak); solve() returns {differential,explainAll,display,defaultSite,ruledOut}
@@ -244,24 +346,40 @@ src/engine/    generic solver code (rarely changes when adding a region)
   tracts.js      tractsFor() (which tracts a finding-set implicates + candidate sites along each);
                  tractNarrative() (composed Course prose); whyNotOthers() (derived per-level discrimination)
   patterns.js    cross-cutting SYNTHESIS (NOT localisation): umnLmnPattern() and functionalFlag()
+  multifocal.js  LOGIC ONLY (content lives in data/multifocal.js). unifyingDiagnoses(sites,observed,
+                 {onset,course}) matches the MULTIFOCAL roster against a site set (hard constraints filter,
+                 tempo/course only demote); forcingFindings(observed,opts) is the parsimony guard — for
+                 each LOCALISING finding, does removing it collapse the picture to one site?
 src/data/
   syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags
   causes.js      THE PATHOLOGY LAYER. tempo-aware surgical-sieve DDx: causesFor(site,{onset}) ->
-                 {byCategory, completion, all, source}. Precedence: curated CAUSES[site] → phonebook ddx
+                 {byCategory, demoted, all, source}. Precedence: curated CAUSES[site] → phonebook ddx
                  (categorised live) → attribute-derived fallback. Each cause via `c(name,cat,tempo,
                  likelihood,red,feature,pathognomonic)`: `feature` = a "what points to it" clue; `pathognomonic`
                  = a bedside "🔎 Confirm on exam" sign. A central `PATHOGNOMONIC` keyword→sign table enriches
                  causes from ALL sources by name (Ramsay Hunt vesicles, Argyll Robertson, KF rings, …).
-                 `completion` = region-tuned sieve gap-fill (regionOf/sieveGenerics).
+                 A cause whose tempo misses the entered onset moves to `demoted`, it is never dropped.
+                 combinedCauses(sites,{onset}) + canonicalKey(name) merge causes across sites for the
+                 Together/What-all-sites views — canonicalised through the MULTIFOCAL roster's own `matches`
+                 regex (a name matching 2+ regexes is left uncanonicalised rather than guessed).
   nextSteps.js   THE WORKUP LAYER (educational). nextStepsFor(site) -> {immediate, investigations,
                  confirmatory, monitoring, urgency, referral, curated}. Curated NEXT[site] carries specifics;
                  tiers derive from urgency + region (bulbar/cord/arousal/nmu/optic/vestibular) otherwise.
+                 combinedNextSteps(sites) unions per-site plans for the cross-site view; urgency = the
+                 MOST urgent site, never an average.
+  multifocal.js  CONTENT ONLY (matching logic lives in engine/multifocal.js), reviewable on its own: the
+                 13-entity MULTIFOCAL roster (ALS/MS/mets/vasculitis/sarcoid/mononeuritis multiplex/
+                 leptomeningeal disease/NMOSD/CNS lymphoma/NF2/paraneoplastic/neurosyphilis-HIV/embolic
+                 shower) + FINDING_CLASSES (named finding classes an entity can `forbid`). Predicates are
+                 over anatomical ATTRIBUTES (compartment/level/region), never site ids.
 app/             zero-build teaching web app (pure consumer of the engine; no model changes)
   index.html     markup + all CSS
   app.js         renders the nested exam tree + the where/why/what output cards; pure consumer of solve()/
-                 tractsFor()/causesFor()/nextStepsFor()
+                 tractsFor()/causesFor()/nextStepsFor()/unifyingDiagnoses()/forcingFindings()
   exam-map.js    EXAM_TREE (nested category→subcategory→finding) + flattenFindings() (no presets)
   neuraxis-diagram.js  neuraxisSVG(): derived, clickable neuraxis SVG from the tract taxonomy + candidates
+  combined-sites.js  combinedSites(r,list,pinned) -> {sites,source}: the user's pinned pair if still valid,
+                 else the engine's minimal cover. Pure/DOM-free; every app.js call site must pass `pinned`
   serve.mjs      static server, port 8137
 ```
 

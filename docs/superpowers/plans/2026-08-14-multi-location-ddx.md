@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** not started. Spec: `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md`.
+**Status:** implemented 2026-08-14. Spec: `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md`.
 
 **Goal:** When a picture needs more than one lesion, answer *what single disease hits both of these places* — with a curated cross-site entity roster, merged causes and workup, manual pinning of a pair, and a parsimony guard that names the finding forcing the second lesion.
 
