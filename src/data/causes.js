@@ -3,7 +3,12 @@
 // CATEGORIES correlate with site attributes and with the TEMPO of onset. This module is the structured,
 // tempo-aware layer over the same knowledge the phonebook (syndromes.js) holds as free-text ddx.
 //
-//   causesFor(site, { onset }) -> { byCategory, all, onset, derived, source }
+//   causesFor(site, { onset }) -> { byCategory, demoted, all, onset, derived, source }
+//
+// A tempo mismatch DEMOTES a cause, it never drops it: `byCategory` holds only causes concordant with
+// the entered onset, `demoted` holds the rest (each carrying `demotion: { axis, entered, expected }`),
+// and `all` stays tempo-concordant so existing callers keep their current meaning — the full unfiltered
+// list is `byCategory` ∪ `demoted` (owner ruling, 2026-08-14).
 //
 // Curated per-site entries (bootstrapped from the phonebook ddx) take precedence; a derived category
 // fallback seeds plausible categories from site attributes so EVERY site returns something.
@@ -3093,12 +3098,19 @@ export function causesFor(site, { onset } = {}) {
   // that has no inline flag yet (covers curated, phonebook and derived from one source of truth).
   list = list.map(x => x.pathognomonic ? x : { ...x, pathognomonic: pathognomonicFor(x.name) });
   const derived = source === "derived";
-  const filtered = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice())
-    .sort((a, b) => LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood));
+  // TEMPO DEMOTES, IT DOES NOT DROP (owner ruling, 2026-08-14). A cause whose tempo does not match the
+  // entered onset is still a real cause at this site — hiding it entirely is the same failure the sieve
+  // sweep fixed, in reverse. It moves to `demoted`, carrying WHICH axis missed and what it does fit, so
+  // the app can show it behind a "less likely given the tempo" disclosure.
+  const byLikelihood = (a, b) => LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood);
+  const concordant = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice()).sort(byLikelihood);
+  const demoted = (onset ? list.filter(x => !x.tempo.includes(onset)) : [])
+    .map(x => ({ ...x, demotion: { axis: "tempo", entered: onset, expected: x.tempo } }))
+    .sort(byLikelihood);
   // A sieve category with no plausible cause at this site simply does not appear. The sieve is an
   // authoring checklist, not an output format — it must never manufacture content to fill itself.
   const byCategory = CATEGORIES
-    .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: filtered.filter(x => x.cat === cat.id) }))
+    .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: concordant.filter(x => x.cat === cat.id) }))
     .filter(g => g.causes.length);
-  return { byCategory, all: filtered, onset: onset || null, derived, source };
+  return { byCategory, demoted, all: concordant, onset: onset || null, derived, source };
 }

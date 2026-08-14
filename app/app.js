@@ -361,12 +361,14 @@ function whatBlock(site) {
     ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
   const cap = (S.onset || res.derived)
     ? `<p class="what-cap">${S.onset ? `<span style="color:var(--terra)">${esc(S.onset)}</span> onset` : ""}${res.derived ? ` <span class="derived">(derived from site type — not individually curated)</span>` : ""}</p>` : "";
-  // Empty state teaches the NEGATIVE rather than sending the user away: a site that genuinely never
-  // presents at this tempo should say so, not have a cause invented to fill the gap.
-  const empty = `<div class="empty">A lesion here does not typically present with
-    <b>${esc(S.onset || "this")}</b> onset — the mismatch between tempo and site is itself informative.
-    Change the onset filter to see this site's differential.</div>`;
-  return `${cap}${lead}${red}${groups || empty}`;
+  // Tempo mismatches are demoted, never deleted — the teaching line that used to REPLACE the content now
+  // heads the disclosure. Spec 2026-08-14 §7.
+  const dem = res.demoted && res.demoted.length
+    ? `<details class="demoted" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given <b>${esc(S.onset)}</b> onset <span class="c">${res.demoted.length}</span></summary>
+        <div class="annot" style="margin-top:4px">A lesion here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
+        ${res.demoted.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">usually ${x.demotion.expected.map(esc).join(" / ")}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}</details>`
+    : "";
+  return `${cap}${lead}${red}${groups}${dem}`;
 }
 
 // ④ Next steps — its own card, tiered (immediate → first-line → confirmatory → monitoring) + urgency/referral.

@@ -7,6 +7,7 @@ import { CATEGORIES, TEMPO, LIKELIHOOD, CAUSES, causesFor, regionOf } from "../s
 import { BY_SITE } from "../src/data/syndromes.js";
 import { SITES } from "../src/model/sites.js";
 import * as sitesMod from "../src/model/sites.js";
+import { candidateSites } from "../src/engine/inverse.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -865,6 +866,27 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
      has("cerebrum_diffuse", /non.convulsive|status epilepticus|\bncse\b/i));
   ok("diffuse cerebrum teaches that focal signs argue AGAINST a diffuse cause",
      feat("cerebrum_diffuse", /focal|lateralis|lateraliz|asymmetr/i));
+}
+
+// --- tempo DEMOTES, never DROPS (2026-08-14, owner ruling) ---
+// A tempo mismatch used to delete the cause from the output. Content vanishing without saying why is the
+// same failure the sieve sweep fixed, in reverse — so a mismatch now demotes into a labelled band.
+{
+  const site = candidateSites().find(s => s.id === "left_medulla_lateral");
+  const all = causesFor(site, {});
+  const chronic = causesFor(site, { onset: "chronic" });
+  const shown = chronic.byCategory.reduce((n, g) => n + g.causes.length, 0);
+  ok("no cause is lost to a tempo filter — shown + demoted equals the unfiltered total",
+     shown + chronic.demoted.length === all.all.length,
+     `${shown} + ${chronic.demoted.length} vs ${all.all.length}`);
+  ok("a tempo mismatch lands in `demoted`, not in byCategory", chronic.demoted.length > 0);
+  ok("every demoted cause names the axis and what was entered",
+     chronic.demoted.every(c => c.demotion && c.demotion.axis === "tempo" && c.demotion.entered === "chronic"));
+  ok("every demoted cause states the tempo it DOES fit",
+     chronic.demoted.every(c => Array.isArray(c.demotion.expected) && c.demotion.expected.length > 0));
+  ok("nothing tempo-concordant is demoted",
+     chronic.demoted.every(c => !c.tempo.includes("chronic")));
+  ok("with no onset entered, nothing is demoted", causesFor(site, {}).demoted.length === 0);
 }
 
 // ---- report ----
