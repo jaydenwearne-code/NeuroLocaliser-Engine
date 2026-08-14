@@ -908,6 +908,71 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
   ok("one site yields no shared causes", combinedCauses([optic], {}).shared.length === 0);
 }
 
+// --- combinedCauses: TEMPO/COURSE DEMOTE, THEY NEVER DROP — the ruling must survive the merge ---
+// causesFor() already honours this for a single site (a tempo-mismatched cause moves to `demoted`, it is
+// never deleted). Before this fix, combinedCauses() intersected over `.all` (the concordant list) ONLY,
+// so a cause shared exclusively via demoted sources vanished from the merge the moment an onset was
+// entered — the ruling honoured on the single-site card and silently reversed on the merged one.
+// Reviewer-verified regression case: left_medulla_lateral + left_root_l5 share "Vertebral metastasis or
+// myeloma" with no onset entered, and share NOTHING once onset=acute is entered (pre-fix).
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const medulla = candidateSites().find(s => s.id === "left_medulla_lateral");
+  const l5 = candidateSites().find(s => s.id === "left_root_l5");
+  ok("fixture sites exist", !!medulla && !!l5);
+  const noOnset = combinedCauses([medulla, l5], {});
+  const withOnset = combinedCauses([medulla, l5], { onset: "acute" });
+  ok("the regression case shares at least one cause with no onset entered", noOnset.shared.length >= 1);
+  ok("(a) entering an onset does not reduce the SHARED count below the no-onset case (regression pair)",
+     withOnset.shared.length >= noOnset.shared.length);
+  ok("the previously-lost shared entry survives, now marked demoted",
+     withOnset.shared.some(s => /metastasis|myeloma/i.test(s.name) && s.demoted === true));
+
+  // (b) a shared entry sourced ONLY from tempo-mismatched causes is marked as demoted, and carries a
+  // demotion object naming the axis and the tempi it DOES fit.
+  const demotedEntries = withOnset.shared.filter(s => s.demoted);
+  ok("(b) at least one shared entry is demoted once onset is entered", demotedEntries.length >= 1);
+  ok("(b) every demoted shared entry carries a demotion object naming the tempi it fits",
+     demotedEntries.every(s => s.demotion && s.demotion.axis === "tempo" &&
+       Array.isArray(s.demotion.expected) && s.demotion.expected.length > 0 &&
+       !s.demotion.expected.includes("acute")));
+
+  // (c) a shared entry with a concordant source at at least one site is NOT demoted. The regression pair
+  // above happens to share only ONE cause (entirely demoted at onset=acute), so a second fixture pair —
+  // found to genuinely mix concordant and demoted shared entries at one onset — carries this assertion.
+  const midbrainL = candidateSites().find(s => s.id === "left_midbrain_medial");
+  const midbrainR = candidateSites().find(s => s.id === "right_midbrain_medial");
+  ok("second fixture sites exist", !!midbrainL && !!midbrainR);
+  const mixed = combinedCauses([midbrainL, midbrainR], { onset: "hyperacute" });
+  const concordantEntries = mixed.shared.filter(s => !s.demoted);
+  const demotedMixedEntries = mixed.shared.filter(s => s.demoted);
+  ok("(c) fixture pair genuinely mixes concordant and demoted shared entries at this onset",
+     concordantEntries.length >= 1 && demotedMixedEntries.length >= 1);
+  ok("(c) concordant shared entries carry no demotion object",
+     concordantEntries.every(s => s.demotion === null));
+  ok("(b) (repeat, on the mixed fixture) demoted shared entries carry a demotion object",
+     demotedMixedEntries.every(s => s.demotion && s.demotion.axis === "tempo"));
+
+  // (a) as a PROPERTY, swept over every candidate site pair and every declared tempo — entering an onset
+  // must never reduce the shared count below the no-onset baseline for that pair, anywhere in the roster.
+  const allSites = candidateSites();
+  const onsets = TEMPO.map(t => t.id ?? t);
+  let regressions = 0, checked = 0;
+  for (let i = 0; i < allSites.length; i++) {
+    for (let j = i + 1; j < allSites.length; j += 11) { // stride keeps the sweep fast while covering every site at least once
+      if (j <= i) continue;
+      const base = combinedCauses([allSites[i], allSites[j]], {}).shared.length;
+      for (const onset of onsets) {
+        checked++;
+        const n = combinedCauses([allSites[i], allSites[j]], { onset }).shared.length;
+        if (n < base) regressions++;
+      }
+    }
+  }
+  ok(`(a) property sweep: onset never shrinks the shared count below no-onset (${checked} pair×onset combos checked, ${regressions} regressions)`,
+     regressions === 0);
+}
+
 // --- canonicalKey: an AMBIGUOUS name (matches >=2 roster regexes) must not be forced onto one entity ---
 // Regression for a real false merge found by the reviewer: "Small metastasis or demyelinating plaque"
 // (the neoplastic cause at cortex_hand_knob) used to canonicalise onto "Multiple sclerosis" purely

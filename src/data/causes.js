@@ -3143,13 +3143,27 @@ export function canonicalKey(name) {
     : { key: `name:${name}`, entity: null };
 }
 
+// TEMPO/COURSE DEMOTE, THEY NEVER DROP (owner ruling, 2026-08-14) — and that ruling applies here exactly
+// as it applies to the single-site card. `causesFor()` already honours it by moving a tempo-mismatched
+// cause into `demoted` rather than deleting it; this merge must do the same, over the FULL list
+// (`all` concordant PLUS `demoted`), or the ruling is silently reversed the moment two sites are combined
+// (reviewer-verified: 31% of a 190-site-pair sweep lost their only shared cause once an onset was entered,
+// because the old code intersected over `.all` alone and threw every demoted cause away first).
+//
+// A shared entry is demoted iff EVERY site that contributes it does so via a demoted (tempo-mismatched)
+// cause — one concordant source anywhere is enough to keep the merged entry out of the demoted band,
+// exactly as a single site's own concordant/demoted split works.
 export function combinedCauses(sites, { onset } = {}) {
-  const perSite = sites.map(site => ({ site, causes: causesFor(site, { onset }).all }));
+  const perSite = sites.map(site => {
+    const r = causesFor(site, { onset });
+    return { site, causes: r.all.concat(r.demoted) };
+  });
   const buckets = new Map();
   for (const { site, causes } of perSite) {
     for (const c of causes) {
       const { key, entity } = canonicalKey(c.name);
-      const b = buckets.get(key) || { name: c.name, cat: c.cat, red: false, feature: c.feature, entity, sites: [] };
+      const b = buckets.get(key) ||
+        { name: c.name, cat: c.cat, red: false, feature: c.feature, entity, sites: [], hasConcordant: false, demotion: null };
       // Prefer the SHORTEST name as the display label — the canonical form is nearly always the plainest
       // ("Multiple sclerosis" over "Demyelination (multiple sclerosis)"). `name`, `cat` and `feature` must
       // always describe the SAME source cause `c` — carry all three across together, or a bucket can end
@@ -3157,12 +3171,26 @@ export function combinedCauses(sites, { onset } = {}) {
       if (c.name.length < b.name.length) { b.name = c.name; b.cat = c.cat; b.feature = c.feature || b.feature; }
       b.red = b.red || !!c.red;               // the strongest red flag among the sites wins
       if (!b.sites.includes(site.id)) b.sites.push(site.id);
+      if (c.demotion) {
+        // Only record a demotion while nothing concordant has been seen yet for this entry — once a
+        // concordant source is seen (below) the entry is permanently not-demoted, and must not carry a
+        // stale demotion object from an earlier, since-superseded source.
+        if (!b.hasConcordant && !b.demotion) b.demotion = c.demotion;
+      } else {
+        b.hasConcordant = true;
+        b.demotion = null;
+      }
       buckets.set(key, b);
     }
   }
   const shared = [...buckets.values()]
     .filter(b => b.sites.length >= 2)
-    .map(b => ({ ...b, count: b.sites.length }))
+    .map(({ hasConcordant, demotion, ...rest }) => ({
+      ...rest,
+      count: rest.sites.length,
+      demoted: !hasConcordant,
+      demotion: hasConcordant ? null : demotion,
+    }))
     .sort((a, b) => b.count - a.count || Number(b.red) - Number(a.red));
   return { shared, perSite };
 }
