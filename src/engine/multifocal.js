@@ -11,6 +11,8 @@ import { compartmentOf } from "../model/compartments.js";
 import { regionOf } from "../data/causes.js";
 import { umnLmnPattern } from "./patterns.js";
 import { LIKELIHOOD } from "../data/causes.js";
+import { solve } from "./inverse.js";
+import { LOCALISING } from "./score.js";
 
 const idOf = t => t.split("@")[0];
 
@@ -106,4 +108,28 @@ export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
   const rank = (a, b) =>
     LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood) || b.why.length - a.why.length;
   return { concordant: concordant.sort(rank), discordant: discordant.sort(rank) };
+}
+
+// THE PARSIMONY GUARD. Multifocality is a claim that must be earned, and the app's first job is to try to
+// talk you out of it: a localising sign entered on the wrong side is the one real path to over-calling,
+// because nearFit() deliberately refuses to relax a localising sign.
+//
+// So rather than relaxing it automatically, we NAME it and hand the judgement to the clinician — which is
+// that rule's intent. For each localising finding, does removing it collapse the picture to one site?
+export function forcingFindings(observedSet, opts = {}) {
+  const current = solve(observedSet, opts);
+  if (current.singleExplainsAll) return { findings: [], collapsesTo: null };
+
+  const findings = [];
+  let collapsesTo = null;
+  for (const tok of observedSet) {
+    if (!LOCALISING.has(idOf(tok))) continue; // a soft sign can never be what forces a second lesion
+    const without = new Set([...observedSet].filter(t => t !== tok));
+    const r = solve(without, opts);
+    if (r.singleExplainsAll) {
+      findings.push(tok);
+      collapsesTo = collapsesTo || (r.display && r.display[0] ? r.display[0].site : r.best && r.best.site) || null;
+    }
+  }
+  return { findings, collapsesTo };
 }

@@ -10,7 +10,7 @@
 import { MULTIFOCAL, FINDING_CLASSES } from "../src/data/multifocal.js";
 import { CATEGORIES, CAUSES, TEMPO, LIKELIHOOD } from "../src/data/causes.js";
 import { COURSE_IDS } from "../src/model/course.js";
-import { unifyingDiagnoses, assignClauses } from "../src/engine/multifocal.js";
+import { unifyingDiagnoses, assignClauses, forcingFindings } from "../src/engine/multifocal.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { compartmentOf } from "../src/model/compartments.js";
@@ -177,6 +177,46 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   const r = unifyingDiagnoses(sites, toks, { course: "stepwise", onset: "acute" });
   const names = [...r.concordant, ...r.discordant].map(e => e.name);
   ok("Mononeuritis multiplex emerges on two named-nerve sites", names.some(n => /mononeuritis multiplex/i.test(n)));
+}
+
+// --- 11: THE FORCING-FINDING GUARD, as a PROPERTY TEST ---
+// The card claims "remove this finding and one lesion explains everything". The test IS that claim: for
+// every finding named, removing it must actually collapse the picture. Claim and test are one statement.
+{
+  const wallenberg = siteById("left_medulla_lateral");
+  const l5 = siteById("right_root_l5");
+  const toks = new Set([...expectedFindings(wallenberg), ...expectedFindings(l5)]);
+  const f = forcingFindings(toks, {});
+  ok("a genuinely multifocal case names at least one forcing finding", f.findings.length > 0);
+
+  const { solve } = await import("../src/engine/inverse.js");
+  const allCollapse = f.findings.every(tok => {
+    const without = new Set([...toks].filter(t => t !== tok));
+    return solve(without).singleExplainsAll === true;
+  });
+  ok("EVERY named forcing finding provably collapses the picture when removed", allCollapse);
+}
+{
+  // A single-lesion case has nothing forcing a second site.
+  const toks = new Set(expectedFindings(siteById("left_medulla_lateral")));
+  ok("a single-lesion case names no forcing findings", forcingFindings(toks, {}).findings.length === 0);
+}
+
+// --- 12: MURKY-INPUT REGRESSION SET — these must NEVER produce a combined view ---
+// Probes from the design session. They are the guard against a future loosening of the trigger.
+{
+  const { solve } = await import("../src/engine/inverse.js");
+  const exp = [...expectedFindings(siteById("left_medulla_lateral"))];
+  const cases = {
+    "clean Wallenberg": exp,
+    "crossed sensory on the WRONG side": exp.map(t => t === "spinothalamic@right" ? "spinothalamic@left" : t),
+    "one spurious non-localising sign": [...exp, "babinski@right"],
+    "sparse murky input": ["weak_arm@left", "distal_sensory_loss@right"],
+  };
+  for (const [label, toks] of Object.entries(cases)) {
+    const r = solve(new Set(toks));
+    ok(`murky input produces no multifocal claim: ${label}`, !r.multi);
+  }
 }
 
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
