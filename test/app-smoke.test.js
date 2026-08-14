@@ -82,8 +82,8 @@ ok("Tone is its own top-level leaf", EXAM_TREE.some(n => n.id === "tone") && !!t
 // wrapper — two adjacent solve() fields with opposite shapes, which has already caused one crash.
 {
   const r = solve(new Set([...expectedFindings(siteById("left_medulla_lateral")), ...expectedFindings(siteById("right_root_l5"))]));
-  ok("r.multi.sites are RAW site objects with an id", r.multi.sites.every(s => s && typeof s.id === "string"));
-  ok("r.multi.sites are NOT {site} wrappers", r.multi.sites.every(s => s.site === undefined));
+  ok("r.multi.sites are RAW site objects with an id", !!r.multi && r.multi.sites.every(s => s && typeof s.id === "string"));
+  ok("r.multi.sites are NOT {site} wrappers", !!r.multi && r.multi.sites.every(s => s.site === undefined));
 }
 
 console.log("\nNeuroLocaliser — EXAM TREE integrity (Sub-project D)\n" + "=".repeat(52));

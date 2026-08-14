@@ -107,6 +107,7 @@ node test/gate.test.js           # ED prototype — passphrase gate hash-and-com
 node test/stroke-data.test.js    # Code-stroke mode — clinical content integrity (NIHSS 42, cites)
 node test/stroke-logic.test.js   # Code-stroke mode — NIHSS/localiser bridge, windows, LVO, eligibility, handover
 node test/multifocal.test.js     # cross-site (multi-location) entity roster — content-only invariants
+node test/combined-sites.test.js # Together card — pinned-pair vs engine-cover resolution (pure, DOM-free)
 ```
 
 ## Status

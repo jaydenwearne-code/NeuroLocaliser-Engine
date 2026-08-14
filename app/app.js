@@ -15,6 +15,8 @@ import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { encodeCase, decodeCase } from "./case-url.js";
 import { feedbackHref } from "./feedback.js";
 import { renderCodeStroke, stopStrokeClock } from "./code-stroke.js";
+import { combinedSites } from "./combined-sites.js";
+import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -188,6 +190,7 @@ function renderResults() {
   el.innerHTML = resultHeader(sel, list, total, r)
     + pmsg + rmsg
     + whereCard(list, cands, total, r)
+    + togetherCard(r, list)
     + whyCard(tf, sel, total)
     + whatCard(sel.site)
     + nextCard(sel.site);
@@ -255,17 +258,6 @@ function resultHeader(sel, list, total, r) {
     <p class="oh-status">${status}</p>${funcFlag}</div>`;
 }
 
-// What does the combined view describe — the user's pinned pair, or the engine's minimal cover? The label
-// matters: the user must always know which they are looking at.
-function combinedSites(r, list) {
-  if (S.pinned.size >= 2) {
-    const sites = list.filter(c => S.pinned.has(c.site.id)).map(c => c.site);
-    if (sites.length >= 2) return { sites, source: "pinned" };
-  }
-  if (r.multi && r.multi.sites.length > 1) return { sites: r.multi.sites, source: "cover" };
-  return { sites: [], source: null };
-}
-
 // ① Where — the differential list + localisation annotations + (collapsed) ruled-out
 function whereCard(list, cands, total, r) {
   const nAll = r.explainAll.length;
@@ -293,6 +285,56 @@ function whereCard(list, cands, total, r) {
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
   return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`);
+}
+
+// One entry in the Together card's disease list — same visual language as renderCause() ("What") so the
+// two cards read as one system, plus a `.dloc` line naming which of the sites each entry's clauses actually
+// resolved to (spread/motor clauses have no single site, so `satisfiedBy` is null for those — they simply
+// contribute nothing to this line rather than rendering as "undefined" or an empty bullet).
+function unifyingRow(e) {
+  const whyLine = e.why
+    .map(w => (w.satisfiedBy && w.satisfiedBy.id) ? esc(siteName(w.satisfiedBy)) : "")
+    .filter(Boolean).join(" · ");
+  const path = e.confirm ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(e.confirm)}</span></div>` : "";
+  return `<div class="cause"><div class="cline"><span class="cn">${esc(e.name)}</span><span class="lk">${esc(e.likelihood)}</span>${e.red ? `<span class="rf">RED</span>` : ""}</div>${e.feature ? `<div class="cfeat">${esc(e.feature)}</div>` : ""}${whyLine ? `<div class="dloc">${whyLine}</div>` : ""}${path}</div>`;
+}
+
+// ② Together — the cross-site view. PARSIMONY FIRST: the card's first job is to try to talk you out of a
+// multifocal claim, because a localising sign entered on the wrong side is the one real path to
+// over-calling. The disease list comes second, framed conditionally. Order matters and must not change:
+// guard → which sites → disease list (concordant open, tempo/course mismatches collapsed).
+function togetherCard(r, list) {
+  const { sites, source } = combinedSites(r, list, S.pinned);
+  if (sites.length < 2) return "";
+
+  const ff = forcingFindings(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
+  // Each forcing finding carries ITS OWN collapse target (see multifocal.js) — different findings can
+  // collapse the picture onto different sites, so they are named in pairs, never under one shared claim.
+  const guard = ff.findings.length
+    ? `<div class="multi" style="border-color:var(--gold)"><b>Check this first.</b> This is multifocal only because of: ${ff.findings.map(f =>
+        `<code>${esc(f.token)}</code>${f.collapsesTo ? ` — drop it and a single ${esc(siteName(f.collapsesTo))} lesion explains everything` : ""}`
+      ).join("; ")}. If any of these signs is uncertain, re-check it before accepting a multifocal picture.</div>`
+    : `<div class="annot"><b>Several findings independently require a second site</b> — no single observation is carrying the multifocal claim.</div>`;
+
+  const srcLine = `<div class="annot">Showing <b>${source === "pinned" ? "your selection" : "the engine's minimal cover"}</b>: ${sites.map(s => esc(siteName(s))).join(" + ")}.${source === "cover" ? " Pin two sites in the list above to test a different pair." : ""}</div>`;
+
+  const u = unifyingDiagnoses(sites, S.tokens, { onset: S.onset || undefined, course: S.course || undefined });
+  const fits = u.concordant.length
+    ? u.concordant.map(unifyingRow).join("")
+    : `<div class="empty">No catalogued cross-site process fits this combination — which is itself informative: consider two unrelated lesions.</div>`;
+
+  // Soft-axis mismatches DEMOTE, they never drop (owner ruling). The band names WHICH axis missed and what
+  // would have to be true.
+  const axisLabel = es => {
+    const axes = [...new Set(es.flatMap(e => e.demotions.map(d => d.axis)))];
+    return axes.length === 2 ? "tempo and course" : axes[0] === "course" ? "the course" : "the tempo";
+  };
+  const disc = u.discordant.length
+    ? `<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given ${esc(axisLabel(u.discordant))} <span class="c">${u.discordant.length}</span></summary>
+        ${u.discordant.map(e => `${unifyingRow(e)}<div class="annot">${e.demotions.map(d => `You entered <b>${esc(d.entered)}</b>; this is typically ${d.expected.map(esc).join(" / ")}.`).join(" ")}</div>`).join("")}</details>`
+    : "";
+
+  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, guard + srcLine + fits + disc);
 }
 
 const sideName = s => s === "left" ? "left" : s === "right" ? "right" : s === "bilateral" ? "both sides" : "the affected side";
