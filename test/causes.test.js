@@ -889,6 +889,25 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
   ok("with no onset entered, nothing is demoted", causesFor(site, {}).demoted.length === 0);
 }
 
+// --- combinedCauses: the cross-site merge (spec 2026-08-14 §6) ---
+// Naive name intersection DOES NOT WORK and this is the assertion that proves it stays fixed: MS appears
+// as >=8 different strings across the layer ("Demyelination", "Demyelination (MS)", "Multiple sclerosis"),
+// so canonicalisation via the roster's `matches` regex is what makes the flagship case surface at all.
+{
+  const { combinedCauses } = await import("../src/data/causes.js");
+  const optic = candidateSites().find(s => s.level === "visual_pathway" && /optic/.test(s.part));
+  const cord = candidateSites().find(s => s.id === "left_cord_hemi");
+  const r = combinedCauses([optic, cord], {});
+  ok("combinedCauses returns shared and perSite", Array.isArray(r.shared) && Array.isArray(r.perSite));
+  ok("every shared cause names >= 2 sites", r.shared.every(s => s.sites.length >= 2));
+  ok("every shared cause reports its count", r.shared.every(s => s.count === s.sites.length));
+  ok("demyelination surfaces across differently-worded sites (canonicalisation works)",
+     r.shared.some(s => /demyelinat|sclerosis/i.test(s.name) || s.entity === "Multiple sclerosis"));
+  ok("perSite covers every site passed in", r.perSite.length === 2);
+  // A single site can share nothing with itself-as-a-pair.
+  ok("one site yields no shared causes", combinedCauses([optic], {}).shared.length === 0);
+}
+
 // ---- report ----
 console.log("\nNeuroLocaliser — CAUSES / AETIOLOGY LAYER (the 'what')\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);

@@ -18,6 +18,8 @@
 // plausible cause at a site, the honest output is silence, so `byCategory` simply omits it.
 // See docs/superpowers/specs/2026-08-11-differential-depth-design.md.
 
+import { MULTIFOCAL } from "./multifocal.js";
+
 // ---- the surgical sieve ----
 export const CATEGORIES = [
   { id: "vascular",     label: "Vascular (ischaemic / haemorrhagic)",        tint: "--terra" },
@@ -3113,4 +3115,40 @@ export function causesFor(site, { onset } = {}) {
     .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: concordant.filter(x => x.cat === cat.id) }))
     .filter(g => g.causes.length);
   return { byCategory, demoted, all: concordant, onset: onset || null, derived, source };
+}
+
+// ---- CROSS-SITE MERGE (spec 2026-08-14 §6) ----
+// Which causes are plausible at MORE THAN ONE of these sites? Measured before designing: 856 distinct
+// cause names, only 147 repeat verbatim. The family builders (sbSpine/nvSpine/rtSpine) produce identical
+// names by construction and intersect perfectly; HAND-AUTHORED entities fragment badly — MS alone appears
+// as "Demyelination", "Demyelination (MS)", "Multiple sclerosis", "Demyelination (multiple sclerosis)".
+//
+// So: canonicalise through the roster's `matches` regexes FIRST (one table doing double duty — it names
+// the cross-site entity AND supplies the intersection key, so there is no second alias map to drift),
+// then fall back to the verbatim name, which already works for the builder families.
+function canonicalKey(name) {
+  const hit = MULTIFOCAL.find(e => e.matches && e.matches.test(name));
+  return hit ? { key: `entity:${hit.name}`, entity: hit.name } : { key: `name:${name}`, entity: null };
+}
+
+export function combinedCauses(sites, { onset } = {}) {
+  const perSite = sites.map(site => ({ site, causes: causesFor(site, { onset }).all }));
+  const buckets = new Map();
+  for (const { site, causes } of perSite) {
+    for (const c of causes) {
+      const { key, entity } = canonicalKey(c.name);
+      const b = buckets.get(key) || { name: c.name, cat: c.cat, red: false, feature: c.feature, entity, sites: [] };
+      // Prefer the SHORTEST name as the display label — the canonical form is nearly always the plainest
+      // ("Multiple sclerosis" over "Demyelination (multiple sclerosis)").
+      if (c.name.length < b.name.length) { b.name = c.name; b.feature = c.feature || b.feature; }
+      b.red = b.red || !!c.red;               // the strongest red flag among the sites wins
+      if (!b.sites.includes(site.id)) b.sites.push(site.id);
+      buckets.set(key, b);
+    }
+  }
+  const shared = [...buckets.values()]
+    .filter(b => b.sites.length >= 2)
+    .map(b => ({ ...b, count: b.sites.length }))
+    .sort((a, b) => b.count - a.count || Number(b.red) - Number(a.red));
+  return { shared, perSite };
 }
