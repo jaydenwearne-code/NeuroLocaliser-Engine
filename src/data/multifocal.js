@@ -25,12 +25,17 @@ export const FINDING_CLASSES = {
 };
 
 // mf(name, cat, opts) — mirrors c() in causes.js.
-//   spread   {minSites, distinctCompartments}  generic dissemination in space
-//   sites    [{compartment|level|region}]      specific places, each matched by a DISTINCT site
-//   motor    "mixed"                            delegates to umnLmnPattern() over the observed findings
-//   forbids  ["sensory"]                        finding CLASSES that exclude this entity
-//   course/tempo  SOFT axes — they demote, they never drop (owner ruling 2026-08-14)
-//   matches  RegExp                             canonicalises per-site CAUSES names onto this entity
+//   spread       {minSites, distinctCompartments}  generic dissemination in space
+//   sites        [{compartment|level|region}]      specific places, each matched by a DISTINCT site
+//   motor        "mixed"                            delegates to umnLmnPattern() over the observed findings
+//   forbids      ["sensory"]                        finding CLASSES that exclude this entity
+//   compartments ["brain","cord",...]  OPTIONAL allow-list of compartments the entity can plausibly
+//                involve (owner ruling 4, 2026-08-14) — a HARD constraint like spread/sites/motor/forbids:
+//                if declared, EVERY site in the picture must resolve to one of the listed compartments or
+//                the entity does not fire at all. This is anatomy, not tempo — it filters, it never merely
+//                demotes. An entity without the field is unconstrained.
+//   course/tempo SOFT axes — they demote, they never drop (owner ruling 2026-08-14)
+//   matches      RegExp                             canonicalises per-site CAUSES names onto this entity
 const mf = (name, cat, opts) => ({ name, cat, red: false, confirm: "", ...opts });
 
 export const MULTIFOCAL = [
@@ -44,6 +49,12 @@ export const MULTIFOCAL = [
   }),
   mf("Multiple sclerosis", "inflammatory", {
     spread: { minSites: 2, distinctCompartments: 2 },
+    // Owner ruling 3 (2026-08-14): MS fired on ANY two distinct compartments — including anatomically
+    // senseless pairs like skull base + sympathetic chain (690 new site pairs once those two compartments
+    // were split out). Restricted to the CNS: brain, brainstem, cerebellum, cord. `optic` is included
+    // DELIBERATELY — the optic nerve is a CNS tract, and optic neuritis is a defining MS presentation (see
+    // `feature` below, which names it). Flag for the owner's veto if they disagree with including it.
+    compartments: ["brain", "brainstem", "cerebellum", "cord", "optic"],
     course: ["relapsing", "progressive", "stepwise"], tempo: ["subacute"], likelihood: "common",
     // Excludes osmotic demyelination (central/extrapontine myelinolysis) — a distinct osmotic/metabolic
     // entity that otherwise matches `demyelinat` and gets wrongly canonicalised onto MS (2026-08-14 review).

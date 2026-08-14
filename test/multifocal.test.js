@@ -307,6 +307,36 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
      !/interferon|glatiramer|natalizumab|ocrelizumab|fingolimod|dimethyl fumarate|alemtuzumab|cladribine|siponimod|ofatumumab|rituximab/i.test(ms.red));
 }
 
+// --- 18: RULING 3 (owner, 2026-08-14) — MS restricted to the CNS (brain, brainstem, cerebellum, cord,
+// optic). It must no longer fire on an anatomically senseless pair like skull base + sympathetic chain,
+// but must still fire on genuine CNS pairs, including one that uses the optic compartment.
+{
+  const skullBaseSite = siteById("left_peripheral_vestibular_labyrinth"); // compartment: skull_base
+  const sympatheticSite = siteById("left_sympathetic_preganglionic");
+  ok("fixture sites exist (skull_base + sympathetic)", !!skullBaseSite && !!sympatheticSite);
+  ok("fixture sites are indeed in different, non-CNS compartments",
+     compartmentOf(skullBaseSite) === "skull_base" && compartmentOf(sympatheticSite) === "sympathetic");
+  const toks = tokensFor(skullBaseSite.id, sympatheticSite.id);
+  const r = unifyingDiagnoses([skullBaseSite, sympatheticSite], toks, {});
+  const names = [...r.concordant, ...r.discordant].map(e => e.name);
+  ok("MS does NOT fire on skull_base + sympathetic (not CNS)", !names.some(n => /multiple sclerosis/i.test(n)), names.join(", "));
+
+  // Genuine CNS pairs still fire, including a pair that uses the `optic` compartment.
+  const cortexSite = siteById("left_cortex_motor_facearm");
+  const cordSite = siteById("left_cord_hemi");
+  const toks2 = tokensFor(cortexSite.id, cordSite.id);
+  const r2 = unifyingDiagnoses([cortexSite, cordSite], toks2, {});
+  const names2 = [...r2.concordant, ...r2.discordant].map(e => e.name);
+  ok("MS still fires on brain + cord (genuine CNS pair)", names2.some(n => /multiple sclerosis/i.test(n)), names2.join(", "));
+
+  const opticSite = siteById("left_visual_pathway_optic_tract");
+  const toks3 = tokensFor(opticSite.id, cordSite.id);
+  const r3 = unifyingDiagnoses([opticSite, cordSite], toks3, {});
+  const names3 = [...r3.concordant, ...r3.discordant].map(e => e.name);
+  ok("MS still fires on optic + cord (optic deliberately included as a CNS tract)",
+     names3.some(n => /multiple sclerosis/i.test(n)), names3.join(", "));
+}
+
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

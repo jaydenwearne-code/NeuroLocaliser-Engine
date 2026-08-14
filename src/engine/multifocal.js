@@ -77,6 +77,14 @@ export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
   for (const entity of MULTIFOCAL) {
     let why = [];
 
+    // --- hard: anatomical sense-check (owner ruling 4, 2026-08-14) ---
+    // An optional allow-list of compartments the entity can plausibly involve. If declared, EVERY site in
+    // the set must resolve to one of the listed compartments, or the entity does not fire at all — this is
+    // anatomy, not tempo, so it FILTERS exactly like spread/sites/motor/forbids, never merely demotes. An
+    // entity without the field is unconstrained (unchanged behaviour). E.g. two peripheral-nerve sites must
+    // not be able to return Primary CNS lymphoma or an embolic shower, which make no anatomical sense there.
+    if (entity.compartments && sites.some(s => !entity.compartments.includes(compartmentOf(s)))) continue;
+
     // --- hard: dissemination in space ---
     if (entity.spread) {
       const w = spreadSatisfied(sites, entity.spread);
