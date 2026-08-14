@@ -52,6 +52,46 @@ const list = [{ site: siteA, n: 3 }, { site: siteB, n: 2 }, { site: siteC, n: 1 
   ok("no pins and no cover -> sites is empty", res.sites.length === 0);
 }
 
+// Strip `//` line comments and `/* */` block comments from a source string before the call-site regex below
+// scans it, so a comment that happens to contain something call-shaped (e.g. an old two-argument example, or
+// a literal ")") can't be mistaken for a real call site. Tracks string literals (', ", `) char-by-char —
+// including escaped quotes — so a `//` or `/*` inside a string is left alone rather than treated as a comment
+// start.
+// REMAINING LIMITATION: this is not a real JS parser. A `)` inside a call's own THIRD argument (e.g. a
+// function-expression argument containing an unbalanced paren, or a regex literal containing `/*`) can still
+// confuse the arity count below, because the call-site match itself is a non-nesting regex, not a parser. Keep
+// this test's job narrow (arity of textually-simple calls) rather than reaching for a real parser here.
+function stripComments(src) {
+  let out = "";
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i], c2 = src[i + 1];
+    if (c === "'" || c === '"' || c === "`") {
+      const quote = c;
+      out += c; i++;
+      while (i < n && src[i] !== quote) {
+        if (src[i] === "\\") { out += src[i] + (src[i + 1] ?? ""); i += 2; continue; }
+        out += src[i]; i++;
+      }
+      out += src[i] ?? ""; i++;
+      continue;
+    }
+    if (c === "/" && c2 === "/") {
+      while (i < n && src[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && c2 === "*") {
+      i += 2;
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      i += 2;
+      continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
 // ---- EVERY call site must pass the pinned Set ----
 // combinedSites(r, list, pinned) silently falls back to the engine's cover when `pinned` is omitted. That is
 // correct behaviour for the argument, but a CALLER that forgets it makes the Together card show the user's
@@ -59,7 +99,8 @@ const list = [{ site: siteA, n: 3 }, { site: siteB, n: 2 }, { site: siteC, n: 1 
 // same screen, with nothing to signal it. That shipped once (whatCard and nextCard both omitted it) and is
 // invisible to any test that calls the function directly, so the guard has to be over the call sites.
 {
-  const src = readFileSync(new URL("../app/app.js", import.meta.url), "utf8");
+  const raw = readFileSync(new URL("../app/app.js", import.meta.url), "utf8");
+  const src = stripComments(raw);
   const calls = [...src.matchAll(/combinedSites\(([^)]*)\)/g)].map(m => m[1]);
   const arity = calls.map(a => a.split(",").length);
   ok(`every combinedSites() call site passes 3 args (found ${arity.join("/")})`,

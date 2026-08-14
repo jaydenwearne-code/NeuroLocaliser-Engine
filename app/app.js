@@ -476,21 +476,28 @@ function nextCard(site, r, list) {
   const nx = combined ? combinedNextSteps(sites) : nextStepsFor(site);
   const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
-  return card(cap, toggle + nextBlock(nx));
+  return card(cap, toggle + nextBlock(nx, combined));
 }
 
-function nextBlock(nx) {
+// `combined` distinguishes the two shapes nextBlock is fed: nextStepsFor()'s single-site plan (which carries
+// a real `curated` flag) vs combinedNextSteps()'s union-of-plans (which never sets `curated` — the merged
+// tiers may mix curated and derived sites, so neither true nor false would be honest). Do not read
+// nx.curated for the combined case; say what actually happened instead — see review Task 14 A1.
+function nextBlock(nx, combined) {
   const urgTint = nx.urgency === "emergency" ? "--red" : nx.urgency === "urgent" ? "--gold" : "--faint";
   const urgLabel = nx.urgency === "emergency" ? "EMERGENCY" : nx.urgency === "urgent" ? "URGENT" : "routine";
   const tier = (title, items) => (items && items.length)
     ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
+  const provenance = combined
+    ? `<p class="derived">Merged from each site's individual workup plan — see "This site" for any one site's own tiers.</p>`
+    : (nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`);
   return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
     ${tier("Immediate / bedside", nx.immediate)}
     ${tier("First-line investigations", nx.investigations)}
     ${tier("Confirmatory / specialist", nx.confirmatory)}
     ${tier("Monitoring / safety-netting", nx.monitoring)}
-    ${nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`}`;
+    ${provenance}`;
 }
 
 // ================= ATLAS =================
