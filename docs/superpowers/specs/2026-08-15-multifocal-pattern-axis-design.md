@@ -55,16 +55,24 @@ only when the observed sites have that shape.
 
 ### 1. `src/model/vascular.js` — the authored vascular axis
 
-Keyed by **part**, not site, so left and right collapse to one row: 94 CNS parts rather than 188 sites.
+Keyed by **`level|part`**, not by site, so left and right collapse to one row: **104 CNS keys** rather than
+188 sites.
+
+> **Keyed by `level|part`, NOT by `part` alone.** Part names are not unique across levels — `lateral` is
+> used at midbrain, pons, medulla, cord *and* hypothalamus; `hemi` at four levels; also `medial` and
+> `anterior`. Four names collide, which is why there are 94 distinct part names but **104** distinct
+> `level|part` keys. Keying on the bare name would give lateral medulla (PICA) and lateral midbrain a single
+> shared vascular row — a silent clinical error. `causes.js` already resolves keys as
+> `` `${level}_${part}` `` for the same reason; follow that precedent.
 
 ```js
 export const VASCULAR = {
-  motor_facearm:    { vessel: "MCA",     segment: "M4",  branch: "precentral",        zone: "cortical" },
-  hand_knob:        { vessel: "MCA",     segment: "M4",  branch: "precentral",        zone: "cortical" },
-  operculum:        { vessel: "MCA",     segment: "M3",  branch: "frontal operculum", zone: "cortical" },
-  motor_leg:        { vessel: "ACA",     segment: "A4",  branch: "paracentral",       zone: "cortical" },
-  internal_capsule: { vessel: "MCA",     segment: "M1",  branch: "lenticulostriate",  zone: "perforator" },
-  watershed_anterior:{ vessel: "ACA-MCA",segment: null,  branch: null,                zone: "watershed" },
+  "cortex|motor_facearm":    { vessel: "MCA",     segment: "M4",  branch: "precentral",        zone: "cortical" },
+  "cortex|hand_knob": { vessel: "MCA",     segment: "M4",  branch: "precentral",        zone: "cortical" },
+  "cortex|operculum": { vessel: "MCA",     segment: "M3",  branch: "frontal operculum", zone: "cortical" },
+  "cortex|motor_leg": { vessel: "ACA",     segment: "A4",  branch: "paracentral",       zone: "cortical" },
+  "subcortex|internal_capsule": { vessel: "MCA",     segment: "M1",  branch: "lenticulostriate",  zone: "perforator" },
+  "cortex|watershed_anterior": { vessel: "ACA-MCA",segment: null,  branch: null,                zone: "watershed" },
 };
 ```
 
@@ -85,18 +93,18 @@ null carries a reason and is asserted as intentional, the same shape as `NOT_LOC
 
 ### 2. `src/model/topography.js` — the authored non-vascular axis
 
-Also keyed by part. Kept separate from `vascular.js` because it is a different clinical review question.
+Also keyed by `level|part`, for the same collision reason. Kept separate from `vascular.js` because it is a different clinical review question.
 
 ```js
 export const TOPOGRAPHY = {
-  motor_facearm:     { lobe: "frontal",  surface: false, system: null },
-  cauda_equina:      { lobe: null,       surface: true,  system: null },
-  anterior_temporal: { lobe: "temporal", surface: false, system: "limbic" },
+  "cortex|motor_facearm":     { lobe: "frontal",  surface: false, system: null },
+  "cauda|cauda_equina": { lobe: null,       surface: true,  system: null },
+  "cortex|anterior_temporal": { lobe: "temporal", surface: false, system: "limbic" },
 };
 ```
 
-- **`lobe`** — `frontal · parietal · temporal · occipital · insula`. **33 cortex parts** need a tag; the
-  other 61 CNS parts are `lobe: null` by nature.
+- **`lobe`** — `frontal · parietal · temporal · occipital · insula`. **33 cortex keys** need a tag; the
+  other 71 CNS keys are `lobe: null` by nature.
 - **`surface`** — CSF-bathed (meninges, cranial-nerve exits, roots, cauda) versus deep parenchyma.
 - **`system`** — tags only the selectively vulnerable systems: `limbic · cerebellar · brainstem · DRG ·
   NMJ`. `null` everywhere else.
@@ -179,7 +187,7 @@ precisely because its allow-list already spans CNS and PNS.
 
 **Table invariants**, in the shape that has held elsewhere in this engine:
 
-- every CNS part has a `VASCULAR` row and every part a `TOPOGRAPHY` row, asserted against
+- every CNS `level|part` key has a `VASCULAR` row and every key a `TOPOGRAPHY` row, asserted against
   `candidateSites()` at runtime so a newly added site cannot fall through silently;
 - **every `segment: null` is deliberate and carries a reason** — a null is never an unfilled cell;
 - every `vessel`, `segment`, `lobe`, `zone` and `system` value comes from a declared vocabulary, so free
@@ -199,8 +207,8 @@ widen a specific pattern, not to loosen the mechanism.
 | Risk | Mitigation |
 |---|---|
 | Over-suppression — the card falls silent too often | Measured before/after and reported as a number; widen specific patterns if it climbs |
-| 94 vascular rows are new clinical content at the roster's bar | Authored and presented in anatomical batches (anterior → posterior → perforator → brainstem → cord), not dropped at once |
-| A part's territory is genuinely not vascular-defined | Explicit `segment: null` with a reason, asserted deliberate |
+| 104 vascular rows are new clinical content at the roster's bar | Authored and presented in anatomical batches (anterior → posterior → perforator → brainstem → cord), not dropped at once |
+| A key's territory is genuinely not vascular-defined | Explicit `segment: null` with a reason, asserted deliberate |
 | Patterns drawn too tight, so a real disease stops being offered | Start tight, widen against cases the owner flags — the reverse is invisible |
 | This changes behaviour already live to ED testers | Owner sign-off before merge, as with the roster |
 
@@ -216,7 +224,7 @@ widen a specific pattern, not to loosen the mechanism.
    yields neither leptomeningeal disease nor paraneoplastic syndrome.
 2. MS fires on any two CNS sites separated in space on any axis, and on no fewer.
 3. `spread` no longer exists in the entity shape.
-4. Every CNS part has a vascular row; every `segment: null` is deliberate and reasoned.
+4. Every CNS `level|part` key has a vascular row; every `segment: null` is deliberate and reasoned.
 5. Every single site alone still produces no multifocal claim; genuinely two-lesion pairs still fire.
 6. The before/after silent-pair percentage is measured and reported.
 7. All suites green, and the reported case verified in the running app.
