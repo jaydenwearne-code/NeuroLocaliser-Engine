@@ -1,7 +1,7 @@
 // multifocal.js (engine) — matching and ranking for the cross-site layer. LOGIC ONLY: every disease name,
 // feature and red flag lives in src/data/multifocal.js so the content can be reviewed on its own.
 //
-// HARD constraints (spread / sites / motor / forbids) FILTER: they are anatomical facts, and an entity
+// HARD constraints (pattern / sites / motor / forbids) FILTER: they are anatomical facts, and an entity
 // that does not fit them does not apply. SOFT constraints (tempo / course) only DEMOTE — a mismatch is
 // informative, not disqualifying (owner ruling, 2026-08-14).
 //
@@ -13,6 +13,8 @@ import { umnLmnPattern } from "./patterns.js";
 import { LIKELIHOOD } from "../data/causes.js";
 import { solve } from "./inverse.js";
 import { LOCALISING } from "./score.js";
+import { separatedInSpace } from "./space.js";
+import { topographyOf } from "../model/topography.js";
 
 const idOf = t => t.split("@")[0];
 
@@ -54,17 +56,47 @@ export function assignClauses(sites, clauses) {
   return assign(0) ? why : null;
 }
 
-// `spread` is satisfied by the SET of sites, not by any one of them — there is no single site to name,
-// so `satisfiedBy` is null. The clause object still carries the descriptive count/compartment text.
-function spreadSatisfied(sites, spread) {
-  const minSites = spread.minSites || 2;
-  if (sites.length < minSites) return null;
-  if (spread.distinctCompartments) {
-    const cmps = new Set(sites.map(compartmentOf).filter(Boolean));
-    if (cmps.size < spread.distinctCompartments) return null;
-    return [{ clause: { spread: `${cmps.size} compartments` }, satisfiedBy: null }];
+// ---- LESION PATTERNS (spec 2026-08-15) ----
+// A disease has a characteristic lesion PATTERN, not a lesion count. The previous `spread: {minSites: 2}`
+// asked "are there two sites?" — a counting question — and fired nine of thirteen entities together, so
+// leptomeningeal disease and paraneoplastic syndrome appeared on two motor-strip lesions while multiple
+// sclerosis, blocked by its own `distinctCompartments`, did not appear at all (owner bug report).
+//
+// Every predicate below is a statement about the WHOLE site set, so there is exactly one reading. Each is
+// satisfied by the SET rather than by any one site, so `satisfiedBy` stays null and the clause carries the
+// descriptive text the card renders.
+export const PATTERNS = ["mass", "territorial", "surface", "systemSelective", "nerveTrunk", "motorSystem", "cns"];
+
+const CNS_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "cord", "optic"]);
+const allCns = sites => sites.every(s => CNS_COMPARTMENTS.has(compartmentOf(s)));
+
+export function patternMatches(pattern, sites, observedSet) {
+  if (!Array.isArray(sites) || sites.length < 2) return false;
+  switch (pattern) {
+    // A discrete lesion IN parenchyma, rather than seeded on a CSF surface.
+    case "mass":
+      return allCns(sites) && sites.every(s => topographyOf(s)?.surface === false);
+    // Multiple arterial territories at BRANCH level — the signature of a shower of emboli.
+    case "territorial":
+      return allCns(sites) && separatedInSpace(sites, "segment");
+    // Seeded along CSF-bathed surfaces: meninges, cranial-nerve corridors, roots, cauda.
+    case "surface":
+      return sites.every(s => topographyOf(s)?.surface === true);
+    // Attacks a selectively vulnerable SYSTEM rather than an arbitrary place.
+    case "systemSelective":
+      return sites.every(s => !!topographyOf(s)?.system);
+    case "nerveTrunk":
+      return sites.every(s => compartmentOf(s) === "nerve");
+    // Delegates to the existing synthesis over the OBSERVED findings, so this layer and the UMN/LMN flag
+    // can never disagree. Deliberately NOT a property of the site set.
+    case "motorSystem":
+      return umnLmnPattern(observedSet).verdict === "mixed";
+    // Any two CNS sites separated in space on ANY axis — the owner's ruling for MS.
+    case "cns":
+      return allCns(sites) && separatedInSpace(sites, "any");
+    default:
+      return false;
   }
-  return [{ clause: { spread: `${sites.length} sites` }, satisfiedBy: null }];
 }
 
 export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
@@ -85,11 +117,13 @@ export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
     // not be able to return Primary CNS lymphoma or an embolic shower, which make no anatomical sense there.
     if (entity.compartments && sites.some(s => !entity.compartments.includes(compartmentOf(s)))) continue;
 
-    // --- hard: dissemination in space ---
-    if (entity.spread) {
-      const w = spreadSatisfied(sites, entity.spread);
-      if (!w) continue;
-      why = why.concat(w);
+    // --- hard: lesion PATTERN — the shape of dissemination, not a site count ---
+    // An entity fires if ANY ONE of its declared patterns matches; some diseases genuinely have more than
+    // one mode (systemic vasculitis is territorial in the CNS and a nerve-trunk process in the PNS).
+    if (entity.pattern && entity.pattern.length) {
+      const hit = entity.pattern.find(p => patternMatches(p, sites, observedSet));
+      if (!hit) continue;
+      why.push({ clause: { pattern: hit }, satisfiedBy: null });
     }
     // --- hard: specific places ---
     if (entity.sites && entity.sites.length) {

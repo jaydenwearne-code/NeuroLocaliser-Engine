@@ -10,7 +10,7 @@
 import { MULTIFOCAL, FINDING_CLASSES } from "../src/data/multifocal.js";
 import { CATEGORIES, CAUSES, TEMPO, LIKELIHOOD } from "../src/data/causes.js";
 import { COURSE_IDS } from "../src/model/course.js";
-import { unifyingDiagnoses, assignClauses, forcingFindings } from "../src/engine/multifocal.js";
+import { PATTERNS, patternMatches, unifyingDiagnoses, assignClauses, forcingFindings } from "../src/engine/multifocal.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { compartmentOf } from "../src/model/compartments.js";
@@ -25,7 +25,9 @@ const TEMPO_IDS = new Set(TEMPO.map(t => t.id));
 // --- 1: shape ---
 {
   ok(`the roster has >= 13 entities (got ${MULTIFOCAL.length})`, MULTIFOCAL.length >= 13);
-  const noClause = MULTIFOCAL.filter(e => !e.spread && !(e.sites && e.sites.length) && !e.motor);
+  // The trigger is now `pattern` (2026-08-15) — `spread` no longer exists. Same intent: an entity with
+  // no hard clause at all would fire on any two sites whatsoever.
+  const noClause = MULTIFOCAL.filter(e => !(e.pattern && e.pattern.length) && !(e.sites && e.sites.length) && !e.motor);
   ok(`every entity has at least one HARD clause (${noClause.length} without)`, noClause.length === 0,
      noClause.map(e => e.name).join(", "));
   const badCat = MULTIFOCAL.filter(e => !CAT_IDS.has(e.cat));
@@ -48,11 +50,17 @@ const TEMPO_IDS = new Set(TEMPO.map(t => t.id));
 // --- 2: THE ANTI-OVER-CALL GUARD ---
 // A cross-site entity that a single site could satisfy is not a cross-site entity.
 {
-  const singleSatisfiable = MULTIFOCAL.filter(e => {
-    const minSpread = e.spread ? (e.spread.minSites || 2) : 0;
-    const nSites = e.sites ? e.sites.length : 0;
-    return Math.max(minSpread, nSites) < 2 && e.motor !== "mixed";
-  });
+  // Restated 2026-08-15: the old form read `e.spread.minSites`, which no longer exists. The guarantee is
+  // now structural — patternMatches() returns false for any set of fewer than two sites — so it is
+  // asserted directly against every pattern rather than inferred from a declared minimum.
+  // NB `siteById` is declared further down (§5), so this block does its own lookup rather than reaching
+  // into the temporal dead zone.
+  const oneSite = [candidateSites().find(s => s.id === "left_cortex_motor_facearm")];
+  const anyPatternOnOneSite = PATTERNS.filter(p => patternMatches(p, oneSite, new Set()));
+  ok(`no PATTERN can be satisfied by a single site (${anyPatternOnOneSite.length})`,
+     anyPatternOnOneSite.length === 0, anyPatternOnOneSite.join(", "));
+  const singleSatisfiable = MULTIFOCAL.filter(e =>
+    !(e.pattern && e.pattern.length) && (e.sites ? e.sites.length : 0) < 2 && e.motor !== "mixed");
   ok(`no entity can be satisfied by a single site (${singleSatisfiable.length})`, singleSatisfiable.length === 0,
      singleSatisfiable.map(e => e.name).join(", "));
 }
@@ -101,8 +109,8 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   // the visual_pathway level parts (optic_tract / lgn / retina / chiasm); `left_visual_pathway_optic_tract`
   // is used here as the closest real site satisfying the test's anatomical intent — a lesion in the optic
   // compartment, distinct from the cord compartment. The MS entity's clause is a generic
-  // `spread:{distinctCompartments:2}`, not an optic-specific clause, so any two distinct compartments
-  // satisfy it; this substitution preserves that intent exactly.
+  // `pattern: ["cns"]`, not an optic-specific clause, so any two separated CNS sites satisfy it; this
+  // substitution preserves that intent exactly.
   const sites = [siteById("left_visual_pathway_optic_tract"),
                  siteById("left_cord_hemi")].filter(Boolean);
   const toks = tokensFor(...sites.map(s => s.id));
@@ -110,12 +118,14 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   ok("MS emerges on optic + cord (two compartments)",
      r.concordant.some(e => /multiple sclerosis/i.test(e.name)));
   const ms = r.concordant.find(e => /multiple sclerosis/i.test(e.name));
-  // MS's only clause is `spread` (satisfied by the SET, not any one site) — `satisfiedBy` is null by
-  // design (FINDING 2); the derivation is carried in the clause's descriptive text instead.
-  ok("MS carries its derivation (`why` names the satisfying spread)",
+  // MS's only clause is now `pattern: ["cns"]` (satisfied by the SET, not any one site) — `satisfiedBy`
+  // is null by design; the derivation is carried in the clause's descriptive text instead. Restated
+  // 2026-08-15 from `clause.spread` to `clause.pattern`; the intent (a derivation IS present, and it is
+  // not falsely attributed to one site) is unchanged.
+  ok("MS carries its derivation (`why` names the satisfying pattern)",
      ms && Array.isArray(ms.why) && ms.why.length > 0 &&
      ms.why.every(w => w.satisfiedBy === null) &&
-     ms.why.some(w => w.clause && typeof w.clause.spread === "string"));
+     ms.why.some(w => w.clause && w.clause.pattern === "cns"));
 }
 
 // --- 6: SOFT AXES DEMOTE, THEY DO NOT DROP (the owner's ruling — the assertion that guards it) ---
@@ -463,6 +473,88 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   ok("mis-sided input produces NO multifocal claim", !r.multi,
      r.multi ? r.multi.sites.map(s => s.id).join(" + ") : "");
   ok("...but the near-fit still names the flipped finding", !!r.nearFit && /spinothalamic/.test(r.nearFit.missing));
+}
+
+
+// --- 27: PATTERN PREDICATES (spec 2026-08-15 §4) ---
+// Each is a predicate over the WHOLE site set, so there is exactly one reading. "CNS compartments" means
+// brain, brainstem, cerebellum, cord, optic.
+{
+  const s = id => siteById(id);
+  const cortexPair  = [s("right_cortex_motor_leg"), s("left_cortex_motor_facearm")];
+  const nervePair   = [s("left_nerve_radial_axilla"), s("left_nerve_median_proximal")];
+  const surfacePair = [s("left_skull_base_vii_geniculate"), s("cauda_equina")];
+  const brainstemPair = [s("left_medulla_lateral"), s("left_pons_lateral")];
+
+  ok("PATTERNS lists the seven documented patterns", PATTERNS.length === 7, PATTERNS.join(","));
+
+  ok("`mass` matches two deep CNS lesions", patternMatches("mass", cortexPair, new Set()));
+  ok("`mass` does NOT match two peripheral nerves", !patternMatches("mass", nervePair, new Set()));
+  ok("`mass` does NOT match CSF-surface sites", !patternMatches("mass", surfacePair, new Set()));
+
+  ok("`territorial` matches two different arterial segments (A4 vs M4)",
+     patternMatches("territorial", cortexPair, new Set()));
+  ok("`territorial` does NOT match two peripheral nerves (no vascular rows)",
+     !patternMatches("territorial", nervePair, new Set()));
+
+  ok("`surface` matches a cranial-nerve corridor + cauda", patternMatches("surface", surfacePair, new Set()));
+  ok("`surface` does NOT match two motor strips", !patternMatches("surface", cortexPair, new Set()));
+
+  ok("`nerveTrunk` matches two named nerves", patternMatches("nerveTrunk", nervePair, new Set()));
+  ok("`nerveTrunk` does NOT match two cortical sites", !patternMatches("nerveTrunk", cortexPair, new Set()));
+
+  ok("`cns` matches two CNS sites separated on any axis", patternMatches("cns", cortexPair, new Set()));
+  ok("`cns` does NOT match two peripheral nerves", !patternMatches("cns", nervePair, new Set()));
+
+  ok("`systemSelective` matches two brainstem sites (both tagged)",
+     patternMatches("systemSelective", brainstemPair, new Set()));
+  ok("`systemSelective` does NOT match two motor strips (no system tag)",
+     !patternMatches("systemSelective", cortexPair, new Set()));
+
+  // motorSystem delegates to umnLmnPattern over the OBSERVED findings, not the sites
+  const mixed = new Set([...expectedFindings(s("left_cortex_motor_facearm")),
+                         ...expectedFindings(s("motor_unit_anterior_horn")),
+                         "babinski@left", "fasciculations@left"]);
+  ok("`motorSystem` matches a mixed UMN + LMN finding set",
+     patternMatches("motorSystem", [s("left_cortex_motor_facearm"), s("motor_unit_anterior_horn")], mixed));
+  ok("`motorSystem` does NOT match a picture with no LMN signs",
+     !patternMatches("motorSystem", cortexPair, new Set(expectedFindings(s("left_cortex_motor_facearm")))));
+
+  ok("an unknown pattern name never matches", !patternMatches("not_a_pattern", cortexPair, new Set()));
+  ok("a single site never matches any pattern",
+     PATTERNS.every(p => !patternMatches(p, [cortexPair[0]], new Set())));
+}
+
+// --- 28: THE OWNER'S VERDICTS on right arm + left leg weakness (bug report 2026-08-15) ---
+// "multifocal masses, embolic or vasculitic phenomena" are right; "leptomeningeal and especially
+// paraneoplastic causes are quite a stretch"; "demyelination would also cause this issue but it is not
+// offered". These are the headline regression for the whole pattern axis.
+{
+  const sites = [siteById("right_cortex_motor_leg"), siteById("left_cortex_motor_facearm")];
+  const r = unifyingDiagnoses(sites, new Set(["weak_arm@right", "weak_leg@left"]), {});
+  const names = [...r.concordant, ...r.discordant].map(e => e.name).join(" | ");
+  const has = re => new RegExp(re, "i").test(names);
+
+  ok("metastases fire (multifocal masses)", has("metasta"), names);
+  ok("embolic shower fires", has("embol"), names);
+  ok("vasculitis fires", has("vasculit"), names);
+  ok("MULTIPLE SCLEROSIS fires — the reported omission", has("multiple sclerosis"), names);
+  ok("primary CNS lymphoma fires (owner: 'mass is right')", has("lymphoma"), names);
+  ok("leptomeningeal disease does NOT fire — a stretch here", !has("leptomeningeal"), names);
+  ok("paraneoplastic syndrome does NOT fire — especially a stretch", !has("paraneoplastic"), names);
+}
+
+// --- 29: `spread` is gone from the entity shape ---
+{
+  const withSpread = MULTIFOCAL.filter(e => e.spread !== undefined);
+  ok(`no entity still carries a \`spread\` clause (${withSpread.length})`, withSpread.length === 0,
+     withSpread.map(e => e.name).join(", "));
+  const withoutTrigger = MULTIFOCAL.filter(e => !e.pattern && !(e.sites && e.sites.length) && !e.motor);
+  ok(`every entity has a trigger — pattern, sites or motor (${withoutTrigger.length} without)`,
+     withoutTrigger.length === 0, withoutTrigger.map(e => e.name).join(", "));
+  const badPattern = MULTIFOCAL.filter(e => e.pattern && e.pattern.some(p => !PATTERNS.includes(p)));
+  ok(`every declared pattern is a known one (${badPattern.length} bad)`, badPattern.length === 0,
+     badPattern.map(e => e.name).join(", "));
 }
 
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);

@@ -25,12 +25,16 @@ export const FINDING_CLASSES = {
 };
 
 // mf(name, cat, opts) — mirrors c() in causes.js.
-//   spread       {minSites, distinctCompartments}  generic dissemination in space
+//   pattern      ["mass"|"territorial"|"surface"|"systemSelective"|"nerveTrunk"|"motorSystem"|"cns"]
+//                the SHAPE of dissemination this disease produces (PATTERNS in engine/multifocal.js).
+//                ANY ONE matching fires — some diseases have more than one mode (systemic vasculitis is
+//                territorial in the CNS and a nerve-trunk process in the PNS). This REPLACED `spread`,
+//                which asked only "are there two sites?" and so fired nine of thirteen entities together.
 //   sites        [{compartment|level|region}]      specific places, each matched by a DISTINCT site
 //   motor        "mixed"                            delegates to umnLmnPattern() over the observed findings
 //   forbids      ["sensory"]                        finding CLASSES that exclude this entity
 //   compartments ["brain","cord",...]  OPTIONAL allow-list of compartments the entity can plausibly
-//                involve (owner ruling 4, 2026-08-14) — a HARD constraint like spread/sites/motor/forbids:
+//                involve (owner ruling 4, 2026-08-14) — a HARD constraint like pattern/sites/motor/forbids:
 //                if declared, EVERY site in the picture must resolve to one of the listed compartments or
 //                the entity does not fire at all. This is anatomy, not tempo — it filters, it never merely
 //                demotes. An entity without the field is unconstrained.
@@ -40,7 +44,7 @@ const mf = (name, cat, opts) => ({ name, cat, red: false, confirm: "", ...opts }
 
 export const MULTIFOCAL = [
   mf("Motor neurone disease (ALS)", "degenerative", {
-    spread: { minSites: 2 }, motor: "mixed", forbids: ["sensory"],
+    pattern: ["motorSystem"], motor: "mixed", forbids: ["sensory"],
     // Owner ruling 4 (2026-08-14) draft allow-list — the anterior horn/corticospinal disease process.
     compartments: ["brain", "brainstem", "cord", "motor_unit"],
     course: ["progressive"], tempo: ["subacute", "chronic"], likelihood: "common",
@@ -50,7 +54,7 @@ export const MULTIFOCAL = [
     confirm: "Fasciculation in two or more regions with entirely preserved sensation on formal testing",
   }),
   mf("Multiple sclerosis", "inflammatory", {
-    spread: { minSites: 2, distinctCompartments: 2 },
+    pattern: ["cns"],
     // Owner ruling 3 (2026-08-14): MS fired on ANY two distinct compartments — including anatomically
     // senseless pairs like skull base + sympathetic chain (690 new site pairs once those two compartments
     // were split out). Restricted to the CNS: brain, brainstem, cerebellum, cord. `optic` is included
@@ -62,7 +66,7 @@ export const MULTIFOCAL = [
     // entity that otherwise matches `demyelinat` and gets wrongly canonicalised onto MS (2026-08-14 review).
     matches: /^(?!.*(?:osmotic demyelinat|myelinolysis|extrapontine)).*(?:demyelinat|multiple sclerosis|\bMS plaque\b)/i,
     // Owner ruling 2 (2026-08-14): flag a first presentation disseminated in space. MS's only clause is
-    // `spread:{distinctCompartments:2}`, so this flag applies to every case that fires at all.
+    // `pattern: ["cns"]`, so this flag applies to every case that fires at all.
     red: "A first presentation already disseminated in space is not a one-off — confirm the diagnosis formally, because it changes long-term management",
     feature: "Lesions separated in space AND time, typically optic nerve, brainstem, cord or periventricular white matter; young adult, symptoms evolving over days then partly recovering",
     confirm: "Uhthoff's phenomenon — the deficit reappears or worsens with heat or exercise",
@@ -72,7 +76,7 @@ export const MULTIFOCAL = [
     // plexus, but it almost never happens, and listing it there is noise. Constrained to where secondary
     // deposits actually land.
     compartments: ["brain", "brainstem", "cerebellum", "cord"],
-    spread: { minSites: 2 },
+    pattern: ["mass"],
     course: ["progressive", "stepwise"], tempo: ["subacute", "chronic"], likelihood: "common",
     matches: /metasta/i,
     red: "Multiple lesions with a known or suspected primary — image the whole neuraxis and look for cord compression",
@@ -84,7 +88,7 @@ export const MULTIFOCAL = [
     // (that is what mononeuritis multiplex IS). But it does not typically pick off the neuromuscular
     // junction/muscle, the pupillary efferent, the sympathetic chain or the cauda, so those are excluded.
     compartments: ["brain", "brainstem", "cerebellum", "cord", "optic", "skull_base", "root", "plexus", "nerve"],
-    spread: { minSites: 2 },
+    pattern: ["territorial", "nerveTrunk"],
     course: ["stepwise", "progressive"], tempo: ["acute", "subacute"], likelihood: "uncommon",
     matches: /vasculit/i,
     red: "Stepwise multifocal deficits with systemic inflammation — untreated, each step causes further irreversible loss",
@@ -113,7 +117,7 @@ export const MULTIFOCAL = [
     confirm: "Map the deficit against named-nerve territories — the sparing rules (triceps, first web space, inversion) show it is not a root or a plexus",
   }),
   mf("Leptomeningeal disease", "neoplastic", {
-    spread: { minSites: 2 },
+    pattern: ["surface"],
     // Owner ruling 4 (2026-08-14) draft allow-list — CSF-bathed surfaces and the nerves/roots that run
     // through them; excludes plexus, nerve (distal to the CSF space), motor_unit, pupil, sympathetic.
     // `root` and `cauda` KEPT deliberately (2026-08-15): leptomeningeal carcinomatosis classically presents
@@ -136,7 +140,7 @@ export const MULTIFOCAL = [
     confirm: "Poorer visual recovery and a more severe cord syndrome than MS would produce",
   }),
   mf("Primary CNS lymphoma", "neoplastic", {
-    spread: { minSites: 2 },
+    pattern: ["mass"],
     // Owner ruling 4 (2026-08-14) draft allow-list — a CNS-parenchymal disease (the name says so).
     // `cord` dropped 2026-08-15 (typicality review): periventricular/deep brain and vitreoretinal disease
     // are typical; primary spinal cord lymphoma is rare enough to be noise.
@@ -160,7 +164,7 @@ export const MULTIFOCAL = [
     confirm: "Bilateral sensorineural hearing loss with cutaneous schwannomas and posterior subcapsular cataracts",
   }),
   mf("Paraneoplastic syndrome", "inflammatory", {
-    spread: { minSites: 2 },
+    pattern: ["systemSelective"],
     // Owner ruling 4 (2026-08-14) draft allow-list — antibody-mediated attack on neurons/nerves/junction
     // across the neuraxis (limbic, cerebellar, brainstem, dorsal root ganglia, NMJ per its own `feature`).
     compartments: ["brain", "brainstem", "cerebellum", "cord", "root", "nerve", "motor_unit"],
@@ -171,7 +175,7 @@ export const MULTIFOCAL = [
     confirm: "Weight loss with a sensory neuronopathy — sensory loss that is non-length-dependent, affecting face and trunk",
   }),
   mf("Neurosyphilis or HIV", "infective", {
-    spread: { minSites: 2 },
+    pattern: ["mass", "surface", "nerveTrunk"],
     // Owner ruling 4 (2026-08-14) draft allow-list — "any combination of cognitive change, myelopathy,
     // neuropathy and cranial neuropathy" per its own `feature`; excludes cerebellum, cauda, plexus,
     // motor_unit, pupil, sympathetic.
@@ -183,7 +187,7 @@ export const MULTIFOCAL = [
     confirm: "Argyll Robertson pupils — small, irregular, accommodating but not reacting to light",
   }),
   mf("Embolic shower (cardiac or aortic source)", "vascular", {
-    spread: { minSites: 2 },
+    pattern: ["territorial"],
     // Owner ruling 4 (2026-08-14) draft allow-list — arterial territories a shower of emboli can reach.
     // `cord` dropped 2026-08-15 (typicality review): retinal emboli are typical, but embolic cord
     // infarction from a cardiac shower is vanishingly rare.
