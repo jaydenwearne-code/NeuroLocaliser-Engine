@@ -121,53 +121,97 @@ segment  →  vessel  →  lobe  →  hemisphere  →  level
 the axis it needs, and `"any"` means the sites differ on **at least one** axis. A part whose `segment` is
 `null` simply cannot satisfy the `segment` axis and falls back to whatever coarser axis the pattern allows.
 
-### 4. The `pattern` axis on entities
+### 4. The `substrate` axis on entities — what tissue the disease attacks
 
-`pattern` takes an **array** — some diseases genuinely have more than one mode of dissemination.
+**AMENDED 2026-08-15, after measurement.** An earlier draft of this section defined seven lesion
+*patterns* (`mass`, `territorial`, `surface`, `systemSelective`, `nerveTrunk`, `motorSystem`, `cns`), each
+a predicate over the whole site set. It was built, measured, and **rejected** — see the amendment note at
+the end of this section for what it broke and why the fix below is structural rather than a workaround.
 
-Each definition below is stated as a predicate over the **whole site set**, so there is exactly one reading.
-"CNS compartments" means `brain · brainstem · cerebellum · cord · optic`.
+**A disease attacks a SUBSTRATE, and that substrate has its own distribution through the body.** Vasculitis
+crosses the CNS/PNS boundary because its substrate — blood vessels — exists on both sides of it. Metastases
+do not, because theirs does not. Distribution is therefore not a property of the disease's "shape"; it is a
+property of the tissue it targets and where that tissue exists.
 
-| Pattern | Fires when |
-|---|---|
-| `mass` | **every** site is in a CNS compartment **and** has `surface: false` — a discrete lesion in parenchyma rather than on a CSF surface |
-| `territorial` | **every** site is in a CNS compartment, and the set is separated at the **`segment`** axis |
-| `surface` | **every** site has `surface: true` |
-| `systemSelective` | **every** site has a non-null `system` tag |
-| `nerveTrunk` | **every** site is in the `nerve` compartment |
-| `motorSystem` | UMN + LMN present and no sensory finding — delegates to `umnLmnPattern()` over the observed findings, not to the site set |
-| `cns` | **every** site is in a CNS compartment, and the set is separated on **at least one** axis |
+**Substrates present at a site — DERIVED from the tables already authored, not newly hand-listed:**
 
-All patterns additionally require ≥2 sites, which `unifyingDiagnoses()` already enforces before any entity
-is considered. An entity fires if **any one** of its declared patterns matches.
-
-**Entity assignment:**
-
-| Entity | Pattern | Separation |
+| Substrate | Where it exists | Derived from |
 |---|---|---|
-| Metastases | `mass` | — |
-| Primary CNS lymphoma | `mass` | — |
-| Embolic shower | `territorial` | segment |
-| Vasculitis | `territorial`, `nerveTrunk` | segment / — |
-| **Multiple sclerosis** | **`cns`** | **any** |
-| Leptomeningeal disease | `surface` | — |
-| Neurosarcoidosis | `surface` | — |
-| Paraneoplastic syndrome | `systemSelective` | — |
-| Neurosyphilis or HIV | `mass`, `surface`, `nerveTrunk` | — |
-| Motor neurone disease | `motorSystem` | — |
-| NMOSD · Mononeuritis multiplex · NF2 | *keep their existing `sites` clauses* | — |
+| `vessel` | **everywhere** — CNS and PNS alike | universal |
+| `parenchyma` | CNS, non-surface | CNS compartment + `surface: false` |
+| `leptomeninges` | CSF-bathed surfaces | `surface: true` |
+| `myelin_cns` | CNS white matter | CNS compartments |
+| `schwann` | peripheral nerve, root, plexus | compartment |
+| `neuron_population` | the selectively vulnerable systems | non-null `system` tag |
+| `motor_neuron` | the motor system, upper and lower | `umnLmnPattern()` over the observed findings |
 
-**MS is `cns` + `any`, on the owner's explicit ruling** ("MS should fire in any two CNS sites differentiated
-in space"). An earlier draft proposed a `whiteMatter` pattern for it; that ruling removes the need, MS was
-its only user, so **the `whiteMatter` pattern and its topography field are dropped entirely.**
+**Each entity declares the substrate it attacks, plus an optional distribution rule** for how it spreads
+*within* that substrate. An entity fires when its substrate is present at **every** site in the set and the
+distribution rule (if any) holds over the set.
 
-**The `compartments` allow-lists signed off on 2026-08-15 stay unchanged.** Pattern and allow-list answer
-different questions — *how it spreads* versus *where it goes* — and **both are HARD filters** (owner's
-ruling). Tempo and course remain the only soft axes. Vasculitis needs `territorial` OR `nerveTrunk`
-precisely because its allow-list already spans CNS and PNS.
+| Entity | Attacks | Distribution |
+|---|---|---|
+| Vasculitis | `vessel` | — (vessels are everywhere, so CNS+PNS involvement follows structurally) |
+| Embolic shower | `vessel` | distinct arterial **segments** — emboli lodge at branch points |
+| Metastases | `parenchyma` | — |
+| Primary CNS lymphoma | `parenchyma` | — |
+| Multiple sclerosis | `myelin_cns` | separated in space, **any** axis |
+| Leptomeningeal disease | `leptomeninges` | — |
+| Neurosarcoidosis | `leptomeninges` | — |
+| Paraneoplastic syndrome | `neuron_population` | — |
+| Mononeuritis multiplex | `vessel` restricted to `schwann` territory | ≥2 named nerves |
+| Motor neurone disease | `motor_neuron` | — |
+| Neurofibromatosis type 2 | `schwann` | — |
+| NMOSD | `myelin_cns` | its existing `sites` clause (optic + cord) |
+| Neurosyphilis or HIV | `parenchyma`, `leptomeninges`, `schwann` | — |
 
-`spread` is removed from the entity shape entirely, so no dead path remains.
+Two consequences worth stating plainly:
 
+- **Mononeuritis multiplex stops being its own mechanism** and becomes what it clinically is — vasculitis of
+  the vasa nervorum. Same substrate as vasculitis, restricted to peripheral nerve.
+- **Embolic shower and vasculitis share a substrate and differ only in distribution** (segment-lodging
+  versus diffuse), which is the real clinical distinction between them.
+
+#### The `compartments` allow-list is retained, subject to a narrowness invariant
+
+Substrate answers *is the target tissue here* (structure). The allow-list answers *does this disease
+actually turn up here* (frequency) — the owner's 2026-08-15 typicality ruling, which substrate cannot
+express. Four of the typicality rulings become structural and their allow-list entries stop doing any work:
+metastases not reaching nerve or plexus (`parenchyma` absent), MS not firing on skull base + sympathetic
+chain (`myelin_cns` absent), leptomeningeal disease not firing on deep parenchyma (`leptomeninges` absent),
+and two peripheral nerves not returning CNS lymphoma (`parenchyma` absent).
+
+Four survive, and only an allow-list can state them, because the tissue **is** present:
+
+| Ruling | Why substrate cannot express it |
+|---|---|
+| Embolic shower excludes `cord` | The cord has vessels (anterior spinal artery); embolic cord infarction is vanishingly rare |
+| Primary CNS lymphoma excludes `cord` | The cord is parenchyma; primary spinal cord lymphoma is atypical |
+| Neurosarcoidosis excludes `cauda` | The cauda is a CSF surface, so substrate would allow it |
+| Vasculitis excludes NMJ, pupil, sympathetic, cauda | Vessels are everywhere, so substrate allows all of them |
+
+**INVARIANT: an allow-list must be strictly NARROWER than its substrate's natural footprint, or it is
+deleted.** An allow-list that merely restates its substrate looks meaningful but is not, and a later edit to
+one could silently contradict the other. MND's list and MS's list are already restatements and go. This is
+asserted, so a redundant allow-list cannot be reintroduced.
+
+#### Amendment note: why the pattern axis was replaced
+
+The pattern version was implemented and measured before being rejected — the evidence is the reason for the
+change, not a hunch. Silent site pairs rose from **7.8% to 38.0%**, and **74% of the silent pairs were mixed
+CNS+PNS pictures**. Concretely, `brain + peripheral nerve`, `brainstem + peripheral nerve` and
+**`cord + L5 root`** all returned an empty card — the last being the flagship multifocal example from the
+original layer.
+
+The cause was structural: every pattern was phrased "**every** site is X", so a mixed picture could satisfy
+none of them. Vasculitis declared `["territorial", "nerveTrunk"]` precisely to cover both sides of the
+neuraxis, and the "any one pattern over all sites" rule defeated that intent — the two diseases whose
+defining feature is hitting CNS *and* PNS were the two that could never fire on a mixed picture.
+
+The first proposed fix was to give vasculitis the `mass` pattern as well. **The owner rejected that as a
+workaround** — it attributes a non-vascular attribute to a vascular disease to make the mechanics work,
+which is fitting the disease to the model rather than modelling the disease. The substrate axis above is
+the structural answer: vasculitis reaches both because vessels are in both.
 ### 5. Outcome on the reported case
 
 `right_cortex_motor_leg` (ACA, A4, paracentral, frontal lobe, right) and `left_cortex_motor_facearm`

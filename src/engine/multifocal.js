@@ -1,7 +1,7 @@
 // multifocal.js (engine) — matching and ranking for the cross-site layer. LOGIC ONLY: every disease name,
 // feature and red flag lives in src/data/multifocal.js so the content can be reviewed on its own.
 //
-// HARD constraints (pattern / sites / motor / forbids) FILTER: they are anatomical facts, and an entity
+// HARD constraints (substrate / sites / motor / forbids) FILTER: they are anatomical facts, and an entity
 // that does not fit them does not apply. SOFT constraints (tempo / course) only DEMOTE — a mismatch is
 // informative, not disqualifying (owner ruling, 2026-08-14).
 //
@@ -14,7 +14,7 @@ import { LIKELIHOOD } from "../data/causes.js";
 import { solve } from "./inverse.js";
 import { LOCALISING } from "./score.js";
 import { separatedInSpace } from "./space.js";
-import { topographyOf } from "../model/topography.js";
+import { substratesAt } from "../model/substrate.js";
 
 const idOf = t => t.split("@")[0];
 
@@ -56,46 +56,36 @@ export function assignClauses(sites, clauses) {
   return assign(0) ? why : null;
 }
 
-// ---- LESION PATTERNS (spec 2026-08-15) ----
-// A disease has a characteristic lesion PATTERN, not a lesion count. The previous `spread: {minSites: 2}`
-// asked "are there two sites?" — a counting question — and fired nine of thirteen entities together, so
-// leptomeningeal disease and paraneoplastic syndrome appeared on two motor-strip lesions while multiple
-// sclerosis, blocked by its own `distinctCompartments`, did not appear at all (owner bug report).
+// ---- SUBSTRATE + DISTRIBUTION (spec 2026-08-15 §4) ----
+// A disease attacks a SUBSTRATE, and that substrate has its own distribution through the body. Vasculitis
+// crosses the CNS/PNS boundary because vessels exist on both sides of it; metastases do not, because
+// parenchyma does not. Distribution is a property of the target tissue, not of the disease's "shape".
 //
-// Every predicate below is a statement about the WHOLE site set, so there is exactly one reading. Each is
-// satisfied by the SET rather than by any one site, so `satisfiedBy` stays null and the clause carries the
-// descriptive text the card renders.
-export const PATTERNS = ["mass", "territorial", "surface", "systemSelective", "nerveTrunk", "motorSystem", "cns"];
+// This REPLACED a "lesion pattern" axis that phrased every rule as "every site is X". That formulation was
+// implemented, measured and rejected: silent site pairs rose 7.8% -> 38.0%, 74% of them mixed CNS+PNS, and
+// `cord + L5 root` returned an empty card — because a mixed picture could satisfy no single pattern, so the
+// two diseases whose defining feature is hitting BOTH sides (vasculitis, neurosyphilis) were exactly the
+// two that could never fire on one.
+export const DISTRIBUTIONS = ["segment", "any", "nerveTrunk"];
 
-const CNS_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "cord", "optic"]);
-const allCns = sites => sites.every(s => CNS_COMPARTMENTS.has(compartmentOf(s)));
-
-export function patternMatches(pattern, sites, observedSet) {
+// An entity fires when its substrate is present at EVERY site, and its distribution rule holds over the set.
+export function substrateMatches(entity, sites, observedSet) {
   if (!Array.isArray(sites) || sites.length < 2) return false;
-  switch (pattern) {
-    // A discrete lesion IN parenchyma, rather than seeded on a CSF surface.
-    case "mass":
-      return allCns(sites) && sites.every(s => topographyOf(s)?.surface === false);
-    // Multiple arterial territories at BRANCH level — the signature of a shower of emboli.
-    case "territorial":
-      return allCns(sites) && separatedInSpace(sites, "segment");
-    // Seeded along CSF-bathed surfaces: meninges, cranial-nerve corridors, roots, cauda.
-    case "surface":
-      return sites.every(s => topographyOf(s)?.surface === true);
-    // Attacks a selectively vulnerable SYSTEM rather than an arbitrary place.
-    case "systemSelective":
-      return sites.every(s => !!topographyOf(s)?.system);
-    case "nerveTrunk":
-      return sites.every(s => compartmentOf(s) === "nerve");
-    // Delegates to the existing synthesis over the OBSERVED findings, so this layer and the UMN/LMN flag
-    // can never disagree. Deliberately NOT a property of the site set.
-    case "motorSystem":
-      return umnLmnPattern(observedSet).verdict === "mixed";
-    // Any two CNS sites separated in space on ANY axis — the owner's ruling for MS.
-    case "cns":
-      return allCns(sites) && separatedInSpace(sites, "any");
-    default:
-      return false;
+
+  // `motor_neuron` is a property of the observed FINDINGS (upper + lower motor neurone signs together),
+  // not of a place — so it delegates to the existing synthesis and never consults the site set.
+  if (entity.substrate === "motor_neuron") return umnLmnPattern(observedSet).verdict === "mixed";
+
+  if (!sites.every(s => substratesAt(s).has(entity.substrate))) return false;
+
+  switch (entity.distribution) {
+    // Emboli lodge at branch points, so the lesions sit in distinct arterial segments.
+    case "segment": return separatedInSpace(sites, "segment");
+    // Disseminated in space on any axis — segment, vessel, lobe, hemisphere or level.
+    case "any": return separatedInSpace(sites, "any");
+    // Vasculitis of the vasa nervorum: the same substrate as vasculitis, restricted to peripheral nerve.
+    case "nerveTrunk": return sites.every(s => compartmentOf(s) === "nerve");
+    default: return true;
   }
 }
 
@@ -117,13 +107,11 @@ export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
     // not be able to return Primary CNS lymphoma or an embolic shower, which make no anatomical sense there.
     if (entity.compartments && sites.some(s => !entity.compartments.includes(compartmentOf(s)))) continue;
 
-    // --- hard: lesion PATTERN — the shape of dissemination, not a site count ---
-    // An entity fires if ANY ONE of its declared patterns matches; some diseases genuinely have more than
-    // one mode (systemic vasculitis is territorial in the CNS and a nerve-trunk process in the PNS).
-    if (entity.pattern && entity.pattern.length) {
-      const hit = entity.pattern.find(p => patternMatches(p, sites, observedSet));
-      if (!hit) continue;
-      why.push({ clause: { pattern: hit }, satisfiedBy: null });
+    // --- hard: SUBSTRATE — the tissue this disease attacks, and how it spreads within it ---
+    if (entity.substrate) {
+      if (!substrateMatches(entity, sites, observedSet)) continue;
+      why.push({ clause: { substrate: entity.substrate, distribution: entity.distribution || null },
+                 satisfiedBy: null });
     }
     // --- hard: specific places ---
     if (entity.sites && entity.sites.length) {

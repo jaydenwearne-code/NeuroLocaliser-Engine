@@ -10,10 +10,11 @@
 import { MULTIFOCAL, FINDING_CLASSES } from "../src/data/multifocal.js";
 import { CATEGORIES, CAUSES, TEMPO, LIKELIHOOD } from "../src/data/causes.js";
 import { COURSE_IDS } from "../src/model/course.js";
-import { PATTERNS, patternMatches, unifyingDiagnoses, assignClauses, forcingFindings } from "../src/engine/multifocal.js";
+import { substrateMatches, unifyingDiagnoses, assignClauses, forcingFindings } from "../src/engine/multifocal.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { compartmentOf } from "../src/model/compartments.js";
+import { SUBSTRATES, substratesAt, substrateFootprint } from "../src/model/substrate.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -27,7 +28,7 @@ const TEMPO_IDS = new Set(TEMPO.map(t => t.id));
   ok(`the roster has >= 13 entities (got ${MULTIFOCAL.length})`, MULTIFOCAL.length >= 13);
   // The trigger is now `pattern` (2026-08-15) — `spread` no longer exists. Same intent: an entity with
   // no hard clause at all would fire on any two sites whatsoever.
-  const noClause = MULTIFOCAL.filter(e => !(e.pattern && e.pattern.length) && !(e.sites && e.sites.length) && !e.motor);
+  const noClause = MULTIFOCAL.filter(e => !e.substrate && !(e.sites && e.sites.length) && !e.motor);
   ok(`every entity has at least one HARD clause (${noClause.length} without)`, noClause.length === 0,
      noClause.map(e => e.name).join(", "));
   const badCat = MULTIFOCAL.filter(e => !CAT_IDS.has(e.cat));
@@ -56,11 +57,11 @@ const TEMPO_IDS = new Set(TEMPO.map(t => t.id));
   // NB `siteById` is declared further down (§5), so this block does its own lookup rather than reaching
   // into the temporal dead zone.
   const oneSite = [candidateSites().find(s => s.id === "left_cortex_motor_facearm")];
-  const anyPatternOnOneSite = PATTERNS.filter(p => patternMatches(p, oneSite, new Set()));
-  ok(`no PATTERN can be satisfied by a single site (${anyPatternOnOneSite.length})`,
-     anyPatternOnOneSite.length === 0, anyPatternOnOneSite.join(", "));
+  const firesOnOne = MULTIFOCAL.filter(e => substrateMatches(e, oneSite, new Set()));
+  ok(`no entity's substrate can be satisfied by a single site (${firesOnOne.length})`,
+     firesOnOne.length === 0, firesOnOne.map(e => e.name).join(", "));
   const singleSatisfiable = MULTIFOCAL.filter(e =>
-    !(e.pattern && e.pattern.length) && (e.sites ? e.sites.length : 0) < 2 && e.motor !== "mixed");
+    !e.substrate && (e.sites ? e.sites.length : 0) < 2 && e.motor !== "mixed");
   ok(`no entity can be satisfied by a single site (${singleSatisfiable.length})`, singleSatisfiable.length === 0,
      singleSatisfiable.map(e => e.name).join(", "));
 }
@@ -109,7 +110,7 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   // the visual_pathway level parts (optic_tract / lgn / retina / chiasm); `left_visual_pathway_optic_tract`
   // is used here as the closest real site satisfying the test's anatomical intent — a lesion in the optic
   // compartment, distinct from the cord compartment. The MS entity's clause is a generic
-  // `pattern: ["cns"]`, not an optic-specific clause, so any two separated CNS sites satisfy it; this
+  // `substrate: "myelin_cns"`, not an optic-specific clause, so any two separated CNS sites satisfy it; this
   // substitution preserves that intent exactly.
   const sites = [siteById("left_visual_pathway_optic_tract"),
                  siteById("left_cord_hemi")].filter(Boolean);
@@ -122,10 +123,10 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   // is null by design; the derivation is carried in the clause's descriptive text instead. Restated
   // 2026-08-15 from `clause.spread` to `clause.pattern`; the intent (a derivation IS present, and it is
   // not falsely attributed to one site) is unchanged.
-  ok("MS carries its derivation (`why` names the satisfying pattern)",
+  ok("MS carries its derivation (`why` names the satisfying substrate)",
      ms && Array.isArray(ms.why) && ms.why.length > 0 &&
      ms.why.every(w => w.satisfiedBy === null) &&
-     ms.why.some(w => w.clause && w.clause.pattern === "cns"));
+     ms.why.some(w => w.clause && w.clause.substrate === "myelin_cns"));
 }
 
 // --- 6: SOFT AXES DEMOTE, THEY DO NOT DROP (the owner's ruling — the assertion that guards it) ---
@@ -476,53 +477,76 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
 }
 
 
-// --- 27: PATTERN PREDICATES (spec 2026-08-15 §4) ---
-// Each is a predicate over the WHOLE site set, so there is exactly one reading. "CNS compartments" means
-// brain, brainstem, cerebellum, cord, optic.
+// --- 27: SUBSTRATE AXIS (spec 2026-08-15 §4, amended) ---
+// A disease attacks a SUBSTRATE, and that substrate has its own distribution through the body. This
+// replaced a "lesion pattern" axis that phrased every rule as "every site is X" — measured at 38% silent
+// pairs, 74% of them mixed CNS+PNS, with `cord + L5 root` returning an empty card.
 {
   const s = id => siteById(id);
-  const cortexPair  = [s("right_cortex_motor_leg"), s("left_cortex_motor_facearm")];
-  const nervePair   = [s("left_nerve_radial_axilla"), s("left_nerve_median_proximal")];
-  const surfacePair = [s("left_skull_base_vii_geniculate"), s("cauda_equina")];
-  const brainstemPair = [s("left_medulla_lateral"), s("left_pons_lateral")];
+  const cortex = s("left_cortex_motor_facearm");
+  const nerve  = s("left_nerve_radial_axilla");
+  const cauda  = s("cauda_equina");
 
-  ok("PATTERNS lists the seven documented patterns", PATTERNS.length === 7, PATTERNS.join(","));
+  ok("vessels exist EVERYWHERE — this is why vasculitis crosses CNS/PNS",
+     substratesAt(cortex).has("vessel") && substratesAt(nerve).has("vessel") && substratesAt(cauda).has("vessel"));
+  ok("parenchyma exists in CNS but NOT in peripheral nerve",
+     substratesAt(cortex).has("parenchyma") && !substratesAt(nerve).has("parenchyma"));
+  ok("leptomeninges exist at the cauda but NOT in motor cortex",
+     substratesAt(cauda).has("leptomeninges") && !substratesAt(cortex).has("leptomeninges"));
+  ok("schwann cells exist in peripheral nerve but NOT in cortex",
+     substratesAt(nerve).has("schwann") && !substratesAt(cortex).has("schwann"));
+  ok("every substrate a site reports is a declared one",
+     [...substratesAt(cortex), ...substratesAt(nerve), ...substratesAt(cauda)].every(x => SUBSTRATES.includes(x)));
+}
 
-  ok("`mass` matches two deep CNS lesions", patternMatches("mass", cortexPair, new Set()));
-  ok("`mass` does NOT match two peripheral nerves", !patternMatches("mass", nervePair, new Set()));
-  ok("`mass` does NOT match CSF-surface sites", !patternMatches("mass", surfacePair, new Set()));
+// --- 27b: THE MIXED CNS+PNS CASE the pattern axis could not express ---
+// The whole reason the pattern axis was rejected. Vasculitis MUST reach both sides of the neuraxis,
+// because vessels are on both sides — structurally, not by giving it a non-vascular attribute.
+{
+  const pairs = [
+    ["cord + L5 root", "left_cord_hemi", "right_root_l5"],
+    ["brain + peripheral nerve", "left_cortex_motor_facearm", "left_nerve_radial_axilla"],
+  ];
+  for (const [label, a, b] of pairs) {
+    const sites = [siteById(a), siteById(b)];
+    const toks = tokensFor(a, b);
+    const names = (() => { const r = unifyingDiagnoses(sites, toks, {}); return [...r.concordant, ...r.discordant].map(e => e.name); })();
+    ok(`${label}: something fires (the pattern axis returned nothing here)`, names.length > 0, label);
+    ok(`${label}: vasculitis fires — vessels exist on both sides`, names.some(n => /vasculit/i.test(n)), names.join(", "));
+    ok(`${label}: metastases do NOT fire — parenchyma is not in the peripheral site`,
+       !names.some(n => /metasta/i.test(n)), names.join(", "));
+  }
+}
 
-  ok("`territorial` matches two different arterial segments (A4 vs M4)",
-     patternMatches("territorial", cortexPair, new Set()));
-  ok("`territorial` does NOT match two peripheral nerves (no vascular rows)",
-     !patternMatches("territorial", nervePair, new Set()));
+// --- 27c: the allow-list must be strictly NARROWER than its substrate footprint, or it is redundant ---
+// An allow-list that merely restates its substrate looks meaningful but is not, and a later edit to one
+// could silently contradict the other.
+{
+  const all = candidateSites();
+  const redundant = MULTIFOCAL.filter(e => {
+    if (!e.compartments || !e.substrate || e.substrate === "motor_neuron") return false;
+    const foot = substrateFootprint(e.substrate, all);
+    return [...foot].every(c => e.compartments.includes(c));   // allow-list adds nothing
+  });
+  ok(`no allow-list merely restates its substrate (${redundant.length} redundant)`, redundant.length === 0,
+     redundant.map(e => e.name).join(", "));
+}
 
-  ok("`surface` matches a cranial-nerve corridor + cauda", patternMatches("surface", surfacePair, new Set()));
-  ok("`surface` does NOT match two motor strips", !patternMatches("surface", cortexPair, new Set()));
 
-  ok("`nerveTrunk` matches two named nerves", patternMatches("nerveTrunk", nervePair, new Set()));
-  ok("`nerveTrunk` does NOT match two cortical sites", !patternMatches("nerveTrunk", cortexPair, new Set()));
-
-  ok("`cns` matches two CNS sites separated on any axis", patternMatches("cns", cortexPair, new Set()));
-  ok("`cns` does NOT match two peripheral nerves", !patternMatches("cns", nervePair, new Set()));
-
-  ok("`systemSelective` matches two brainstem sites (both tagged)",
-     patternMatches("systemSelective", brainstemPair, new Set()));
-  ok("`systemSelective` does NOT match two motor strips (no system tag)",
-     !patternMatches("systemSelective", cortexPair, new Set()));
-
-  // motorSystem delegates to umnLmnPattern over the OBSERVED findings, not the sites
-  const mixed = new Set([...expectedFindings(s("left_cortex_motor_facearm")),
-                         ...expectedFindings(s("motor_unit_anterior_horn")),
-                         "babinski@left", "fasciculations@left"]);
-  ok("`motorSystem` matches a mixed UMN + LMN finding set",
-     patternMatches("motorSystem", [s("left_cortex_motor_facearm"), s("motor_unit_anterior_horn")], mixed));
-  ok("`motorSystem` does NOT match a picture with no LMN signs",
-     !patternMatches("motorSystem", cortexPair, new Set(expectedFindings(s("left_cortex_motor_facearm")))));
-
-  ok("an unknown pattern name never matches", !patternMatches("not_a_pattern", cortexPair, new Set()));
-  ok("a single site never matches any pattern",
-     PATTERNS.every(p => !patternMatches(p, [cortexPair[0]], new Set())));
+// --- 27d: cranial-nerve corridors carry Schwann cells ---
+// Caught by the fire-rate measurement, not by a unit test: NF2 fell to 0.0% of pairs because `schwann`
+// omitted `skull_base`, and NF2 needs Schwann cells at every site AND a skull-base site. A vestibular
+// schwannoma at the IAM is literally a Schwann-cell tumour, so the omission was simply wrong.
+{
+  const iam = candidateSites().find(x => x.level === "skull_base" && /iam|cpa/i.test(x.part));
+  ok("a skull-base cranial-nerve corridor carries `schwann`", !!iam && substratesAt(iam).has("schwann"),
+     iam ? iam.id : "no fixture");
+  // The optic nerve must NOT: it is a CNS tract myelinated by oligodendrocytes, and its skull-base parts
+  // are re-mapped to the `optic` compartment.
+  const opticSb = candidateSites().find(x => x.level === "skull_base" && /optic_neuritis/.test(x.part));
+  ok("an optic skull-base part does NOT carry `schwann` (oligodendrocyte-myelinated)",
+     !!opticSb && !substratesAt(opticSb).has("schwann"), opticSb ? opticSb.id : "no fixture");
+  ok("...and does carry myelin_cns instead", !!opticSb && substratesAt(opticSb).has("myelin_cns"));
 }
 
 // --- 28: THE OWNER'S VERDICTS on right arm + left leg weakness (bug report 2026-08-15) ---
@@ -549,12 +573,15 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   const withSpread = MULTIFOCAL.filter(e => e.spread !== undefined);
   ok(`no entity still carries a \`spread\` clause (${withSpread.length})`, withSpread.length === 0,
      withSpread.map(e => e.name).join(", "));
-  const withoutTrigger = MULTIFOCAL.filter(e => !e.pattern && !(e.sites && e.sites.length) && !e.motor);
-  ok(`every entity has a trigger — pattern, sites or motor (${withoutTrigger.length} without)`,
+  const withoutTrigger = MULTIFOCAL.filter(e => !e.substrate && !(e.sites && e.sites.length) && !e.motor);
+  ok(`every entity has a trigger — substrate, sites or motor (${withoutTrigger.length} without)`,
      withoutTrigger.length === 0, withoutTrigger.map(e => e.name).join(", "));
-  const badPattern = MULTIFOCAL.filter(e => e.pattern && e.pattern.some(p => !PATTERNS.includes(p)));
-  ok(`every declared pattern is a known one (${badPattern.length} bad)`, badPattern.length === 0,
-     badPattern.map(e => e.name).join(", "));
+  const badSub = MULTIFOCAL.filter(e => e.substrate && !SUBSTRATES.includes(e.substrate));
+  ok(`every declared substrate is a known one (${badSub.length} bad)`, badSub.length === 0,
+     badSub.map(e => `${e.name}:${e.substrate}`).join(", "));
+  const noPattern = MULTIFOCAL.filter(e => e.pattern !== undefined);
+  ok(`no entity still carries a \`pattern\` clause (${noPattern.length})`, noPattern.length === 0,
+     noPattern.map(e => e.name).join(", "));
 }
 
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);
