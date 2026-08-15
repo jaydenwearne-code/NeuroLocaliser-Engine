@@ -183,18 +183,36 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
 // The card claims "remove this finding and one lesion explains everything". The test IS that claim: for
 // every finding named, removing it must actually collapse the picture. Claim and test are one statement.
 {
-  const wallenberg = siteById("left_medulla_lateral");
-  const l5 = siteById("right_root_l5");
-  const toks = new Set([...expectedFindings(wallenberg), ...expectedFindings(l5)]);
-  const f = forcingFindings(toks, {});
-  ok("a genuinely multifocal case names at least one forcing finding", f.findings.length > 0);
-
   const { solve } = await import("../src/engine/inverse.js");
+
+  // A pair where ONE finding carries the whole multifocal claim: a midbrain lesion plus a frontal eye
+  // field lesion, where `gaze_deviation` is the only finding the midbrain site cannot account for.
+  const forcingCase = new Set([
+    ...expectedFindings(siteById("left_midbrain_medial")),
+    ...expectedFindings(siteById("left_cortex_frontal_eye_field")),
+  ]);
+  const f = forcingFindings(forcingCase, {});
+  ok("a case whose multifocality rests on ONE finding names that finding", f.findings.length > 0,
+     f.findings.map(x => x.token).join(", "));
+
   const allCollapse = f.findings.every(({ token }) => {
-    const without = new Set([...toks].filter(t => t !== token));
+    const without = new Set([...forcingCase].filter(t => t !== token));
     return solve(without).singleExplainsAll === true;
   });
   ok("EVERY named forcing finding provably collapses the picture when removed", allCollapse);
+
+  // The OTHER branch, and why this assertion changed (2026-08-15): Wallenberg + an L5 radiculopathy is
+  // genuinely multifocal, but the L5 root contributes SEVERAL findings the medulla cannot explain, so no
+  // single one of them collapses the picture. This used to report a forcing finding only because
+  // `singleExplainsAll` was the weaker "covers all LOCALISING findings" test, which passed vacuously.
+  // Under the honest superset test the correct answer is "several findings independently require a second
+  // site" — which is exactly the guard's third branch, not a failure to find one.
+  const wallenberg = siteById("left_medulla_lateral");
+  const l5 = siteById("right_root_l5");
+  const several = new Set([...expectedFindings(wallenberg), ...expectedFindings(l5)]);
+  ok("a multifocal case with no single forcing finding reports none (guard falls to 'several')",
+     forcingFindings(several, {}).findings.length === 0);
+  ok("...and that case is still genuinely multifocal", !!solve(several).multi);
 }
 {
   // A single-lesion case has nothing forcing a second site.
@@ -392,6 +410,59 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   // Neurosarcoidosis lost `cauda` but keeps the cranial-nerve + nerve/root presentations.
   ok("neurosarcoidosis does NOT fire on a cranial nerve + cauda picture",
      !lepto.some(n => /sarcoid/i.test(n)), lepto.join(", "));
+}
+
+// --- 21: MULTIFOCAL MUST FIRE WHEN NO SINGLE LESION EXPLAINS THE PICTURE (owner bug report 2026-08-15) ---
+// Reported case: "right arm and left leg weakness — no single lesion would cause this, but it is not
+// flagged as multifocal". Three linked defects caused the silence, and each gets an assertion:
+//   1. minimalSet() covered only LOCALISING findings. weak_arm and weak_leg are both long-tract signs and
+//      deliberately NON-localising, so the target set was empty and the cover returned null.
+//   2. singleExplainsAll was a separate test over the localising findings, which passed VACUOUSLY on an
+//      empty set — so the engine claimed a single lesion explained everything while explainAll was 0.
+//   3. minimalSet enumerated every site instead of the differential's pool, so it built covers from sites
+//      the known-negative filter had already excluded (locked-in "covered" both findings on its own).
+{
+  const { solve, minimalSet, MAX_COVER_SITES } = await import("../src/engine/inverse.js");
+
+  const toks = new Set(["weak_arm@right", "weak_leg@left"]);
+  const r = solve(toks);
+  ok("right arm + left leg weakness: no single lesion explains it", r.singleExplainsAll === false);
+  ok("...and singleExplainsAll agrees with explainAll (they answer the same question)",
+     r.singleExplainsAll === (r.explainAll.length > 0));
+  ok("...and it IS flagged as multifocal", !!r.multi, "multi was null");
+  ok("...with a two-site cover", r.multi && r.multi.sites.length === 2,
+     r.multi ? r.multi.sites.map(s => s.id).join(" + ") : "none");
+  ok("...covering both findings, nothing left unexplained", r.multi && r.multi.uncovered.length === 0);
+
+  // The cover must come from the differential's pool, so a site the known-negative filter excluded can
+  // never appear in it. Locked-in is bilateral: it predicts a weak LEFT arm and a weak RIGHT leg, both
+  // recorded as normal here, so it must not be offered.
+  const ids = r.multi ? r.multi.sites.map(s => s.id) : [];
+  ok("the cover excludes sites ruled out by a normal finding (locked-in)", !ids.includes("locked_in"), ids.join(", "));
+
+  // A cover this large is not a clinical hypothesis — it means the findings are internally inconsistent.
+  ok("MAX_COVER_SITES is exported and small", MAX_COVER_SITES >= 2 && MAX_COVER_SITES <= 3);
+  ok("solve() never surfaces a cover larger than MAX_COVER_SITES",
+     !r.multi || r.multi.sites.length <= MAX_COVER_SITES);
+
+  // minimalSet itself is unbounded — the cap is a PRESENTATION decision made in solve(), so the raw
+  // set-cover stays honest and inspectable.
+  const raw = minimalSet(toks, {});
+  ok("minimalSet itself still returns a cover for a non-localising-only picture", !!raw && raw.sites.length > 0);
+}
+
+// --- 22: the cap suppresses fragmented covers from internally inconsistent input ---
+// Wallenberg with the crossed sensory finding entered on the WRONG side: the known-negative filter then
+// eliminates the one site that actually fits, and the cover assembles unrelated fragments. Reporting
+// "you have five lesions" would be worse than silence — the near-fit line already names the flipped sign.
+{
+  const { solve } = await import("../src/engine/inverse.js");
+  const exp = [...expectedFindings(siteById("left_medulla_lateral"))];
+  const flipped = new Set(exp.map(t => (t === "spinothalamic@right" ? "spinothalamic@left" : t)));
+  const r = solve(flipped);
+  ok("mis-sided input produces NO multifocal claim", !r.multi,
+     r.multi ? r.multi.sites.map(s => s.id).join(" + ") : "");
+  ok("...but the near-fit still names the flipped finding", !!r.nearFit && /spinothalamic/.test(r.nearFit.missing));
 }
 
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);

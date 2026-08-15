@@ -141,25 +141,37 @@ export function ruledOutSites(observedSet, opts = {}) {
   return out;
 }
 
-// Does a single site explain every localising finding?
-function coversAllLocalising(result, observedSet) {
-  const need = new Set(localisingObserved(observedSet));
-  for (const m of result.matched) need.delete(m);
-  return need.size === 0;
-}
-
 // ---- MINIMAL-SET SEARCH (multifocal) ----
-// Greedy set cover over the localising findings, preferring high-scoring sites and fewest sites.
-// For a POC the localising set is small, so greedy with a refinement pass is ample.
+// Greedy set cover over the OBSERVED findings, preferring high-scoring sites and fewest sites.
+//
+// This used to cover only the LOCALISING findings, which under-called multifocality in two ways
+// (owner bug report, 2026-08-15 — "right arm and left leg weakness ... not flagged as multifocal"):
+//   1. When NO observed finding is localising — `weak_arm` and `weak_leg` are both long-tract signs and
+//      deliberately non-localising — the target set was empty and this returned null immediately, so a
+//      picture that plainly needs two lesions produced no multifocal hypothesis at all.
+//   2. More generally, if ONE site happened to cover every localising finding, the cover was a single
+//      site and `multi` stayed null even while the other findings went unexplained. That silently hit
+//      8.8% of site pairs.
+// Covering the observed set fixes both. Findings that no site can explain still land in `uncovered`
+// rather than inventing a site for them, and the tie-break below still prefers the site that explains
+// more of the picture — so a stray sign does not get its own lesion while a real site can absorb it.
+// A cover larger than this is not a clinical hypothesis — see the note at its use in solve().
+export const MAX_COVER_SITES = 3;
+
 export function minimalSet(observedSet, opts = {}) {
-  const needAll = new Set(localisingObserved(observedSet));
+  const needAll = new Set(observedSet);
   if (needAll.size === 0) return null;
 
-  const sites = candidateSites().map(site => {
-    const exp = expectedFindings(site, opts);
-    const covers = new Set([...needAll].filter(f => exp.has(f)));
-    return { site, exp, covers };
-  }).filter(s => s.covers.size > 0);
+  // The pool is the DIFFERENTIAL's candidate list, not a fresh enumeration of every site. differential()
+  // already applies the known-negative exclusion (the un-entered opposite side of a lateralised finding is
+  // treated as confirmed-normal) and the raised-pressure compartment filter, and it try/catches composers
+  // that throw. Enumerating separately let the cover be built from sites the differential had already
+  // ruled out: `weak_arm@right` + `weak_leg@left` was "covered" by locked-in alone — a bilateral site that
+  // also predicts a weak LEFT arm and a weak RIGHT leg, both recorded as normal — so the cover collapsed to
+  // one site and no multifocal hypothesis was offered (owner bug report, 2026-08-15).
+  const sites = differential(observedSet, opts)
+    .map(c => ({ site: c.site, exp: c.exp, covers: new Set([...needAll].filter(f => c.exp.has(f))) }))
+    .filter(s => s.covers.size > 0);
 
   const remaining = new Set(needAll);
   const chosen = [];
@@ -289,21 +301,36 @@ export function solve(observedSet, options = {}) {
     : observedSet;
   const single = rankSingle(localising, opts);
   const best = single[0] || null;
-  const singleExplainsAll = best ? coversAllLocalising(best, localising) : false;
+
+  const diff = differential(observedSet, opts);
+  const total = localising.size;
+  const explainAll = diff.filter(c => c.n === total);
+
+  // "Does a single lesion explain everything?" is the SUPERSET question the differential already answers,
+  // so it is answered here in exactly one place. It used to be a separate test over the LOCALISING findings
+  // only, which returned TRUE VACUOUSLY when none of the observed findings were localising — so
+  // `weak_arm@right` + `weak_leg@left` reported "a single lesion explains all" while `explainAll` was
+  // simultaneously 0, and the two fields contradicted each other on the same screen (owner bug report,
+  // 2026-08-15).
+  const singleExplainsAll = explainAll.length > 0;
 
   let multi = null;
   if (!singleExplainsAll) {
     const ms = minimalSet(localising, opts);
-    // Only surface a multifocal hypothesis if it needs >1 site (otherwise the single ranking already has it).
-    if (ms && ms.sites.length > 1) multi = ms;
+    // Only surface a multifocal hypothesis if it needs >1 site (otherwise the single ranking already has it)
+    // and no more than MAX_COVER_SITES. Two lesions is a clinical hypothesis; five is not — a cover that
+    // large means the findings are internally INCONSISTENT (typically a lateralised sign entered on the
+    // wrong side, which the known-negative filter then uses to eliminate the one site that actually fits,
+    // leaving the cover to assemble fragments). Asserting "you have five lesions" would be worse than
+    // saying nothing; the near-fit line and the "best explains n/total" header already carry the signal.
+    // The bound is evidence-based, not a guess: across every genuine two-lesion pair sampled, 100% cover
+    // in <= 3 sites (1838 at exactly 2, 5 at 3), so this discards no real multifocal picture.
+    if (ms && ms.sites.length > 1 && ms.sites.length <= MAX_COVER_SITES) multi = ms;
   }
 
   const nf = nearFit(localising, opts);
   const level = describeLevel(best, options.sensoryLevel);
   const length = describeLength(best, options.distalReach);
-  const diff = differential(observedSet, opts);
-  const total = localising.size;
-  const explainAll = diff.filter(c => c.n === total);
   const display = explainAll.length ? explainAll : diff;
   const defaultSite = display[0]?.site.id ?? null;
   const ruledOut = ruledOutSites(localising, opts);
