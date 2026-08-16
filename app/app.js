@@ -506,8 +506,15 @@ function perSiteRemainderHTML(cc, sites) {
     .filter(x => x.remainder.length);
   if (!bySite.length) return "";
   const n = bySite.reduce((sum, x) => sum + x.remainder.length, 0);
+  // A remainder row can be tempo-DEMOTED just like a shared one — `combinedCauses()` builds perSite from
+  // `all.concat(demoted)`. The single-site What card and the shared band both say so; without this the
+  // remainder was the one view of three that showed a demoted cause with no hint it was demoted.
   const body = bySite.map(({ site, remainder }) =>
-    `<div class="catgrp"><div class="cathead">${esc(siteName(site))}</div>${remainder.map(renderCause).join("")}</div>`
+    `<div class="catgrp"><div class="cathead">${esc(siteName(site))}</div>${remainder.map(c =>
+      renderCause(c) + (c.demotion
+        ? `<div class="annot" style="margin:-4px 0 6px">Less likely given <b>${esc(c.demotion.entered)}</b> onset — usually ${c.demotion.expected.map(esc).join(" / ")}.</div>`
+        : "")
+    ).join("")}</div>`
   ).join("");
   return `<details class="ruledout" style="margin-top:8px"><summary style="font-size:11.5px;color:var(--muted)">Only plausible at one site <span class="c">${n}</span></summary><div style="margin-top:4px">${body}</div></details>`;
 }
