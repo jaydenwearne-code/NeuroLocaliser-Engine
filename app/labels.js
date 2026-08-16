@@ -58,7 +58,9 @@ export const PART_LABEL = {
   "cortex|medial_pfc": "medial prefrontal cortex",
   "cortex|orbitofrontal": "orbitofrontal cortex",
   "cortex|parietal": "inferior parietal lobule",
-  "cortex|temporoparietal": "temporoparietal cortex (Wernicke's area)",
+  // Wernicke's area is the POSTERIOR SUPERIOR TEMPORAL GYRUS — the site key says "temporoparietal", which
+  // is the territory it sits in, not the gyrus the lesion is on.
+  "cortex|temporoparietal": "posterior superior temporal gyrus (Wernicke's area)",
   "cortex|temporal": "temporal lobe",
   "cortex|anterior_temporal": "anterior temporal lobe",
   "cortex|occipital": "primary visual cortex",
@@ -88,8 +90,9 @@ export const PART_LABEL = {
   "aphasia_subcortical|thalamic": "thalamus (language)",
 
   // --- thalamus + hypothalamus ---
-  "thalamus|vpm": "VPM thalamic nucleus",
-  "thalamus|vl": "VA/VL thalamic nucleus",
+  // Spelled out rather than left as the abbreviation — these are nuclei, and the name should say which.
+  "thalamus|vpm": "ventral posteromedial thalamic nucleus",
+  "thalamus|vl": "ventral lateral thalamic nucleus",
   "thalamus|limbic": "anterior + dorsomedial thalamic nuclei",
   "thalamus|pulvinar": "pulvinar",
   "thalamus_arousal|paramedian": "paramedian thalamus",

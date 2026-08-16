@@ -108,6 +108,12 @@ ok("every PART_LABEL key is `level|part`",
   const hypoBad = [...new Set(SITES.filter(s => s.level === "hypothalamus").map(s => s.part))]
     .filter(p => / hypothalamus$/.test(siteLabel({ level: "hypothalamus", part: p })));
   ok("no hypothalamic portion is labelled as the whole hypothalamus", !hypoBad.length, hypoBad.join(" | "));
+  const thalBad = [...new Set(SITES.filter(s => s.level === "thalamus").map(s => s.part))]
+    .filter(p => / thalamus$/.test(siteLabel({ level: "thalamus", part: p })));
+  ok("no thalamic nucleus is labelled as the whole thalamus", !thalBad.length, thalBad.join(" | "));
+  ok("Wernicke's area is named as the gyrus it sits on, not the territory",
+     /posterior superior temporal gyrus/.test(siteLabel({ level: "cortex", part: "temporoparietal" })),
+     siteLabel({ level: "cortex", part: "temporoparietal" }));
   const lab = (level, part) => siteLabel({ level, part });
   ok("a brainstem half uses the hemi- term",
      lab("pons", "hemi") === "hemipons" && lab("midbrain", "hemi") === "hemimidbrain"
