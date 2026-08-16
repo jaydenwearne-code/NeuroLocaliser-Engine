@@ -18,7 +18,7 @@
 // Note `plexus` is FALSE deliberately — it is extradural, outside the CSF space, so leptomeningeal
 // disease does not reach it. Roots ARE true: they run in the thecal sac.
 //
-// ⚠ CLINICAL CONTENT AWAITING THE OWNER'S SIGN-OFF.
+// ✅ CLINICALLY SIGNED OFF by the owner (a clinician), 2026-08-15.
 // Spec: docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md §2
 
 export const LOBES = ["frontal", "parietal", "temporal", "occipital", "insula"];

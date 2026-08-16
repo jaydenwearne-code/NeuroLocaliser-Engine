@@ -9,7 +9,7 @@
 // so a bare-name key would give lateral medulla (PICA) and lateral midbrain one shared row, which is a
 // silent clinical error. `causes.js` resolves keys as `${level}_${part}` for the same reason.
 //
-// ⚠ CLINICAL CONTENT AWAITING THE OWNER'S SIGN-OFF.
+// ✅ CLINICALLY SIGNED OFF by the owner (a clinician), 2026-08-15.
 // Spec: docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md §1
 
 export const VESSELS = [

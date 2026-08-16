@@ -1,7 +1,7 @@
 # Multifocal pattern axis: what shape of dissemination, not how many sites
 
 **Date:** 2026-08-15
-**Status:** design, approved — awaiting implementation plan
+**Status:** implemented 2026-08-15; clinical content SIGNED OFF by the owner 2026-08-15
 **Amends:** `2026-08-14-multi-location-ddx-design.md` (replaces the `spread` trigger it introduced)
 
 ## The problem

@@ -199,7 +199,7 @@ Normal-pressure hydrocephalus is excluded by name — the pressure is normal, so
 > flagged for review if uncertain. Spec + outcome table:
 > `docs/superpowers/specs/2026-08-11-differential-depth-design.md`.
 
-## Multi-location DDx layer (DONE 2026-08-14) — ⚠ NEW CLINICAL CONTENT AWAITING SIGN-OFF
+## Multi-location DDx layer (DONE 2026-08-14) — ✅ CLINICALLY SIGNED OFF
 
 **What it answers:** when a picture genuinely needs more than one lesion, *what single disease hits both
 of these places?* Previously causes/next-steps/why were shown for the one selected site only; a multifocal
@@ -280,20 +280,21 @@ the single-site view and the merged cross-site view — **every call site of `co
 pinned Set explicitly**, or the Together card and the What/Next cards can silently describe different sites
 on the same screen (this shipped once; `test/combined-sites.test.js` guards the call sites, comment-aware).
 
-> **⚠ The 13-entity `MULTIFOCAL` roster (Motor neurone disease, Multiple sclerosis, Metastases,
-> Vasculitis, Neurosarcoidosis, Mononeuritis multiplex, Leptomeningeal disease, NMOSD, Primary CNS
-> lymphoma, Neurofibromatosis type 2, Paraneoplastic syndrome, Neurosyphilis/HIV, Embolic shower) and the
-> `LOCALISING` promote/excuse split above are NEW CLINICAL CONTENT AWAITING THE OWNER'S (a clinician's)
-> SIGN-OFF — do not describe either as reviewed.** The plan's review gate requires both be offered before
-> merge to `main`: the roster as a table (name · what makes it fire · discriminating feature · red flag),
-> and the promote/excuse split as two lists with reasons — the LOCALISING change carries more risk because
-> it alters scoring/ranking behaviour, not just added content. New suites: `test/compartments.test.js`,
+> **✅ CLINICALLY SIGNED OFF (2026-08-14/15).** The 13-entity roster was reviewed entity by entity and
+> produced five owner rulings, all applied: keep the fundoscopy/slit-lamp `confirm` fields; give MS a red
+> flag for a first presentation disseminated in space; fix the optic misfiling so NMOSD can fire on its own
+> archetype; restrict MS to the CNS; and constrain every entity to where its disease TYPICALLY presents
+> rather than everywhere it could reach. **One item was never separately ticked and is NOT covered by that
+> sign-off: the `LOCALISING` 12-promoted / 9-excused split.** The owner ruled explicitly on three
+> REJECTIONS from it (`fasciculations`, `palmomental`, `rigidity`) and confirmed four promotions, but the
+> full list has not been walked. It alters scoring and ranking, not just content, so treat it as the one
+> open review item. New suites: `test/compartments.test.js`,
 > `test/localising-audit.test.js`, `test/multifocal.test.js`, `test/combined-sites.test.js`. Spec/plan:
 > `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md`,
 > `docs/superpowers/plans/2026-08-14-multi-location-ddx.md`.
 
 
-## Multifocal SUBSTRATE axis (DONE 2026-08-15) — ⚠ NEW CLINICAL CONTENT AWAITING SIGN-OFF
+## Multifocal SUBSTRATE axis (DONE 2026-08-15) — ✅ CLINICALLY SIGNED OFF
 
 **What it fixes.** The cross-site roster fired on a COUNT (`spread: {minSites: 2}`), so nine of thirteen
 entities appeared together. The owner reported it from the live app: right arm + left leg weakness offered
@@ -349,8 +350,10 @@ baseline — while leptomeningeal fell 54%→8% and paraneoplastic 47%→6%.
 `skull_base` — and a vestibular schwannoma at the IAM is a Schwann-cell tumour. Fixed (NF2 → 12.6%), with a
 test that also pins the optic nerve as NOT Schwann (it is oligodendrocyte-myelinated).
 
-> **⚠ The 104-key vascular table, the 202-key topography table and the substrate assignments are NEW
-> CLINICAL CONTENT AWAITING THE OWNER'S SIGN-OFF.** New suites: `test/vascular.test.js`,
+> **✅ CLINICALLY SIGNED OFF (2026-08-15) by the owner (a clinician): the 104-key vascular table, the
+> 202-key topography table and the substrate assignments.** The review gate is closed — do not re-flag
+> this content as unreviewed. Content added from here is held to the same bar and flagged if uncertain.
+> New suites: `test/vascular.test.js`,
 > `test/topography.test.js`, `test/space.test.js`. Spec/plan:
 > `docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md`,
 > `docs/superpowers/plans/2026-08-15-multifocal-pattern-axis.md`.
