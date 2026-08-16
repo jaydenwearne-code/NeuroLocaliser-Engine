@@ -10,10 +10,11 @@
 import { MULTIFOCAL, FINDING_CLASSES } from "../src/data/multifocal.js";
 import { CATEGORIES, CAUSES, TEMPO, LIKELIHOOD } from "../src/data/causes.js";
 import { COURSE_IDS } from "../src/model/course.js";
-import { unifyingDiagnoses, assignClauses, forcingFindings } from "../src/engine/multifocal.js";
+import { substrateMatches, unifyingDiagnoses, assignClauses, forcingFindings } from "../src/engine/multifocal.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { compartmentOf } from "../src/model/compartments.js";
+import { SUBSTRATES, substratesAt, substrateFootprint } from "../src/model/substrate.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -25,7 +26,9 @@ const TEMPO_IDS = new Set(TEMPO.map(t => t.id));
 // --- 1: shape ---
 {
   ok(`the roster has >= 13 entities (got ${MULTIFOCAL.length})`, MULTIFOCAL.length >= 13);
-  const noClause = MULTIFOCAL.filter(e => !e.spread && !(e.sites && e.sites.length) && !e.motor);
+  // The trigger is now `pattern` (2026-08-15) — `spread` no longer exists. Same intent: an entity with
+  // no hard clause at all would fire on any two sites whatsoever.
+  const noClause = MULTIFOCAL.filter(e => !e.substrate && !(e.sites && e.sites.length) && !e.motor);
   ok(`every entity has at least one HARD clause (${noClause.length} without)`, noClause.length === 0,
      noClause.map(e => e.name).join(", "));
   const badCat = MULTIFOCAL.filter(e => !CAT_IDS.has(e.cat));
@@ -48,11 +51,17 @@ const TEMPO_IDS = new Set(TEMPO.map(t => t.id));
 // --- 2: THE ANTI-OVER-CALL GUARD ---
 // A cross-site entity that a single site could satisfy is not a cross-site entity.
 {
-  const singleSatisfiable = MULTIFOCAL.filter(e => {
-    const minSpread = e.spread ? (e.spread.minSites || 2) : 0;
-    const nSites = e.sites ? e.sites.length : 0;
-    return Math.max(minSpread, nSites) < 2 && e.motor !== "mixed";
-  });
+  // Restated 2026-08-15: the old form read `e.spread.minSites`, which no longer exists. The guarantee is
+  // now structural — patternMatches() returns false for any set of fewer than two sites — so it is
+  // asserted directly against every pattern rather than inferred from a declared minimum.
+  // NB `siteById` is declared further down (§5), so this block does its own lookup rather than reaching
+  // into the temporal dead zone.
+  const oneSite = [candidateSites().find(s => s.id === "left_cortex_motor_facearm")];
+  const firesOnOne = MULTIFOCAL.filter(e => substrateMatches(e, oneSite, new Set()));
+  ok(`no entity's substrate can be satisfied by a single site (${firesOnOne.length})`,
+     firesOnOne.length === 0, firesOnOne.map(e => e.name).join(", "));
+  const singleSatisfiable = MULTIFOCAL.filter(e =>
+    !e.substrate && (e.sites ? e.sites.length : 0) < 2 && e.motor !== "mixed");
   ok(`no entity can be satisfied by a single site (${singleSatisfiable.length})`, singleSatisfiable.length === 0,
      singleSatisfiable.map(e => e.name).join(", "));
 }
@@ -101,8 +110,8 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   // the visual_pathway level parts (optic_tract / lgn / retina / chiasm); `left_visual_pathway_optic_tract`
   // is used here as the closest real site satisfying the test's anatomical intent — a lesion in the optic
   // compartment, distinct from the cord compartment. The MS entity's clause is a generic
-  // `spread:{distinctCompartments:2}`, not an optic-specific clause, so any two distinct compartments
-  // satisfy it; this substitution preserves that intent exactly.
+  // `substrate: "myelin_cns"`, not an optic-specific clause, so any two separated CNS sites satisfy it; this
+  // substitution preserves that intent exactly.
   const sites = [siteById("left_visual_pathway_optic_tract"),
                  siteById("left_cord_hemi")].filter(Boolean);
   const toks = tokensFor(...sites.map(s => s.id));
@@ -110,12 +119,14 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   ok("MS emerges on optic + cord (two compartments)",
      r.concordant.some(e => /multiple sclerosis/i.test(e.name)));
   const ms = r.concordant.find(e => /multiple sclerosis/i.test(e.name));
-  // MS's only clause is `spread` (satisfied by the SET, not any one site) — `satisfiedBy` is null by
-  // design (FINDING 2); the derivation is carried in the clause's descriptive text instead.
-  ok("MS carries its derivation (`why` names the satisfying spread)",
+  // MS's only clause is now `pattern: ["cns"]` (satisfied by the SET, not any one site) — `satisfiedBy`
+  // is null by design; the derivation is carried in the clause's descriptive text instead. Restated
+  // 2026-08-15 from `clause.spread` to `clause.pattern`; the intent (a derivation IS present, and it is
+  // not falsely attributed to one site) is unchanged.
+  ok("MS carries its derivation (`why` names the satisfying substrate)",
      ms && Array.isArray(ms.why) && ms.why.length > 0 &&
      ms.why.every(w => w.satisfiedBy === null) &&
-     ms.why.some(w => w.clause && typeof w.clause.spread === "string"));
+     ms.why.some(w => w.clause && w.clause.substrate === "myelin_cns"));
 }
 
 // --- 6: SOFT AXES DEMOTE, THEY DO NOT DROP (the owner's ruling — the assertion that guards it) ---
@@ -463,6 +474,114 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   ok("mis-sided input produces NO multifocal claim", !r.multi,
      r.multi ? r.multi.sites.map(s => s.id).join(" + ") : "");
   ok("...but the near-fit still names the flipped finding", !!r.nearFit && /spinothalamic/.test(r.nearFit.missing));
+}
+
+
+// --- 27: SUBSTRATE AXIS (spec 2026-08-15 §4, amended) ---
+// A disease attacks a SUBSTRATE, and that substrate has its own distribution through the body. This
+// replaced a "lesion pattern" axis that phrased every rule as "every site is X" — measured at 38% silent
+// pairs, 74% of them mixed CNS+PNS, with `cord + L5 root` returning an empty card.
+{
+  const s = id => siteById(id);
+  const cortex = s("left_cortex_motor_facearm");
+  const nerve  = s("left_nerve_radial_axilla");
+  const cauda  = s("cauda_equina");
+
+  ok("vessels exist EVERYWHERE — this is why vasculitis crosses CNS/PNS",
+     substratesAt(cortex).has("vessel") && substratesAt(nerve).has("vessel") && substratesAt(cauda).has("vessel"));
+  ok("parenchyma exists in CNS but NOT in peripheral nerve",
+     substratesAt(cortex).has("parenchyma") && !substratesAt(nerve).has("parenchyma"));
+  ok("leptomeninges exist at the cauda but NOT in motor cortex",
+     substratesAt(cauda).has("leptomeninges") && !substratesAt(cortex).has("leptomeninges"));
+  ok("schwann cells exist in peripheral nerve but NOT in cortex",
+     substratesAt(nerve).has("schwann") && !substratesAt(cortex).has("schwann"));
+  ok("every substrate a site reports is a declared one",
+     [...substratesAt(cortex), ...substratesAt(nerve), ...substratesAt(cauda)].every(x => SUBSTRATES.includes(x)));
+}
+
+// --- 27b: THE MIXED CNS+PNS CASE the pattern axis could not express ---
+// The whole reason the pattern axis was rejected. Vasculitis MUST reach both sides of the neuraxis,
+// because vessels are on both sides — structurally, not by giving it a non-vascular attribute.
+{
+  const pairs = [
+    ["cord + L5 root", "left_cord_hemi", "right_root_l5"],
+    ["brain + peripheral nerve", "left_cortex_motor_facearm", "left_nerve_radial_axilla"],
+  ];
+  for (const [label, a, b] of pairs) {
+    const sites = [siteById(a), siteById(b)];
+    const toks = tokensFor(a, b);
+    const names = (() => { const r = unifyingDiagnoses(sites, toks, {}); return [...r.concordant, ...r.discordant].map(e => e.name); })();
+    ok(`${label}: something fires (the pattern axis returned nothing here)`, names.length > 0, label);
+    ok(`${label}: vasculitis fires — vessels exist on both sides`, names.some(n => /vasculit/i.test(n)), names.join(", "));
+    ok(`${label}: metastases do NOT fire — parenchyma is not in the peripheral site`,
+       !names.some(n => /metasta/i.test(n)), names.join(", "));
+  }
+}
+
+// --- 27c: the allow-list must be strictly NARROWER than its substrate footprint, or it is redundant ---
+// An allow-list that merely restates its substrate looks meaningful but is not, and a later edit to one
+// could silently contradict the other.
+{
+  const all = candidateSites();
+  const redundant = MULTIFOCAL.filter(e => {
+    if (!e.compartments || !e.substrate || e.substrate === "motor_neuron") return false;
+    const foot = substrateFootprint(e.substrate, all);
+    return [...foot].every(c => e.compartments.includes(c));   // allow-list adds nothing
+  });
+  ok(`no allow-list merely restates its substrate (${redundant.length} redundant)`, redundant.length === 0,
+     redundant.map(e => e.name).join(", "));
+}
+
+
+// --- 27d: cranial-nerve corridors carry Schwann cells ---
+// Caught by the fire-rate measurement, not by a unit test: NF2 fell to 0.0% of pairs because `schwann`
+// omitted `skull_base`, and NF2 needs Schwann cells at every site AND a skull-base site. A vestibular
+// schwannoma at the IAM is literally a Schwann-cell tumour, so the omission was simply wrong.
+{
+  const iam = candidateSites().find(x => x.level === "skull_base" && /iam|cpa/i.test(x.part));
+  ok("a skull-base cranial-nerve corridor carries `schwann`", !!iam && substratesAt(iam).has("schwann"),
+     iam ? iam.id : "no fixture");
+  // The optic nerve must NOT: it is a CNS tract myelinated by oligodendrocytes, and its skull-base parts
+  // are re-mapped to the `optic` compartment.
+  const opticSb = candidateSites().find(x => x.level === "skull_base" && /optic_neuritis/.test(x.part));
+  ok("an optic skull-base part does NOT carry `schwann` (oligodendrocyte-myelinated)",
+     !!opticSb && !substratesAt(opticSb).has("schwann"), opticSb ? opticSb.id : "no fixture");
+  ok("...and does carry myelin_cns instead", !!opticSb && substratesAt(opticSb).has("myelin_cns"));
+}
+
+// --- 28: THE OWNER'S VERDICTS on right arm + left leg weakness (bug report 2026-08-15) ---
+// "multifocal masses, embolic or vasculitic phenomena" are right; "leptomeningeal and especially
+// paraneoplastic causes are quite a stretch"; "demyelination would also cause this issue but it is not
+// offered". These are the headline regression for the whole pattern axis.
+{
+  const sites = [siteById("right_cortex_motor_leg"), siteById("left_cortex_motor_facearm")];
+  const r = unifyingDiagnoses(sites, new Set(["weak_arm@right", "weak_leg@left"]), {});
+  const names = [...r.concordant, ...r.discordant].map(e => e.name).join(" | ");
+  const has = re => new RegExp(re, "i").test(names);
+
+  ok("metastases fire (multifocal masses)", has("metasta"), names);
+  ok("embolic shower fires", has("embol"), names);
+  ok("vasculitis fires", has("vasculit"), names);
+  ok("MULTIPLE SCLEROSIS fires — the reported omission", has("multiple sclerosis"), names);
+  ok("primary CNS lymphoma fires (owner: 'mass is right')", has("lymphoma"), names);
+  ok("leptomeningeal disease does NOT fire — a stretch here", !has("leptomeningeal"), names);
+  ok("paraneoplastic syndrome does NOT fire — especially a stretch", !has("paraneoplastic"), names);
+}
+
+// --- 29: `spread` is gone from the entity shape ---
+{
+  const withSpread = MULTIFOCAL.filter(e => e.spread !== undefined);
+  ok(`no entity still carries a \`spread\` clause (${withSpread.length})`, withSpread.length === 0,
+     withSpread.map(e => e.name).join(", "));
+  const withoutTrigger = MULTIFOCAL.filter(e => !e.substrate && !(e.sites && e.sites.length) && !e.motor);
+  ok(`every entity has a trigger — substrate, sites or motor (${withoutTrigger.length} without)`,
+     withoutTrigger.length === 0, withoutTrigger.map(e => e.name).join(", "));
+  const badSub = MULTIFOCAL.filter(e => e.substrate && !SUBSTRATES.includes(e.substrate));
+  ok(`every declared substrate is a known one (${badSub.length} bad)`, badSub.length === 0,
+     badSub.map(e => `${e.name}:${e.substrate}`).join(", "));
+  const noPattern = MULTIFOCAL.filter(e => e.pattern !== undefined);
+  ok(`no entity still carries a \`pattern\` clause (${noPattern.length})`, noPattern.length === 0,
+     noPattern.map(e => e.name).join(", "));
 }
 
 for (const l of log) console.log(`${l.ok ? "PASS" : "FAIL"}  ${l.label}${l.detail && !l.ok ? `  [${l.detail}]` : ""}`);

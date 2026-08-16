@@ -1924,9 +1924,9 @@ export const NEXT = {
       monitoring: ["Continue high-dose parenteral thiamine for the full course — under-treatment risks permanent Korsakoff amnesia",
                    "Repeat cognitive assessment; falls risk and physiotherapy"] }),
   guillain_mollaret_rubral: ns(
-    ["MRI brain including the brainstem and the OLIVE — look for hypertrophic olivary degeneration and the original causative lesion",
+    ["MRI brain including the brainstem and the OLIVE — hypertrophic olivary degeneration plus the original causative lesion",
      "Susceptibility-weighted imaging for a cavernoma or old haemorrhage"],
-    "routine", "Neurology; neurosurgery if a cavernoma or resectable lesion is identified.",
+    "routine", "Neurology; neurosurgery if a cavernoma or resectable lesion is found.",
     { immediate: ["Inspect the palate directly for rhythmic movement, and ask about ear clicking",
                   "Take a history for a brainstem event MONTHS earlier — the delay is the diagnostic clue",
                   "Test for accompanying cerebellar and brainstem signs"],
@@ -1937,7 +1937,7 @@ export const NEXT = {
   guillain_mollaret_dentate: ns(
     ["MRI brain including the brainstem and the OLIVE — hypertrophic olivary degeneration plus the original causative lesion",
      "Susceptibility-weighted imaging for a cavernoma or old haemorrhage"],
-    "routine", "Neurology; neurosurgery if a cavernoma or resectable lesion is identified.",
+    "routine", "Neurology; neurosurgery if a cavernoma or resectable lesion is found.",
     { immediate: ["Inspect the palate for rhythmic movement and ask about ear clicking",
                   "Take a history for a brainstem or cerebellar event MONTHS earlier, including posterior-fossa surgery",
                   "Assess accompanying cerebellar signs"],

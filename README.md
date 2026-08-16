@@ -90,6 +90,9 @@ node test/tier2-deferred.test.js # Tier 2 — brachial plexus cords, optic field
 node test/causes.test.js         # aetiology layer — tempo-aware surgical-sieve causesFor(site, {onset})
 node test/causes-depth.test.js   # differential-depth invariants — no generic filler; >=6 causes, each with a feature
 node test/fundus.test.js         # fundoscopy + acuity findings; papilloedema as a compartment axis
+node test/space.test.js        # separatedInSpace across segment/vessel/lobe/hemisphere/level
+node test/topography.test.js  # lobe / CSF-surface / vulnerable-system axis, all 202 keys
+node test/vascular.test.js   # authored vascular axis (vessel/segment/branch/zone), 104 CNS keys
 node test/compartments.test.js  # level -> compartment axis; INTRACRANIAL_LEVELS derives from it
 node test/localising-audit.test.js # every single-level finding is LOCALISING or explicitly excused (NOT_LOCALISING_BY_DESIGN)
 node test/app-smoke.test.js      # exam-map integrity (every finding real; lobe/brainstem/fatiguability taxonomy)

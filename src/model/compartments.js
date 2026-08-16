@@ -21,12 +21,13 @@ export const LEVEL_COMPARTMENT = {
   aphasia_subcortical: "brain", thalamus: "brain", thalamus_arousal: "brain",
   hypothalamus: "brain", basal_ganglia: "brain", olfactory: "brain",
   // --- brainstem (incl. the composite/functional brainstem levels) ---
-  // NB: there is no "brainstem" level — the old hand-written INTRACRANIAL_LEVELS listed one, but no
-  // site uses it. The real level is brainstem_aras, which that list omitted. `parinaud` is kept even
-  // though no site uses it as a level today, because the original set named it and the regression
-  // guard still expects it.
+  // NB: TWO phantom levels from the old hand-written INTRACRANIAL_LEVELS are deliberately absent here.
+  // `brainstem` — no site uses it; the real level is brainstem_aras, which that list omitted.
+  // `parinaud` — no site uses it either; the Parinaud site's level is dorsal_midbrain. It was carried
+  // over on the first pass purely because the regression guard still named it, which is a dead entry
+  // masquerading as coverage. Removed 2026-08-15 along with its entry in that guard.
   midbrain: "brainstem", pons: "brainstem", medulla: "brainstem", brainstem_aras: "brainstem",
-  pontomesencephalic: "brainstem", dorsal_midbrain: "brainstem", parinaud: "brainstem",
+  pontomesencephalic: "brainstem", dorsal_midbrain: "brainstem",
   locked_in: "brainstem", pseudobulbar: "brainstem", guillain_mollaret: "brainstem",
   central_vestibular: "brainstem", craniocervical_junction: "brainstem",
   // --- cerebellum ---

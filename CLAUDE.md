@@ -199,7 +199,7 @@ Normal-pressure hydrocephalus is excluded by name — the pressure is normal, so
 > flagged for review if uncertain. Spec + outcome table:
 > `docs/superpowers/specs/2026-08-11-differential-depth-design.md`.
 
-## Multi-location DDx layer (DONE 2026-08-14) — ⚠ NEW CLINICAL CONTENT AWAITING SIGN-OFF
+## Multi-location DDx layer (DONE 2026-08-14) — ✅ CLINICALLY SIGNED OFF
 
 **What it answers:** when a picture genuinely needs more than one lesion, *what single disease hits both
 of these places?* Previously causes/next-steps/why were shown for the one selected site only; a multifocal
@@ -280,17 +280,83 @@ the single-site view and the merged cross-site view — **every call site of `co
 pinned Set explicitly**, or the Together card and the What/Next cards can silently describe different sites
 on the same screen (this shipped once; `test/combined-sites.test.js` guards the call sites, comment-aware).
 
-> **⚠ The 13-entity `MULTIFOCAL` roster (Motor neurone disease, Multiple sclerosis, Metastases,
-> Vasculitis, Neurosarcoidosis, Mononeuritis multiplex, Leptomeningeal disease, NMOSD, Primary CNS
-> lymphoma, Neurofibromatosis type 2, Paraneoplastic syndrome, Neurosyphilis/HIV, Embolic shower) and the
-> `LOCALISING` promote/excuse split above are NEW CLINICAL CONTENT AWAITING THE OWNER'S (a clinician's)
-> SIGN-OFF — do not describe either as reviewed.** The plan's review gate requires both be offered before
-> merge to `main`: the roster as a table (name · what makes it fire · discriminating feature · red flag),
-> and the promote/excuse split as two lists with reasons — the LOCALISING change carries more risk because
-> it alters scoring/ranking behaviour, not just added content. New suites: `test/compartments.test.js`,
+> **✅ CLINICALLY SIGNED OFF (2026-08-14/15).** The 13-entity roster was reviewed entity by entity and
+> produced five owner rulings, all applied: keep the fundoscopy/slit-lamp `confirm` fields; give MS a red
+> flag for a first presentation disseminated in space; fix the optic misfiling so NMOSD can fire on its own
+> archetype; restrict MS to the CNS; and constrain every entity to where its disease TYPICALLY presents
+> rather than everywhere it could reach. **The `LOCALISING` 12-promoted / 9-excused split was walked in
+> full and approved on 2026-08-15** — the whole list, with the model footprint of each finding, after the
+> owner had already ruled out three proposed promotions (`fasciculations`, `palmomental`, `rigidity`) and
+> declined three further challenges I raised against `disinhibition`, `executive_dysfunction` and
+> `optic_atrophy`. **There is no open review item on this layer.** New suites: `test/compartments.test.js`,
 > `test/localising-audit.test.js`, `test/multifocal.test.js`, `test/combined-sites.test.js`. Spec/plan:
 > `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md`,
 > `docs/superpowers/plans/2026-08-14-multi-location-ddx.md`.
+
+
+## Multifocal SUBSTRATE axis (DONE 2026-08-15) — ✅ CLINICALLY SIGNED OFF
+
+**What it fixes.** The cross-site roster fired on a COUNT (`spread: {minSites: 2}`), so nine of thirteen
+entities appeared together. The owner reported it from the live app: right arm + left leg weakness offered
+leptomeningeal disease and paraneoplastic syndrome (clinically a stretch) while multiple sclerosis — which
+would genuinely explain it — was blocked by its own `distinctCompartments`, because two hemispheres are
+both the `brain` compartment.
+
+**Two authored tables, both keyed `${level}|${part}` (NEVER by `part` alone — `lateral`, `hemi`, `medial`
+and `anterior` are each reused across levels, so a bare-name key would give lateral medulla (PICA) and
+lateral midbrain one shared row; 94 part names but 104 keys):**
+- **`src/model/vascular.js`** — `vessel`, `segment` (M1–M4 / A1–A5 / P1–P4), `branch`, `zone` across 104
+  CNS keys. Authored, not parsed: `site.territory` is prose and **0 of 211 strings carry a vessel segment**.
+  49 keys have a real segment; 55 are deliberately null, each with a reason in `SEGMENT_NULL_REASON`, and
+  the suite asserts the null set and the reason set match exactly in both directions.
+- **`src/model/topography.js`** — `lobe`, `surface` (CSF-bathed vs deep parenchyma), `system` (the
+  selectively vulnerable systems), across all 202 keys. `surface` is decided by COMPARTMENT exhaustively,
+  and the suite asserts the RULE rather than the values, so a new site cannot land undetermined.
+
+**`src/engine/space.js`** derives `separatedInSpace(sites, axis)` over five axes — `segment → vessel →
+lobe → hemisphere → level`. A site that cannot speak on an axis (null segment, or a nerve with no vascular
+row) DISQUALIFIES that axis rather than comparing equal: two nulls must never read as "the same place".
+
+**`src/model/substrate.js` — THE KEY IDEA.** A disease attacks a SUBSTRATE, and that substrate has its own
+distribution through the body. **Vasculitis crosses the CNS/PNS boundary because vessels are on both sides
+of it; metastases do not, because parenchyma is not.** Substrates (`vessel`, `parenchyma`, `leptomeninges`,
+`myelin_cns`, `schwann`, `neuron_population`, `motor_neuron`) are DERIVED from the two tables above, so a
+new site inherits them automatically. Entities declare `substrate` plus an optional `distribution`
+(`segment` for embolic lodging, `any` for MS, `nerveTrunk` for vasa nervorum).
+
+**An intermediate "lesion pattern" axis was built, measured and REJECTED — the history matters.** Seven
+patterns each phrased "every site is X". Measured: silent pairs rose **7.8% → 38.0%**, **74% of them mixed
+CNS+PNS**, and `cord + L5 root` returned an empty card — because a mixed picture satisfied no single
+pattern, so the two diseases whose defining feature is hitting BOTH sides were exactly the two that could
+never fire. The first proposed fix (give vasculitis a `mass` pattern) was **rejected by the owner as a
+workaround**: it attributes a non-vascular attribute to a vascular disease to make the mechanics work.
+The substrate axis is the structural answer, and it returned the silent rate to **7.8%** — the pre-pattern
+baseline — while leptomeningeal fell 54%→8% and paraneoplastic 47%→6%.
+
+**Two invariants worth keeping:**
+- **A `compartments` allow-list must be strictly NARROWER than its substrate's footprint, or it is
+  deleted.** It fired immediately and removed two (MS, paraneoplastic) that merely restated their
+  substrate. Substrate answers *is the target tissue here*; the allow-list answers *does this disease
+  actually turn up here* — the four that survive (embolic-not-cord, lymphoma-not-cord, sarcoid-not-cauda,
+  vasculitis-not-NMJ/pupil/sympathetic/cauda) are typicality judgements substrate cannot express.
+- **Vasculitis deliberately has NO distribution rule** and fires on ~92% of pairs. All four candidates were
+  measured: separated-`any` 97.3% and distinct-vascular-unit 96.9% (no narrower), separated-`vessel` 21.5%
+  and separated-`segment` 5.0% (both narrow only by disqualifying nerve sites, re-breaking `cord + L5
+  root`). Spatial separation cannot discriminate vasculitis because that is what vasculitis always HAS; its
+  real discriminator is temporal (stepwise), which lives in `course` and DEMOTES. **Owner's decision: accept
+  the breadth.**
+
+**The fire-rate measurement caught a bug no unit test did:** NF2 at 0.0%, because `schwann` omitted
+`skull_base` — and a vestibular schwannoma at the IAM is a Schwann-cell tumour. Fixed (NF2 → 12.6%), with a
+test that also pins the optic nerve as NOT Schwann (it is oligodendrocyte-myelinated).
+
+> **✅ CLINICALLY SIGNED OFF (2026-08-15) by the owner (a clinician): the 104-key vascular table, the
+> 202-key topography table and the substrate assignments.** The review gate is closed — do not re-flag
+> this content as unreviewed. Content added from here is held to the same bar and flagged if uncertain.
+> New suites: `test/vascular.test.js`,
+> `test/topography.test.js`, `test/space.test.js`. Spec/plan:
+> `docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md`,
+> `docs/superpowers/plans/2026-08-15-multifocal-pattern-axis.md`.
 
 ## Commands
 

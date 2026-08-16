@@ -44,7 +44,7 @@ const SITES = candidateSites();
   // src/model/compartments.js). brainstem_aras and pupil are ADDED: they were never in the old
   // hand-written INTRACRANIAL_LEVELS, but they belong there and the derivation now correctly includes them.
   const EXPECTED = ["midbrain", "pons", "medulla", "pontomesencephalic", "dorsal_midbrain",
-    "parinaud", "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular", "cortex",
+    "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular", "cortex",
     "subcortex", "cerebrum", "corpus_callosum", "aphasia_subcortical", "thalamus", "thalamus_arousal",
     "hypothalamus", "basal_ganglia", "cerebellum", "visual_pathway", "olfactory", "craniocervical_junction",
     "brainstem_aras", "pupil"];
@@ -136,7 +136,7 @@ const SITES = candidateSites();
 // set must contain exactly the same 25 levels as before the override existed.
 {
   const EXPECTED = ["midbrain", "pons", "medulla", "pontomesencephalic", "dorsal_midbrain",
-    "parinaud", "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular", "cortex",
+    "locked_in", "pseudobulbar", "guillain_mollaret", "central_vestibular", "cortex",
     "subcortex", "cerebrum", "corpus_callosum", "aphasia_subcortical", "thalamus", "thalamus_arousal",
     "hypothalamus", "basal_ganglia", "cerebellum", "visual_pathway", "olfactory", "craniocervical_junction",
     "brainstem_aras", "pupil"];

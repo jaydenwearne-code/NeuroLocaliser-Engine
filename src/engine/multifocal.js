@@ -1,7 +1,7 @@
 // multifocal.js (engine) — matching and ranking for the cross-site layer. LOGIC ONLY: every disease name,
 // feature and red flag lives in src/data/multifocal.js so the content can be reviewed on its own.
 //
-// HARD constraints (spread / sites / motor / forbids) FILTER: they are anatomical facts, and an entity
+// HARD constraints (substrate / sites / motor / forbids) FILTER: they are anatomical facts, and an entity
 // that does not fit them does not apply. SOFT constraints (tempo / course) only DEMOTE — a mismatch is
 // informative, not disqualifying (owner ruling, 2026-08-14).
 //
@@ -13,6 +13,8 @@ import { umnLmnPattern } from "./patterns.js";
 import { LIKELIHOOD } from "../data/causes.js";
 import { solve } from "./inverse.js";
 import { LOCALISING } from "./score.js";
+import { separatedInSpace } from "./space.js";
+import { substratesAt } from "../model/substrate.js";
 
 const idOf = t => t.split("@")[0];
 
@@ -54,17 +56,37 @@ export function assignClauses(sites, clauses) {
   return assign(0) ? why : null;
 }
 
-// `spread` is satisfied by the SET of sites, not by any one of them — there is no single site to name,
-// so `satisfiedBy` is null. The clause object still carries the descriptive count/compartment text.
-function spreadSatisfied(sites, spread) {
-  const minSites = spread.minSites || 2;
-  if (sites.length < minSites) return null;
-  if (spread.distinctCompartments) {
-    const cmps = new Set(sites.map(compartmentOf).filter(Boolean));
-    if (cmps.size < spread.distinctCompartments) return null;
-    return [{ clause: { spread: `${cmps.size} compartments` }, satisfiedBy: null }];
+// ---- SUBSTRATE + DISTRIBUTION (spec 2026-08-15 §4) ----
+// A disease attacks a SUBSTRATE, and that substrate has its own distribution through the body. Vasculitis
+// crosses the CNS/PNS boundary because vessels exist on both sides of it; metastases do not, because
+// parenchyma does not. Distribution is a property of the target tissue, not of the disease's "shape".
+//
+// This REPLACED a "lesion pattern" axis that phrased every rule as "every site is X". That formulation was
+// implemented, measured and rejected: silent site pairs rose 7.8% -> 38.0%, 74% of them mixed CNS+PNS, and
+// `cord + L5 root` returned an empty card — because a mixed picture could satisfy no single pattern, so the
+// two diseases whose defining feature is hitting BOTH sides (vasculitis, neurosyphilis) were exactly the
+// two that could never fire on one.
+export const DISTRIBUTIONS = ["segment", "any", "nerveTrunk"];
+
+// An entity fires when its substrate is present at EVERY site, and its distribution rule holds over the set.
+export function substrateMatches(entity, sites, observedSet) {
+  if (!Array.isArray(sites) || sites.length < 2) return false;
+
+  // `motor_neuron` is a property of the observed FINDINGS (upper + lower motor neurone signs together),
+  // not of a place — so it delegates to the existing synthesis and never consults the site set.
+  if (entity.substrate === "motor_neuron") return umnLmnPattern(observedSet).verdict === "mixed";
+
+  if (!sites.every(s => substratesAt(s).has(entity.substrate))) return false;
+
+  switch (entity.distribution) {
+    // Emboli lodge at branch points, so the lesions sit in distinct arterial segments.
+    case "segment": return separatedInSpace(sites, "segment");
+    // Disseminated in space on any axis — segment, vessel, lobe, hemisphere or level.
+    case "any": return separatedInSpace(sites, "any");
+    // Vasculitis of the vasa nervorum: the same substrate as vasculitis, restricted to peripheral nerve.
+    case "nerveTrunk": return sites.every(s => compartmentOf(s) === "nerve");
+    default: return true;
   }
-  return [{ clause: { spread: `${sites.length} sites` }, satisfiedBy: null }];
 }
 
 export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
@@ -85,11 +107,11 @@ export function unifyingDiagnoses(sites, observedSet, { onset, course } = {}) {
     // not be able to return Primary CNS lymphoma or an embolic shower, which make no anatomical sense there.
     if (entity.compartments && sites.some(s => !entity.compartments.includes(compartmentOf(s)))) continue;
 
-    // --- hard: dissemination in space ---
-    if (entity.spread) {
-      const w = spreadSatisfied(sites, entity.spread);
-      if (!w) continue;
-      why = why.concat(w);
+    // --- hard: SUBSTRATE — the tissue this disease attacks, and how it spreads within it ---
+    if (entity.substrate) {
+      if (!substrateMatches(entity, sites, observedSet)) continue;
+      why.push({ clause: { substrate: entity.substrate, distribution: entity.distribution || null },
+                 satisfiedBy: null });
     }
     // --- hard: specific places ---
     if (entity.sites && entity.sites.length) {

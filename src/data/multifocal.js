@@ -25,12 +25,18 @@ export const FINDING_CLASSES = {
 };
 
 // mf(name, cat, opts) — mirrors c() in causes.js.
-//   spread       {minSites, distinctCompartments}  generic dissemination in space
+//   substrate    "vessel"|"parenchyma"|"leptomeninges"|"myelin_cns"|"schwann"|"neuron_population"|
+//                "motor_neuron" — WHAT TISSUE this disease attacks. It fires only where that tissue exists
+//                at EVERY site. Vasculitis reaches CNS and PNS because vessels are in both; that is
+//                structural, not a per-disease exception. This REPLACED a "lesion pattern" axis (and,
+//                before it, `spread`) — see the amendment note in the spec for what measurement rejected.
+//   distribution "segment"|"any"|"nerveTrunk" — OPTIONAL, how it spreads WITHIN that substrate (emboli
+//                lodge at branch points; MS is disseminated in space; vasa nervorum is nerve-restricted).
 //   sites        [{compartment|level|region}]      specific places, each matched by a DISTINCT site
 //   motor        "mixed"                            delegates to umnLmnPattern() over the observed findings
 //   forbids      ["sensory"]                        finding CLASSES that exclude this entity
 //   compartments ["brain","cord",...]  OPTIONAL allow-list of compartments the entity can plausibly
-//                involve (owner ruling 4, 2026-08-14) — a HARD constraint like spread/sites/motor/forbids:
+//                involve (owner ruling 4, 2026-08-14) — a HARD constraint like substrate/sites/motor/forbids:
 //                if declared, EVERY site in the picture must resolve to one of the listed compartments or
 //                the entity does not fire at all. This is anatomy, not tempo — it filters, it never merely
 //                demotes. An entity without the field is unconstrained.
@@ -40,7 +46,7 @@ const mf = (name, cat, opts) => ({ name, cat, red: false, confirm: "", ...opts }
 
 export const MULTIFOCAL = [
   mf("Motor neurone disease (ALS)", "degenerative", {
-    spread: { minSites: 2 }, motor: "mixed", forbids: ["sensory"],
+    substrate: "motor_neuron", motor: "mixed", forbids: ["sensory"],
     // Owner ruling 4 (2026-08-14) draft allow-list — the anterior horn/corticospinal disease process.
     compartments: ["brain", "brainstem", "cord", "motor_unit"],
     course: ["progressive"], tempo: ["subacute", "chronic"], likelihood: "common",
@@ -50,19 +56,18 @@ export const MULTIFOCAL = [
     confirm: "Fasciculation in two or more regions with entirely preserved sensation on formal testing",
   }),
   mf("Multiple sclerosis", "inflammatory", {
-    spread: { minSites: 2, distinctCompartments: 2 },
-    // Owner ruling 3 (2026-08-14): MS fired on ANY two distinct compartments — including anatomically
-    // senseless pairs like skull base + sympathetic chain (690 new site pairs once those two compartments
-    // were split out). Restricted to the CNS: brain, brainstem, cerebellum, cord. `optic` is included
-    // DELIBERATELY — the optic nerve is a CNS tract, and optic neuritis is a defining MS presentation (see
-    // `feature` below, which names it). Flag for the owner's veto if they disagree with including it.
-    compartments: ["brain", "brainstem", "cerebellum", "cord", "optic"],
+    substrate: "myelin_cns", distribution: "any",
+    // NO `compartments` allow-list. Owner ruling 3 (2026-08-14) restricted MS to the CNS, and that ruling
+    // is now STRUCTURAL: the substrate `myelin_cns` exists only in the CNS, so an allow-list naming those
+    // same compartments would merely restate it — and two rules saying the same thing can later drift
+    // apart. The narrowness invariant in test/multifocal.test.js deleted it. The optic nerve is still
+    // included, as the owner intended, because it is a CNS tract and carries myelin_cns.
     course: ["relapsing", "progressive", "stepwise"], tempo: ["subacute"], likelihood: "common",
     // Excludes osmotic demyelination (central/extrapontine myelinolysis) — a distinct osmotic/metabolic
     // entity that otherwise matches `demyelinat` and gets wrongly canonicalised onto MS (2026-08-14 review).
     matches: /^(?!.*(?:osmotic demyelinat|myelinolysis|extrapontine)).*(?:demyelinat|multiple sclerosis|\bMS plaque\b)/i,
     // Owner ruling 2 (2026-08-14): flag a first presentation disseminated in space. MS's only clause is
-    // `spread:{distinctCompartments:2}`, so this flag applies to every case that fires at all.
+    // `substrate: "myelin_cns"`, so this flag applies to every case that fires at all.
     red: "A first presentation already disseminated in space is not a one-off — confirm the diagnosis formally, because it changes long-term management",
     feature: "Lesions separated in space AND time, typically optic nerve, brainstem, cord or periventricular white matter; young adult, symptoms evolving over days then partly recovering",
     confirm: "Uhthoff's phenomenon — the deficit reappears or worsens with heat or exercise",
@@ -72,7 +77,7 @@ export const MULTIFOCAL = [
     // plexus, but it almost never happens, and listing it there is noise. Constrained to where secondary
     // deposits actually land.
     compartments: ["brain", "brainstem", "cerebellum", "cord"],
-    spread: { minSites: 2 },
+    substrate: "parenchyma",
     course: ["progressive", "stepwise"], tempo: ["subacute", "chronic"], likelihood: "common",
     matches: /metasta/i,
     red: "Multiple lesions with a known or suspected primary — image the whole neuraxis and look for cord compression",
@@ -84,7 +89,22 @@ export const MULTIFOCAL = [
     // (that is what mononeuritis multiplex IS). But it does not typically pick off the neuromuscular
     // junction/muscle, the pupillary efferent, the sympathetic chain or the cauda, so those are excluded.
     compartments: ["brain", "brainstem", "cerebellum", "cord", "optic", "skull_base", "root", "plexus", "nerve"],
-    spread: { minSites: 2 },
+    // Vessels run everywhere, which is WHY systemic vasculitis reaches the CNS and the PNS in one
+    // illness. NO DISTRIBUTION RULE, and that is a measured decision rather than an omission.
+    //
+    // This entity fires on ~92% of site pairs, and the owner asked whether a distribution rule should
+    // narrow it. All four candidates were measured over 2850 pairs: separated-"any" 97.3% and
+    // distinct-vascular-unit 96.9% (no narrower than no rule at all), separated-"vessel" 21.5% and
+    // separated-"segment" 5.0% (both narrow only by disqualifying peripheral-nerve sites, which would
+    // re-break `cord + L5 root` — the mixed CNS/PNS case the substrate axis exists to fix).
+    //
+    // The finding is structural: spatial separation cannot discriminate vasculitis, because spatial
+    // separation is what vasculitis always HAS. Its real discriminator is temporal — stepwise, with
+    // plateaus — which is declared in `course` below and DEMOTES rather than filters, per the owner's
+    // standing ruling that course must never delete a differential. Owner's decision, 2026-08-15:
+    // accept the breadth. "Always consider vasculitis in a multifocal picture" is a teaching point, and
+    // at `uncommon` likelihood it sorts below the common entities anyway.
+    substrate: "vessel",
     course: ["stepwise", "progressive"], tempo: ["acute", "subacute"], likelihood: "uncommon",
     matches: /vasculit/i,
     red: "Stepwise multifocal deficits with systemic inflammation — untreated, each step causes further irreversible loss",
@@ -92,6 +112,7 @@ export const MULTIFOCAL = [
     confirm: "Palpable purpura, nail-fold infarcts, or a mononeuritis multiplex pattern on limb examination",
   }),
   mf("Neurosarcoidosis", "inflammatory", {
+    substrate: "leptomeninges",
     sites: [{ compartment: "skull_base" }, {}],
     // Owner ruling 4 (2026-08-14) draft allow-list — granulomatous disease along the neuraxis and its
     // cranial/spinal nerve exits; excludes cerebellum, plexus, motor_unit, pupil and sympathetic.
@@ -105,6 +126,9 @@ export const MULTIFOCAL = [
     confirm: "Look for uveitis, erythema nodosum, lupus pernio and parotid enlargement",
   }),
   mf("Mononeuritis multiplex", "inflammatory", {
+    // Vasculitis of the vasa nervorum — the SAME substrate as systemic vasculitis, restricted to
+    // peripheral nerve. It is not its own mechanism.
+    substrate: "vessel", distribution: "nerveTrunk",
     sites: [{ compartment: "nerve" }, { compartment: "nerve" }],
     course: ["stepwise"], tempo: ["acute", "subacute"], likelihood: "uncommon",
     matches: /mononeuritis multiplex/i,
@@ -113,7 +137,7 @@ export const MULTIFOCAL = [
     confirm: "Map the deficit against named-nerve territories — the sparing rules (triceps, first web space, inversion) show it is not a root or a plexus",
   }),
   mf("Leptomeningeal disease", "neoplastic", {
-    spread: { minSites: 2 },
+    substrate: "leptomeninges",
     // Owner ruling 4 (2026-08-14) draft allow-list — CSF-bathed surfaces and the nerves/roots that run
     // through them; excludes plexus, nerve (distal to the CSF space), motor_unit, pupil, sympathetic.
     // `root` and `cauda` KEPT deliberately (2026-08-15): leptomeningeal carcinomatosis classically presents
@@ -128,6 +152,7 @@ export const MULTIFOCAL = [
     confirm: "Multiple cranial nerve palsies at different skull-base exits at once",
   }),
   mf("NMOSD (neuromyelitis optica spectrum disorder)", "inflammatory", {
+    substrate: "myelin_cns",
     sites: [{ compartment: "optic" }, { compartment: "cord" }],
     course: ["relapsing"], tempo: ["acute", "subacute"], likelihood: "uncommon",
     matches: /NMOSD|neuromyelitis/i,
@@ -136,7 +161,7 @@ export const MULTIFOCAL = [
     confirm: "Poorer visual recovery and a more severe cord syndrome than MS would produce",
   }),
   mf("Primary CNS lymphoma", "neoplastic", {
-    spread: { minSites: 2 },
+    substrate: "parenchyma",
     // Owner ruling 4 (2026-08-14) draft allow-list — a CNS-parenchymal disease (the name says so).
     // `cord` dropped 2026-08-15 (typicality review): periventricular/deep brain and vitreoretinal disease
     // are typical; primary spinal cord lymphoma is rare enough to be noise.
@@ -148,6 +173,7 @@ export const MULTIFOCAL = [
     confirm: "Examine the eyes — vitreous involvement (ocular lymphoma) can be seen on slit lamp",
   }),
   mf("Neurofibromatosis type 2", "congenital", {
+    substrate: "schwann",
     sites: [{ compartment: "skull_base" }, {}],
     // Owner ruling 4 (2026-08-14) draft allow-list — schwannomas/meningiomas along CNS surfaces and
     // nerve roots; excludes cerebellum (the vestibular schwannoma itself is a skull_base/CPA site),
@@ -160,10 +186,10 @@ export const MULTIFOCAL = [
     confirm: "Bilateral sensorineural hearing loss with cutaneous schwannomas and posterior subcapsular cataracts",
   }),
   mf("Paraneoplastic syndrome", "inflammatory", {
-    spread: { minSites: 2 },
-    // Owner ruling 4 (2026-08-14) draft allow-list — antibody-mediated attack on neurons/nerves/junction
-    // across the neuraxis (limbic, cerebellar, brainstem, dorsal root ganglia, NMJ per its own `feature`).
-    compartments: ["brain", "brainstem", "cerebellum", "cord", "root", "nerve", "motor_unit"],
+    substrate: "neuron_population",
+    // NO `compartments` allow-list. The substrate `neuron_population` already exists only where a
+    // selectively vulnerable system is tagged (limbic, cerebellar, brainstem, DRG, NMJ), so the allow-list
+    // restated it exactly. Deleted by the narrowness invariant.
     course: ["progressive", "stepwise"], tempo: ["subacute"], likelihood: "rare",
     matches: /paraneoplastic|anti-Hu|anti-Ma2|anti-Yo/i,
     red: "A subacute multifocal syndrome may precede the tumour by months — the cancer search is the investigation",
@@ -171,7 +197,9 @@ export const MULTIFOCAL = [
     confirm: "Weight loss with a sensory neuronopathy — sensory loss that is non-length-dependent, affecting face and trunk",
   }),
   mf("Neurosyphilis or HIV", "infective", {
-    spread: { minSites: 2 },
+    // Protean: it reaches parenchyma, the meninges and peripheral nerve. `parenchyma` is the broadest
+    // single substrate that covers its cognitive/myelopathic core.
+    substrate: "parenchyma",
     // Owner ruling 4 (2026-08-14) draft allow-list — "any combination of cognitive change, myelopathy,
     // neuropathy and cranial neuropathy" per its own `feature`; excludes cerebellum, cauda, plexus,
     // motor_unit, pupil, sympathetic.
@@ -183,7 +211,9 @@ export const MULTIFOCAL = [
     confirm: "Argyll Robertson pupils — small, irregular, accommodating but not reacting to light",
   }),
   mf("Embolic shower (cardiac or aortic source)", "vascular", {
-    spread: { minSites: 2 },
+    // Same substrate as vasculitis; the difference is DISTRIBUTION — emboli lodge at branch points, so
+    // the lesions sit in distinct arterial segments.
+    substrate: "vessel", distribution: "segment",
     // Owner ruling 4 (2026-08-14) draft allow-list — arterial territories a shower of emboli can reach.
     // `cord` dropped 2026-08-15 (typicality review): retinal emboli are typical, but embolic cord
     // infarction from a cardiac shower is vanishingly rare.

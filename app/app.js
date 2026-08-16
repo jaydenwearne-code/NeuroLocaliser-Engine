@@ -298,8 +298,31 @@ function whereCard(list, cands, total, r) {
 // THAT rather than discarding it, or the entity shows no derivation at all — spec: "never a bare disease
 // name". `sites` is the full combined-site set the Together card is comparing, so a spread clause can name
 // exactly which sites it disseminated across.
+// What tissue the disease attacks, in words a clinician reads — the derivation line under each entity.
+// Keep this in step with SUBSTRATES in src/model/substrate.js: an unmapped substrate renders an empty
+// line, which is how the pattern->substrate migration silently blanked every derivation until it was
+// caught by driving the UI (the unit suites assert engine output, not the app's consumption of it).
+const SUBSTRATE_TEXT = {
+  vessel: "blood vessels — present throughout the CNS and the PNS alike",
+  parenchyma: "brain and cord parenchyma",
+  leptomeninges: "the CSF-bathed surfaces — meninges, cranial-nerve exits, roots",
+  myelin_cns: "central myelin",
+  schwann: "Schwann cells of the peripheral nerves",
+  neuron_population: "a selectively vulnerable neuronal population",
+  motor_neuron: "upper and lower motor neurones",
+};
+const DISTRIBUTION_TEXT = {
+  segment: "in distinct arterial branch territories",
+  any: "disseminated in space",
+  nerveTrunk: "confined to the peripheral nerve trunks",
+};
+
 function clauseText(clause, sites) {
-  if (clause.spread) return `disseminated in space — ${esc(clause.spread)}: ${sites.map(s => esc(siteName(s))).join(" + ")}`;
+  if (clause.substrate) {
+    const what = SUBSTRATE_TEXT[clause.substrate] || clause.substrate;
+    const how = clause.distribution ? `, ${DISTRIBUTION_TEXT[clause.distribution] || clause.distribution}` : "";
+    return `attacks ${esc(what)}${esc(how)} — ${sites.map(s => esc(siteName(s))).join(" + ")}`;
+  }
   if (clause.motor) return "mixed upper + lower motor neurone signs on examination";
   return "";
 }
@@ -483,8 +506,15 @@ function perSiteRemainderHTML(cc, sites) {
     .filter(x => x.remainder.length);
   if (!bySite.length) return "";
   const n = bySite.reduce((sum, x) => sum + x.remainder.length, 0);
+  // A remainder row can be tempo-DEMOTED just like a shared one — `combinedCauses()` builds perSite from
+  // `all.concat(demoted)`. The single-site What card and the shared band both say so; without this the
+  // remainder was the one view of three that showed a demoted cause with no hint it was demoted.
   const body = bySite.map(({ site, remainder }) =>
-    `<div class="catgrp"><div class="cathead">${esc(siteName(site))}</div>${remainder.map(renderCause).join("")}</div>`
+    `<div class="catgrp"><div class="cathead">${esc(siteName(site))}</div>${remainder.map(c =>
+      renderCause(c) + (c.demotion
+        ? `<div class="annot" style="margin:-4px 0 6px">Less likely given <b>${esc(c.demotion.entered)}</b> onset — usually ${c.demotion.expected.map(esc).join(" / ")}.</div>`
+        : "")
+    ).join("")}</div>`
   ).join("");
   return `<details class="ruledout" style="margin-top:8px"><summary style="font-size:11.5px;color:var(--muted)">Only plausible at one site <span class="c">${n}</span></summary><div style="margin-top:4px">${body}</div></details>`;
 }
