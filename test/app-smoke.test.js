@@ -5,6 +5,7 @@ import { FINDINGS } from "../src/model/findings.js";
 import { solve, candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { nameForSite } from "../src/data/syndromes.js";
+import { encodeCase, decodeCase } from "../app/case-url.js";
 
 const siteById = id => candidateSites().find(s => s.id === id);
 
@@ -84,6 +85,25 @@ ok("Tone is its own top-level leaf", EXAM_TREE.some(n => n.id === "tone") && !!t
   const r = solve(new Set([...expectedFindings(siteById("left_medulla_lateral")), ...expectedFindings(siteById("right_root_l5"))]));
   ok("r.multi.sites are RAW site objects with an id", !!r.multi && r.multi.sites.every(s => s && typeof s.id === "string"));
   ok("r.multi.sites are NOT {site} wrappers", !!r.multi && r.multi.sites.every(s => s.site === undefined));
+}
+
+// ---- control relocation must not change the case URL contract (2026-08-16) ----
+// The controls move into the cards they act on, which means a control can be UNMOUNTED while its state is
+// set (onset is "subacute" but no finding is entered, so the What card never rendered). S stays the single
+// source of truth and the value must still round-trip, or a shared case silently loses its tempo.
+{
+  const state = { tokens: new Set(["weak_arm@right"]), onset: "subacute", course: "relapsing",
+    dominant: "right", sensoryLevel: "T10", distalReach: "knees", pinned: new Set(), mode: "localise" };
+  const round = decodeCase("#" + encodeCase(state), { validFindings: new Set(["weak_arm"]) });
+  ok("onset survives the round trip", round.onset === "subacute");
+  ok("course survives the round trip", round.course === "relapsing");
+  ok("dominant hemisphere survives the round trip", round.dominant === "right");
+  ok("sensory level survives the round trip", round.sensoryLevel === "T10");
+  ok("distal reach survives the round trip", round.distalReach === "knees");
+  // the unmounted case: state set, no findings at all
+  const bare = decodeCase("#" + encodeCase({ tokens: new Set(), onset: "chronic", course: "progressive" }), {});
+  ok("onset serialises with no findings entered", bare.onset === "chronic");
+  ok("course serialises with no findings entered", bare.course === "progressive");
 }
 
 console.log("\nNeuroLocaliser — EXAM TREE integrity (Sub-project D)\n" + "=".repeat(52));
