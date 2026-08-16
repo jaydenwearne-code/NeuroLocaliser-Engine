@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** not started. Spec: `docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md`.
+**Status:** implemented 2026-08-15 (amended mid-flight: the pattern axis was replaced by the substrate axis after measurement — see the spec). Spec: `docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md`.
 
 **Goal:** Replace the cross-site roster's "are there two sites?" trigger with "does this disease produce *this shape* of dissemination?", so leptomeningeal disease and paraneoplastic syndrome stop firing on two motor-strip lesions and multiple sclerosis starts.
 

@@ -90,7 +90,20 @@ export const MULTIFOCAL = [
     // junction/muscle, the pupillary efferent, the sympathetic chain or the cauda, so those are excluded.
     compartments: ["brain", "brainstem", "cerebellum", "cord", "optic", "skull_base", "root", "plexus", "nerve"],
     // Vessels run everywhere, which is WHY systemic vasculitis reaches the CNS and the PNS in one
-    // illness. No distribution rule: it does not need to lodge anywhere particular.
+    // illness. NO DISTRIBUTION RULE, and that is a measured decision rather than an omission.
+    //
+    // This entity fires on ~92% of site pairs, and the owner asked whether a distribution rule should
+    // narrow it. All four candidates were measured over 2850 pairs: separated-"any" 97.3% and
+    // distinct-vascular-unit 96.9% (no narrower than no rule at all), separated-"vessel" 21.5% and
+    // separated-"segment" 5.0% (both narrow only by disqualifying peripheral-nerve sites, which would
+    // re-break `cord + L5 root` — the mixed CNS/PNS case the substrate axis exists to fix).
+    //
+    // The finding is structural: spatial separation cannot discriminate vasculitis, because spatial
+    // separation is what vasculitis always HAS. Its real discriminator is temporal — stepwise, with
+    // plateaus — which is declared in `course` below and DEMOTES rather than filters, per the owner's
+    // standing ruling that course must never delete a differential. Owner's decision, 2026-08-15:
+    // accept the breadth. "Always consider vasculitis in a multifocal picture" is a teaching point, and
+    // at `uncommon` likelihood it sorts below the common entities anyway.
     substrate: "vessel",
     course: ["stepwise", "progressive"], tempo: ["acute", "subacute"], likelihood: "uncommon",
     matches: /vasculit/i,

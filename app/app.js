@@ -298,8 +298,31 @@ function whereCard(list, cands, total, r) {
 // THAT rather than discarding it, or the entity shows no derivation at all — spec: "never a bare disease
 // name". `sites` is the full combined-site set the Together card is comparing, so a spread clause can name
 // exactly which sites it disseminated across.
+// What tissue the disease attacks, in words a clinician reads — the derivation line under each entity.
+// Keep this in step with SUBSTRATES in src/model/substrate.js: an unmapped substrate renders an empty
+// line, which is how the pattern->substrate migration silently blanked every derivation until it was
+// caught by driving the UI (the unit suites assert engine output, not the app's consumption of it).
+const SUBSTRATE_TEXT = {
+  vessel: "blood vessels — present throughout the CNS and the PNS alike",
+  parenchyma: "brain and cord parenchyma",
+  leptomeninges: "the CSF-bathed surfaces — meninges, cranial-nerve exits, roots",
+  myelin_cns: "central myelin",
+  schwann: "Schwann cells of the peripheral nerves",
+  neuron_population: "a selectively vulnerable neuronal population",
+  motor_neuron: "upper and lower motor neurones",
+};
+const DISTRIBUTION_TEXT = {
+  segment: "in distinct arterial branch territories",
+  any: "disseminated in space",
+  nerveTrunk: "confined to the peripheral nerve trunks",
+};
+
 function clauseText(clause, sites) {
-  if (clause.spread) return `disseminated in space — ${esc(clause.spread)}: ${sites.map(s => esc(siteName(s))).join(" + ")}`;
+  if (clause.substrate) {
+    const what = SUBSTRATE_TEXT[clause.substrate] || clause.substrate;
+    const how = clause.distribution ? `, ${DISTRIBUTION_TEXT[clause.distribution] || clause.distribution}` : "";
+    return `attacks ${esc(what)}${esc(how)} — ${sites.map(s => esc(siteName(s))).join(" + ")}`;
+  }
   if (clause.motor) return "mixed upper + lower motor neurone signs on examination";
   return "";
 }

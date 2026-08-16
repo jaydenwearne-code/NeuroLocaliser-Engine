@@ -195,6 +195,24 @@ deleted.** An allow-list that merely restates its substrate looks meaningful but
 one could silently contradict the other. MND's list and MS's list are already restatements and go. This is
 asserted, so a redundant allow-list cannot be reintroduced.
 
+#### Vasculitis has no distribution rule — a measured decision
+
+Vasculitis fires on ~92% of site pairs, because its substrate is universal. Four candidate distribution
+rules were measured over 2850 pairs:
+
+| Candidate | Fires on | Verdict |
+|---|---|---|
+| separated `any` | 97.3% | No narrower than no rule |
+| distinct vascular unit | 96.9% | No narrower than no rule |
+| separated `vessel` | 21.5% | Narrows only by disqualifying nerve sites — re-breaks `cord + L5 root` |
+| separated `segment` | 5.0% | Same defect, more extreme |
+
+**Spatial separation cannot discriminate vasculitis, because spatial separation is what vasculitis always
+has.** Its real discriminator is temporal — stepwise, with plateaus — which lives in `course` and DEMOTES
+rather than filters, per the standing ruling that course must never delete a differential. **Owner's
+decision (2026-08-15): accept the breadth.** At `uncommon` likelihood it sorts below the common entities,
+and a course mismatch collapses it into the demoted band.
+
 #### Amendment note: why the pattern axis was replaced
 
 The pattern version was implemented and measured before being rejected — the evidence is the reason for the
