@@ -94,6 +94,13 @@ right headline. `plainSiteName()` only replaces the 14% fallback and the 100% su
 2. `PART_LABEL` — an override map for the parts that read badly mechanically (`motor_facearm` →
    "face/arm motor cortex", not "motor facearm").
 
+**`PART_LABEL` is keyed `` `${level}|${part}` ``, never by part alone** (amended 2026-08-16 during planning,
+after measuring). There are 202 distinct `level|part` keys but only 192 distinct parts: `lateral` spans
+midbrain, pons, medulla, cord and hypothalamus; `hemi` spans four levels; `medial` three; `anterior` two. A
+bare-part key would give lateral medulla and lateral midbrain one shared label. This is the same rule
+`src/model/vascular.js` and `src/model/topography.js` already follow, for the same reason — and the mistake
+they document having made.
+
 **Invariant test** (`test/app-naming.test.js`): every part id reachable from `candidateSites()` produces a
 label containing no underscore and no un-expanded abbreviation from the table. A new site cannot land with
 a machine-looking name without failing a suite.
