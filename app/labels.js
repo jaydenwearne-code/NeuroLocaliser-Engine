@@ -36,25 +36,49 @@ export function humanisePart(part) {
 // An entry is a COMPLETE anatomical phrase with no side word — siteLabel() appends the level only when the
 // phrase does not already imply it (see LEVEL_IMPLIED below).
 export const PART_LABEL = {
-  // --- cortex: the strip is named by BODY PART first, the way it is examined ---
+  // --- cortex ---
+  // EVERY key at this level is authored explicitly (asserted in the suite), because the `cortex` LEVEL is
+  // not all cortex: it also holds a white-matter tract (the arcuate fasciculus), two border zones, and five
+  // vascular territories. Appending the level word here produced "arcuate cortex" for a fasciculus and
+  // "ACA cortex" for an arterial supply — both wrong, both caught in review. Say what the thing IS.
+  // The motor/sensory strip is named by BODY PART first, the way it is examined.
   "cortex|motor_leg": "leg motor cortex",
   "cortex|motor_facearm": "face/arm motor cortex",
   "cortex|sensory_leg": "leg sensory cortex",
   "cortex|sensory_facearm": "face/arm sensory cortex",
-  "cortex|sensory_hand": "hand sensory cortex",
-  "cortex|hand_knob": "hand-knob motor cortex",
+  "cortex|hand_knob": "precentral hand knob",
+  "cortex|sensory_hand": "postcentral hand area",
+  "cortex|premotor": "premotor cortex",
   "cortex|sma": "supplementary motor area",
+  "cortex|paracentral": "paracentral lobule",
+  "cortex|operculum": "frontal operculum (Broca's area)",
+  "cortex|frontal_eye_field": "frontal eye field",
+  "cortex|dlpfc": "dorsolateral prefrontal cortex",
   "cortex|medial_pfc": "medial prefrontal cortex",
-  "cortex|watershed_anterior": "anterior watershed cortex",
-  "cortex|watershed_posterior": "posterior watershed cortex",
-  "cortex|aphasia_global": "perisylvian language cortex",
-  "cortex|aphasia_mixed_transcortical": "watershed language cortex",
-  // vascular territories are a SUPPLY, not a place — say so, or "ACA cortex" reads like an anatomical part
-  "cortex|aca": "ACA territory cortex",
-  "cortex|mca": "MCA territory cortex",
-  "cortex|mca_superior": "MCA superior division cortex",
-  "cortex|mca_inferior": "MCA inferior division cortex",
-  "cortex|pca": "PCA territory cortex",
+  "cortex|orbitofrontal": "orbitofrontal cortex",
+  "cortex|parietal": "inferior parietal lobule",
+  "cortex|temporoparietal": "temporoparietal cortex (Wernicke's area)",
+  "cortex|temporal": "temporal lobe",
+  "cortex|anterior_temporal": "anterior temporal lobe",
+  "cortex|occipital": "primary visual cortex",
+  "cortex|auditory": "primary auditory cortex (Heschl's gyrus)",
+  "cortex|insula": "insular cortex",
+  "cortex|angular": "angular gyrus",
+  "cortex|fusiform": "fusiform gyrus",
+  // a white-matter TRACT that happens to sit at the cortex level — never "arcuate cortex"
+  "cortex|arcuate": "arcuate fasciculus",
+  // border zones between two supplies — a zone, not a cortical area
+  "cortex|watershed_anterior": "anterior watershed zone",
+  "cortex|watershed_posterior": "posterior watershed zone",
+  // language composites: unions of regions, one of which is the arcuate (white matter), so not "cortex"
+  "cortex|aphasia_global": "perisylvian language area",
+  "cortex|aphasia_mixed_transcortical": "both watershed language zones",
+  // vascular territories are a SUPPLY, not a place — never named as a cortex
+  "cortex|aca": "ACA territory",
+  "cortex|mca": "MCA territory",
+  "cortex|mca_superior": "MCA superior division territory",
+  "cortex|mca_inferior": "MCA inferior division territory",
+  "cortex|pca": "PCA territory",
 
   // --- subcortex / white matter ---
   "subcortex|sensorimotor": "sensorimotor white matter",
@@ -69,6 +93,10 @@ export const PART_LABEL = {
   "thalamus|pulvinar": "pulvinar",
   "thalamus_arousal|paramedian": "paramedian thalamus",
   "hypothalamus|mammillary": "mammillary bodies",
+  "hypothalamus|suprachiasmatic": "suprachiasmatic nucleus",
+  "hypothalamus|supraoptic": "supraoptic nucleus",
+  "hypothalamus|ventromedial": "ventromedial nucleus",
+  "hypothalamus|tuberal": "tuberal / arcuate nucleus",
 
   // --- basal ganglia / cerebellum ---
   "basal_ganglia|subthalamic": "subthalamic nucleus",
@@ -181,7 +209,7 @@ export const PART_LABEL = {
 // Levels whose name is redundant once the part phrase is read ("internal capsule", not "internal capsule
 // subcortex"). Everything else gets the level appended, which is what disambiguates the reused part names —
 // so a level may only join this set when NO part under it is shared with another level.
-const LEVEL_IMPLIED = new Set(["subcortex", "cerebrum", "motor_unit", "polyneuropathy", "skull_base",
+const LEVEL_IMPLIED = new Set(["cortex", "subcortex", "cerebrum", "motor_unit", "polyneuropathy", "skull_base",
   "peripheral_vestibular", "central_vestibular", "guillain_mollaret", "combined_degeneration",
   "aphasia_subcortical", "locked_in", "pseudobulbar", "olfactory", "craniocervical_junction",
   "cauda", "conus", "basal_ganglia", "sympathetic", "pupil", "visual_pathway", "brainstem_aras",

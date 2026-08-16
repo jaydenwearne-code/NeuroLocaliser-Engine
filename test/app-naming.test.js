@@ -74,6 +74,27 @@ ok("every PART_LABEL key is `level|part`",
      !/ skull base$/.test(lab("skull_base", "cavernous_sinus")), lab("skull_base", "cavernous_sinus"));
 }
 
+// ---- the `cortex` LEVEL is not all cortex (owner review, 2026-08-16) ----
+// Appending the level word here named a white-matter tract "arcuate cortex" and an arterial supply "ACA
+// cortex". Every cortex key is now authored explicitly, and these pin the three classes that are NOT cortex.
+{
+  const lab = (level, part) => siteLabel({ level, part });
+  const cortexKeys = [...new Set(SITES.filter(s => s.level === "cortex").map(s => s.part))];
+  const unlabelled = cortexKeys.filter(p => !PART_LABEL[`cortex|${p}`]);
+  ok(`every cortex key is authored explicitly (${cortexKeys.length} keys)`, !unlabelled.length,
+     unlabelled.join(" | "));
+  ok("the arcuate is a fasciculus, never a cortex",
+     /fasciculus/.test(lab("cortex", "arcuate")) && !/cortex/.test(lab("cortex", "arcuate")),
+     lab("cortex", "arcuate"));
+  ok("a vascular territory is never named as a cortex",
+     ["aca", "mca", "mca_superior", "mca_inferior", "pca"].every(p => !/cortex/.test(lab("cortex", p))),
+     ["aca", "mca", "pca"].map(p => lab("cortex", p)).join(" / "));
+  ok("a watershed border zone is a zone, not a cortex",
+     !/cortex/.test(lab("cortex", "watershed_anterior")), lab("cortex", "watershed_anterior"));
+  ok("the global-aphasia composite is an area, not a cortex (it includes the arcuate)",
+     !/cortex/.test(lab("cortex", "aphasia_global")), lab("cortex", "aphasia_global"));
+}
+
 // ---- reused part names stay distinguishable ----
 {
   const lat = SITES.filter(s => s.part === "lateral");
