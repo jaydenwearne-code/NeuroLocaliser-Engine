@@ -10,7 +10,8 @@ export const ABBREV = {
   dlpfc: "dorsolateral prefrontal", pfc: "prefrontal", mlf: "MLF", aras: "ARAS",
   vpm: "VPM", vpl: "VPL", scm: "sternocleidomastoid",
   sup: "superior", inf: "inferior", lat: "lateral", med: "medial", fem: "femoral",
-  iii: "III", iv: "IV", vi: "VI", ix: "IX", xi: "XI", xii: "XII",
+  v: "V", vi: "VI", vii: "VII", viii: "VIII", ix: "IX", x: "X", xi: "XI", xii: "XII",
+  iii: "III", iv: "IV",
   cn3: "CN III", cn4: "CN IV", cn6: "CN VI", cn7: "CN VII",
 };
 
@@ -24,4 +25,173 @@ export function humanisePart(part) {
     if (m) return m[1].toUpperCase() + m[2];
     return w;
   }).join(" ");
+}
+
+// Overrides for the keys the mechanical transform gets wrong. Keyed `${level}|${part}` — NEVER by part
+// alone: `lateral` alone spans midbrain, pons, medulla, cord and hypothalamus, so a bare-part key would
+// label five different lesions identically. Same rule as vascular.js / topography.js.
+//
+// An entry is a COMPLETE anatomical phrase with no side word — siteLabel() appends the level only when the
+// phrase does not already imply it (see LEVEL_IMPLIED below).
+export const PART_LABEL = {
+  // --- cortex: the strip is named by BODY PART first, the way it is examined ---
+  "cortex|motor_leg": "leg motor cortex",
+  "cortex|motor_facearm": "face/arm motor cortex",
+  "cortex|sensory_leg": "leg sensory cortex",
+  "cortex|sensory_facearm": "face/arm sensory cortex",
+  "cortex|sensory_hand": "hand sensory cortex",
+  "cortex|hand_knob": "hand-knob motor cortex",
+  "cortex|sma": "supplementary motor area",
+  "cortex|medial_pfc": "medial prefrontal cortex",
+  "cortex|watershed_anterior": "anterior watershed cortex",
+  "cortex|watershed_posterior": "posterior watershed cortex",
+  "cortex|aphasia_global": "perisylvian language cortex",
+  "cortex|aphasia_mixed_transcortical": "watershed language cortex",
+  // vascular territories are a SUPPLY, not a place — say so, or "ACA cortex" reads like an anatomical part
+  "cortex|aca": "ACA territory cortex",
+  "cortex|mca": "MCA territory cortex",
+  "cortex|mca_superior": "MCA superior division cortex",
+  "cortex|mca_inferior": "MCA inferior division cortex",
+  "cortex|pca": "PCA territory cortex",
+
+  // --- subcortex / white matter ---
+  "subcortex|sensorimotor": "sensorimotor white matter",
+  "subcortex|anterior_choroidal": "anterior choroidal territory",
+  "aphasia_subcortical|striatocapsular": "striatocapsular white matter",
+  "aphasia_subcortical|thalamic": "thalamus (language)",
+
+  // --- thalamus + hypothalamus ---
+  "thalamus|vpm": "VPM thalamic nucleus",
+  "thalamus|vl": "VA/VL thalamic nucleus",
+  "thalamus|limbic": "anterior + dorsomedial thalamic nuclei",
+  "thalamus|pulvinar": "pulvinar",
+  "thalamus_arousal|paramedian": "paramedian thalamus",
+  "hypothalamus|mammillary": "mammillary bodies",
+
+  // --- basal ganglia / cerebellum ---
+  "basal_ganglia|subthalamic": "subthalamic nucleus",
+  "cerebellum|hemisphere": "cerebellar hemisphere",
+  "cerebellum|vermis": "cerebellar vermis",
+  "cerebellum|flocculonodular": "flocculonodular lobe",
+  "cerebellum|pancerebellar": "whole cerebellum",
+  "guillain_mollaret|dentate": "dentate nucleus",
+  "guillain_mollaret|rubral": "red nucleus",
+  "guillain_mollaret|triangle": "Guillain–Mollaret triangle",
+
+  // --- brainstem ---
+  "pons|basis_pontis": "basis pontis",
+  "pons|trigeminal": "pontine trigeminal complex",
+  "pons|lateral_trigeminal": "lateral pons (trigeminal)",
+  "midbrain|trochlear": "trochlear nucleus, midbrain",
+  "dorsal_midbrain|tectum": "midbrain tectum",
+  "pontomesencephalic|tegmentum": "pontomesencephalic tegmentum",
+  "brainstem_aras|paramedian_tegmentum": "paramedian tegmentum (ARAS)",
+  "locked_in|ventral_pons": "ventral pons (basis pontis)",
+  "pseudobulbar|corticobulbar": "corticobulbar tracts, bilateral",
+  "midbrain|hemi": "one half of the midbrain",
+  "pons|hemi": "one half of the pons",
+  "medulla|hemi": "one half of the medulla",
+
+  // --- cord ---
+  "cord|hemi": "cord hemisection",
+  "cord|lateral": "lateral column of the cord",
+  "cord|posterior": "posterior columns",
+  "combined_degeneration|scd": "subacute combined degeneration",
+  "combined_degeneration|friedreich": "Friedreich's ataxia",
+  "craniocervical_junction|foramen_magnum": "foramen magnum",
+  "cauda|equina": "cauda equina",
+  "conus|medullaris": "conus medullaris",
+  "polyneuropathy|length_dependent": "length-dependent polyneuropathy",
+  "cerebrum|diffuse": "diffuse cerebral involvement",
+
+  // --- motor unit ---
+  "motor_unit|anterior_horn": "anterior horn cell",
+  "motor_unit|nmj_presynaptic": "presynaptic neuromuscular junction",
+  "motor_unit|nmj_postsynaptic": "postsynaptic neuromuscular junction",
+
+  // --- visual pathway ---
+  "corpus_callosum|splenium": "splenium of the corpus callosum",
+  "visual_pathway|chiasm": "optic chiasm",
+  "visual_pathway|lgn": "lateral geniculate nucleus",
+  "olfactory|olfactory_groove": "olfactory groove",
+
+  // --- vestibular ---
+  "peripheral_vestibular|anterior_canal": "anterior semicircular canal",
+  "peripheral_vestibular|posterior_canal": "posterior semicircular canal",
+  "peripheral_vestibular|horizontal_canal": "horizontal semicircular canal",
+  "central_vestibular|nucleus": "vestibular nuclei",
+
+  // --- pupil + oculosympathetic ---
+  "pupil|cn3_compressive": "CN III (compressive)",
+  "pupil|cn3_ischaemic": "CN III (ischaemic)",
+  "sympathetic|preganglionic": "preganglionic oculosympathetic",
+  "sympathetic|pancoast": "lung apex (Pancoast)",
+
+  // --- skull base: the cranial-nerve COURSE sites, named nerve-then-segment ---
+  "skull_base|iii_orbit_sup": "III — superior division, orbit",
+  "skull_base|iii_orbit_inf": "III — inferior division, orbit",
+  "skull_base|trochlear_cisternal": "IV — cisternal segment",
+  "skull_base|v_ganglion": "trigeminal (Gasserian) ganglion",
+  "skull_base|v1_division": "V1 division",
+  "skull_base|v1_petrous": "V1 — petrous segment",
+  "skull_base|v3_ovale": "V3 at foramen ovale",
+  "skull_base|vi_cisternal": "VI — cisternal segment",
+  "skull_base|vi_petrous_apex": "VI at the petrous apex",
+  "skull_base|vii_geniculate": "VII — geniculate ganglion",
+  "skull_base|vii_tympanic": "VII — tympanic segment",
+  "skull_base|vii_mastoid": "VII — mastoid segment",
+  "skull_base|vii_stylomastoid": "VII at the stylomastoid foramen",
+  "skull_base|vii_parotid": "VII — parotid branches",
+  "skull_base|ix_jugular": "IX at the jugular foramen",
+  "skull_base|x_jugular": "X at the jugular foramen",
+  "skull_base|xi_jugular": "XI at the jugular foramen",
+  "skull_base|x_recurrent_laryngeal": "recurrent laryngeal nerve",
+  "skull_base|xi_posterior_triangle": "XI — posterior triangle",
+  "skull_base|xii_neck": "XII — neck",
+  "skull_base|collet_sicard": "Collet–Sicard (jugular + hypoglossal)",
+  "skull_base|villaret": "Villaret (retroparotid space)",
+  "skull_base|optic_canal": "optic canal",
+  "skull_base|optic_aion": "optic nerve head (ischaemic)",
+  "skull_base|optic_neuritis": "optic nerve (retrobulbar)",
+
+  // --- plexus: "cord" here is a brachial-plexus cord, NOT the spinal cord ---
+  "plexus|lateral_cord": "lateral cord of the brachial plexus",
+  "plexus|medial_cord": "medial cord of the brachial plexus",
+  "plexus|posterior_cord": "posterior cord of the brachial plexus",
+  "plexus|upper_trunk": "upper trunk of the brachial plexus",
+  "plexus|middle_trunk": "middle trunk of the brachial plexus",
+  "plexus|lower_trunk": "lower trunk of the brachial plexus",
+
+  // --- named nerves: nerve first, then where it is compressed ---
+  "nerve|median_carpal_tunnel": "median nerve at the carpal tunnel",
+  "nerve|median_proximal": "median nerve, proximal",
+  "nerve|median_ain": "anterior interosseous nerve",
+  "nerve|radial_pin": "posterior interosseous nerve",
+  "nerve|radial_axilla": "radial nerve in the axilla",
+  "nerve|radial_spiral_groove": "radial nerve in the spiral groove",
+  "nerve|ulnar_elbow": "ulnar nerve at the elbow",
+  "nerve|ulnar_wrist": "ulnar nerve at the wrist",
+  "nerve|peroneal_common": "common peroneal nerve",
+  "nerve|peroneal_deep": "deep peroneal nerve",
+  "nerve|peroneal_superficial": "superficial peroneal nerve",
+};
+
+// Levels whose name is redundant once the part phrase is read ("internal capsule", not "internal capsule
+// subcortex"). Everything else gets the level appended, which is what disambiguates the reused part names —
+// so a level may only join this set when NO part under it is shared with another level.
+const LEVEL_IMPLIED = new Set(["subcortex", "cerebrum", "motor_unit", "polyneuropathy", "skull_base",
+  "peripheral_vestibular", "central_vestibular", "guillain_mollaret", "combined_degeneration",
+  "aphasia_subcortical", "locked_in", "pseudobulbar", "olfactory", "craniocervical_junction",
+  "cauda", "conus", "basal_ganglia", "sympathetic", "pupil", "visual_pathway", "brainstem_aras",
+  "dorsal_midbrain", "pontomesencephalic", "thalamus_arousal", "plexus"]);
+
+const humaniseLevel = level => humanisePart(level);
+
+export function siteLabel(site) {
+  const key = `${site.level}|${site.part}`;
+  if (PART_LABEL[key]) return PART_LABEL[key];
+  const part = humanisePart(site.part);
+  if (LEVEL_IMPLIED.has(site.level)) return part;
+  const level = humaniseLevel(site.level);
+  return part.toLowerCase().includes(level.toLowerCase()) ? part : `${part} ${level}`;
 }
