@@ -41,13 +41,14 @@ export const PART_LABEL = {
   // not all cortex: it also holds a white-matter tract (the arcuate fasciculus), two border zones, and five
   // vascular territories. Appending the level word here produced "arcuate cortex" for a fasciculus and
   // "ACA cortex" for an arterial supply — both wrong, both caught in review. Say what the thing IS.
-  // The motor/sensory strip is named by BODY PART first, the way it is examined.
-  "cortex|motor_leg": "leg motor cortex",
-  "cortex|motor_facearm": "face/arm motor cortex",
-  "cortex|sensory_leg": "leg sensory cortex",
-  "cortex|sensory_facearm": "face/arm sensory cortex",
-  "cortex|hand_knob": "precentral hand knob",
-  "cortex|sensory_hand": "postcentral hand area",
+  // The strip is named by BODY PART first, the way it is examined — and as an AREA OF the motor/sensory
+  // cortex, not as a cortex of its own. There is one motor cortex; the leg and face/arm are regions of it.
+  "cortex|motor_leg": "leg area of the motor cortex",
+  "cortex|motor_facearm": "face/arm area of the motor cortex",
+  "cortex|sensory_leg": "leg area of the sensory cortex",
+  "cortex|sensory_facearm": "face/arm area of the sensory cortex",
+  "cortex|hand_knob": "hand knob of the motor cortex",
+  "cortex|sensory_hand": "hand area of the sensory cortex",
   "cortex|premotor": "premotor cortex",
   "cortex|sma": "supplementary motor area",
   "cortex|paracentral": "paracentral lobule",
@@ -92,11 +93,16 @@ export const PART_LABEL = {
   "thalamus|limbic": "anterior + dorsomedial thalamic nuclei",
   "thalamus|pulvinar": "pulvinar",
   "thalamus_arousal|paramedian": "paramedian thalamus",
+  // Every hypothalamic key is a PORTION of the hypothalamus — a nucleus or a named area — so none of them
+  // may be labelled "<something> hypothalamus", which names the whole structure. Terms follow the site's
+  // own territory string.
   "hypothalamus|mammillary": "mammillary bodies",
   "hypothalamus|suprachiasmatic": "suprachiasmatic nucleus",
-  "hypothalamus|supraoptic": "supraoptic nucleus",
+  "hypothalamus|supraoptic": "supraoptic / paraventricular nuclei",
   "hypothalamus|ventromedial": "ventromedial nucleus",
   "hypothalamus|tuberal": "tuberal / arcuate nucleus",
+  "hypothalamus|lateral": "lateral hypothalamic area",
+  "hypothalamus|thermoregulatory": "anterior + posterior hypothalamic nuclei",
 
   // --- basal ganglia / cerebellum ---
   "basal_ganglia|subthalamic": "subthalamic nucleus",
@@ -118,9 +124,9 @@ export const PART_LABEL = {
   "brainstem_aras|paramedian_tegmentum": "paramedian tegmentum (ARAS)",
   "locked_in|ventral_pons": "ventral pons (basis pontis)",
   "pseudobulbar|corticobulbar": "corticobulbar tracts, bilateral",
-  "midbrain|hemi": "one half of the midbrain",
-  "pons|hemi": "one half of the pons",
-  "medulla|hemi": "one half of the medulla",
+  "midbrain|hemi": "hemimidbrain",
+  "pons|hemi": "hemipons",
+  "medulla|hemi": "hemimedulla",
 
   // --- cord ---
   "cord|hemi": "cord hemisection",

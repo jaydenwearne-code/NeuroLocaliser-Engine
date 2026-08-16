@@ -57,7 +57,7 @@ ok("every PART_LABEL key is `level|part`",
 {
   const lab = (level, part) => siteLabel({ level, part });
   ok("the motor strip is named by body part first, not `motor leg`",
-     lab("cortex", "motor_leg") === "leg motor cortex", lab("cortex", "motor_leg"));
+     /^leg /.test(lab("cortex", "motor_leg")), lab("cortex", "motor_leg"));
   ok("a vascular territory says `territory`, not `ACA cortex`",
      /territory/.test(lab("cortex", "aca")), lab("cortex", "aca"));
   ok("an eponym part is spelled as the eponym",
@@ -93,6 +93,26 @@ ok("every PART_LABEL key is `level|part`",
      !/cortex/.test(lab("cortex", "watershed_anterior")), lab("cortex", "watershed_anterior"));
   ok("the global-aphasia composite is an area, not a cortex (it includes the arcuate)",
      !/cortex/.test(lab("cortex", "aphasia_global")), lab("cortex", "aphasia_global"));
+  // owner review 2: the strip regions are AREAS OF the motor/sensory cortex, not cortices of their own
+  ok("a homuncular strip region is named as an area of its cortex",
+     /^leg area of the motor cortex$/.test(lab("cortex", "motor_leg")) &&
+     /area of the sensory cortex$/.test(lab("cortex", "sensory_facearm")),
+     `${lab("cortex", "motor_leg")} / ${lab("cortex", "sensory_facearm")}`);
+}
+
+// ---- a PORTION must never be named as the WHOLE structure (owner review 2, 2026-08-16) ----
+{
+  // Every hypothalamic key is a nucleus or a named area within the hypothalamus, so "<x> hypothalamus"
+  // misnames a part as the organ. The same rule caught the brainstem halves: one half of the pons is the
+  // hemipons, not "one half of the pons".
+  const hypoBad = [...new Set(SITES.filter(s => s.level === "hypothalamus").map(s => s.part))]
+    .filter(p => / hypothalamus$/.test(siteLabel({ level: "hypothalamus", part: p })));
+  ok("no hypothalamic portion is labelled as the whole hypothalamus", !hypoBad.length, hypoBad.join(" | "));
+  const lab = (level, part) => siteLabel({ level, part });
+  ok("a brainstem half uses the hemi- term",
+     lab("pons", "hemi") === "hemipons" && lab("midbrain", "hemi") === "hemimidbrain"
+       && lab("medulla", "hemi") === "hemimedulla",
+     [lab("pons", "hemi"), lab("midbrain", "hemi"), lab("medulla", "hemi")].join(" / "));
 }
 
 // ---- reused part names stay distinguishable ----
