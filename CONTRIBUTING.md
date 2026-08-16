@@ -475,12 +475,27 @@ localises the lesion:
   precedent).
 - **Multifocal (DONE 2026-08-14):** now weighs "one disease hitting many sites" — a 13-entity cross-site
   roster (`src/data/multifocal.js`) matched by `unifyingDiagnoses()` (`src/engine/multifocal.js`) against
-  hard anatomical constraints (spread/specific compartments/motor pattern), with tempo + course (a new
-  "how it unfolded" axis, `src/model/course.js`) as soft demotions rather than filters. A parsimony guard
-  (`forcingFindings()`) names which finding is actually forcing the second lesion before any disease list
-  is shown. See `CLAUDE.md` §"Multi-location DDx layer" and
-  `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md` for the full design — the roster is new
+  hard anatomical constraints, with tempo + course (a new "how it unfolded" axis, `src/model/course.js`)
+  as soft demotions rather than filters. A parsimony guard (`forcingFindings()`) names which finding is
+  actually forcing the second lesion before any disease list is shown. See `CLAUDE.md` §"Multi-location
+  DDx layer" and `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md` — the roster is new
   clinical content still awaiting the owner's sign-off.
+- **Multifocal SUBSTRATE axis (DONE 2026-08-15):** the trigger above was a site COUNT, so nine of the
+  thirteen entities fired together. It is now **what tissue the disease attacks**: a disease declares a
+  `substrate`, and that substrate has its own distribution through the body. **Vasculitis crosses the
+  CNS/PNS boundary because vessels are on both sides of it; metastases do not, because parenchyma is
+  not.** Three new model files —
+  - `src/model/vascular.js` — AUTHORED vessel/segment/branch/zone per `` `${level}|${part}` `` (104 CNS
+    keys). `site.territory` is prose and none of the 211 strings carries a vessel segment, so branch-level
+    resolution is written down rather than parsed. Every `segment: null` carries a reason.
+  - `src/model/topography.js` — AUTHORED lobe / CSF-surface / vulnerable-system per key (202 keys).
+  - `src/model/substrate.js` — `substratesAt(site)`, DERIVED from the two tables above, so a newly added
+    site inherits its substrates automatically.
+  plus `src/engine/space.js` (`separatedInSpace()` over segment → vessel → lobe → hemisphere → level).
+  **Key the tables by `level|part`, never by `part`** — four part names are reused across levels.
+  An intermediate "lesion pattern" axis was built, measured (silent pairs 7.8% → 38%) and rejected; the
+  spec's amendment note records why. Spec:
+  `docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md`.
 - **Tempo**: port the sudden/subacute/chronic differential-weighting from the old prototype.
 - **Non-organic**: FND as *positive* findings (Hoover's, entrainment, inconsistency) that no
   anatomical site predicts — surfaced when localising findings are functional, never as a
