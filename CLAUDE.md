@@ -284,11 +284,11 @@ on the same screen (this shipped once; `test/combined-sites.test.js` guards the 
 > produced five owner rulings, all applied: keep the fundoscopy/slit-lamp `confirm` fields; give MS a red
 > flag for a first presentation disseminated in space; fix the optic misfiling so NMOSD can fire on its own
 > archetype; restrict MS to the CNS; and constrain every entity to where its disease TYPICALLY presents
-> rather than everywhere it could reach. **One item was never separately ticked and is NOT covered by that
-> sign-off: the `LOCALISING` 12-promoted / 9-excused split.** The owner ruled explicitly on three
-> REJECTIONS from it (`fasciculations`, `palmomental`, `rigidity`) and confirmed four promotions, but the
-> full list has not been walked. It alters scoring and ranking, not just content, so treat it as the one
-> open review item. New suites: `test/compartments.test.js`,
+> rather than everywhere it could reach. **The `LOCALISING` 12-promoted / 9-excused split was walked in
+> full and approved on 2026-08-15** — the whole list, with the model footprint of each finding, after the
+> owner had already ruled out three proposed promotions (`fasciculations`, `palmomental`, `rigidity`) and
+> declined three further challenges I raised against `disinhibition`, `executive_dysfunction` and
+> `optic_atrophy`. **There is no open review item on this layer.** New suites: `test/compartments.test.js`,
 > `test/localising-audit.test.js`, `test/multifocal.test.js`, `test/combined-sites.test.js`. Spec/plan:
 > `docs/superpowers/specs/2026-08-14-multi-location-ddx-design.md`,
 > `docs/superpowers/plans/2026-08-14-multi-location-ddx.md`.

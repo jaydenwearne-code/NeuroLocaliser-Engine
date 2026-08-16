@@ -88,7 +88,11 @@ const LOCALISING = new Set([
   // trigeminal complex (pontine main sensory + motor V)
   "face_touch_loss","jaw_weakness",
 
-  // --- 2026-08-14 LOCALISING audit (spec §9) ---
+  // --- 2026-08-14 LOCALISING audit (spec §9) — ✅ REVIEWED IN FULL AND APPROVED by the owner
+// (a clinician) on 2026-08-15: all 12 promotions and all 9 excusals, each with its model footprint.
+// Three further promotions were REJECTED before this list settled (fasciculations, palmomental,
+// rigidity), and three challenges I raised afterwards (disinhibition, executive_dysfunction,
+// optic_atrophy) were considered and declined. Do not re-flag this split as unreviewed.
   // Findings confined to a single level that were never added to this set. The fundoscopy pair arrived
   // with the 2026-08-11 increment and was missed; the rest predate it. Promoting a finding raises its
   // match weight 1 -> 3 and lets it force a second lesion, so each of these is a clinical judgement that
