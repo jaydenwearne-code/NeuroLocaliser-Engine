@@ -71,27 +71,33 @@ function syncURL() {
 }
 
 // ================= LOCALISE =================
+// The sensory-level and distal-reach inputs annotate a cord / length-dependent picture and mean nothing
+// otherwise, so they only mount once such a finding is present. Onset, course and dominant hemisphere moved
+// into the card they act on (What / Together / the header) — see the 2026-08-16 UI-clarity spec.
+// Deliberately NOT weak_arm / weak_leg: limb weakness is the commonest finding in the app and is usually
+// cortical, so triggering on it put these inputs on screen for almost every case — the noise this pass
+// exists to remove. A sensory level or a length-dependent picture is what makes them mean anything.
+const CORD_AXIS_FINDINGS = new Set(["spinothalamic","dorsal_column","sensory_level","sensory_ataxia",
+  "sphincter_dysfunction","saddle_anaesthesia","glove_stocking","distal_sensory_loss"]);
+
 function renderLocalise() {
+  const hasCord = [...S.tokens].some(t => CORD_AXIS_FINDINGS.has(fid(t)));
   app.innerHTML = `
-  <div class="ctrls">
-    <label>Dominant hemisphere <select id="dom"><option value="left">left</option><option value="right">right</option></select></label>
-    <label>Onset (for causes) <select id="onset"><option value="">all</option>${TEMPO.map(t=>`<option value="${t.id}">${esc(t.label)}</option>`).join("")}</select></label>
-    <label>Course (for cross-site diagnoses) <select id="course"><option value="">all</option>${COURSES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join("")}</select></label>
-    <label>Sensory level <input type="text" id="slevel" placeholder="e.g. T10" size="6"></label>
-    <label>Distal reach <input type="text" id="reach" placeholder="e.g. knees" size="7"></label>
-  </div>
   <div class="grid">
     <div class="pane">
       <h3>Examination findings</h3>
       <input class="search" id="search" placeholder="Search findings… (e.g. Horner, ataxia, gaze)">
       <div class="chips" id="chips"></div>
+      <div class="ctrls ctrls-inline" id="levelctrls"${hasCord ? "" : " hidden"}>
+        <label>Sensory level <input type="text" id="slevel" placeholder="e.g. T10" size="6"></label>
+        <label>Distal reach <input type="text" id="reach" placeholder="e.g. knees" size="7"></label>
+      </div>
       <div class="accordion" id="acc">${examAccordion()}</div>
     </div>
     <div class="pane" id="results"></div>
   </div>`;
-  document.getElementById("dom").value = S.dominant;
-  document.getElementById("onset").value = S.onset;
-  document.getElementById("course").value = S.course;
+  const sl = document.getElementById("slevel"); if (sl) sl.value = S.sensoryLevel;
+  const dr = document.getElementById("reach"); if (dr) dr.value = S.distalReach;
   wireLocalise();
   renderChips(); renderResults();
 }
@@ -124,15 +130,25 @@ function frow(f) {
 }
 
 function wireLocalise() {
-  document.getElementById("dom").onchange = e => { S.dominant = e.target.value; renderResults(); markSides(); };
-  document.getElementById("onset").onchange = e => { S.onset = e.target.value; renderResults(); };
-  document.getElementById("course").onchange = e => { S.course = e.target.value; renderResults(); };
-  document.getElementById("slevel").oninput = e => { S.sensoryLevel = e.target.value.trim(); renderResults(); };
-  document.getElementById("reach").oninput = e => { S.distalReach = e.target.value.trim(); renderResults(); };
-  document.getElementById("search").oninput = e => filterFindings(e.target.value.toLowerCase());
-  document.getElementById("acc").onclick = e => { const b = e.target.closest("button[data-f]"); if (!b) return;
-    toggleToken(`${b.dataset.f}@${b.dataset.s}`); };
+  // Controls now live in the cards they act on, so each may be absent on any given render. Every handler is
+  // bound defensively; S remains the single source of truth either way, and the case URL still serialises a
+  // value whose control is not currently mounted (guarded in test/app-smoke.test.js).
+  const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el[ev] = fn; };
+  on("slevel", "oninput", e => { S.sensoryLevel = e.target.value.trim(); renderResults(); });
+  on("reach", "oninput", e => { S.distalReach = e.target.value.trim(); renderResults(); });
+  on("search", "oninput", e => filterFindings(e.target.value.toLowerCase()));
+  on("acc", "onclick", e => { const b = e.target.closest("button[data-f]"); if (!b) return;
+    toggleToken(`${b.dataset.f}@${b.dataset.s}`); });
   markSides();
+}
+
+// The onset / course selects live INSIDE cards that re-render on every state change, so they are rebound
+// after each render rather than once at boot.
+function wireCardControls() {
+  const o = document.getElementById("onset");
+  if (o) o.onchange = e => { S.onset = e.target.value; renderResults(); };
+  const c = document.getElementById("course");
+  if (c) c.onchange = e => { S.course = e.target.value; renderResults(); };
 }
 function filterFindings(q) {
   const acc = document.getElementById("acc");
@@ -143,7 +159,13 @@ function filterFindings(q) {
   });
   if (!q) acc.querySelectorAll("details").forEach(d => { d.open = false; });
 }
-function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); markSides(); }
+function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); markSides(); syncLevelCtrls(); }
+// Show the level inputs the moment a cord / length-dependent finding appears. Toggling visibility rather
+// than re-rendering renderLocalise() keeps the accordion's open sections and scroll position intact.
+function syncLevelCtrls() {
+  const el = document.getElementById("levelctrls"); if (!el) return;
+  el.hidden = ![...S.tokens].some(t => CORD_AXIS_FINDINGS.has(fid(t)));
+}
 function markSides() {
   const acc = document.getElementById("acc"); if (!acc) return;
   acc.querySelectorAll("button[data-f]").forEach(b => b.classList.toggle("on", S.tokens.has(`${b.dataset.f}@${b.dataset.s}`)));
@@ -195,6 +217,7 @@ function renderResults() {
     + whyCard(tf, sel, total)
     + whatCard(sel.site, r, list)
     + nextCard(sel.site, r, list);
+  wireCardControls();
   const nx = el.querySelector(".neuraxis");
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
@@ -402,7 +425,14 @@ function togetherCard(r, list) {
         ${u.discordant.map(e => `${unifyingRow(e, sites)}<div class="annot">${e.demotions.map(d => `You entered <b>${esc(d.entered)}</b>; this is typically ${d.expected.map(esc).join(" / ")}.`).join(" ")}</div>`).join("")}</details>`
     : "";
 
-  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, guard + srcLine + fits + disc);
+  // The course control lives HERE — it exists only for the cross-site roster, so it has no meaning until
+  // this card is on screen. That is also why its label no longer has to explain itself.
+  const courseCtrl = `<div class="card-ctrl"><label>Course
+      <select id="course">
+        <option value="">all</option>
+        ${COURSES.map(c=>`<option value="${c.id}"${S.course===c.id?" selected":""}>${esc(c.label)}</option>`).join("")}
+      </select></label></div>`;
+  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc);
 }
 
 const sideName = s => s === "left" ? "left" : s === "right" ? "right" : s === "bilateral" ? "both sides" : "the affected side";
@@ -573,8 +603,12 @@ function whatBlock(site) {
   const leadCauses = res.all.filter(x => x.likelihood === "common").slice(0, 3).map(x => x.name);
   const lead = leadCauses.length
     ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
-  const cap = (S.onset || res.derived)
-    ? `<p class="what-cap">${S.onset ? `<span style="color:var(--terra)">${esc(S.onset)}</span> onset` : ""}${res.derived ? ` <span class="derived">(derived from site type — not individually curated)</span>` : ""}</p>` : "";
+  // The onset control lives HERE, in the card it acts on — it filters/demotes causes and nothing else.
+  const cap = `<div class="card-ctrl"><label>Onset
+      <select id="onset">
+        <option value="">all</option>
+        ${TEMPO.map(t=>`<option value="${t.id}"${S.onset===t.id?" selected":""}>${esc(t.label)}</option>`).join("")}
+      </select></label>${res.derived ? `<span class="derived">(derived from site type — not individually curated)</span>` : ""}</div>`;
   // Tempo mismatches are demoted, never deleted — the teaching line that used to REPLACE the content now
   // heads the disclosure. Spec 2026-08-14 §7.
   const dem = res.demoted && res.demoted.length
@@ -661,6 +695,12 @@ function boot() {
     m==="localise" ? renderLocalise() : m==="atlas" ? renderAtlas() : renderStroke(); syncURL(); };
   // Reflect the (possibly URL-restored) mode in the toggle before the first render.
   document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === S.mode));
+  // Dominant hemisphere is a per-USER constant, not a per-case knob, so it lives in the static header and is
+  // bound once here rather than on every render of the localise view.
+  const domSel = document.getElementById("dom");
+  if (domSel) { domSel.value = S.dominant;
+    domSel.onchange = e => { S.dominant = e.target.value;
+      if (S.mode === "localise") { renderResults(); markSides(); } syncURL(); }; }
   try { S.mode==="atlas" ? renderAtlas() : S.mode==="stroke" ? renderStroke() : renderLocalise(); }
   catch (err) { app.innerHTML = errorPanel(err); }
 }
