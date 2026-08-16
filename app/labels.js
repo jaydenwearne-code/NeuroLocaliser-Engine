@@ -1,6 +1,8 @@
 // labels.js — DISPLAY naming only. Pure and DOM-free so it can be unit-tested directly (same pattern as
 // combined-sites.js / together-guard.js). The engine speaks ids; this module is the one place that turns
 // them into words a clinician reads. Ids still travel in the case URL and the feedback payload untouched.
+import { BY_SITE, nameForSite } from "../src/data/syndromes.js";
+import { FINDINGS } from "../src/model/findings.js";
 
 // Word-level expansions applied to every underscore-separated token of a part id. Keys are lowercase and
 // contain no underscore (asserted in test/app-naming.test.js) — they are matched per WORD, not per id.
@@ -194,4 +196,38 @@ export function siteLabel(site) {
   if (LEVEL_IMPLIED.has(site.level)) return part;
   const level = humaniseLevel(site.level);
   return part.toLowerCase().includes(level.toLowerCase()) ? part : `${part} ${level}`;
+}
+
+const SIDE_WORD = { left: "Left", right: "Right", bilateral: "Bilateral", midline: "Midline" };
+const sideWord = s => SIDE_WORD[s] || "";
+
+// Does the phonebook actually name this site? Checked against BY_SITE directly rather than by comparing
+// nameForSite()'s output to its own fallback string, which would break the moment that string is reworded.
+const hasEponym = site => !!(BY_SITE[site.id] || BY_SITE[`${site.level}_${site.part}`]);
+
+export function plainSiteName(site, opts = {}) {
+  const label = siteLabel(site);
+  const plain = [sideWord(site.side), label].filter(Boolean).join(" ");
+  const raw = `${site.side} · ${site.level} · ${site.part}`;
+  const terr = site.territory || "";
+  // For the named nerves and roots the territory string RESTATES the label ("ulnar nerve at the elbow —
+  // ulnar nerve at the elbow (cubital tunnel)"). Drop the duplicate rather than printing it twice.
+  const addsSomething = terr && !terr.toLowerCase().includes(label.toLowerCase());
+  if (hasEponym(site)) {
+    return { name: nameForSite(site, opts).name, sub: [plain, addsSomething ? terr : ""].filter(Boolean).join(" — "), raw };
+  }
+  return { name: plain, sub: addsSomething ? terr : "", raw };
+}
+
+// A finding `desc` is a teaching sentence (papilloedema's runs to 130 characters), so the chip takes its
+// leading clause and the full desc goes in a title attribute at the call site.
+const CLAUSE_SEPARATORS = [" — ", " (", ", ", " / ", " + ", " ± "];
+
+export function shortFindingLabel(id) {
+  const d = (FINDINGS[id] && FINDINGS[id].desc) || "";
+  let s = d.trim();
+  for (const sep of CLAUSE_SEPARATORS) s = s.split(sep)[0].trim();
+  if (!s) s = humanisePart(id).replace(/^./, c => c.toUpperCase());
+  if (s.length > 32) s = s.slice(0, 31).trimEnd() + "…";
+  return s;
 }

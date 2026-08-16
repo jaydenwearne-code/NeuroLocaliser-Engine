@@ -1,7 +1,8 @@
 // app-naming.test.js — display-naming invariants (app/labels.js). The app must speak clinical English:
 // no raw ids, no un-expanded abbreviations, no underscores on screen.
-import { ABBREV, humanisePart, PART_LABEL, siteLabel } from "../app/labels.js";
+import { ABBREV, humanisePart, PART_LABEL, siteLabel, plainSiteName, shortFindingLabel } from "../app/labels.js";
 import { candidateSites } from "../src/engine/inverse.js";
+import { FINDINGS } from "../src/model/findings.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -79,6 +80,41 @@ ok("every PART_LABEL key is `level|part`",
   const labels = new Set(lat.map(siteLabel));
   ok("the 5 levels sharing part `lateral` get distinct labels", labels.size === new Set(lat.map(s => s.level)).size,
      [...labels].join(" / "));
+}
+
+// ---- plainSiteName: eponym wins the headline; plain anatomy fills the subtitle ----
+{
+  const byId = id => SITES.find(s => s.id === id);
+  const aca = byId("right_cortex_aca");           // HAS an eponym
+  const leg = byId("right_cortex_motor_leg");     // has NO eponym (one of the 52)
+  ok("an eponym site keeps its eponym as the name", !!aca && /anterior cerebral/i.test(plainSiteName(aca).name));
+  ok("an eponym site gets plain anatomy in the subtitle", !!aca && plainSiteName(aca).sub.length > 0);
+  ok("a no-eponym site is named in plain English, not schema",
+     !!leg && !plainSiteName(leg).name.includes("_") && !/\(motor_leg\)/.test(plainSiteName(leg).name));
+  ok("a no-eponym site names its side", !!leg && /^right/i.test(plainSiteName(leg).name));
+  // the named nerves/roots restate their label in `territory`; the subtitle must not print it twice
+  const uln = byId("right_nerve_ulnar_elbow");
+  ok("a subtitle never restates the label it sits under",
+     !uln || !/(ulnar nerve at the elbow).*\1/i.test(plainSiteName(uln).sub), uln && plainSiteName(uln).sub);
+  ok("raw keeps the id triple for the disclosure",
+     !!leg && plainSiteName(leg).raw === "right · cortex · motor_leg", leg && plainSiteName(leg).raw);
+}
+// ---- no site anywhere renders an underscore or an empty name ----
+{
+  const bad = SITES.filter(s => { const p = plainSiteName(s);
+    return !p.name || !p.name.trim() || p.name.includes("_"); });
+  ok(`no site yields an empty or schema name (${SITES.length} sites)`, !bad.length,
+     bad.slice(0, 5).map(s => s.id).join(" | "));
+}
+// ---- shortFindingLabel: chip-sized, never empty, for every finding ----
+{
+  const ids = Object.keys(FINDINGS);
+  const tooLong = ids.filter(f => shortFindingLabel(f).length > 32);
+  const empty = ids.filter(f => !shortFindingLabel(f).trim());
+  ok(`every finding label fits 32 chars (${ids.length} findings)`, !tooLong.length, tooLong.slice(0, 5).join(" | "));
+  ok("no finding label is empty", !empty.length, empty.slice(0, 5).join(" | "));
+  ok("a short desc passes through unchanged", shortFindingLabel("weak_arm") === "Arm weakness", shortFindingLabel("weak_arm"));
+  ok("a parenthetical is trimmed", shortFindingLabel("weak_adduction") === "Weak adduction", shortFindingLabel("weak_adduction"));
 }
 
 console.log("\nNeuroLocaliser — DISPLAY NAMING\n" + "=".repeat(52));
