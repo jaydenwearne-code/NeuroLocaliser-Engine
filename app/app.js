@@ -649,10 +649,26 @@ function whatBlock(site) {
   const red = ph.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(ph.red)}</div>` : "";
   // Curated causes only — a category with nothing plausible at this site is simply not shown.
   const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));
+  // Per category the leading causes stay open, and EVERY red-flagged must-not-miss stays open regardless of
+  // its rank — the must-not-miss list is never what gets collapsed. The remainder keeps its NAMES on screen
+  // in the summary line, so nothing is hidden, only ranked.
+  //
+  // MEASURED EFFECT IS SMALL, and the design spec overstated it. After the 2026-08-11 depth sweep the mean
+  // site carries 6.4 causes spread across the sieve categories, so <=2 per category is already the norm:
+  // only 73 of 377 sites (19%) collapse anything at all, and the mean first read falls just 6.4 -> 6.1
+  // entries. It earns its place on the dense sites (length-dependent polyneuropathy goes 8 -> 5) and costs
+  // nothing on the rest. The real density on screen was the ALL-SITES view and the demoted bands, not a
+  // single site's category lists.
+  const OPEN_PER_CAT = 2;
   const groups = CATEGORIES.map(cat => {
     const causes = bySpec[cat.id]?.causes || [];
     if (!causes.length) return "";
-    return `<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${cat.tint})"></span>${esc(cat.label)}</div>${causes.map(renderCause).join("")}</div>`;
+    const open = causes.filter((c, i) => i < OPEN_PER_CAT || c.red);
+    const rest = causes.filter(c => !open.includes(c));
+    const more = rest.length
+      ? `<details class="more-causes"><summary>+${rest.length} more — ${rest.map(c => esc(c.name)).join(", ")}</summary>${rest.map(renderCause).join("")}</details>`
+      : "";
+    return `<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${cat.tint})"></span>${esc(cat.label)}</div>${open.map(renderCause).join("")}${more}</div>`;
   }).join("");
   // Lead: the common causes to think of first (given the chosen tempo, if any).
   const leadCauses = res.all.filter(x => x.likelihood === "common").slice(0, 3).map(x => x.name);

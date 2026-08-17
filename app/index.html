@@ -232,6 +232,13 @@
   .setaside>summary:hover{color:var(--muted);}
   .setaside>summary .c{font-family:var(--mono);font-size:var(--fs-cap);}
   .setaside-body{margin-top:6px;}
+  /* What-card density: the remainder of a category keeps its names on the summary line */
+  .more-causes{margin:2px 0 0 16px;border-bottom:0;}
+  .more-causes>summary{cursor:pointer;font-size:var(--fs-meta);color:var(--faint);list-style:none;display:block;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .more-causes>summary::-webkit-details-marker{display:none;}
+  .more-causes>summary:hover{color:var(--terra);}
+  .more-causes[open]>summary{white-space:normal;}
   /* code-stroke worksheet */
   .cs-banner{border:1px solid var(--gold);background:var(--gold-bg);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:var(--fs-meta);margin:10px 0;}
   .cs-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px;}
