@@ -1,7 +1,8 @@
 # App UI clarity: speak clinician, rank the page, put controls where they act
 
 **Date:** 2026-08-16
-**Status:** design approved 2026-08-16; not yet implemented
+**Status:** all six workstreams implemented 2026-08-16 on `feat/app-ui-clarity`. **`PART_LABEL` CLINICALLY
+SIGNED OFF by the owner 2026-08-16** after three review passes; the naming is wired. Not yet merged.
 **Scope:** `app/` only — no `src/model/`, `src/engine/` or `src/data/` changes
 
 ## The problem
@@ -173,7 +174,12 @@ Per category: the top 1–2 causes stay expanded with their discriminating featu
 must-not-miss regardless of rank**; the remainder collapses to a single "+N more" line carrying the names.
 Nothing is deleted, and the must-not-miss list is never what gets collapsed.
 
-On the measured case this takes the What card's first read from ~40 lines to ~10.
+**Measured after implementation, this claim was wrong and is corrected here.** After the 2026-08-11 depth
+sweep the mean site carries 6.4 causes spread across the sieve categories, so ≤2 per category is already the
+norm: only **73 of 377 sites (19%)** collapse anything, and the mean first read falls just **6.4 → 6.1**
+entries. It was kept because it earns its place on the dense sites (length-dependent polyneuropathy 8 → 5)
+and costs nothing elsewhere — but the real on-screen density was the **all-sites view and the demoted
+bands**, not a single site's category lists.
 
 **This workstream is severable** — it is the most judgement-heavy and the only one that changes what a
 reader sees by default rather than how it is presented. If the first five land well, it can be decided

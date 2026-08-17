@@ -459,6 +459,12 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ### Task 4: Wire clinical naming into the UI
 
+> ✅ **DONE 2026-08-16.** The gate is closed — the owner signed off `PART_LABEL` after three review passes
+> (cortex-level classes, portion-vs-whole, Wernicke's gyrus + thalamic nuclei). Wiring found two leaks this
+> task had not scoped: the Why card and the parsimony guard both printed raw `finding@side` tokens; both now
+> render clinically with the token in a `title`.
+
+
 **Files:**
 - Modify: `app/app.js:221-222` (`siteName`, `siteLoc`), `app/app.js:262` (header), `app/app.js:282` (differential rows), `app/app.js:118-124` (`frow`), `app/app.js:151-157` (`renderChips`)
 
