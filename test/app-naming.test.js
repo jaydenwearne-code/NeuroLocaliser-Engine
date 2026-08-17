@@ -156,12 +156,16 @@ ok("every PART_LABEL key is `level|part`",
 // ---- shortFindingLabel: chip-sized, never empty, for every finding ----
 {
   const ids = Object.keys(FINDINGS);
-  const tooLong = ids.filter(f => shortFindingLabel(f).length > 32);
+  const tooLong = ids.filter(f => shortFindingLabel(f).length > 44);
   const empty = ids.filter(f => !shortFindingLabel(f).trim());
-  ok(`every finding label fits 32 chars (${ids.length} findings)`, !tooLong.length, tooLong.slice(0, 5).join(" | "));
+  ok(`every finding label fits 44 chars (${ids.length} findings)`, !tooLong.length, tooLong.slice(0, 5).join(" | "));
   ok("no finding label is empty", !empty.length, empty.slice(0, 5).join(" | "));
   ok("a short desc passes through unchanged", shortFindingLabel("weak_arm") === "Arm weakness", shortFindingLabel("weak_arm"));
   ok("a parenthetical is trimmed", shortFindingLabel("weak_adduction") === "Weak adduction", shortFindingLabel("weak_adduction"));
+  // " / " must NOT be treated as a clause break: splitting there turned "Loss of pain / temperature on the
+  // body" into "Loss of pain", which names a different sign.
+  ok("a finding joined by / keeps BOTH halves",
+     shortFindingLabel("spinothalamic").includes("temperature"), shortFindingLabel("spinothalamic"));
 }
 
 console.log("\nNeuroLocaliser — DISPLAY NAMING\n" + "=".repeat(52));

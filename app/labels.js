@@ -273,13 +273,20 @@ export function plainSiteName(site, opts = {}) {
 
 // A finding `desc` is a teaching sentence (papilloedema's runs to 130 characters), so the chip takes its
 // leading clause and the full desc goes in a title attribute at the call site.
-const CLAUSE_SEPARATORS = [" — ", " (", ", ", " / ", " + ", " ± "];
+//
+// " / ", " + " and " ± " are DELIBERATELY NOT separators, though they look like ones. They join co-equal
+// halves of a single finding rather than clauses, so splitting on them changes the clinical meaning:
+// "Loss of pain / temperature on the body" became "Loss of pain", which is a different sign. Caught by
+// reading the rendered chips. The cap is 44 rather than 32 for the same reason — it keeps 218 of 233
+// labels whole instead of 182, and an ellipsis is only ever a truncation, never a silent half-truth.
+const CLAUSE_SEPARATORS = [" — ", " (", ", "];
+const LABEL_CAP = 44;
 
 export function shortFindingLabel(id) {
   const d = (FINDINGS[id] && FINDINGS[id].desc) || "";
   let s = d.trim();
   for (const sep of CLAUSE_SEPARATORS) s = s.split(sep)[0].trim();
   if (!s) s = humanisePart(id).replace(/^./, c => c.toUpperCase());
-  if (s.length > 32) s = s.slice(0, 31).trimEnd() + "…";
+  if (s.length > LABEL_CAP) s = s.slice(0, LABEL_CAP - 1).trimEnd() + "…";
   return s;
 }
