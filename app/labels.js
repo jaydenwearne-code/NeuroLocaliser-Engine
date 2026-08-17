@@ -242,18 +242,33 @@ const sideWord = s => SIDE_WORD[s] || "";
 // nameForSite()'s output to its own fallback string, which would break the moment that string is reworded.
 const hasEponym = site => !!(BY_SITE[site.id] || BY_SITE[`${site.level}_${site.part}`]);
 
+// The territory string very often RESTATES what the headline and the label already said — "MCA superior
+// division territory — MCA superior division (fronto-opercular)", or Wernicke's named twice. A substring
+// test is too weak to catch those (the wordings differ), so compare CONTENT WORDS: if the territory adds
+// almost nothing the reader does not already have, drop it rather than print it twice.
+const STOP = new Set(["the","of","a","an","and","or","at","in","on","to","for","with","its"]);
+const contentWords = t => new Set(String(t).toLowerCase().match(/[a-z0-9]+/g)?.filter(w => w.length > 2 && !STOP.has(w)) || []);
+
+function territoryAdds(terr, alreadySaid) {
+  const t = contentWords(terr);
+  if (!t.size) return false;
+  const known = contentWords(alreadySaid);
+  let novel = 0;
+  for (const w of t) if (!known.has(w)) novel++;
+  return novel / t.size > 0.4;   // it must be substantially new, not a reworded echo
+}
+
 export function plainSiteName(site, opts = {}) {
   const label = siteLabel(site);
   const plain = [sideWord(site.side), label].filter(Boolean).join(" ");
   const raw = `${site.side} · ${site.level} · ${site.part}`;
   const terr = site.territory || "";
-  // For the named nerves and roots the territory string RESTATES the label ("ulnar nerve at the elbow —
-  // ulnar nerve at the elbow (cubital tunnel)"). Drop the duplicate rather than printing it twice.
-  const addsSomething = terr && !terr.toLowerCase().includes(label.toLowerCase());
-  if (hasEponym(site)) {
-    return { name: nameForSite(site, opts).name, sub: [plain, addsSomething ? terr : ""].filter(Boolean).join(" — "), raw };
-  }
-  return { name: plain, sub: addsSomething ? terr : "", raw };
+  const name = hasEponym(site) ? nameForSite(site, opts).name : plain;
+  // Measured against BOTH the headline and the label — a territory can echo either one.
+  const sub = territoryAdds(terr, `${name} ${label}`)
+    ? (hasEponym(site) ? `${plain} — ${terr}` : terr)
+    : (hasEponym(site) ? plain : "");
+  return { name, sub, raw };
 }
 
 // A finding `desc` is a teaching sentence (papilloedema's runs to 130 characters), so the chip takes its
