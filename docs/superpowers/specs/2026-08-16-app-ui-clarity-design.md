@@ -1,8 +1,8 @@
 # App UI clarity: speak clinician, rank the page, put controls where they act
 
 **Date:** 2026-08-16
-**Status:** workstreams 2-6 implemented 2026-08-16 on `feat/app-ui-clarity`; **workstream 1 (clinical
-naming) is BUILT BUT NOT WIRED** — it is held at a review gate until the owner signs off `PART_LABEL`
+**Status:** all six workstreams implemented 2026-08-16 on `feat/app-ui-clarity`. **`PART_LABEL` CLINICALLY
+SIGNED OFF by the owner 2026-08-16** after three review passes; the naming is wired. Not yet merged.
 **Scope:** `app/` only — no `src/model/`, `src/engine/` or `src/data/` changes
 
 ## The problem

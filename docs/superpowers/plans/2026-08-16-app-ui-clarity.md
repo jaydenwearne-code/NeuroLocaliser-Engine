@@ -459,10 +459,10 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ### Task 4: Wire clinical naming into the UI
 
-> ⛔ **NOT DONE — HELD AT THE REVIEW GATE.** Tasks 1-3 built and tested the naming layer; this task is the
-> one that puts it on screen. It must not run until the owner has signed off `PART_LABEL` (see Task 2 Step
-> 7). Three review passes have been applied already (cortex-level classes, portion-vs-whole, Wernicke's
-> gyrus + thalamic nuclei); the gate is still open.
+> ✅ **DONE 2026-08-16.** The gate is closed — the owner signed off `PART_LABEL` after three review passes
+> (cortex-level classes, portion-vs-whole, Wernicke's gyrus + thalamic nuclei). Wiring found two leaks this
+> task had not scoped: the Why card and the parsimony guard both printed raw `finding@side` tokens; both now
+> render clinically with the token in a `title`.
 
 
 **Files:**

@@ -358,9 +358,9 @@ test that also pins the optic nerve as NOT Schwann (it is oligodendrocyte-myelin
 > `docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md`,
 > `docs/superpowers/plans/2026-08-15-multifocal-pattern-axis.md`.
 
-## App UI clarity pass (2026-08-16) — ⚠ WORKSTREAM 1 HELD AT A REVIEW GATE
+## App UI clarity pass (DONE 2026-08-16) — ✅ NAMING CLINICALLY SIGNED OFF
 
-**Branch `feat/app-ui-clarity`, not yet merged.** The owner reported the UI had become messy after seven
+**Branch `feat/app-ui-clarity`, not yet merged. 64 suites / 3658 assertions green.** The owner reported the UI had become messy after seven
 content increments landed into the same three surfaces without anyone re-ranking what the reader sees.
 Measured before: a two-finding case rendered a **3051px** results column, five cards all expanded with no
 navigation, **16** distinct font sizes (10 between 8px and 13px), five global controls above the fold of
@@ -379,10 +379,10 @@ phrase otherwise (`nameForSite()` falls back to `` `${side} ${level} (${part})` 
 never by part alone** — `lateral` spans five levels, `hemi` four; the same trap `vascular.js` and
 `topography.js` document.
 
-> ⚠ **The naming is BUILT BUT NOT WIRED to the UI (plan Task 4).** `PART_LABEL` is 114 hand-authored
-> anatomical labels and a wrong one mislabels a lesion on the result headline, so it is held until the owner
-> signs it off. Three review passes are already applied — see below. **Do not wire Task 4 without the
-> sign-off.**
+> **✅ CLINICALLY SIGNED OFF (2026-08-16) by the owner (a clinician): all 202 site labels.** The gate is
+> CLOSED — do not re-flag this content as unreviewed. It took three review passes, each of which is now an
+> INVARIANT rather than a patch (below). Labels added from here are held to the same bar and flagged if
+> uncertain.
 
 **Three lessons from those review passes, each generalised into an invariant rather than patched:**
 - **A LEVEL is not its contents.** The `cortex` level also holds a white-matter tract (the arcuate
