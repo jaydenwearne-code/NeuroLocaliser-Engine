@@ -358,6 +358,61 @@ test that also pins the optic nerve as NOT Schwann (it is oligodendrocyte-myelin
 > `docs/superpowers/specs/2026-08-15-multifocal-pattern-axis-design.md`,
 > `docs/superpowers/plans/2026-08-15-multifocal-pattern-axis.md`.
 
+## App UI clarity pass (2026-08-16) — ⚠ WORKSTREAM 1 HELD AT A REVIEW GATE
+
+**Branch `feat/app-ui-clarity`, not yet merged.** The owner reported the UI had become messy after seven
+content increments landed into the same three surfaces without anyone re-ranking what the reader sees.
+Measured before: a two-finding case rendered a **3051px** results column, five cards all expanded with no
+navigation, **16** distinct font sizes (10 between 8px and 13px), five global controls above the fold of
+which **three** were inert until a finding existed, and **three** separate affordances answering "which
+site am I reasoning about".
+
+**Trainee-primary, ED-usable** (owner's ruling): the reasoning chain stays in ONE scroll in a fixed order —
+a tabbed UI would let a trainee skip Why, which is the teaching payload. ED speed comes from a sticky
+section nav plus an urgency pill in the header, not from reordering. **Putting Next Steps first was
+considered and rejected** on those grounds.
+
+**`app/labels.js` is a new display-naming layer** — pure, DOM-free, unit-tested by `test/app-naming.test.js`
+(39 assertions). `plainSiteName()` returns the eponym when the phonebook has one and a plain anatomical
+phrase otherwise (`nameForSite()` falls back to `` `${side} ${level} (${part})` `` for 52 of 377 sites —
+18% of COMMON sites, including the whole cortical motor strip). **`PART_LABEL` is keyed `${level}|${part}`,
+never by part alone** — `lateral` spans five levels, `hemi` four; the same trap `vascular.js` and
+`topography.js` document.
+
+> ⚠ **The naming is BUILT BUT NOT WIRED to the UI (plan Task 4).** `PART_LABEL` is 114 hand-authored
+> anatomical labels and a wrong one mislabels a lesion on the result headline, so it is held until the owner
+> signs it off. Three review passes are already applied — see below. **Do not wire Task 4 without the
+> sign-off.**
+
+**Three lessons from those review passes, each generalised into an invariant rather than patched:**
+- **A LEVEL is not its contents.** The `cortex` level also holds a white-matter tract (the arcuate
+  fasciculus), two watershed border zones, two aphasia composites and five vascular territories, so
+  appending the level word produced "arcuate cortex" and "ACA cortex". `cortex` now cannot take an appended
+  level word at all and **all 33 cortex keys are authored explicitly**, asserted by a test.
+- **A PORTION is not the WHOLE.** Every hypothalamic and thalamic key is a nucleus or named area within its
+  structure, so none may read "<x> hypothalamus" / "<x> thalamus". Asserted for both levels.
+- **A mechanical invariant is a FLOOR, not a ceiling.** The clean-label test (no underscores, no stray
+  abbreviations) passed on an *empty* override table — it cannot see whether a label is anatomically true.
+  That judgement is the owner's, which is why the gate exists; targeted assertions now pin each ruling.
+
+**Controls live in the card they act on** (onset → What, course → Together, level inputs → findings pane
+behind a cord finding, dominant hemisphere → header), so a control can be unmounted while its state is set.
+`S` stays the single source of truth and `test/app-smoke.test.js` pins the case-URL round trip.
+
+**Two bugs found by driving the app, not by tests:** (1) `weak_arm`/`weak_leg` in the level-input trigger
+set put those inputs on screen for nearly every case — the exact noise the pass removes; (2) **the URL hash
+IS the shareable case**, so letting the browser follow the nav's `href="#sec-next"` natively overwrote the
+whole case — anyone using the nav before copying the link would have shared a case with no findings. Jump
+links now `preventDefault` and scroll manually.
+
+**Workstream 6 (What-card density) was overstated in the spec and the code says so:** after the 2026-08-11
+depth sweep the mean site carries 6.4 causes across the sieve categories, so only 73 of 377 sites (19%)
+collapse anything and the mean first read falls 6.4 → 6.1. Kept (it earns its place at 8 → 5 on the dense
+sites) but the real density was the all-sites view and the demoted bands.
+
+Spec/plan: `docs/superpowers/specs/2026-08-16-app-ui-clarity-design.md`,
+`docs/superpowers/plans/2026-08-16-app-ui-clarity.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
