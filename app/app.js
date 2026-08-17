@@ -333,6 +333,15 @@ function resultHeader(sel, list, total, r) {
     <p class="oh-status">${status}</p>${scope}${funcFlag}</div>`;
 }
 
+// Five places tell the reader "the engine considered this and set it aside" — in five phrasings and five
+// styles. They are ONE concept and get one component. The REASON text still distinguishes them, because the
+// mechanisms genuinely differ: a known-negative EXCLUDES a site, a tempo/course mismatch only DEMOTES it.
+// `reason` is trusted HTML (literal copy we control, sometimes with <b>) — never user input.
+function setAside(reason, n, body) {
+  return `<details class="setaside"><summary>Set aside — ${reason} <span class="c">${n}</span></summary>
+    <div class="setaside-body">${body}</div></details>`;
+}
+
 // ① Where — the differential list + localisation annotations + (collapsed) ruled-out
 function whereCard(list, cands, total, r) {
   const nAll = r.explainAll.length;
@@ -352,11 +361,11 @@ function whereCard(list, cands, total, r) {
     return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteLoc(c.site))}${c.site.territory?` · ${esc(c.site.territory)}`:""}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site to compare across lesions">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
-    ? `<details class="ruledout" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Ruled out by a normal finding <span class="c">${r.ruledOut.length}</span></summary>
-        <div class="why-list" style="margin-top:4px">${r.ruledOut.map(x => {
+    ? setAside("contradicted by a normal finding", r.ruledOut.length,
+        `<div class="why-list">${r.ruledOut.map(x => {
           const side = x.contradictedBy.split("@")[1];
           return `<div class="why-item"><span class="k no">✗</span><span class="t">${esc(siteName(x.site))}</span><span class="d">would also cause ${esc(desc(fid(x.contradictedBy)))} on the ${esc(side)} — which is normal here</span></div>`;
-        }).join("")}</div></details>`
+        }).join("")}</div>`)
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
   return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where");
@@ -468,8 +477,8 @@ function togetherCard(r, list) {
     return axes.length === 2 ? "tempo and course" : axes[0] === "course" ? "the course" : "the tempo";
   };
   const disc = u.discordant.length
-    ? `<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given ${esc(axisLabel(u.discordant))} <span class="c">${u.discordant.length}</span></summary>
-        ${u.discordant.map(e => `${unifyingRow(e, sites)}<div class="annot">${e.demotions.map(d => `You entered <b>${esc(d.entered)}</b>; this is typically ${d.expected.map(esc).join(" / ")}.`).join(" ")}</div>`).join("")}</details>`
+    ? setAside(`less likely given ${esc(axisLabel(u.discordant))}`, u.discordant.length,
+        u.discordant.map(e => `${unifyingRow(e, sites)}<div class="annot">${e.demotions.map(d => `You entered <b>${esc(d.entered)}</b>; this is typically ${d.expected.map(esc).join(" / ")}.`).join(" ")}</div>`).join(""))
     : "";
 
   // The course control lives HERE — it exists only for the cross-site roster, so it has no meaning until
@@ -593,7 +602,7 @@ function perSiteRemainderHTML(cc, sites) {
         : "")
     ).join("")}</div>`
   ).join("");
-  return `<details class="ruledout" style="margin-top:8px"><summary style="font-size:11.5px;color:var(--muted)">Only plausible at one site <span class="c">${n}</span></summary><div style="margin-top:4px">${body}</div></details>`;
+  return setAside("only plausible at one site", n, body);
 }
 
 // ③ What — the curated differential for this site. Categories with no plausible cause are omitted,
@@ -618,9 +627,9 @@ function whatCard(site, r, list) {
       ? `<div class="empty">Every shared cause is demoted given <b>${esc(S.onset)}</b> onset — see "Less likely given the tempo" below.</div>`
       : `<div class="empty">No cause is plausible at more than one of these sites — which argues for two unrelated processes.</div>`;
     const dem = demotedShared.length
-      ? `<details class="demoted" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given <b>${esc(S.onset)}</b> onset <span class="c">${demotedShared.length}</span></summary>
-          <div class="annot" style="margin-top:4px">A cause shared here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
-          ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}</details>`
+      ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, demotedShared.length,
+          `<div class="annot">A cause shared here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
+           ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}`)
       : "";
     const remainder = perSiteRemainderHTML(cc, sites);
     return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what");
@@ -658,9 +667,9 @@ function whatBlock(site) {
   // Tempo mismatches are demoted, never deleted — the teaching line that used to REPLACE the content now
   // heads the disclosure. Spec 2026-08-14 §7.
   const dem = res.demoted && res.demoted.length
-    ? `<details class="demoted" style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Less likely given <b>${esc(S.onset)}</b> onset <span class="c">${res.demoted.length}</span></summary>
-        <div class="annot" style="margin-top:4px">A lesion here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
-        ${res.demoted.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">usually ${x.demotion.expected.map(esc).join(" / ")}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}</details>`
+    ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, res.demoted.length,
+        `<div class="annot">A lesion here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
+         ${res.demoted.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">usually ${x.demotion.expected.map(esc).join(" / ")}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}`)
     : "";
   return `${cap}${lead}${red}${groups}${dem}`;
 }

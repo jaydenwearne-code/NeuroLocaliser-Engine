@@ -223,6 +223,15 @@
   /* the sticky nav would collide with the sticky safety bar on a phone, where the single column already
      puts the sections next to each other */
   @media (max-width:560px){ .secnav{display:none;} }
+  /* ONE set-aside treatment: five disclosures ("ruled out by a normal finding", two "less likely given
+     onset", "less likely given tempo and course", "only plausible at one site") were one concept in five
+     phrasings and five inline styles. The reason text still distinguishes exclusion from demotion. */
+  .setaside{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px;}
+  .setaside>summary{cursor:pointer;font-size:var(--fs-meta);color:var(--faint);list-style:none;}
+  .setaside>summary::-webkit-details-marker{display:none;}
+  .setaside>summary:hover{color:var(--muted);}
+  .setaside>summary .c{font-family:var(--mono);font-size:var(--fs-cap);}
+  .setaside-body{margin-top:6px;}
   /* code-stroke worksheet */
   .cs-banner{border:1px solid var(--gold);background:var(--gold-bg);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:var(--fs-meta);margin:10px 0;}
   .cs-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px;}
