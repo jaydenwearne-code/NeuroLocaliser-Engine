@@ -142,6 +142,22 @@ function wireLocalise() {
   markSides();
 }
 
+// The section nav and the urgency pill are in-page jumps, and THE URL HASH IS THE SHAREABLE CASE — letting
+// the browser follow `href="#sec-next"` natively overwrites the whole case with "#sec-next", so anyone who
+// clicked the nav before copying the link would share a case with no findings in it. Scroll manually and
+// keep the hash. (Found by clicking it; no unit test can see this.)
+function wireJumpLinks(root) {
+  root.querySelectorAll('a[href^="#sec-"]').forEach(a => {
+    a.onclick = e => {
+      e.preventDefault();
+      const target = document.getElementById(a.getAttribute("href").slice(1));
+      // behavior:"auto", not "smooth" — smooth was measured as a no-op in the in-app browser (scrollY never
+      // moved), and an instant jump is the better behaviour anyway for "get me to Next Steps now".
+      if (target) target.scrollIntoView({ behavior: "auto", block: "start" });
+    };
+  });
+}
+
 // The onset / course selects live INSIDE cards that re-render on every state change, so they are rebound
 // after each render rather than once at boot.
 function wireCardControls() {
@@ -210,14 +226,19 @@ function renderResults() {
   S.selected = sel.site.id;
   syncURL();
   const tf = tractsFor(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
+  const together = togetherCard(r, list);
+  const has = new Set(["where", "why", "what", "next"]);
+  if (together) has.add("together");
   el.innerHTML = resultHeader(sel, list, total, r)
+    + sectionNav(has)
     + pmsg + rmsg
     + whereCard(list, cands, total, r)
-    + togetherCard(r, list)
+    + together
     + whyCard(tf, sel, total)
     + whatCard(sel.site, r, list)
     + nextCard(sel.site, r, list);
   wireCardControls();
+  wireJumpLinks(el);
   const nx = el.querySelector(".neuraxis");
   if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
@@ -245,8 +266,21 @@ function siteName(site){ const e = nameForSite(site); return e.name; }
 function siteLoc(site){ return `${site.side} · ${site.level} · ${site.part}`; }
 
 // cap is trusted HTML (literal labels we control, e.g. "Why" or `Where <span…>(N)</span>`) — not user input.
-function card(capHTML, body) {
-  return `<section class="out-card"><div class="out-cap">${capHTML}</div>${body}</section>`;
+// `anchor` gives the section nav a jump target.
+function card(capHTML, body, anchor) {
+  return `<section class="out-card"${anchor ? ` id="sec-${anchor}"` : ""}><div class="out-cap">${capHTML}</div>${body}</section>`;
+}
+
+// The reasoning chain stays in ONE scroll in a fixed order — a trainee must not be able to skip Why, which
+// is the teaching payload — so the nav is a jump list, not a tab strip: nothing is hidden by it. It is what
+// lets a time-poor reader reach Next Steps in one click instead of four screens of scrolling. Sections that
+// do not render for this case are omitted rather than shown disabled.
+function sectionNav(has) {
+  const items = [["where","Where"],["together","Together"],["why","Why"],["what","What"],["next","Next"]]
+    .filter(([k]) => has.has(k));
+  if (items.length < 2) return "";
+  return `<nav class="secnav">${items.map(([k,l]) =>
+    `<a href="#sec-${k}" data-sec="${k}">${l}</a>`).join("")}</nav>`;
 }
 
 // A "Report a problem" link → the external form, pre-filled with the LIVE case URL (syncURL ran first),
@@ -281,9 +315,22 @@ function resultHeader(sel, list, total, r) {
     : fnd.suppressed
     ? `<div class="annot"><b>Functional sign noted:</b> ${esc(fnd.note)}</div>`
     : "";
+  // Urgency already exists in the workup layer but was only visible four screens down — it is the one signal
+  // a time-poor reader needs before anything else, so it sits in the header and links to the Next card.
+  let urg = "";
+  try {
+    const u = nextStepsFor(sel.site).urgency;
+    const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
+    const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
+    urg = `<a class="urg-pill" href="#sec-next" style="color:var(${tint});border-color:var(${tint})">${lab}</a>`;
+  } catch { urg = ""; }
+  // ONE scope control, here, governing both the What and the Next cards — they used to render a copy each
+  // off the same S.scope, which is two controls for one decision.
+  const { sites: scopeSites } = combinedSites(r, list, S.pinned);
+  const scope = scopeSites.length >= 2 ? scopeToggle(scopeSites.length) : "";
   return `<div class="out-head">
-    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b><span class="oh-loc">${esc(siteLoc(sel.site))}${sel.site.territory?` · ${esc(sel.site.territory)}`:""}</span></div>${feedbackButton(list)}</div>
-    <p class="oh-status">${status}</p>${funcFlag}</div>`;
+    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b><span class="oh-loc">${esc(siteLoc(sel.site))}${sel.site.territory?` · ${esc(sel.site.territory)}`:""}</span></div>${urg}${feedbackButton(list)}</div>
+    <p class="oh-status">${status}</p>${scope}${funcFlag}</div>`;
 }
 
 // ① Where — the differential list + localisation annotations + (collapsed) ruled-out
@@ -312,7 +359,7 @@ function whereCard(list, cands, total, r) {
         }).join("")}</div></details>`
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
-  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`);
+  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where");
 }
 
 // A `spread`/`motor` clause has no single site — it is satisfied by the SET of sites, or by the observed
@@ -432,7 +479,7 @@ function togetherCard(r, list) {
         <option value="">all</option>
         ${COURSES.map(c=>`<option value="${c.id}"${S.course===c.id?" selected":""}>${esc(c.label)}</option>`).join("")}
       </select></label></div>`;
-  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc);
+  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc, "together");
 }
 
 const sideName = s => s === "left" ? "left" : s === "right" ? "right" : s === "bilateral" ? "both sides" : "the affected side";
@@ -481,7 +528,7 @@ function whyCard(tf, sel, total) {
     : "";
   if (!tf.length) {
     // non-tract findings: no tract narrative/diagram — lead with the per-site explanation, expanded.
-    return card("Why", `${umnlmn}${whyBlock(sel, total, false)}`);
+    return card("Why", `${umnlmn}${whyBlock(sel, total, false)}`, "why");
   }
   const course = tf.map(t => `<p class="synth"><b>Course.</b> ${esc(tractNarrative(t.tract))}</p>`).join("");
   const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
@@ -499,7 +546,7 @@ function whyCard(tf, sel, total) {
     ? `<div class="whynot"><b>Why not elsewhere.</b><ul class="whynot-list">${lines}</ul><p class="derived">None reported — examine specifically to exclude.</p></div>`
     : "";
   const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>Neuraxis diagram</summary>${neuraxisBlock(tf, sel.site.id)}</details>`;
-  return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`);
+  return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`, "why");
 }
 
 // Merged causes/workup render through the cards that already OWN that presentation, rather than a third
@@ -556,7 +603,6 @@ function whatCard(site, r, list) {
   // S.pinned MUST be passed: without it this resolves the engine's cover while the Together card resolves
   // the user's pinned pair, and the two cards silently describe DIFFERENT sites on the same screen.
   const { sites } = combinedSites(r, list, S.pinned);
-  const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
   if (sites.length >= 2 && S.scope === "all") {
     const cc = combinedCauses(sites, { onset: S.onset || undefined });
     // Tempo mismatches DEMOTE, never drop (owner ruling) — a shared cause is demoted iff EVERY contributing
@@ -577,9 +623,9 @@ function whatCard(site, r, list) {
           ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}</details>`
       : "";
     const remainder = perSiteRemainderHTML(cc, sites);
-    return card(`What <span class="oc-n">(all sites)</span>`, toggle + shared + dem + remainder);
+    return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what");
   }
-  return card("What", toggle + whatBlock(site));
+  return card("What", whatBlock(site), "what");
 }
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
@@ -628,9 +674,8 @@ function nextCard(site, r, list) {
   const { sites } = combinedSites(r, list, S.pinned);
   const combined = sites.length >= 2 && S.scope === "all";
   const nx = combined ? combinedNextSteps(sites) : nextStepsFor(site);
-  const toggle = sites.length >= 2 ? scopeToggle(sites.length) : "";
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
-  return card(cap, toggle + nextBlock(nx, combined));
+  return card(cap, nextBlock(nx, combined), "next");
 }
 
 // `combined` distinguishes the two shapes nextBlock is fed: nextStepsFor()'s single-site plan (which carries
