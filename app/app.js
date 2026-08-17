@@ -18,6 +18,7 @@ import { renderCodeStroke, stopStrokeClock } from "./code-stroke.js";
 import { combinedSites } from "./combined-sites.js";
 import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
 import { togetherGuardState } from "./together-guard.js";
+import { plainSiteName, shortFindingLabel } from "./labels.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -126,7 +127,8 @@ function frow(f) {
   const btns = (NON_LATERALISED.has(f) || (sides.length===1 && sides[0]==="none"))
     ? `<button data-f="${f}" data-s="none">add</button>`
     : sides.filter(s=>s!=="none").map(s=>`<button data-f="${f}" data-s="${s}">${sideTag(s)}</button>`).join("");
-  return `<div class="frow" data-fid="${f}" title="${esc(f)}"><div class="nm"><span class="fd-primary">${esc(desc(f))}</span> <span class="fid-mini">${esc(f)}</span></div><div class="sides">${btns}</div></div>`;
+  // The id stays in the title attribute — reachable for a bug report, off the screen for a clinician.
+  return `<div class="frow" data-fid="${f}" title="${esc(f)} — ${esc(desc(f))}"><div class="nm"><span class="fd-primary">${esc(desc(f))}</span></div><div class="sides">${btns}</div></div>`;
 }
 
 function wireLocalise() {
@@ -190,7 +192,7 @@ function renderChips() {
   const el = document.getElementById("chips");
   if (!S.tokens.size) { el.innerHTML = `<span class="fd" style="color:var(--faint);font-size:11.5px">No findings yet — tick from the exam steps, or try a worked example above.</span>`; return; }
   el.innerHTML = [...S.tokens].map(t => { const [f,s]=t.split("@");
-    return `<span class="chip"><span class="sd">${sideTag(s)}</span>${esc(f)}<span class="x" data-t="${t}">×</span></span>`; }).join("");
+    return `<span class="chip" title="${esc(f)} — ${esc(desc(f))}"><span class="sd">${sideTag(s)}</span>${esc(shortFindingLabel(f))}<span class="x" data-t="${t}">×</span></span>`; }).join("");
   el.onclick = e => { const t = e.target.dataset.t; if (t) toggleToken(t); };
 }
 
@@ -262,8 +264,11 @@ function renderResults() {
   });
 }
 
-function siteName(site){ const e = nameForSite(site); return e.name; }
-function siteLoc(site){ return `${site.side} · ${site.level} · ${site.part}`; }
+// siteName keeps returning a plain STRING — all 15 call sites (diagram labels, feedback payload, why
+// blocks, together rows, code-stroke) depend on that. Only the composition changed.
+function siteName(site){ return plainSiteName(site, { dominantSide: S.dominant }).name; }
+function siteSub(site){ return plainSiteName(site, { dominantSide: S.dominant }).sub; }
+function siteRaw(site){ return plainSiteName(site, { dominantSide: S.dominant }).raw; }
 
 // cap is trusted HTML (literal labels we control, e.g. "Why" or `Where <span…>(N)</span>`) — not user input.
 // `anchor` gives the section nav a jump target.
@@ -329,7 +334,9 @@ function resultHeader(sel, list, total, r) {
   const { sites: scopeSites } = combinedSites(r, list, S.pinned);
   const scope = scopeSites.length >= 2 ? scopeToggle(scopeSites.length) : "";
   return `<div class="out-head">
-    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b><span class="oh-loc">${esc(siteLoc(sel.site))}${sel.site.territory?` · ${esc(sel.site.territory)}`:""}</span></div>${urg}${feedbackButton(list)}</div>
+    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b>${siteSub(sel.site)?`<span class="oh-loc">${esc(siteSub(sel.site))}</span>`:""}
+      <details class="oh-raw"><summary>site id</summary><code>${esc(siteRaw(sel.site))} · ${esc(sel.site.id)}</code></details>
+    </div>${urg}${feedbackButton(list)}</div>
     <p class="oh-status">${status}</p>${scope}${funcFlag}</div>`;
 }
 
@@ -358,7 +365,7 @@ function whereCard(list, cands, total, r) {
     const w = Math.round((c.n/total)*54);
     const fit = c.n===total ? `<span class="dall">✓ all</span>` : `<span class="dfrac">${c.n}/${total}</span>`;
     const pinned = S.pinned.has(c.site.id) ? " pinned" : "";
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteLoc(c.site))}${c.site.territory?` · ${esc(c.site.territory)}`:""}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site to compare across lesions">📌</button></div>`;
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site to compare across lesions">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? setAside("contradicted by a normal finding", r.ruledOut.length,
@@ -459,7 +466,7 @@ function togetherCard(r, list) {
     ? `<div class="annot"><b>A single lesion already explains every finding here.</b> You've pinned a second site to compare anyway — this is a hypothetical "what if" comparison, not a claim that the picture is actually multifocal.</div>`
     : gState.kind === "forcing"
     ? `<div class="multi" style="border-color:var(--gold)"><b>Check this first.</b> This is multifocal only because of: ${gState.findings.map(f =>
-        `<code>${esc(f.token)}</code>${f.collapsesTo ? ` — drop it and a single ${esc(siteName(f.collapsesTo))} lesion explains everything` : ""}`
+        `${tokenLabel(f.token)}${f.collapsesTo ? ` — drop it and a single ${esc(siteName(f.collapsesTo))} lesion explains everything` : ""}`
       ).join("; ")}. If any of these signs is uncertain, re-check it before accepting a multifocal picture.</div>`
     : `<div class="annot"><b>Several findings independently require a second site</b> — no single observation is carrying the multifocal claim.</div>`;
 
@@ -514,13 +521,21 @@ function neuraxisBlock(tf, selectedId) {
   return `<div class="neuraxis-wrap"><div class="nx-cap">Neuraxis — click a site to select it</div>${svg}</div>`;
 }
 
+// A `finding@side` token as a clinician reads it: "Right · Arm weakness". The raw token stays in the title
+// so a bug report can still name it exactly. Used wherever the Why card lists individual findings.
+function tokenLabel(t) {
+  const [f, side] = t.split("@");
+  const sd = sideTag(side);
+  return `<span class="t" title="${esc(t)}">${sd !== "•" ? `<span class="sd">${sd}</span> ` : ""}${esc(shortFindingLabel(f))}</span>`;
+}
+
 function whyBlock(c, total, collapsed = false) {
   const observed = [...S.tokens];
   const explained = new Set(c.explained);
-  const ok = c.explained.map(t=>`<div class="why-item"><span class="k ok">✓</span><span class="t">${esc(t)}</span><span class="d">${esc(desc(fid(t)))}</span></div>`).join("");
-  const no = observed.filter(t=>!explained.has(t)).map(t=>`<div class="why-item"><span class="k no">✗</span><span class="t">${esc(t)}</span><span class="d">not explained by this site</span></div>`).join("");
+  const ok = c.explained.map(t=>`<div class="why-item"><span class="k ok">✓</span>${tokenLabel(t)}</div>`).join("");
+  const no = observed.filter(t=>!explained.has(t)).map(t=>`<div class="why-item"><span class="k no">✗</span>${tokenLabel(t)}<span class="d">not explained by this site</span></div>`).join("");
   const missed = [...c.exp].filter(t=>!S.tokens.has(t));
-  const warn = missed.map(t=>`<div class="why-item"><span class="k warn">⚠</span><span class="t">${esc(t)}</span><span class="d">predicted here but not reported</span></div>`).join("");
+  const warn = missed.map(t=>`<div class="why-item"><span class="k warn">⚠</span>${tokenLabel(t)}<span class="d">predicted here but not reported</span></div>`).join("");
   const body = `<div class="why-list">${ok}${no}</div>
     ${warn?`<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Predicted here but not reported <span class="c">${missed.length}</span></summary><div class="why-list" style="margin-top:4px">${warn}</div></details>`:""}`;
   const head = `<span style="color:var(--terra)">${esc(siteName(c.site))}</span> explains ${c.n}/${total}`;
@@ -749,7 +764,7 @@ function renderAtlasDetail() {
   const res = causesFor(site, {});
   const groups = res.byCategory.map(g=>`<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>${g.causes.map(c=>`<div class="cause"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span>${c.red?`<span class="rf">RED</span>`:""}</div>`).join("")}</div>`).join("");
   document.getElementById("adetail").innerHTML = `<h3>${esc(siteName(site))}</h3>
-    <div class="where-best" style="margin-bottom:10px"><div class="loc">${esc(siteLoc(site))}</div>${site.territory?`<div class="terr">${esc(site.territory)}</div>`:""}</div>
+    <div class="where-best" style="margin-bottom:10px"><div class="loc">${esc(siteSub(site) || siteRaw(site))}</div><div class="terr">${esc(siteRaw(site))}</div></div>
     <h3>Produces (findings)</h3><div class="why-list">${rows||'<div class="empty">—</div>'}</div>
     <h3 style="margin-top:14px">Causes</h3>${groups}`;
 }

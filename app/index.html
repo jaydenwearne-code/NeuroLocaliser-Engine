@@ -211,6 +211,12 @@
   .card-ctrl select,.hemi-set select{font:inherit;font-size:var(--fs-meta);padding:3px 7px;border:1px solid var(--line);border-radius:7px;background:var(--paper);color:var(--ink);}
   .ctrls-inline{margin:0 0 8px;}
   .ctrls-inline[hidden]{display:none;}
+  /* the raw side/level/part triple, kept reachable for a bug report but off the first read */
+  .oh-raw{margin-top:4px;border-bottom:0;}
+  .oh-raw>summary{font-size:var(--fs-cap);color:var(--faint);cursor:pointer;list-style:none;display:block;}
+  .oh-raw>summary::-webkit-details-marker{display:none;}
+  .oh-raw>summary:hover{color:var(--muted);}
+  .oh-raw code{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);}
   /* section nav + urgency pill (2026-08-16 UI-clarity pass) */
   .secnav{position:sticky;top:0;z-index:4;display:flex;gap:2px;padding:6px 0;margin:8px 0 2px;
     background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:saturate(1.1) blur(3px);}
