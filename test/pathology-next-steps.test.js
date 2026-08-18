@@ -4,6 +4,7 @@
 // This layer keys the confirmatory / monitoring / urgency / referral tiers by the pathology the user
 // selected, while immediate + first-line stay site-level (they are what GET you the cause).
 import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
+import { CAUSES } from "../src/data/causes.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (!c && d ? `  [${d}]` : "")); };
@@ -26,6 +27,18 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
     const p = pathologyPlanFor(name, site("cord_transverse"));
     const leaked = [...p.confirmatory, ...p.monitoring].filter(s => /\{[a-z]+\}/.test(s));
     ok(`\`${name}\` leaves no unreplaced {slot}`, leaked.length === 0, leaked.join(" | "));
+  }
+}
+
+// --- 3: no orphan plans — every key names a cause that actually exists ---
+// A plan keyed to a misspelled pathology never fires and never errors. This is the only thing that catches it.
+{
+  const realNames = new Set(Object.keys(CAUSES).flatMap(k => CAUSES[k].map(c => c.name)));
+  for (const name of Object.keys(PATHOLOGY_NEXT))
+    ok(`plan key \`${name}\` matches a real cause in CAUSES`, realNames.has(name));
+  for (const [from, to] of Object.entries(PATHOLOGY_ALIAS)) {
+    ok(`alias source \`${from}\` matches a real cause`, realNames.has(from));
+    ok(`alias target \`${to}\` has a plan`, !!PATHOLOGY_NEXT[to]);
   }
 }
 
