@@ -47,7 +47,7 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), scope:"site",
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), selectedPathology:undefined, scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
@@ -199,6 +199,7 @@ function loadExample(id) {
   S.onset = ex.onset || "";
   S.course = ex.course || "";
   S.selected = undefined;
+  S.selectedPathology = undefined;
   S.pinned = new Set();
   S.scope = "site";
   renderLocalise();
@@ -268,7 +269,20 @@ function renderResults() {
   wireCardControls();
   wireJumpLinks(el);
   const nx = el.querySelector(".neuraxis");
-  if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
+  if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selectedPathology = undefined; S.selected = g.dataset.k; renderResults(); };
+  // Selecting a cause narrows the Next card to that pathology; clicking the selected one clears it.
+  // Bound on BOTH cards: the What rows and the Next card's chip carry data-px, so one handler shape
+  // serves them and the chip's x needs no separate wiring. card() emits id="sec-<anchor>" (app.js:301).
+  for (const secId of ["sec-what", "sec-next"]) {
+    const sec = document.getElementById(secId);
+    if (!sec) continue;
+    sec.onclick = e => {
+      const row = e.target.closest("[data-px]"); if (!row) return;
+      const name = row.dataset.px;
+      S.selectedPathology = S.selectedPathology === name ? undefined : name;
+      renderResults();
+    };
+  }
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
   const dl = document.getElementById("difflist");
   if (dl) dl.onclick = e => {
@@ -281,6 +295,7 @@ function renderResults() {
     }
     const row = e.target.closest(".drow");
     if (!row) return;
+    S.selectedPathology = undefined;   // a pathology chosen at one lesion is meaningless at another
     S.selected = row.dataset.k;
     renderResults();
   };
@@ -680,9 +695,13 @@ function whatCard(site, r, list) {
 }
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
+// The row is SELECTABLE (spec 2026-08-18) — clicking it narrows the Next card to this pathology.
+// `--terra` on the selected row is a legitimate use of the identity colour: the selected pathology IS the
+// answer the Next card is now about.
 function renderCause(c) {
   const path = c.pathognomonic ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(c.pathognomonic)}</span></div>` : "";
-  return `<div class="cause"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
+  const on = S.selectedPathology === c.name;
+  return `<div class="cause${on?" sel":""}" data-px="${esc(c.name)}" role="button" tabindex="0" aria-pressed="${on}"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
 }
 
 function whatBlock(site) {

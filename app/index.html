@@ -19,6 +19,12 @@
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
   :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#5d6c7e;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--on-danger:#ffffff;--ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#8d8b84;--mimic:#3f7f96;--iatro:#9c5a86;}
   :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#96a3b5;--line:#26364d;--band:#1b2942;--terra:#e79075;--on-danger:#ffffff;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#6f819c;--mimic:#7fbcd6;--iatro:#d296b8;}
+  /* selected-pathology row + chip (spec 2026-08-18). Defined for all four theme states so the toggle
+     wins in both directions and the system default is never left borrowing the host page background. */
+  :root{--sel-bg:#f8ece7;}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sel-bg:#26314a;}}
+  :root[data-theme="light"]{--sel-bg:#f8ece7;}
+  :root[data-theme="dark"]{--sel-bg:#26314a;}
   *{box-sizing:border-box;} body{margin:0;font-family:var(--sans);color:var(--ink);line-height:1.5;
     background:radial-gradient(1100px 560px at 100% -10%,color-mix(in srgb,var(--navy) 4%,transparent),transparent 60%),var(--cream);min-height:100vh;}
   .wrap{max-width:1200px;margin:0 auto;padding:clamp(14px,3vw,32px);}
@@ -64,7 +70,17 @@
   .multi{border:1px dashed var(--contra);border-radius:9px;padding:9px 10px;margin-top:8px;font-size:var(--fs-body);background:var(--contra-bg);}
   /* causes */
   .catgrp{margin-bottom:9px;} .cathead{display:flex;align-items:center;gap:7px;font-size:var(--fs-meta);font-weight:800;letter-spacing:.03em;text-transform:uppercase;margin-bottom:3px;} .catdot{width:9px;height:9px;border-radius:50%;flex:none;}
-  .cause{font-size:var(--fs-body);padding:3px 0 3px 16px;} .cline{display:flex;align-items:baseline;gap:8px;} .cause .cn{flex:1;} .cause .tp{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);} .cause .lk{font-size:var(--fs-cap);font-weight:700;letter-spacing:.03em;color:var(--muted);}
+  .cause{font-size:var(--fs-body);padding:3px 0 3px 16px;}
+  /* selectable cause rows + the Next card's pathology chip (spec 2026-08-18) */
+  .cause[data-px]{cursor:pointer;border-left:2px solid transparent;border-radius:0 5px 5px 0;}
+  .cause.sel{border-left-color:var(--terra);background:var(--sel-bg);}
+  .cause[data-px]:focus-visible{outline:2px solid var(--terra);outline-offset:2px;}
+  .px-line{font-size:var(--fs-cap);color:var(--muted);margin:6px 0 2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .px-chip{background:var(--sel-bg);border:1px solid var(--terra);color:var(--ink);border-radius:99px;
+           padding:2px 9px;font-size:var(--fs-cap);cursor:pointer;font-family:inherit;}
+  .px-x{color:var(--muted);font-weight:700;}
+  .ns-scope{color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;}
+  .cline{display:flex;align-items:baseline;gap:8px;} .cause .cn{flex:1;} .cause .tp{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);} .cause .lk{font-size:var(--fs-cap);font-weight:700;letter-spacing:.03em;color:var(--muted);}
   /* The must-not-miss is distinguished by FORM, not hue: a tired reader should never have to tell
      #d36d52 from #b32b1c at 10px. Filled chip + glyph, everywhere a red flag appears. */
   .rf{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-cap);font-weight:800;
