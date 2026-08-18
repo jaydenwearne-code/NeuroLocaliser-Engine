@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NeuroLocaliser</title>
 <style>
-  :root{--cream:#fdfdfc;--paper:#ffffff;--navy:#1d314d;--navy-2:#2b4468;--terra:#d36d52;--ink:#1d314d;--muted:#5a6b82;--faint:#8595ab;--line:#e2e6ee;--band:#f4f6fa;--mimic:#3f7f96;--iatro:#9c5a86;
+  :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--ink:#16283f;--muted:#5d6c7e;--faint:#8d8b84;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
     --ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;
-    --red:#c0392b;--red-bg:#fbe9e7;--shadow:0 1px 2px rgba(29,49,77,.05),0 6px 20px rgba(29,49,77,.06);--radius:12px;
+    --red:#b32b1c;--red-bg:#fbe9e7;--shadow:0 1px 2px rgba(29,49,77,.05),0 6px 20px rgba(29,49,77,.06);--radius:12px;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     /* FOUR sizes, not sixteen. The page had 16 ad-hoc font-sizes (10 of them between 8px and 13px), which
        is why nothing looked ranked. answer = the result; body = prose; meta = labels//captions; cap = the
        uppercase micro-captions and mono tokens. Exceptions, deliberate: the wordmark and the code-stroke
        clock, which are doing a different job. */
     --fs-answer:17px;--fs-body:13px;--fs-meta:11px;--fs-cap:10px;}
-  @media (prefers-color-scheme:dark){:root{--cream:#10192a;--paper:#17233a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--ink:#e7edf6;--muted:#9aabc4;--faint:#6f819c;--line:#2a3b57;--band:#17233a;--mimic:#7fbcd6;--iatro:#d296b8;
-    --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e79075;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#e79075;--red-bg:#3a2318;
+  @media (prefers-color-scheme:dark){:root{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--ink:#e9edf3;--muted:#96a3b5;--faint:#6f819c;--line:#26364d;--band:#1b2942;--mimic:#7fbcd6;--iatro:#d296b8;
+    --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#d24a33;--red-bg:#3a2318;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
-  :root[data-theme="light"]{--cream:#fdfdfc;--paper:#fff;--navy:#1d314d;--ink:#1d314d;--muted:#5a6b82;--line:#e2e6ee;--band:#f4f6fa;--terra:#d36d52;--ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;--red:#c0392b;--red-bg:#fbe9e7;--navy-2:#2b4468;--faint:#8595ab;--mimic:#3f7f96;--iatro:#9c5a86;}
-  :root[data-theme="dark"]{--cream:#10192a;--paper:#17233a;--navy:#dbe4f1;--ink:#e7edf6;--muted:#9aabc4;--line:#2a3b57;--band:#17233a;--terra:#e79075;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e79075;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#e79075;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#6f819c;--mimic:#7fbcd6;--iatro:#d296b8;}
+  :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#5d6c7e;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#8d8b84;--mimic:#3f7f96;--iatro:#9c5a86;}
+  :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#96a3b5;--line:#26364d;--band:#1b2942;--terra:#e79075;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#d24a33;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#6f819c;--mimic:#7fbcd6;--iatro:#d296b8;}
   *{box-sizing:border-box;} body{margin:0;font-family:var(--sans);color:var(--ink);line-height:1.5;
     background:radial-gradient(1100px 560px at 100% -10%,color-mix(in srgb,var(--terra) 6%,transparent),transparent 60%),var(--cream);min-height:100vh;}
   .wrap{max-width:1200px;margin:0 auto;padding:clamp(14px,3vw,32px);}
