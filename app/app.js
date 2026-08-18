@@ -19,6 +19,7 @@ import { combinedSites } from "./combined-sites.js";
 import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
 import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName, shortFindingLabel } from "./labels.js";
+import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -796,7 +797,20 @@ function reveal() {
   document.getElementById("app-shell").classList.add("show");
 }
 
+// One geometry, three call sites — the header mark, the gate mark and the favicon all come from brand.js,
+// so there is no second copy of the logo to drift. Runs before the gate is shown.
+function paintBrand() {
+  // 32px balances the two-line lockup (byline + 26px wordmark ≈ 53px tall); 26px read small beside it.
+  document.querySelectorAll("[data-brand-mark]").forEach(el => { el.innerHTML = markSVG({ size: 32 }); });
+  document.querySelectorAll("[data-brand-version]").forEach(el => { el.textContent = `v${VERSION} \u00b7 Beta`; });
+  let link = document.querySelector('link[rel="icon"]');
+  if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+  link.type = "image/svg+xml";
+  link.href = faviconDataURI(getComputedStyle(document.documentElement).getPropertyValue("--terra").trim() || "#d36d52");
+}
+
 async function startGate() {
+  paintBrand();
   const gateEl = document.getElementById("gate");
   if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal(); boot(); return; }
   gateEl.classList.add("show");

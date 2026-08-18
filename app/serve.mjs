@@ -24,4 +24,4 @@ const server = createServer(async (req, res) => {
     res.writeHead(404, { "content-type": "text/plain" }).end("not found");
   }
 });
-server.listen(PORT, () => console.log(`NeuroLocaliser app → http://localhost:${PORT}/app/`));
+server.listen(PORT, () => console.log(`Wearne's NeuroLocaliser → http://localhost:${PORT}/app/`));

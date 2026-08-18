@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NeuroLocaliser</title>
+<title>Wearne's NeuroLocaliser</title>
 <style>
   :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--on-danger:#ffffff;--ink:#16283f;--muted:#5d6c7e;--faint:#8d8b84;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
     --ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;
@@ -248,6 +248,19 @@
   .more-causes>summary::-webkit-details-marker{display:none;}
   .more-causes>summary:hover{color:var(--navy);}
   .more-causes[open]>summary{white-space:normal;}
+  /* "Wearne's" sits ABOVE the wordmark: it reads as authorship, keeps NEUROLOCALISER as the product name,
+     and avoids a long single line on mobile. The BETA badge is navy, NOT terracotta — it is a status, and
+     terracotta is reserved for identity and the answer. */
+  .lockup{display:flex;align-items:center;gap:10px;}
+  .lockup-mark{flex:none;display:inline-flex;color:var(--terra);} /* allowlisted — identity */
+  .lockup-txt{min-width:0;}
+  .byline{display:block;font-size:var(--fs-cap);font-weight:600;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:1px;}
+  .beta-badge{flex:none;align-self:flex-start;margin-top:3px;font-size:var(--fs-cap);font-weight:800;
+    letter-spacing:.11em;color:var(--muted);border:1px solid var(--line);background:var(--band);
+    border-radius:999px;padding:2px 7px;}
+  .gate-ver{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);}
+  @media (max-width:560px){ .lockup{gap:8px;} }
   /* code-stroke worksheet */
   .cs-banner{border:1px solid var(--gold);background:var(--gold-bg);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:var(--fs-meta);margin:10px 0;}
   .cs-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px;}
@@ -271,8 +284,15 @@
 <body>
 <div id="gate" class="gate">
   <div class="gate-card">
-    <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
-    <p class="gate-sub">Teaching prototype — access for invited testers</p>
+    <div class="lockup">
+      <span class="lockup-mark" data-brand-mark></span>
+      <div class="lockup-txt">
+        <span class="byline">Wearne's</span>
+        <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
+    </div>
+      <span class="beta-badge">BETA</span>
+    </div>
+    <p class="gate-sub">Teaching prototype — access for invited testers<br><span class="gate-ver" data-brand-version></span></p>
     <form id="gate-form" autocomplete="off">
       <label class="gate-lbl">Access passphrase
         <input type="password" id="gate-pass" autocomplete="off" autofocus>
@@ -289,7 +309,14 @@
   <div class="wrap">
     <header>
       <div>
-        <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
+        <div class="lockup">
+        <span class="lockup-mark" data-brand-mark></span>
+        <div class="lockup-txt">
+          <span class="byline">Wearne's</span>
+          <h1 class="wordmark"><span class="n">NEURO</span><span class="l">LOCALISER</span></h1>
+        </div>
+        <span class="beta-badge">BETA</span>
+      </div>
         <p class="subtitle">Reason through the neurological exam the way a neurologist does — <b>localise</b> the lesion, understand <b>why</b>, and know <b>what to do next</b>.</p>
       </div>
       <div class="head-right">

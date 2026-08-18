@@ -1,3 +1,4 @@
+import { VERSION, PRODUCT_NAME } from "./brand.js";
 // feedback.js — the "Report a problem" flow. A tester's report is reproducible: it carries the exact case
 // link + the top localisation result + the findings entered. Two delivery modes (config.mode):
 //   "mailto" — opens the tester's mail client, pre-filled with the case context + the curated question
@@ -48,7 +49,7 @@ export function buildFeedbackURL(data = {}, config = FEEDBACK_CONFIG) {
 
 export function buildFeedbackMailto(data = {}, email = FEEDBACK_EMAIL) {
   const body = [
-    "Thanks for testing NeuroLocaliser — this takes about a minute.",
+    `Thanks for testing ${PRODUCT_NAME} (v${VERSION}) — this takes about a minute.`,
     "Please do NOT include any patient identifiers.",
     "",
     "— Case context (auto-filled, please keep) —",
@@ -61,7 +62,7 @@ export function buildFeedbackMailto(data = {}, email = FEEDBACK_EMAIL) {
     "",
     "9. Happy to be contacted for follow-up? Reply from your own address if so.",
   ].join("\n");
-  return `mailto:${email}?subject=${encodeURIComponent("NeuroLocaliser feedback")}&body=${encodeURIComponent(body)}`;
+  return `mailto:${email}?subject=${encodeURIComponent(`${PRODUCT_NAME} feedback (v${VERSION})`)}&body=${encodeURIComponent(body)}`;
 }
 
 // The href the app actually uses — mailto or form per config.mode.
