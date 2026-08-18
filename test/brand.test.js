@@ -58,6 +58,11 @@ const TERRA_ALLOWED = [
   ".out-head",                         // the focal answer card's rule — THE answer
   ".neuraxis .nx-node.sel .nx-dot",    // the selected lesion on the diagram — THE answer
   ".neuraxis .nx-node.sel .nx-label",
+  // The selected PATHOLOGY (spec 2026-08-18) — the same category as the selected lesion above. Once a
+  // cause is chosen the Next card's lower tiers are about that disease and nothing else, so the marker on
+  // the row, and the chip naming it, are THE answer in exactly the sense .out-head is.
+  ".cause.sel",                        // the selected cause row in the What card — THE answer
+  ".px-chip",                          // the chip naming it in the Next card — the same answer, restated
 ];
 {
   const style = CSS.slice(CSS.indexOf("<style>"), CSS.indexOf("</style>"));
