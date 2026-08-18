@@ -5,7 +5,7 @@ import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { causesFor, combinedCauses, canonicalKey, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
-import { nextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
+import { nextStepsFor, combinedNextSteps, pathologyNextStepsFor } from "../src/data/nextSteps.js";
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
 import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
@@ -759,7 +759,9 @@ function nextCard(site, r, list) {
   // S.pinned MUST be passed — see the note in whatCard().
   const { sites } = combinedSites(r, list, S.pinned);
   const combined = sites.length >= 2 && S.scope === "all";
-  const nx = combined ? combinedNextSteps(sites) : nextStepsFor(site);
+  // Selection is single-site only: "whose pathology?" has no honest answer across a multifocal set, so the
+  // combined view ignores S.selectedPathology rather than picking one site's arbitrarily.
+  const nx = combined ? combinedNextSteps(sites) : pathologyNextStepsFor(site, S.selectedPathology || null);
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
   return card(cap, nextBlock(nx, combined), "next");
 }
@@ -771,17 +773,30 @@ function nextCard(site, r, list) {
 function nextBlock(nx, combined) {
   const urgTint = nx.urgency === "emergency" ? "--red" : nx.urgency === "urgent" ? "--gold" : "--faint";
   const urgLabel = nx.urgency === "emergency" ? "EMERGENCY" : nx.urgency === "urgent" ? "URGENT" : "routine";
-  const tier = (title, items) => (items && items.length)
-    ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
+  // `scope` tags which tiers the selection actually changed. NOT dimming: opacity reads as "disabled"
+  // rather than "unaffected", and these tiers are live and correct — they are simply site-level, because
+  // they are what you do BEFORE the cause is known and what identifies it.
+  const tier = (title, items, scope) => (items && items.length)
+    ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}${scope ? `<span class="ns-scope">— ${esc(scope)}</span>` : ""}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
+  const px = !combined && nx.pathology;
+  const pxHead = px
+    ? `<div class="px-line">Plan for: <button class="px-chip" data-px="${esc(nx.pathology)}" title="Clear the selected pathology">${esc(nx.pathology)} <span class="px-x" aria-hidden="true">×</span></button></div>`
+    : "";
+  // The honest fallback (spec 2026-08-18): an uncurated pathology shows the SITE plan and says so, rather
+  // than deriving generic content to fill the gap.
+  const pxFallback = px && !nx.pathologyCurated
+    ? `<p class="derived">General plan for this site — not specific to ${esc(nx.pathology)}.</p>` : "";
   const provenance = combined
     ? `<p class="derived">Merged from each site's individual workup plan — see "This site" for any one site's own tiers.</p>`
     : (nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`);
   return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
-    ${tier("Immediate / bedside", nx.immediate)}
-    ${tier("First-line investigations", nx.investigations)}
-    ${tier("Confirmatory / specialist", nx.confirmatory)}
-    ${tier("Monitoring / safety-netting", nx.monitoring)}
+    ${pxHead}
+    ${tier("Immediate / bedside", nx.immediate, px ? "site" : "")}
+    ${tier("First-line investigations", nx.investigations, px ? "site" : "")}
+    ${pxFallback}
+    ${tier("Confirmatory / specialist", nx.confirmatory, px && nx.pathologyCurated ? nx.pathology : "")}
+    ${tier("Monitoring / safety-netting", nx.monitoring, px && nx.pathologyCurated ? nx.pathology : "")}
     ${provenance}`;
 }
 
