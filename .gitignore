@@ -9,3 +9,6 @@ npm-debug.log*
 *.log
 .vscode/
 .idea/
+
+# Superpowers session scratch (brainstorm mockups, sdd state)
+.superpowers/
