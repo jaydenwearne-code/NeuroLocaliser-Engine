@@ -30,12 +30,21 @@ const dz = (name, { confirmatory = [], monitoring = [], urgency = null, referral
 
 // Exact synonyms only — two spellings of ONE disease that must share one plan. NOT a place to merge
 // related-but-different entities; the no-two-identical-plans invariant is what keeps that honest.
-export const PATHOLOGY_ALIAS = {};
+export const PATHOLOGY_ALIAS = {
+  // Two spellings of ONE disease, at DISJOINT sets of sites (31 keys vs 6), which is exactly how the
+  // duplicate survived the causes sweep unnoticed. The plan is authored under "Demyelination" and the MS
+  // spelling resolves onto it, so the two can never drift apart into two half-maintained workups.
+  "Demyelination (MS)": "Demyelination",
+};
 
 // REVIEW STATUS. Content is authored here and held for the owner's (a clinician's) sign-off before it is
 // relied on, the same gate every other clinical layer in this repo passed through.
 //   ✅ Round 1 SIGNED OFF 2026-08-18 — posterior circulation stroke + the infective six.
-//   ⚠  Round 2 awaiting review — the neoplastic seven.
+//   ✅ Round 2 SIGNED OFF 2026-08-18 — the neoplastic seven.
+//   ✅ Round 3 SIGNED OFF 2026-08-18 — the inflammatory / vascular / metabolic nine, plus the MS alias.
+//
+// The first tranche is therefore COMPLETE and fully reviewed: 24 plans + 1 alias, 267 of 1286 rows (21%).
+// Tranche 2 (the remaining 831 pathologies) is a separate project and is held to this same gate.
 export const PATHOLOGY_NEXT = {
   // ---- PROMOTED INTO TRANCHE 1 ON CLINICAL GROUNDS (owner ruling, 2026-08-18) ----
   // Only 2 host sites, so reuse count would have left it until tranche 3. It is nonetheless the app's
@@ -251,6 +260,341 @@ export const PATHOLOGY_NEXT = {
       skull_base_petrous_apex: {
         level: "eye abduction and facial sensation",
         flavour: "petrous apex involvement reproduces Gradenigo's triad, and here it is infective rather than neoplastic",
+      },
+    },
+  }),
+
+  // ---- INFLAMMATORY / VASCULAR / METABOLIC TRANCHE (2026-08-18) ----
+  "Demyelination": dz("Demyelination", {
+    confirmatory: [
+      "MRI BRAIN AND WHOLE SPINE with contrast — dissemination in SPACE needs both, and an enhancing lesion alongside a non-enhancing one gives dissemination in TIME on a single scan",
+      "MRI {level} — {flavour}",
+      "CSF for oligoclonal bands, compared against a PAIRED serum sample: bands present in CSF and not in serum are what count, and they supply dissemination in time where imaging alone falls short",
+      "Serum AQP4 and MOG antibodies to exclude the mimics BEFORE committing to a diagnosis of multiple sclerosis — they are different diseases with different treatments, and some MS therapies make NMOSD worse",
+      "Visual evoked potentials where a second, clinically silent lesion would change the diagnosis",
+    ],
+    monitoring: [
+      "Distinguish a true RELAPSE from a pseudo-relapse: a deficit re-emerging with heat, infection or fatigue (Uhthoff's phenomenon) is old damage unmasked, not new inflammation, and treating it as a relapse is a common error",
+      "Track {level} against the documented baseline — a relapse is defined by new or worsening symptoms lasting more than 24 hours in the absence of fever",
+      "SAFETY NET: a FIRST presentation already disseminated in space needs early specialist review — the window in which disease-modifying treatment most changes the long-term course is early, and it is easily lost to a routine referral",
+      "Ask about the symptoms patients do not volunteer: bladder function, fatigue and mood, which affect quality of life more than the motor deficit does",
+    ],
+    urgency: "urgent",
+    referral: "Neurology / multiple sclerosis service",
+    bySite: {
+      cord_lateral: {
+        level: "the whole cord and brain",
+        flavour: "a SHORT-segment, dorsolateral plaque spanning fewer than two vertebral bodies — a LONGITUDINALLY EXTENSIVE lesion is not typical MS and should redirect you to NMOSD or MOG antibody disease",
+      },
+      cord_posterior: {
+        level: "the whole cord and brain",
+        flavour: "a dorsal-column plaque, often with Lhermitte's phenomenon — check B12 too, since subacute combined degeneration occupies the same columns",
+      },
+      subcortex_optic_radiation: {
+        level: "brain, with FLAIR and diffusion",
+        flavour: "periventricular ovoid lesions lying perpendicular to the callosum (Dawson's fingers)",
+      },
+      visual_pathway_optic_tract: {
+        level: "brain and orbits with fat-saturated contrast views",
+        flavour: "an enhancing short segment of anterior visual pathway — and OCT of the retinal nerve fibre layer, which quantifies axonal loss the fundus cannot show",
+      },
+      corpus_callosum_splenium: {
+        level: "brain, with sagittal FLAIR",
+        flavour: "callosal-septal interface lesions, which are close to specific for demyelination and are missed on axial images alone",
+      },
+      pons_lateral: {
+        level: "brain, with thin brainstem slices",
+        flavour: "a brainstem plaque, which is where an internuclear ophthalmoplegia in a young patient comes from",
+      },
+      // ---- keys reached through the "Demyelination (MS)" alias ----
+      medulla_lateral: {
+        level: "brain and whole spine",
+        flavour: "a medullary plaque — and if it sits at the area postrema with intractable hiccup or vomiting, that is an NMOSD archetype rather than MS",
+      },
+      cord_hemi: {
+        level: "the whole cord and brain",
+        flavour: "a hemicord plaque producing a partial Brown-Séquard picture, which in a young patient is demyelinating far more often than compressive",
+      },
+    },
+  }),
+
+  "Vasculitic mononeuritis multiplex": dz("Vasculitic mononeuritis multiplex", {
+    confirmatory: [
+      "Nerve conduction studies and EMG across MULTIPLE limbs — the diagnosis is a MULTIFOCAL, ASYMMETRIC, AXONAL process picking off named nerves one at a time, and studying only the symptomatic limb cannot show that",
+      "NERVE BIOPSY (usually sural, ideally with adjacent muscle) is the definitive test where the diagnosis is not already secure from a systemic biopsy — take it from a nerve that is affected but not yet end-stage",
+      "Bloods for the systemic disease behind it: ANCA, ANA, ENA, complement, cryoglobulins, rheumatoid factor, ESR and CRP, plus hepatitis B and C and HIV serology",
+      "Look for the ORGAN involvement that outranks the nerve — urinalysis and renal function for glomerulonephritis, chest imaging for pulmonary haemorrhage; {flavour}",
+    ],
+    monitoring: [
+      "SAFETY NET: this is a systemic disease presenting through a nerve. Renal or pulmonary involvement is what threatens life, and it can advance while attention is on the limb — check urinalysis at every review, not just at diagnosis",
+      "Map the deficits by NAMED NERVE at each visit, including {level}, so that a new nerve is recognised as disease activity rather than attributed to the old lesion",
+      "Painful, stepwise accumulation over days to weeks is the expected course; a symmetric length-dependent pattern emerging later means confluence, not resolution",
+    ],
+    urgency: "urgent",
+    referral: "Neurology with rheumatology; nephrology urgently if there is any renal involvement",
+    bySite: {
+      nerve_peroneal_common: {
+        level: "ankle dorsiflexion and eversion",
+        flavour: "a painful foot drop that is NOT at the fibular head on imaging, and with no history of compression, is the classic first presentation",
+      },
+      nerve_ulnar_elbow: {
+        level: "the intrinsic hand muscles and the ulnar sensory territory",
+        flavour: "an ulnar palsy that appeared abruptly and painfully, rather than gradually, argues against a compressive lesion at the elbow",
+      },
+      nerve_sural: {
+        level: "sensation over the lateral foot",
+        flavour: "the sural nerve is also the usual biopsy target, so document its function before biopsy is considered",
+      },
+      nerve_radial_spiral_groove: {
+        level: "wrist and finger extension, with brachioradialis",
+        flavour: "a wrist drop without the classic Saturday-night history, especially if painful, should raise vasculitis rather than compression",
+      },
+      nerve_femoral: {
+        level: "knee extension and the knee jerk",
+        flavour: "a painful femoral neuropathy raises diabetic radiculoplexus neuropathy as the main competing diagnosis — the systemic screen is what separates them",
+      },
+    },
+  }),
+
+  "Intracerebral haemorrhage": dz("Intracerebral haemorrhage", {
+    confirmatory: [
+      "NON-CONTRAST CT is the immediate test and is diagnostic — this is the one situation where CT beats MRI for the primary question",
+      "CT ANGIOGRAPHY in the same sitting: it looks for an underlying vascular lesion and for contrast extravasation within the haematoma, which predicts expansion",
+      "Establish anticoagulant and antiplatelet exposure IMMEDIATELY — reversal is time-critical and is the single most modifiable factor in the first hour",
+      "Delayed MRI with blood-sensitive sequences once stable, to find the cause the acute scan cannot show: lobar microbleeds suggesting amyloid angiopathy, an underlying tumour, or a cavernoma — {flavour}",
+    ],
+    monitoring: [
+      "SAFETY NET: haematoma EXPANSION happens in the first hours and is the commonest cause of early deterioration — a fall in conscious level means repeat imaging immediately, not observation",
+      "Blood pressure, conscious level and {level} on a frequent, defined schedule; intensive early blood-pressure lowering is standard practice and is a treatment, not a bystander observation",
+      "Swallow screen before anything by mouth, and monitor for seizures, which are more frequent with lobar than deep haemorrhage",
+      "A LOBAR haemorrhage in an older patient raises cerebral amyloid angiopathy, which changes future anticoagulation decisions permanently — flag it for the discharge summary rather than leaving it to be rediscovered",
+    ],
+    urgency: "emergency",
+    referral: "Acute stroke pathway with neurosurgery; critical care if conscious level is falling",
+    bySite: {
+      cortex_mca_superior: {
+        level: "face and arm power and speech output",
+        flavour: "a lobar location in this territory raises amyloid angiopathy in an older patient and an underlying lesion in a younger one",
+      },
+      cortex_insula: {
+        level: "conscious level, and blood pressure and rhythm",
+        flavour: "insular haemorrhage is associated with autonomic and cardiac instability out of proportion to the deficit",
+      },
+      cortex_parietal: {
+        level: "cortical sensation, neglect and fields",
+        flavour: "neglect can make the patient appear unconcerned and mask deterioration — do not rely on their report of change",
+      },
+      cortex_hand_knob: {
+        level: "isolated hand function, which mimics a peripheral nerve lesion",
+        flavour: "a small haemorrhage here produces a strikingly focal deficit, and the cause matters more than the volume",
+      },
+    },
+  }),
+
+  "Radiation plexopathy": dz("Radiation plexopathy", {
+    confirmatory: [
+      "EMG looking for MYOKYMIC DISCHARGES — myokymia is the most useful single discriminator, being characteristic of radiation injury and not of tumour infiltration",
+      "MRI of the plexus with contrast: radiation change is typically diffuse thickening with T2 signal change and LITTLE enhancement, whereas an infiltrating tumour tends to form an enhancing mass",
+      "Establish the RADIOTHERAPY FIELD, dose and date, and check the plexus lay within it — the latency is typically months to many years, so the treatment is often not volunteered",
+      "PET-CT where the distinction from recurrence remains unresolved, since the management diverges completely — {flavour}",
+    ],
+    monitoring: [
+      "The discriminating clinical difference is PAIN: severe early pain favours tumour recurrence, while radiation plexopathy is characteristically more numb and weak than painful. A Horner's syndrome also favours tumour",
+      "Track {level} — radiation plexopathy is typically slowly progressive and irreversible, so the realistic goal is function and pain, not reversal",
+      "SAFETY NET: worsening pain, a new Horner's syndrome, or rapid progression should send you back to imaging for recurrence rather than being attributed to the radiation",
+      "Refer early for rehabilitation, orthotics and lymphoedema management, which do more for function here than further investigation does",
+    ],
+    urgency: "routine",
+    referral: "Neurology with the treating oncology team; rehabilitation medicine and pain services",
+    bySite: {
+      plexus_middle_trunk: {
+        level: "elbow extension and wrist extension",
+        flavour: "upper and middle plexus involvement after breast radiotherapy favours radiation injury, whereas tumour recurrence characteristically takes the LOWER plexus",
+      },
+      plexus_lower_trunk: {
+        level: "the small muscles of the hand and the medial forearm",
+        flavour: "LOWER-trunk involvement with pain and a Horner's syndrome favours tumour recurrence and must be excluded before accepting radiation injury",
+      },
+      plexus_lumbar_plexus: {
+        level: "hip flexion and knee extension",
+        flavour: "after pelvic radiotherapy the competing diagnoses are recurrence and, where the picture is bilateral, radiation-induced damage to the cauda equina",
+      },
+      plexus_sacral_plexus: {
+        level: "ankle movement and sphincter function",
+        flavour: "sacral involvement after pelvic radiotherapy warrants explicit questions about bladder, bowel and sexual function, which are rarely volunteered",
+      },
+    },
+  }),
+
+  "Wernicke's encephalopathy": dz("Wernicke's encephalopathy", {
+    confirmatory: [
+      "THIS IS A CLINICAL DIAGNOSIS AND TREATMENT COMES FIRST — parenteral thiamine is given on suspicion, BEFORE any glucose-containing fluid, because a glucose load in a thiamine-deplete patient can precipitate the encephalopathy",
+      "MRI shows symmetrical signal change in the mammillary bodies, the periaqueductal grey and the medial thalami — but a NORMAL MRI DOES NOT EXCLUDE IT, and waiting for the scan is the error that causes the harm",
+      "Do not wait for thiamine levels or red cell transketolase: the results arrive far too late to guide the decision",
+      "Look for the deficiency's context beyond alcohol — hyperemesis, bariatric surgery, prolonged vomiting, malignancy and malnutrition all produce it, and the non-alcoholic cases are the ones that get missed",
+    ],
+    monitoring: [
+      "The classic triad is present in a MINORITY — do not require confusion, ophthalmoplegia and ataxia together before treating; any one of them with a plausible history is enough",
+      "Track {level} — {flavour} — and reassess after treatment begins, since the eye signs improve first and fastest and their improvement supports the diagnosis",
+      "SAFETY NET: untreated or undertreated, this becomes KORSAKOFF SYNDROME, which is largely irreversible. Under-dosing and stopping early are as damaging as not treating",
+      "Replace magnesium as well: thiamine-dependent enzymes need it, and thiamine may not work while magnesium is low",
+    ],
+    urgency: "emergency",
+    referral: "Acute medicine and neurology; alcohol liaison where relevant",
+    bySite: {
+      thalamus_arousal_paramedian: {
+        level: "conscious level and orientation",
+        flavour: "paramedian thalamic involvement is what produces the confusion and drowsiness, and it is the component that recovers least",
+      },
+      skull_base_vi_cisternal: {
+        level: "eye abduction, and the eyes for nystagmus",
+        flavour: "a bilateral sixth-nerve palsy with nystagmus in this context is Wernicke's until treated otherwise",
+      },
+      pontomesencephalic_tegmentum: {
+        level: "eye movements in all directions, and gait",
+        flavour: "periaqueductal involvement gives the ophthalmoplegia — the sign that responds most visibly to treatment",
+      },
+      hypothalamus_thermoregulatory: {
+        level: "temperature, and autonomic stability",
+        flavour: "hypothalamic involvement can give hypothermia and hypotension, which are easily attributed to something else in an unwell patient",
+      },
+    },
+  }),
+
+  "Brainstem abscess or tuberculoma": dz("Brainstem abscess or tuberculoma", {
+    confirmatory: [
+      "MRI with contrast AND diffusion-weighted imaging — a pyogenic abscess restricts diffusion, while a tuberculoma more often shows central T2 hypointensity with rim enhancement",
+      "Hunt the source and the systemic disease: blood cultures, chest imaging, HIV testing, interferon-gamma release assay, and echocardiography for endocarditis",
+      "CSF where it is safe to obtain it, for mycobacterial PCR and culture — but weigh the mass effect first",
+      "BIOPSY IS HAZARDOUS IN THE BRAINSTEM, so treatment is frequently empirical and guided by SERIAL IMAGING; involve neurosurgery and infectious diseases together before committing — {flavour}",
+    ],
+    monitoring: [
+      "SAFETY NET: brainstem mass lesions threaten the airway and conscious level. Deteriorating swallow, a falling conscious level, or new bilateral long-tract signs need immediate reimaging and critical-care review",
+      "Track {level} at defined intervals, since response is judged on serial examination as much as on serial scans",
+      "Paradoxical ENLARGEMENT of a tuberculoma early in treatment is well recognised and is not automatically treatment failure — but it is a decision to make with specialist input, not an assumption",
+      "Monitor for hydrocephalus, which complicates tuberculous disease in this region and is treatable",
+    ],
+    urgency: "emergency",
+    referral: "Neurosurgery and infectious diseases jointly, with acute neurology",
+    bySite: {
+      pons_medial: {
+        level: "eye movements, facial power and swallow",
+        flavour: "a medial pontine lesion sits next to the sixth and seventh nuclei and the corticospinal tract, so a small increase in size produces a large change in deficit",
+      },
+      medulla_medial: {
+        level: "tongue movement, swallow and respiratory pattern",
+        flavour: "medial medullary involvement threatens respiratory drive and the airway earlier than the deficit suggests",
+      },
+      midbrain_medial: {
+        level: "the third nerve, conscious level and pupils",
+        flavour: "a midbrain lesion here risks obstruction at the aqueduct — watch for hydrocephalus as well as for the mass itself",
+      },
+      guillain_mollaret_rubral: {
+        level: "tremor, palate and eye movements",
+        flavour: "a lesion in the triangle may declare itself late, as palatal tremor developing months after the acute illness",
+      },
+    },
+  }),
+
+  // Listed in CAUSES as a MIMIC — not a lesion at this site at all. The workup reflects that: the job is to
+  // exclude it at the bedside in seconds, before any of the structural pathway is embarked on.
+  "Hypoglycaemia": dz("Hypoglycaemia", {
+    confirmatory: [
+      "CAPILLARY BLOOD GLUCOSE, IMMEDIATELY — before imaging, before bloods, before anything else. It takes seconds, it is the one fully reversible cause of a focal deficit, and it is missed by starting with the CT",
+      "A LABORATORY glucose to confirm the capillary reading, drawn before treatment wherever that does not delay it",
+      "Where hypoglycaemia is confirmed and unexplained, take the diagnostic samples AT THE TIME OF the low glucose — insulin, C-peptide, and a sulfonylurea screen — because after treatment the opportunity is gone",
+      "Establish the cause: diabetes treatment, alcohol, liver disease, adrenal insufficiency, sepsis, or exogenous insulin",
+    ],
+    monitoring: [
+      "SAFETY NET: hypoglycaemia can produce a DENSE FOCAL DEFICIT that mimics a stroke exactly, including hemiplegia and aphasia — and it is an explicit exclusion before thrombolysis. Treat it and re-examine before committing to the stroke pathway",
+      "Recheck the glucose after treatment and again later: sulfonylurea and long-acting insulin hypoglycaemia RECURS after an initial correction, and patients are discharged into that relapse",
+      "If {level} does not recover once the glucose is corrected, the deficit is structural and the stroke pathway resumes — a corrected glucose does not close the case",
+      "{flavour}",
+    ],
+    urgency: "emergency",
+    referral: "Acute medicine; diabetes team where the cause is treatment-related",
+    bySite: {
+      cortex_mca: {
+        level: "the full hemispheric deficit",
+        flavour: "profound hypoglycaemia has a recognised predilection for producing hemispheric and cortical deficits, so the resemblance to a large-vessel stroke is close",
+      },
+      subcortex_internal_capsule: {
+        level: "the pure motor deficit",
+        flavour: "a dense pure hemiparesis with a normal conscious level is an entirely plausible presentation of hypoglycaemia",
+      },
+      cortex_aphasia_global: {
+        level: "language, once the patient is able to cooperate",
+        flavour: "isolated aphasia from hypoglycaemia is well described and is regularly thrombolysed before the glucose is checked",
+      },
+    },
+  }),
+
+  "Malignant infiltration or vertebral metastasis": dz("Malignant infiltration or vertebral metastasis", {
+    confirmatory: [
+      "MRI the WHOLE SPINE with contrast, not the symptomatic level alone — disease is frequently multi-level, and the cervical cord leaves no margin for a missed second lesion",
+      "CT chest, abdomen and pelvis for a primary, with dedicated APICAL views: a lower cervical root deficit with a Horner's syndrome is a Pancoast tumour until excluded",
+      "Myeloma screen alongside it — serum and urine electrophoresis with free light chains, calcium, renal function and ESR",
+      "Where the plexus rather than the root may be involved, EMG helps: {flavour}",
+    ],
+    monitoring: [
+      "SAFETY NET: at cervical levels this threatens the CORD, and cord compression here affects all four limbs and the diaphragm. Any long-tract sign, any sensory level, or any sphincter change is a same-day emergency",
+      "Track {level}, and ask specifically about neck pain worse at night and on lying flat — the history that precedes compression by weeks",
+      "Check calcium: hypercalcaemia presents as confusion and constipation rather than as anything neurological, and is readily treatable",
+      "Respiratory function where C3-C5 roots are involved, since diaphragmatic weakness is easy to miss until it is severe",
+    ],
+    urgency: "urgent",
+    referral: "Oncology with spinal surgery; haematology where myeloma is likely",
+    bySite: {
+      root_c5: {
+        level: "shoulder abduction, the biceps jerk, and the diaphragm",
+        flavour: "myokymia would favour radiation injury over infiltration in a previously irradiated field",
+      },
+      root_c8: {
+        level: "the small muscles of the hand, and the sympathetic supply for a Horner's syndrome",
+        flavour: "lower cervical involvement with a Horner's syndrome points to an apical lung tumour invading the lower trunk",
+      },
+      root_c4: {
+        level: "the diaphragm and shoulder elevation, with respiratory function formally",
+        flavour: "at this level the phrenic supply is the finding that matters most and is the least likely to be tested",
+      },
+      root_c3: {
+        level: "the diaphragm and neck flexion, with vital capacity",
+        flavour: "a high cervical lesion threatens ventilation before it threatens the limbs",
+      },
+    },
+  }),
+
+  "Neuralgic amyotrophy": dz("Neuralgic amyotrophy", {
+    confirmatory: [
+      "The HISTORY is the diagnosis: abrupt, severe shoulder-girdle pain lasting days to weeks, with weakness appearing AS THE PAIN SUBSIDES. That sequence is what separates it from a compressive lesion, in which pain and weakness arrive together",
+      "EMG and nerve conduction studies, but timed — changes take about three weeks to appear, so a study done immediately can be falsely reassuring",
+      "MRI of the plexus and cervical spine to exclude a structural lesion, particularly where the picture is atypical or does not begin to recover",
+      "High-resolution ULTRASOUND or MRI of the affected nerve may show the hourglass-like constrictions now recognised in this condition, which can change the surgical conversation — {flavour}",
+    ],
+    monitoring: [
+      "Examine {level} specifically, including scapular winging with the arms pushed against a wall — the pattern is patchy and involves individual nerves rather than a whole trunk, and winging is missed unless it is looked for",
+      "Recovery is usual but SLOW, over months to years, and is often incomplete; set that expectation early rather than at the first disappointing review",
+      "Refer to physiotherapy early to protect shoulder range — a frozen shoulder on top of the weakness is a preventable second problem",
+      "SAFETY NET: recurrent attacks, or a family history of them, raises HEREDITARY neuralgic amyotrophy and warrants genetic referral; progressive rather than recovering weakness should send you back to imaging",
+    ],
+    urgency: "routine",
+    referral: "Neurology, with physiotherapy; peripheral nerve surgery where constrictions are demonstrated",
+    bySite: {
+      nerve_suprascapular: {
+        level: "external rotation and the supraspinatus and infraspinatus for wasting",
+        flavour: "the suprascapular nerve is the most commonly affected, and isolated external-rotation weakness is a characteristic presentation",
+      },
+      nerve_musculocutaneous: {
+        level: "elbow flexion and the biceps jerk",
+        flavour: "isolated biceps weakness after severe shoulder pain fits this far better than any single root lesion",
+      },
+      plexus_posterior_cord: {
+        level: "shoulder abduction, elbow extension and wrist extension together",
+        flavour: "involvement spanning a cord rather than one nerve is still compatible, but makes excluding a structural lesion more important",
+      },
+      root_c7: {
+        level: "elbow extension and the triceps jerk",
+        flavour: "a root-like distribution should prompt cervical imaging before the diagnosis is accepted",
       },
     },
   }),
