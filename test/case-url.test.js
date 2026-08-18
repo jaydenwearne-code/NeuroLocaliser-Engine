@@ -53,5 +53,26 @@ ok("accepts the stroke mode", decodeCase("#m=stroke", {}).mode === "stroke");
      filtered.pinned instanceof Set && filtered.pinned.size === 1);
 }
 
+// --- selected pathology (spec 2026-08-18) ---
+// A shared case must reproduce the pathology view, not just the lesion — otherwise a tester sending a
+// bug report about the Next card sends a link that does not show what they were looking at.
+{
+  const enc = encodeCase({ tokens: new Set(["weak_leg@left"]), selected: "cord_transverse",
+                           selectedPathology: "Spinal epidural abscess" });
+  ok("the selected pathology is encoded", /(^|&)px=/.test(enc));
+
+  const dec = decodeCase("#" + enc, { validPathologies: new Set(["Spinal epidural abscess"]) });
+  ok("it round-trips", dec.selectedPathology === "Spinal epidural abscess");
+
+  const bad = decodeCase("#px=Not%20A%20Real%20Disease",
+                         { validPathologies: new Set(["Spinal epidural abscess"]) });
+  ok("an unknown pathology is dropped, not thrown on", bad.selectedPathology === undefined);
+
+  ok("with no validPathologies set, any value is accepted",
+     decodeCase("#px=Anything").selectedPathology === "Anything");
+
+  ok("no pathology means no px key", !/px=/.test(encodeCase({ tokens: new Set(["weak_leg@left"]) })));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

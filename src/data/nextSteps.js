@@ -11,6 +11,7 @@
 // its optional `extra` ({ immediate, confirmatory, monitoring }).
 import { expectedFindings } from "../engine/forward.js";
 import { CAUSES } from "./causes.js";
+import { pathologyPlanFor } from "./pathologyNextSteps.js";
 
 const ns = (investigations, urgency, referral, extra = {}) => ({ investigations, urgency, referral, ...extra });
 
@@ -2273,6 +2274,30 @@ function deriveMonitoring(site, urgency) {
   return out;
 }
 
+// ---- urgency resolution when a pathology is selected (spec 2026-08-18) ----
+// Three inputs, in order: the curated pathology urgency, else the site's, and beneath BOTH a floor derived
+// from `red: true`. The floor may RAISE urgency and never caps it — a curated plan may legitimately sit
+// below the site's badge (a chronic degenerative cause at an emergency-badged site), but nothing flagged
+// as a must-not-miss may ever render as routine. 377 sites carry a red cause and 76 of them badge routine
+// today; BPPV vs posterior circulation stroke is the sharpest of them.
+const URGENCY_RANK = { emergency: 3, urgent: 2, routine: 1 };
+const RED_FLOOR = "urgent";
+
+function causeEntry(site, causeName) {
+  const key = CAUSES[site.id] ? site.id : `${site.level}_${site.part}`;
+  return (CAUSES[key] || []).find(c => c.name === causeName) || null;
+}
+
+export function resolveUrgency(site, causeName) {
+  const siteUrgency = nextStepsFor(site).urgency || "routine";
+  if (!causeName) return siteUrgency;
+  const plan = pathologyPlanFor(causeName, site);
+  const chosen = (plan && plan.urgency) || siteUrgency;
+  const entry = causeEntry(site, causeName);
+  if (!entry || !entry.red) return chosen;
+  return URGENCY_RANK[chosen] >= URGENCY_RANK[RED_FLOOR] ? chosen : RED_FLOOR;
+}
+
 // ---- public API ----
 export function nextStepsFor(site) {
   const key = NEXT[site.id] ? site.id : `${site.level}_${site.part}`;
@@ -2287,6 +2312,32 @@ export function nextStepsFor(site) {
     urgency: base.urgency,
     referral: base.referral,
     curated: base.curated,
+  };
+}
+
+// The same plan, narrowed to ONE pathology (spec 2026-08-18). Immediate and first-line stay site-level —
+// they are performed before the cause is known, and are what identify it. Confirmatory, monitoring,
+// urgency and referral become pathology-level where a plan is authored.
+//
+// Where no plan is authored the lower tiers fall back to the SITE plan and `pathologyCurated` goes false,
+// so the card can label it honestly ("General plan for this site — not specific to X"). It never derives
+// generic pathology content: the generic sieve filler was deleted engine-wide on 2026-08-11 and must not
+// reappear in another shape.
+//
+// `causeName: null` returns exactly what nextStepsFor() returns, so the card has ONE code path and the
+// no-selection view cannot drift from the pre-2026-08-18 behaviour.
+export function pathologyNextStepsFor(site, causeName) {
+  const base = nextStepsFor(site);
+  if (!causeName) return { ...base, pathology: null, pathologyCurated: false };
+  const plan = pathologyPlanFor(causeName, site);
+  return {
+    ...base,
+    confirmatory: plan ? plan.confirmatory : base.confirmatory,
+    monitoring:   plan ? plan.monitoring   : base.monitoring,
+    urgency:      resolveUrgency(site, causeName),
+    referral:     (plan && plan.referral) || base.referral,
+    pathology: causeName,
+    pathologyCurated: !!plan,
   };
 }
 

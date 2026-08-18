@@ -13,6 +13,7 @@ export function encodeCase(state) {
   if (state.course) p.set("c", state.course);
   if (state.mode && state.mode !== "localise") p.set("m", state.mode);
   if (state.selected) p.set("s", state.selected);
+  if (state.selectedPathology) p.set("px", state.selectedPathology);
   if (state.dominant && state.dominant !== "left") p.set("dom", state.dominant);
   if (state.sensoryLevel) p.set("sl", state.sensoryLevel);
   if (state.distalReach) p.set("dr", state.distalReach);
@@ -24,6 +25,7 @@ export function encodeCase(state) {
 export function decodeCase(hash, opts = {}) {
   const validFindings = opts.validFindings || null; // null = accept any finding id
   const validSites = opts.validSites || null;       // null = accept any site id
+  const validPathologies = opts.validPathologies || null; // null = accept any pathology name
   const out = {};
   let p;
   try { p = new URLSearchParams(String(hash || "").replace(/^#/, "")); } catch { return out; }
@@ -41,6 +43,8 @@ export function decodeCase(hash, opts = {}) {
   const cr = p.get("c"); if (cr && COURSE_IDS.has(cr)) out.course = cr;
   const m = p.get("m"); if (m === "localise" || m === "atlas" || m === "stroke") out.mode = m;
   const s = p.get("s"); if (s && (!validSites || validSites.has(s))) out.selected = s;
+  const px = p.get("px");
+  if (px && (!validPathologies || validPathologies.has(px))) out.selectedPathology = px;
   const dom = p.get("dom"); if (dom === "left" || dom === "right") out.dominant = dom;
   const sl = p.get("sl"); if (sl) out.sensoryLevel = sl;
   const dr = p.get("dr"); if (dr) out.distalReach = dr;

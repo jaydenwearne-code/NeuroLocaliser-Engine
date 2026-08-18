@@ -3,9 +3,9 @@ import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
-import { causesFor, combinedCauses, canonicalKey, CATEGORIES, TEMPO } from "../src/data/causes.js";
+import { causesFor, combinedCauses, canonicalKey, CAUSES, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
-import { nextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
+import { nextStepsFor, combinedNextSteps, pathologyNextStepsFor } from "../src/data/nextSteps.js";
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
 import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
@@ -47,21 +47,25 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), scope:"site",
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), selectedPathology:undefined, scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
 // ---- shareable case URLs: hydrate S from the URL hash on boot, keep the hash live on every change ----
 const VALID_FINDINGS = new Set(Object.keys(FINDINGS));
 const VALID_SITES = new Set(CANDIDATES.map(s => s.id));
+// Every cause name in the app — a hand-edited px= token that names no real pathology is dropped on
+// decode, exactly as an unknown finding or site id is.
+const VALID_PATHOLOGIES = new Set(Object.keys(CAUSES).flatMap(k => CAUSES[k].map(c => c.name)));
 
 function restoreFromURL() {
-  const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES });
+  const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES, validPathologies: VALID_PATHOLOGIES });
   if (st.tokens) S.tokens = st.tokens;
   if (st.onset) S.onset = st.onset;
   if (st.course) S.course = st.course;
   if (st.mode) S.mode = st.mode;
   if (st.selected) S.selected = st.selected;
+  if (st.selectedPathology) S.selectedPathology = st.selectedPathology;
   if (st.dominant) S.dominant = st.dominant;
   if (st.sensoryLevel) S.sensoryLevel = st.sensoryLevel;
   if (st.distalReach) S.distalReach = st.distalReach;
@@ -199,6 +203,7 @@ function loadExample(id) {
   S.onset = ex.onset || "";
   S.course = ex.course || "";
   S.selected = undefined;
+  S.selectedPathology = undefined;
   S.pinned = new Set();
   S.scope = "site";
   renderLocalise();
@@ -268,7 +273,20 @@ function renderResults() {
   wireCardControls();
   wireJumpLinks(el);
   const nx = el.querySelector(".neuraxis");
-  if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selected = g.dataset.k; renderResults(); };
+  if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selectedPathology = undefined; S.selected = g.dataset.k; renderResults(); };
+  // Selecting a cause narrows the Next card to that pathology; clicking the selected one clears it.
+  // Bound on BOTH cards: the What rows and the Next card's chip carry data-px, so one handler shape
+  // serves them and the chip's x needs no separate wiring. card() emits id="sec-<anchor>" (app.js:301).
+  for (const secId of ["sec-what", "sec-next"]) {
+    const sec = document.getElementById(secId);
+    if (!sec) continue;
+    sec.onclick = e => {
+      const row = e.target.closest("[data-px]"); if (!row) return;
+      const name = row.dataset.px;
+      S.selectedPathology = S.selectedPathology === name ? undefined : name;
+      renderResults();
+    };
+  }
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
   const dl = document.getElementById("difflist");
   if (dl) dl.onclick = e => {
@@ -281,6 +299,7 @@ function renderResults() {
     }
     const row = e.target.closest(".drow");
     if (!row) return;
+    S.selectedPathology = undefined;   // a pathology chosen at one lesion is meaningless at another
     S.selected = row.dataset.k;
     renderResults();
   };
@@ -680,9 +699,13 @@ function whatCard(site, r, list) {
 }
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
+// The row is SELECTABLE (spec 2026-08-18) — clicking it narrows the Next card to this pathology.
+// `--terra` on the selected row is a legitimate use of the identity colour: the selected pathology IS the
+// answer the Next card is now about.
 function renderCause(c) {
   const path = c.pathognomonic ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(c.pathognomonic)}</span></div>` : "";
-  return `<div class="cause"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
+  const on = S.selectedPathology === c.name;
+  return `<div class="cause${on?" sel":""}" data-px="${esc(c.name)}" role="button" tabindex="0" aria-pressed="${on}"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
 }
 
 function whatBlock(site) {
@@ -740,7 +763,9 @@ function nextCard(site, r, list) {
   // S.pinned MUST be passed — see the note in whatCard().
   const { sites } = combinedSites(r, list, S.pinned);
   const combined = sites.length >= 2 && S.scope === "all";
-  const nx = combined ? combinedNextSteps(sites) : nextStepsFor(site);
+  // Selection is single-site only: "whose pathology?" has no honest answer across a multifocal set, so the
+  // combined view ignores S.selectedPathology rather than picking one site's arbitrarily.
+  const nx = combined ? combinedNextSteps(sites) : pathologyNextStepsFor(site, S.selectedPathology || null);
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
   return card(cap, nextBlock(nx, combined), "next");
 }
@@ -752,17 +777,30 @@ function nextCard(site, r, list) {
 function nextBlock(nx, combined) {
   const urgTint = nx.urgency === "emergency" ? "--red" : nx.urgency === "urgent" ? "--gold" : "--faint";
   const urgLabel = nx.urgency === "emergency" ? "EMERGENCY" : nx.urgency === "urgent" ? "URGENT" : "routine";
-  const tier = (title, items) => (items && items.length)
-    ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
+  // `scope` tags which tiers the selection actually changed. NOT dimming: opacity reads as "disabled"
+  // rather than "unaffected", and these tiers are live and correct — they are simply site-level, because
+  // they are what you do BEFORE the cause is known and what identifies it.
+  const tier = (title, items, scope) => (items && items.length)
+    ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}${scope ? `<span class="ns-scope">— ${esc(scope)}</span>` : ""}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
+  const px = !combined && nx.pathology;
+  const pxHead = px
+    ? `<div class="px-line">Plan for: <button class="px-chip" data-px="${esc(nx.pathology)}" title="Clear the selected pathology">${esc(nx.pathology)} <span class="px-x" aria-hidden="true">×</span></button></div>`
+    : "";
+  // The honest fallback (spec 2026-08-18): an uncurated pathology shows the SITE plan and says so, rather
+  // than deriving generic content to fill the gap.
+  const pxFallback = px && !nx.pathologyCurated
+    ? `<p class="derived">General plan for this site — not specific to ${esc(nx.pathology)}.</p>` : "";
   const provenance = combined
     ? `<p class="derived">Merged from each site's individual workup plan — see "This site" for any one site's own tiers.</p>`
     : (nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`);
   return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
-    ${tier("Immediate / bedside", nx.immediate)}
-    ${tier("First-line investigations", nx.investigations)}
-    ${tier("Confirmatory / specialist", nx.confirmatory)}
-    ${tier("Monitoring / safety-netting", nx.monitoring)}
+    ${pxHead}
+    ${tier("Immediate / bedside", nx.immediate, px ? "site" : "")}
+    ${tier("First-line investigations", nx.investigations, px ? "site" : "")}
+    ${pxFallback}
+    ${tier("Confirmatory / specialist", nx.confirmatory, px && nx.pathologyCurated ? nx.pathology : "")}
+    ${tier("Monitoring / safety-netting", nx.monitoring, px && nx.pathologyCurated ? nx.pathology : "")}
     ${provenance}`;
 }
 

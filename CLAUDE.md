@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**59 test suites / 3432 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**67 test suites / 3895 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -426,9 +426,12 @@ red ✗ already meaning "contradicted by a normal finding".
 
 **THE COLOUR RULE — `--terra` means the product's identity, or THE answer. Nothing else.** It was on **32
 declarations** (nav pills, subtitles, mono tokens, selected rows, hovers, headings), which left it meaning
-nothing while sitting next to the red-flag colour it resembles. Now **4**, on an allowlist
-`test/brand.test.js` enforces (`.wordmark .l`, `.lockup-mark`, `.out-head`, and the two selected-node
-rules). It cannot creep back without someone justifying the addition.
+nothing while sitting next to the red-flag colour it resembles. Now **7**, on an allowlist
+`test/brand.test.js` enforces (`.wordmark .l`, `.lockup-mark`, `.out-head`, the two selected-node rules,
+and — added 2026-08-18 with the per-pathology layer — `.cause.sel` and `.px-chip`, the selected pathology
+and the chip naming it). It cannot creep back without someone justifying the addition: the guard caught a
+terracotta `:focus-visible` ring on the day it was written and that rule was deleted rather than
+allowlisted, since a focus ring is neither identity nor the answer.
 
 **Three defects this found, all of which were live:**
 1. In dark mode `--terra`, `--contra` and `--red` were **all `#e79075`** — the brand accent,
@@ -479,6 +482,84 @@ because nobody records 13 at the bedside.
 
 Spec/plan: `docs/superpowers/specs/2026-08-16-worked-examples-design.md`,
 `docs/superpowers/plans/2026-08-16-worked-examples.md`.
+
+## Per-pathology next steps (DONE 2026-08-18) — ✅ CLINICALLY SIGNED OFF
+
+**What it fixes.** The Next steps card was keyed by SITE, so it unioned every pathology that could produce
+a lesion there — useful while the cause is unknown, wrong once it is known, which is usually straight after
+the immediate steps. Found from a real defect the owner spotted: **entering leg weakness surfaced fundal
+photography**, because `ophthalmicImaging()` fires on the SITE (its predicted findings, its causes'
+raised-pressure mentions) rather than on anything the user entered.
+
+**Selecting a cause in the What card now narrows the lower half of the Next card to that disease.**
+
+**The tier split is the clinical idea:** the tiers divide by WHEN YOU KNOW THE CAUSE. Immediate/bedside and
+first-line investigations stay **site-level** — they are performed before the cause is known and are what
+IDENTIFY it. Confirmatory, monitoring, urgency and referral become **pathology-level**. With nothing
+selected the card is byte-identical to before (asserted at all 377 sites).
+
+**`src/data/pathologyNextSteps.js`** is content-only (imports nothing from the UI, nothing from
+`nextSteps.js`) so a clinician reviews one file. Keyed by pathology NAME with per-site interpolation via a
+`dz()` spine — the fifth use of the `sbSpine`/`nvSpine`/`rtSpine`/`rootNS` idiom, applied to diseases
+instead of corridors.
+
+**DELIBERATELY NOT keyed by `canonicalKey()`.** That collapses 93 names onto 10 very coarse entities — the
+`Metastases` entity alone swallows 40 names, from "Orbital tumour or metastasis" to "Metastasis to the
+pituitary stalk" to "Vertebral metastasis or myeloma", which share almost no workup. Keying by it would
+recreate the exact blandness this layer removes. `PATHOLOGY_ALIAS` handles true synonyms narrowly, and
+holds **one** entry: `Demyelination (MS)` → `Demyelination`, two spellings of one disease at DISJOINT site
+sets (31 keys vs 6), which is how the duplicate survived the causes sweep unnoticed.
+
+**URGENCY GAINED A RED-DERIVED FLOOR, and it was overdue: 377 sites carry a red must-not-miss and 76 of
+them badged "routine".** The sharpest was BPPV — `peripheral_vestibular_posterior_canal` read *routine*
+while its own cause list named *Posterior circulation stroke* as the must-not-miss. Resolution order is
+curated pathology urgency → site urgency → the `red` floor beneath both. **An authored plan MAY sit below
+the site's badge** (owner ruling): specificity is the point, and a tool that only escalates cries wolf. But
+descent is only ever authored — the floor is mechanical and nothing red can render as routine.
+
+**The honest fallback:** every cause stays selectable; where no plan is authored the lower tiers fall back
+to the site plan under an explicit label ("General plan for this site — not specific to X"). It never
+derives generic pathology content — the same ruling that deleted `sieveGenerics` engine-wide on 2026-08-11.
+
+**Content: the first tranche is COMPLETE — 24 plans + 1 alias, 267 of 1286 rows (21%)**, authored in three
+reviewed rounds. Authoring order is by REUSE (one plan for *Demyelination* lights up 31 sites), except
+that **Posterior circulation stroke was promoted on clinical grounds** despite only 2 host sites, and *Head
+trauma* dropped in exchange (a mechanism, not a disease; its workup is the CT already in every site plan).
+
+**Two invariants earn their keep, both of which caught live bugs:**
+- **No two sites may emit an identical plan for a shared pathology** — forces `bySite` to exist, or the
+  layer says no more than the site card it replaced.
+- **Every `bySite` key must be REACHABLE** — naming a real site is not enough, the pathology must be a
+  cause AT that site, or the entry can never be reached (you can only select what the What card lists).
+  Caught `Radiation plexopathy` → `plexus_upper_trunk` on the day it was written.
+
+**The `--terra` guard did its job too:** it rejected three new declarations. Two were justified and
+allowlisted (`.cause.sel`, `.px-chip` — the selected pathology IS the answer, exactly as the selected
+neuraxis node is); the third, a terracotta `:focus-visible` ring, was DELETED rather than allowlisted —
+a focus ring is neither identity nor the answer, and the app uses the browser default everywhere else.
+
+**Site-level tiers are tagged `— site`, NOT dimmed** — opacity reads as *disabled* rather than
+*unaffected*, and those tiers are live and correct. Selection round-trips through the case URL as `px=`,
+and is deliberately unavailable in the combined/all-sites view: "whose pathology?" has no honest answer
+across a multifocal set.
+
+> **✅ CLINICALLY SIGNED OFF (2026-08-18) by the owner (a clinician), all three rounds** — the review
+> status is recorded in the `pathologyNextSteps.js` header. Content added from here is held to the same bar.
+
+**STILL OPEN, deliberately out of scope:**
+1. **The remaining 831 pathologies** (tranche 2+), in the A–H region rhythm, each with its own sign-off.
+   Much of it is REDISTRIBUTION rather than new writing: curated site `investigations` prose is often
+   already pathology-specific and merely lives in the wrong bucket for want of somewhere better.
+2. **The fundal-photography defect is only HALF fixed.** The raised-pressure route becomes a pathology
+   step, but `VISUAL_FINDING` in `nextSteps.js` still does not respect the chiasm: 22 sites fire on a
+   retro-chiasmal token alone — 4 defensibly (`optic_tract`, `lgn`, pre-/at-geniculate, so band atrophy is
+   real), 2 borderline (`anterior_choroidal`), and **16 wrongly** (post-geniculate, where the discs are
+   normal and OCT adds nothing). It also keys on PREDICTED rather than OBSERVED findings, so it can order
+   imaging to characterise a deficit the Why card simultaneously lists as "predicted but not reported".
+3. **`combinedNextSteps` / the Together card** — multi-site plus per-pathology needs its own design.
+
+Spec/plan: `docs/superpowers/specs/2026-08-18-per-pathology-next-steps-design.md`,
+`docs/superpowers/plans/2026-08-18-per-pathology-next-steps.md`.
 
 ## Commands
 
@@ -603,8 +684,8 @@ suites green). `CONTRIBUTING.md` has the full roadmap and modelling notes.
 
 Per-region designs and implementation plans live under `docs/superpowers/specs/` and
 `docs/superpowers/plans/` (dated, one per region increment). Read the relevant spec before changing a
-region's mechanism. This is not a git repository, so history lives in those docs and the test suites
-rather than in commits.
+region's mechanism. The repo IS under git (public, `origin/main` auto-deploys to Pages on push), so
+history lives in the commits as well as in those docs.
 
 Two published Claude Artifacts (a flow diagram and the anatomy review sheet) visualise the engine;
 their HTML source and the update workflow (edit here, republish to the same URL) are in
