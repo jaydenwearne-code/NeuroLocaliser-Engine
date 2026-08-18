@@ -44,6 +44,22 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   }
 }
 
+// --- 3b: no unreachable bySite entries ---
+// A bySite key naming a real SITE is not enough — the pathology must actually be a cause AT that site, or
+// the entry can never be reached through the UI (you can only select a pathology the What card lists).
+// Caught one on the day it was written: Radiation plexopathy carried a plexus_upper_trunk entry, and that
+// site does not list it as a cause. Same silent-no-op as a misspelled plan key, one level down.
+{
+  const aliasPairs = Object.entries(PATHOLOGY_ALIAS);
+  for (const [name, p] of Object.entries(PATHOLOGY_NEXT)) {
+    const spellings = [name, ...aliasPairs.filter(([, to]) => to === name).map(([from]) => from)];
+    for (const k of Object.keys(p.bySite || {})) {
+      const listed = (CAUSES[k] || []).some(c => spellings.includes(c.name));
+      ok(`\`${name}\` bySite["${k}"] is reachable — the pathology is a cause there`, listed);
+    }
+  }
+}
+
 // --- 4: urgency — curated value wins, red is a FLOOR beneath it, site is the fallback ---
 {
   const sites = candidateSites();
