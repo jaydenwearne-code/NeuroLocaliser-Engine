@@ -1,7 +1,7 @@
 # Wearne's NeuroLocaliser: identity, beta status, and colour discipline
 
 **Date:** 2026-08-16
-**Status:** design approved 2026-08-16; not yet implemented
+**Status:** implemented 2026-08-16 on `feat/brand-beta`
 **Scope:** `app/` + `package.json` only — no `src/` changes, no engine or clinical-content changes
 **Follows:** `2026-08-16-app-ui-clarity-design.md` (same day; this builds on its type ramp and tokens)
 
@@ -83,9 +83,15 @@ tool with a clinician's name on it.
 
 **In dark mode it fixes a defect found while writing this spec: `--terra`, `--contra` and `--red` are all
 currently the identical value `#e79075`.** The brand accent, "contralateral", and "must-not-miss" are one
-colour — three different meanings, no way to tell them apart. Dark-mode `--red` moves to `#e0674f` and
-`--contra` stays at `#e79075`, so all three separate. This is the collision argument at its most literal,
-and it is shipping today.
+colour — three different meanings, no way to tell them apart. This is the collision argument at its most literal, and it was
+shipping.
+
+**Corrected during implementation.** The values above were wrong twice over. `--contra` could not "stay at
+`#e79075`" because `--terra` is that value — it moved to `#e8a184`. And dark `--red` at `#e0674f`/`#d24a33`
+gave only 4.40:1 against white, under the 4.5 a small bold chip needs; it landed at **`#c94429`** (4.84:1).
+A new `--on-danger` token (white in both themes) was also needed, because the chip had been taking its text
+from `--paper` — near-white in light, dark navy in dark, so the dark chip would have been unreadable.
+A contrast invariant now guards all four palette blocks.
 
 The ipsi/bilateral/gold semantic colours are untouched.
 
