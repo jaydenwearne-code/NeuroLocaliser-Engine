@@ -1,7 +1,7 @@
 # Worked examples: four cases that each teach a different card
 
 **Date:** 2026-08-16
-**Status:** design approved 2026-08-16; not yet implemented
+**Status:** implemented 2026-08-16 on `feat/worked-examples`
 **Scope:** `app/` only — no `src/` changes
 **Closes:** the stale empty-state copy introduced when presets were removed
 
