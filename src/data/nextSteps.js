@@ -11,6 +11,7 @@
 // its optional `extra` ({ immediate, confirmatory, monitoring }).
 import { expectedFindings } from "../engine/forward.js";
 import { CAUSES } from "./causes.js";
+import { pathologyPlanFor } from "./pathologyNextSteps.js";
 
 const ns = (investigations, urgency, referral, extra = {}) => ({ investigations, urgency, referral, ...extra });
 
@@ -2271,6 +2272,30 @@ function deriveMonitoring(site, urgency) {
   else if (cordLevel(site)) out.push("Monitor bladder/bowel function and for any progression");
   else if (nmuLevel(site)) out.push("Monitor respiratory function (FVC) if weakness is progressing");
   return out;
+}
+
+// ---- urgency resolution when a pathology is selected (spec 2026-08-18) ----
+// Three inputs, in order: the curated pathology urgency, else the site's, and beneath BOTH a floor derived
+// from `red: true`. The floor may RAISE urgency and never caps it — a curated plan may legitimately sit
+// below the site's badge (a chronic degenerative cause at an emergency-badged site), but nothing flagged
+// as a must-not-miss may ever render as routine. 377 sites carry a red cause and 76 of them badge routine
+// today; BPPV vs posterior circulation stroke is the sharpest of them.
+const URGENCY_RANK = { emergency: 3, urgent: 2, routine: 1 };
+const RED_FLOOR = "urgent";
+
+function causeEntry(site, causeName) {
+  const key = CAUSES[site.id] ? site.id : `${site.level}_${site.part}`;
+  return (CAUSES[key] || []).find(c => c.name === causeName) || null;
+}
+
+export function resolveUrgency(site, causeName) {
+  const siteUrgency = nextStepsFor(site).urgency || "routine";
+  if (!causeName) return siteUrgency;
+  const plan = pathologyPlanFor(causeName, site);
+  const chosen = (plan && plan.urgency) || siteUrgency;
+  const entry = causeEntry(site, causeName);
+  if (!entry || !entry.red) return chosen;
+  return URGENCY_RANK[chosen] >= URGENCY_RANK[RED_FLOOR] ? chosen : RED_FLOOR;
 }
 
 // ---- public API ----

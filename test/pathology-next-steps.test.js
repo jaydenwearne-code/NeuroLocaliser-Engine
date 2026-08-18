@@ -5,6 +5,8 @@
 // selected, while immediate + first-line stay site-level (they are what GET you the cause).
 import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
 import { CAUSES } from "../src/data/causes.js";
+import { resolveUrgency, nextStepsFor } from "../src/data/nextSteps.js";
+import { candidateSites } from "../src/engine/inverse.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (!c && d ? `  [${d}]` : "")); };
@@ -39,6 +41,55 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   for (const [from, to] of Object.entries(PATHOLOGY_ALIAS)) {
     ok(`alias source \`${from}\` matches a real cause`, realNames.has(from));
     ok(`alias target \`${to}\` has a plan`, !!PATHOLOGY_NEXT[to]);
+  }
+}
+
+// --- 4: urgency — curated value wins, red is a FLOOR beneath it, site is the fallback ---
+{
+  const sites = candidateSites();
+  const causesAt = s => CAUSES[s.id] || CAUSES[`${s.level}_${s.part}`] || [];
+
+  // The red floor: no red must-not-miss may render as routine, curated or not.
+  // 377 sites carry a red cause and 76 of them badge routine today — this is the invariant that fixes them.
+  let violations = [];
+  for (const s of sites) for (const c of causesAt(s))
+    if (c.red && resolveUrgency(s, c.name) === "routine") violations.push(`${s.id} / ${c.name}`);
+  ok("no red cause resolves to routine anywhere", violations.length === 0, violations.slice(0, 3).join(" ; "));
+
+  // The sharpest real case: BPPV badges routine, but posterior circulation stroke is its must-not-miss.
+  const bppv = sites.find(s => s.id === "left_peripheral_vestibular_posterior_canal");
+  ok("the BPPV site exists", !!bppv);
+  ok("BPPV site itself still badges routine", nextStepsFor(bppv).urgency === "routine");
+  const stroke = causesAt(bppv).find(c => /posterior circulation stroke/i.test(c.name));
+  ok("its posterior-circulation-stroke cause exists", !!stroke);
+  ok("selecting that cause escalates off routine", resolveUrgency(bppv, stroke.name) !== "routine");
+
+  // No selection = unchanged.
+  ok("null pathology returns the site's own urgency", resolveUrgency(bppv, null) === nextStepsFor(bppv).urgency);
+
+  // Authored descent is permitted (owner ruling 2026-08-18): a curated NON-red pathology may resolve
+  // BELOW the site's urgency. Tested with a stub plan rather than by waiting for content to exist, so the
+  // rule is pinned from day one and cannot be silently reversed by a later refactor.
+  {
+    const host = sites.find(s => nextStepsFor(s).urgency === "emergency" && causesAt(s).some(c => !c.red));
+    ok("an emergency-badged site with a non-red cause exists", !!host);
+    if (host) {
+      const benign = causesAt(host).find(c => !c.red);
+      PATHOLOGY_NEXT[benign.name] = { name: benign.name, confirmatory: ["stub"], monitoring: ["stub"],
+                                      urgency: "routine", referral: "stub", bySite: {} };
+      ok("an authored routine urgency descends below an emergency site badge",
+         resolveUrgency(host, benign.name) === "routine");
+      delete PATHOLOGY_NEXT[benign.name];
+    }
+
+    // ...but a RED cause may never be descended below the floor, even by an authored plan.
+    const redHost = sites.find(s => causesAt(s).some(c => c.red));
+    const redCause = causesAt(redHost).find(c => c.red);
+    PATHOLOGY_NEXT[redCause.name] = { name: redCause.name, confirmatory: ["stub"], monitoring: ["stub"],
+                                      urgency: "routine", referral: "stub", bySite: {} };
+    ok("the red floor overrides an authored routine urgency",
+       resolveUrgency(redHost, redCause.name) !== "routine");
+    delete PATHOLOGY_NEXT[redCause.name];
   }
 }
 
