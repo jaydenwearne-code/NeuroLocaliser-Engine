@@ -126,5 +126,23 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   ok("uncurated still carries the name for the label", fb.pathology === uncurated);
 }
 
+// --- 6: a shared pathology must not read identically at every site it appears at ---
+// The sbSpine no-two-identical-lists rule, applied to diseases. A pathology present at ONE site is exempt
+// (there is nothing to differentiate it from); one present at several must differentiate at least once,
+// or the layer says no more than the site card it replaced.
+{
+  const sites = candidateSites();
+  const sitesWith = name => sites.filter(s =>
+    (CAUSES[s.id] || CAUSES[`${s.level}_${s.part}`] || []).some(c => c.name === name));
+
+  for (const name of Object.keys(PATHOLOGY_NEXT)) {
+    const hosts = sitesWith(name);
+    if (hosts.length < 2) continue;
+    const rendered = new Set(hosts.map(s => JSON.stringify(pathologyPlanFor(name, s))));
+    ok(`\`${name}\` differentiates across its ${hosts.length} sites`, rendered.size > 1,
+       `identical text at all ${hosts.length} sites — add bySite entries`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
