@@ -190,8 +190,28 @@ Two of them are produced by NO structure, by design:
   never excludes disease behind it.
 
 **Fundal photography + OCT** are appended to the workup by `ophthalmicImaging()` in `nextSteps.js`, DERIVED
-from either a visual-field/optic finding in the site's `expectedFindings` or a papilloedema/raised-ICP cause.
-Normal-pressure hydrocephalus is excluded by name — the pressure is normal, so there is no disc swelling.
+rather than hand-listed. **THE TRIGGER RESPECTS THE CHIASM (fixed 2026-08-18)** — these are ANTERIOR-pathway
+tests, measuring the disc and the retinal ganglion cell axons, so exactly three routes fire it:
+(a) an ANTERIOR visual finding in the site's `expectedFindings`; (b) the site sitting AT or ANTERIOR to the
+lateral geniculate (`visual_pathway|optic_tract`, `|lgn` — band atrophy is real and gradeable there);
+(c) a papilloedema/raised-ICP cause. Normal-pressure hydrocephalus is excluded by name — the pressure is
+normal, so there is no disc swelling.
+
+**The original list ignored the chiasm and that was a live bug:** `homonymous_hemianopia` and the
+quadrantanopias were trigger tokens, so **22 sites fired on a retro-chiasmal token alone, 16 of them
+POST-geniculate** — where the discs are normal and OCT adds nothing (retrograde trans-synaptic degeneration
+is a research finding, not a work-up step). Reported symptom: **entering LEG WEAKNESS surfaced fundal
+photography**, because MCA and anterior choroidal are candidates for `weak_leg` and both merely PREDICT a
+field defect the patient was never reported to have. Fixed: 4 firing sites → 2, and the 2 that remain are
+the parasagittal pair firing correctly on sinus thrombosis. **`homonymous_hemianopia` cannot be a trigger
+token** — the optic tract and the occipital cortex both produce it and only one of them wants OCT, so the
+SITE has to decide, which is why rule (b) exists. The anterior choroidal artery is deliberately NOT
+pre-geniculate despite supplying the tract: its lesion is a stroke and takes a stroke work-up.
+
+`test/next-steps.test.js` now asserts the invariant in BOTH directions — every justified site fires, and no
+site fires without one of the three routes. The reverse direction immediately caught a latent test bug:
+`/OCT/i` unanchored matches the "oct" inside **noct**urnal, so carpal-tunnel and phrenic workups counted as
+ophthalmic. It is `\bOCT\b` now.
 
 > **✅ CLINICALLY SIGNED OFF (2026-08-11) by the owner (a clinician), covering all eight regions — all
 > 1286 cause entries, the fundoscopy/acuity findings and the new retina site.** The review gate that had
