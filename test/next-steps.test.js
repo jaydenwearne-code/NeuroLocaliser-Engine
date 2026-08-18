@@ -625,7 +625,10 @@ for (const [lvl, part] of REGION_H_SITES) {
 //   * papilloedema  — the site's curated causes raise papilloedema, raised ICP or obstructive hydrocephalus
 // NB normal-pressure hydrocephalus must NOT trigger it: the pressure is normal, so there is no disc swelling.
 {
-  const OPHTH = /fundal photograph|optical coherence|OCT/i;
+  // \bOCT\b, not OCT: case-insensitively and unanchored, "OCT" matches the "oct" inside NOCTURNAL,
+  // which appears in the carpal-tunnel and phrenic workups. Latent until the reverse direction of the
+  // invariant below started asserting that nothing prompts WITHOUT a reason (2026-08-18).
+  const OPHTH = /fundal photograph|optical coherence|\bOCT\b/i;
   // Use REAL sites from candidateSites(): expectedFindings() needs site.structures, so a hand-built
   // {id, level, part} literal silently throws and the derived trigger can never fire.
   const all = candidateSites();
@@ -653,17 +656,37 @@ for (const [lvl, part] of REGION_H_SITES) {
     ok("a normal-pressure-hydrocephalus site is not treated as raised pressure", !npOnly || !prompts(npOnly));
   }
 
-  // global: EVERY site expecting a visual field / optic finding gets the prompt
-  const missing = [];
+  // global, BOTH DIRECTIONS: the prompt fires exactly where one of the three legitimate routes applies.
+  //
+  // Narrowed on 2026-08-18 (chiasm fix). The old version asserted that EVERY site expecting any visual
+  // field token prompts — which encoded the bug: it swept retro-chiasmal defects in with anterior ones,
+  // and fundal photography + OCT are ANTERIOR-pathway tests. Post-geniculate lesions leave the disc and
+  // the retinal nerve fibre layer normal.
+  //
+  // The three legitimate routes:
+  //   (a) an ANTERIOR visual finding in the site's own expectedFindings
+  //   (b) the site sits AT or ANTERIOR to the lateral geniculate (band atrophy is real there)
+  //   (c) the site's causes raise intracranial pressure (papilloedema IS a disc finding)
+  const ANTERIOR = /^(bitemporal_hemianopia|optic_neuropathy|altitudinal_defect|central_scotoma|optic_atrophy|retinal_pallor|va_reduced_no_pinhole)@/;
+  const PREGENIC = s => s.level === "visual_pathway" && ["optic_tract", "lgn"].includes(s.part);
+  const pressureCause = s => causesFor(s, {}).all.some(c =>
+    !/normal.pressure hydrocephalus/i.test(c.name) &&
+    /papilloedema|raised intracranial pressure|raised pressure|intracranial hypertension|hydrocephalus|sagittal sinus thrombosis|venous sinus thrombosis|Foster.Kennedy/i
+      .test(`${c.name} ${c.feature || ""} ${c.pathognomonic || ""}`));
+
+  const missing = [], unjustified = [];
   for (const s of candidateSites()) {
     let exp; try { exp = [...expectedFindings(s)]; } catch { continue; }
-    const visual = exp.some(t => /^(homonymous_hemianopia|bitemporal_hemianopia|superior_quadrantanopia|inferior_quadrantanopia|optic_neuropathy|altitudinal_defect|central_scotoma|cortical_blindness)@/.test(t));
-    if (!visual) continue;
+    const justified = exp.some(t => ANTERIOR.test(t)) || PREGENIC(s) || pressureCause(s);
     const n = nextStepsFor(s);
-    const all = [...n.investigations, ...n.confirmatory, ...n.monitoring, ...n.immediate];
-    if (!all.some(x => OPHTH.test(x))) missing.push(s.id);
+    const fires = [...n.investigations, ...n.confirmatory, ...n.monitoring, ...n.immediate].some(x => OPHTH.test(x));
+    if (justified && !fires) missing.push(s.id);
+    if (!justified && fires) unjustified.push(s.id);
   }
-  ok(`INVARIANT: every site with a visual field/optic finding prompts fundal photography + OCT (${missing.length} missing: ${missing.slice(0, 5).join(", ")})`, missing.length === 0);
+  ok(`INVARIANT: every anterior / pre-geniculate / raised-pressure site prompts fundal photography + OCT (${missing.length} missing: ${missing.slice(0, 5).join(", ")})`,
+     missing.length === 0);
+  ok(`INVARIANT: no site prompts fundal photography + OCT without one of the three routes (${unjustified.length} unjustified: ${unjustified.slice(0, 5).join(", ")})`,
+     unjustified.length === 0);
 }
 
 // --- combinedNextSteps: one plan for a multifocal picture (spec 2026-08-14 §6) ---

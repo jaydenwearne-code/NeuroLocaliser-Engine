@@ -128,5 +128,55 @@ ok("non-correcting acuity loss is ipsilateral", CROSSES.va_reduced_no_pinhole ==
   ok("an optic-nerve site prompts fundal photography / OCT", all.some(x => /fundal photograph|OCT/i.test(x)));
 }
 
+// --- the ophthalmic prompt must respect the CHIASM (fix 2026-08-18) ---
+//
+// `ophthalmicImaging()` fired on ANY field-defect token in a site's expectedFindings, which lumped
+// retro-chiasmal defects in with anterior ones. Fundal photography and OCT of the retinal nerve fibre
+// layer are ANTERIOR-pathway tests: they measure the disc and the retinal ganglion cell axons.
+//
+//   * ANTERIOR to / AT the geniculate — retina, optic nerve, chiasm, optic TRACT, LGN — the retinal
+//     ganglion cell axon is itself damaged, so disc pallor and RNFL thinning are real and gradeable
+//     (band atrophy after a tract lesion is the classic example). The prompt belongs here.
+//   * POST-geniculate — optic radiation, occipital, parietal, temporal, and the MCA/PCA territories —
+//     the axons measured by OCT are not in the lesion at all. The discs are normal. Retrograde
+//     trans-synaptic degeneration exists but is a research finding, not a work-up step.
+//
+// Reported symptom: entering LEG WEAKNESS surfaced fundal photography, because MCA and anterior
+// choroidal are candidate sites for weak_leg and both PREDICT a field defect the patient was never
+// reported to have.
+{
+  const nsFor = id => {
+    const s = sites.find(x => x.id === id);
+    if (!s) return null;
+    const n = nextStepsFor(s);
+    return [...n.immediate, ...n.investigations, ...n.confirmatory, ...n.monitoring];
+  };
+  const prompts = id => { const a = nsFor(id); return a === null ? null : a.some(x => /fundal photograph|OCT/i.test(x)); };
+
+  // POST-geniculate: must NOT prompt
+  for (const id of ["left_subcortex_optic_radiation", "left_cortex_occipital", "left_cortex_parietal",
+                    "left_cortex_temporal", "left_cortex_mca", "left_cortex_pca", "left_cortex_mca_inferior",
+                    "left_subcortex_anterior_choroidal"]) {
+    const p = prompts(id);
+    ok(`post-geniculate \`${id}\` does NOT prompt fundal photography / OCT`, p === false,
+       p === null ? "site not found" : "still prompting");
+  }
+
+  // AT or ANTERIOR to the geniculate: must STILL prompt
+  for (const id of ["left_visual_pathway_optic_tract", "left_visual_pathway_lgn"]) {
+    const p = prompts(id);
+    ok(`pre-/at-geniculate \`${id}\` still prompts (band atrophy is real here)`, p === true,
+       p === null ? "site not found" : "no longer prompting");
+  }
+
+  // The raised-PRESSURE route is untouched by this fix — a parasagittal site whose causes include
+  // superior sagittal sinus thrombosis must keep prompting, because papilloedema IS a disc finding.
+  {
+    const p = prompts("left_cortex_motor_leg");
+    ok("the raised-pressure route is unaffected (parasagittal site still prompts)", p === true,
+       p === null ? "site not found" : "pressure route broken");
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

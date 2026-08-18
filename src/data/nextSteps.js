@@ -15,15 +15,39 @@ import { pathologyPlanFor } from "./pathologyNextSteps.js";
 
 const ns = (investigations, urgency, referral, extra = {}) => ({ investigations, urgency, referral, ...extra });
 
-// ---- derived ophthalmic imaging prompt (2026-08-11) ----
-// Fundal photography and OCT of the retinal nerve fibre layer must surface wherever the picture involves a
-// VISUAL FIELD DEFECT or PAPILLOEDEMA. Both triggers are DERIVED rather than hand-listed per site, so a
-// future site or cause gets the prompt automatically:
-//   * field defect — the site's own expectedFindings contain a field / optic-nerve finding
+// ---- derived ophthalmic imaging prompt (2026-08-11, CHIASM FIX 2026-08-18) ----
+// Fundal photography and OCT of the retinal nerve fibre layer must surface wherever the picture involves
+// ANTERIOR VISUAL PATHWAY damage or PAPILLOEDEMA. Both triggers are DERIVED rather than hand-listed per
+// site, so a future site or cause gets the prompt automatically:
+//   * anterior pathway — the site's own expectedFindings contain an anterior visual finding, OR the site
+//     itself sits at or anterior to the lateral geniculate
 //   * papilloedema — the site's curated causes raise papilloedema, raised ICP, hydrocephalus or sinus thrombosis
 // Perimetry is deliberately NOT repeated here: the curated entries already prompt it, and this layer is
 // adding the imaging that was missing from the whole workup layer, not restating what is there.
-const VISUAL_FINDING = /^(homonymous_hemianopia|bitemporal_hemianopia|superior_quadrantanopia|inferior_quadrantanopia|optic_neuropathy|altitudinal_defect|central_scotoma|cortical_blindness|optic_atrophy|retinal_pallor|va_reduced_no_pinhole)@/;
+//
+// THE CHIASM MATTERS, and the original list ignored it. These are ANTERIOR-pathway tests — they measure
+// the disc and the retinal ganglion cell axons. A RETRO-CHIASMAL field defect from a post-geniculate
+// lesion leaves those axons, and the discs, entirely normal: retrograde trans-synaptic degeneration is a
+// research finding, not a work-up step. Before this fix, 22 sites fired on a retro-chiasmal token alone
+// and 16 of them were post-geniculate — which is how entering LEG WEAKNESS came to surface fundal
+// photography, MCA and anterior choroidal both being candidates for weak_leg that merely PREDICT a field
+// defect the patient was never reported to have.
+//
+// `homonymous_hemianopia` is therefore NOT a trigger token: it is produced both by the optic tract (where
+// OCT is right) and by the occipital cortex (where it is not), so the token cannot distinguish them and
+// the SITE has to. Hence the second, site-based rule below.
+const VISUAL_FINDING = /^(bitemporal_hemianopia|optic_neuropathy|altitudinal_defect|central_scotoma|optic_atrophy|retinal_pallor|va_reduced_no_pinhole)@/;
+
+// Sites AT or ANTERIOR to the lateral geniculate, where the retinal ganglion cell axon is itself in the
+// lesion, so disc pallor and RNFL thinning are real and gradeable — band atrophy after an optic tract
+// lesion being the classic example. The LGN is included because the retinal ganglion cell axons TERMINATE
+// there, so a geniculate lesion still degenerates them.
+//
+// The anterior choroidal artery is deliberately NOT here even though it supplies the tract and part of the
+// LGN: its lesion presents as a stroke and takes a stroke work-up, and prompting OCT there would teach the
+// wrong first move.
+const PREGENICULATE_PARTS = new Set(["optic_tract", "lgn"]);
+const isPregeniculate = site => site.level === "visual_pathway" && PREGENICULATE_PARTS.has(site.part);
 
 // Causes implying DISC SWELLING. Normal-pressure hydrocephalus is excluded BY NAME and deliberately: the
 // pressure is normal, so there is no papilloedema, and prompting for it there would teach the wrong thing.
@@ -31,6 +55,7 @@ const RAISES_PRESSURE = /papilloedema|raised intracranial pressure|raised pressu
 const NOT_RAISED = /normal.pressure hydrocephalus/i;
 
 function hasFieldDefect(site) {
+  if (isPregeniculate(site)) return true;
   let exp; try { exp = [...expectedFindings(site)]; } catch { return false; }
   return exp.some(t => VISUAL_FINDING.test(t));
 }
