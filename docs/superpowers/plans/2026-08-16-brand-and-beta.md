@@ -14,7 +14,7 @@
 - **Baseline:** 64 suites / 3658 assertions green on `main`. Any failure is a real regression.
 - **No `src/` changes.** Engine, anatomy tables, clinical content are out of scope.
 - **The safety bar wording does not change**, verbatim: `Teaching prototype. Not a medical device; not for clinical decisions. No patient identifiers. Findings stay in your browser.` Nor does the gate acknowledgment copy.
-- **Terracotta rule:** `--terra` means *the product's identity* or *THE answer* — nothing else. Allowlist is exactly: `.wordmark .l`, `.brand-mark`, `.out-head`, `.neuraxis .nx-node.sel .nx-dot`, `.neuraxis .nx-node.sel .nx-label`.
+- **Terracotta rule:** `--terra` means *the product's identity* or *THE answer* — nothing else. Allowlist is exactly: `.wordmark .l`, `.lockup-mark`, `.out-head`, `.neuraxis .nx-node.sel .nx-dot`, `.neuraxis .nx-node.sel .nx-label`.
 - **`--terra` value is unchanged** in both themes (`#d36d52` light, `#e79075` dark) — the owner chose it.
 - **Both colour schemes must work** — `@media (prefers-color-scheme:dark)` plus the `:root[data-theme=…]` overrides.
 - **Register every new test file** in the `test` script in `package.json`.
