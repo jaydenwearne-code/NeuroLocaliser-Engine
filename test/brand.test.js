@@ -48,6 +48,30 @@ for (const [i, b] of blocks.entries()) {
 ok("--terra is unchanged in light", /--terra:#d36d52/.test(CSS));
 ok("--terra is unchanged in dark", /--terra:#e79075/.test(CSS));
 
+// ---- terracotta is IDENTITY or THE ANSWER — nothing else ----
+// It was on 32 declarations (nav pills, subtitles, mono tokens, selected rows, hovers, headings), which
+// left it meaning nothing while sitting next to the red-flag colour it resembles. This is the guard that
+// stops it creeping back: adding a new one fails here until it is justified and allowlisted.
+const TERRA_ALLOWED = [
+  ".wordmark .l",                      // the wordmark — identity
+  ".lockup-mark",                      // the mark's colour holder — identity (markSVG uses currentColor)
+  ".out-head",                         // the focal answer card's rule — THE answer
+  ".neuraxis .nx-node.sel .nx-dot",    // the selected lesion on the diagram — THE answer
+  ".neuraxis .nx-node.sel .nx-label",
+];
+{
+  const style = CSS.slice(CSS.indexOf("<style>"), CSS.indexOf("</style>"));
+  // Rules split on "}"; the selector is the text before "{", and its LAST line (earlier lines belong to
+  // the previous rule's tail or a comment). A chunk inside @media reports the media query, which is fine —
+  // it still surfaces for a human to look at.
+  const offenders = style.split("}")
+    .filter(chunk => chunk.includes("var(--terra)"))
+    .map(chunk => chunk.split("{")[0].split("\n").pop().trim())
+    .filter(sel => sel && !TERRA_ALLOWED.some(a => sel.includes(a)));
+  ok(`every var(--terra) rule is on the allowlist (${TERRA_ALLOWED.length} allowed)`,
+     offenders.length === 0, offenders.slice(0, 8).join(" | "));
+}
+
 console.log("\nNeuroLocaliser — BRAND\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}${r.detail ? "  → " + r.detail : ""}`);
 console.log("=".repeat(52));
