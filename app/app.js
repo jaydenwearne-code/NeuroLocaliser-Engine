@@ -3,7 +3,7 @@ import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
-import { causesFor, combinedCauses, canonicalKey, CATEGORIES, TEMPO } from "../src/data/causes.js";
+import { causesFor, combinedCauses, canonicalKey, CAUSES, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
 import { nextStepsFor, combinedNextSteps, pathologyNextStepsFor } from "../src/data/nextSteps.js";
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
@@ -54,14 +54,18 @@ const app = document.getElementById("app");
 // ---- shareable case URLs: hydrate S from the URL hash on boot, keep the hash live on every change ----
 const VALID_FINDINGS = new Set(Object.keys(FINDINGS));
 const VALID_SITES = new Set(CANDIDATES.map(s => s.id));
+// Every cause name in the app — a hand-edited px= token that names no real pathology is dropped on
+// decode, exactly as an unknown finding or site id is.
+const VALID_PATHOLOGIES = new Set(Object.keys(CAUSES).flatMap(k => CAUSES[k].map(c => c.name)));
 
 function restoreFromURL() {
-  const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES });
+  const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES, validPathologies: VALID_PATHOLOGIES });
   if (st.tokens) S.tokens = st.tokens;
   if (st.onset) S.onset = st.onset;
   if (st.course) S.course = st.course;
   if (st.mode) S.mode = st.mode;
   if (st.selected) S.selected = st.selected;
+  if (st.selectedPathology) S.selectedPathology = st.selectedPathology;
   if (st.dominant) S.dominant = st.dominant;
   if (st.sensoryLevel) S.sensoryLevel = st.sensoryLevel;
   if (st.distalReach) S.distalReach = st.distalReach;
