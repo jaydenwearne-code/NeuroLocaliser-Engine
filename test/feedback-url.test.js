@@ -23,7 +23,10 @@ ok("empty data + no flag returns the bare base", empty === "https://example.test
 // ---- mailto builder ----
 const mail = buildFeedbackMailto({ caseUrl: "https://app/#f=weak_arm@left", topResult: "Wallenberg", findings: "weak_arm@left" }, "tester@example.test");
 ok("mailto starts with the address", mail.startsWith("mailto:tester@example.test?"));
-ok("mailto has a subject", /subject=NeuroLocaliser(\+|%20)feedback/i.test(mail));
+// The subject carries the product name AND the build, so a report always names the version it came from
+// (2026-08-16 brand pass). Matching loosely on the name so a future rename does not fail on punctuation.
+ok("mailto subject names the product", /subject=[^&]*NeuroLocaliser/i.test(mail));
+ok("mailto subject carries the build version", /subject=[^&]*v\d+\.\d+\.\d+/i.test(mail));
 ok("mailto body embeds the case link (encoded)", /weak_arm%40left/.test(mail));
 ok("mailto body includes the top result", /Wallenberg/.test(mail));
 ok("mailto body includes the curated questions", FEEDBACK_QUESTIONS.every(q => mail.includes(encodeURIComponent(q).replace(/%20/g, "+")) || mail.includes(encodeURIComponent(q))));

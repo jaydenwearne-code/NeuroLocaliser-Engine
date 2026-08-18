@@ -19,6 +19,7 @@ import { combinedSites } from "./combined-sites.js";
 import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
 import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName, shortFindingLabel } from "./labels.js";
+import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -327,7 +328,8 @@ function resultHeader(sel, list, total, r) {
     const u = nextStepsFor(sel.site).urgency;
     const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
     const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
-    urg = `<a class="urg-pill" href="#sec-next" style="color:var(${tint});border-color:var(${tint})">${lab}</a>`;
+    const emerg = u === "emergency" ? " urg-emergency" : "";
+    urg = `<a class="urg-pill${emerg}" href="#sec-next"${emerg ? "" : ` style="color:var(${tint});border-color:var(${tint})"`}>${lab}</a>`;
   } catch { urg = ""; }
   // ONE scope control, here, governing both the What and the Next cards — they used to render a copy each
   // off the same S.scope, which is two controls for one decision.
@@ -423,7 +425,7 @@ function unifyingRow(e, sites) {
     .filter(Boolean).join(" · ");
   const path = e.confirm ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(e.confirm)}</span></div>` : "";
   const red = e.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(e.red)}</div>` : "";
-  return `<div class="cause"><div class="cline"><span class="cn">${esc(e.name)}</span><span class="lk">${esc(e.likelihood)}</span>${e.red ? `<span class="rf">RED</span>` : ""}</div>${e.feature ? `<div class="cfeat">${esc(e.feature)}</div>` : ""}${whyLine ? `<div class="dloc">${whyLine}</div>` : ""}${red}${path}</div>`;
+  return `<div class="cause"><div class="cline"><span class="cn">${esc(e.name)}</span><span class="lk">${esc(e.likelihood)}</span>${e.red ? `<span class="rf">⚑ RED</span>` : ""}</div>${e.feature ? `<div class="cfeat">${esc(e.feature)}</div>` : ""}${whyLine ? `<div class="dloc">${whyLine}</div>` : ""}${red}${path}</div>`;
 }
 
 // forcingFindings() runs one solve() per LOCALISING finding — ~190 ms on a two-lesion case, and it grew
@@ -585,7 +587,7 @@ function sharedCauseRow(s, nSites, dem) {
   const loc = dem
     ? `at ${s.count} of ${nSites} sites · usually ${s.demotion.expected.map(esc).join(" / ")} onset`
     : `at ${s.count} of ${nSites} sites`;
-  return `<div class="cause${s.red?" red":""}"><b>${esc(s.name)}</b>${s.red?` <span class="rf">RED</span>`:""} <span class="dloc">${loc}</span>${s.feature?` — ${esc(s.feature)}`:""}</div>`;
+  return `<div class="cause${s.red?" red":""}"><b>${esc(s.name)}</b>${s.red?` <span class="rf">⚑ RED</span>`:""} <span class="dloc">${loc}</span>${s.feature?` — ${esc(s.feature)}`:""}</div>`;
 }
 
 // perSite = the remainder — every per-site cause that did NOT make the shared bucket (spec: "so nothing is
@@ -655,7 +657,7 @@ function whatCard(site, r, list) {
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
 function renderCause(c) {
   const path = c.pathognomonic ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(c.pathognomonic)}</span></div>` : "";
-  return `<div class="cause"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
+  return `<div class="cause"><div class="cline"><span class="cn">${esc(c.name)}</span><span class="tp" title="typical tempo">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span><span class="lk">${esc(c.likelihood)}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>${c.feature?`<div class="cfeat">${esc(c.feature)}</div>`:""}${path}</div>`;
 }
 
 function whatBlock(site) {
@@ -762,7 +764,7 @@ function renderAtlasDetail() {
     const cls = s==="left"||s==="right" ? "bc" : s==="bilateral" ? "bb" : s==="midline" ? "bm" : "bnone";
     return `<div class="why-item"><span class="badge ${cls}">${sideTag(s)}</span><span class="t">${esc(f)}</span><span class="d">${esc(desc(f))}</span></div>`; }).join("");
   const res = causesFor(site, {});
-  const groups = res.byCategory.map(g=>`<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>${g.causes.map(c=>`<div class="cause"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span>${c.red?`<span class="rf">RED</span>`:""}</div>`).join("")}</div>`).join("");
+  const groups = res.byCategory.map(g=>`<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>${g.causes.map(c=>`<div class="cause"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>`).join("")}</div>`).join("");
   document.getElementById("adetail").innerHTML = `<h3>${esc(siteName(site))}</h3>
     <div class="where-best" style="margin-bottom:10px"><div class="loc">${esc(siteSub(site) || siteRaw(site))}</div><div class="terr">${esc(siteRaw(site))}</div></div>
     <h3>Produces (findings)</h3><div class="why-list">${rows||'<div class="empty">—</div>'}</div>
@@ -795,7 +797,20 @@ function reveal() {
   document.getElementById("app-shell").classList.add("show");
 }
 
+// One geometry, three call sites — the header mark, the gate mark and the favicon all come from brand.js,
+// so there is no second copy of the logo to drift. Runs before the gate is shown.
+function paintBrand() {
+  // 32px balances the two-line lockup (byline + 26px wordmark ≈ 53px tall); 26px read small beside it.
+  document.querySelectorAll("[data-brand-mark]").forEach(el => { el.innerHTML = markSVG({ size: 32 }); });
+  document.querySelectorAll("[data-brand-version]").forEach(el => { el.textContent = `v${VERSION} \u00b7 Beta`; });
+  let link = document.querySelector('link[rel="icon"]');
+  if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+  link.type = "image/svg+xml";
+  link.href = faviconDataURI(getComputedStyle(document.documentElement).getPropertyValue("--terra").trim() || "#d36d52");
+}
+
 async function startGate() {
+  paintBrand();
   const gateEl = document.getElementById("gate");
   if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal(); boot(); return; }
   gateEl.classList.add("show");

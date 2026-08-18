@@ -413,6 +413,47 @@ sites) but the real density was the all-sites view and the demoted bands.
 Spec/plan: `docs/superpowers/specs/2026-08-16-app-ui-clarity-design.md`,
 `docs/superpowers/plans/2026-08-16-app-ui-clarity.md`.
 
+## Brand + Beta pass (DONE 2026-08-16)
+
+**Wearne's NeuroLocaliser, v0.9.0 Beta.** Branch `feat/brand-beta`. `app/brand.js` owns `VERSION`,
+`PRODUCT_NAME`, `markSVG()` and `faviconDataURI()` — one geometry drawn twice (full mark + a thicker 16px
+favicon), so there is no second copy of the logo to drift. `test/brand.test.js` asserts `VERSION` equals
+`package.json`, so a bug report always names a real build. The app had **no favicon at all** before this.
+
+**The mark is a pyramidal decussation** — two tracts cross, one node filled and one hollow. That asymmetry
+is the engine's premise. A bare X was rejected: at small size it reads as close/delete, colliding with the
+red ✗ already meaning "contradicted by a normal finding".
+
+**THE COLOUR RULE — `--terra` means the product's identity, or THE answer. Nothing else.** It was on **32
+declarations** (nav pills, subtitles, mono tokens, selected rows, hovers, headings), which left it meaning
+nothing while sitting next to the red-flag colour it resembles. Now **4**, on an allowlist
+`test/brand.test.js` enforces (`.wordmark .l`, `.lockup-mark`, `.out-head`, and the two selected-node
+rules). It cannot creep back without someone justifying the addition.
+
+**Three defects this found, all of which were live:**
+1. In dark mode `--terra`, `--contra` and `--red` were **all `#e79075`** — the brand accent,
+   "contralateral" and "must-not-miss" were one colour with three meanings.
+2. The filled danger chip took its text from `--paper` — near-white in light but **dark navy in dark**, so
+   the dark chip would have been unreadable. Hence a dedicated **`--on-danger`** (white in both themes).
+3. Dark `--red` gave only **4.40:1** against white, under the 4.5 a small bold chip needs. It landed at
+   `#c94429` (4.84:1). A contrast invariant now computes the ratio in all four palette blocks and fails
+   below 4.5:1.
+
+**The must-not-miss is distinguished by FORM, not hue** — `RED` and an `EMERGENCY` urgency are filled chips
+with a ⚑ glyph, so a tired reader never has to tell `#d36d52` from `#b32b1c` at 10px. URGENT and routine
+stay outlined, or the fill stops meaning anything.
+
+**Palette otherwise:** `--terra` is UNCHANGED (the owner preferred terracotta/navy over three alternative
+palettes that were designed and reviewed). Paper warms to parchment and navy deepens — a printed clinical
+text rather than a web app. Five dead rule sets deleted (`.presets`, `.bar`, `.narrow`, `.disc`, `.alt` —
+11 rules, zero uses).
+
+**The safety bar wording did NOT change** — "Beta" describes the build, not the risk. Nor did the gate
+acknowledgment copy. The gate and every feedback email now carry `v0.9.0`.
+
+Spec/plan: `docs/superpowers/specs/2026-08-16-brand-and-beta-design.md`,
+`docs/superpowers/plans/2026-08-16-brand-and-beta.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
