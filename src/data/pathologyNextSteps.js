@@ -32,6 +32,10 @@ const dz = (name, { confirmatory = [], monitoring = [], urgency = null, referral
 // related-but-different entities; the no-two-identical-plans invariant is what keeps that honest.
 export const PATHOLOGY_ALIAS = {};
 
+// REVIEW STATUS. Content is authored here and held for the owner's (a clinician's) sign-off before it is
+// relied on, the same gate every other clinical layer in this repo passed through.
+//   ✅ Round 1 SIGNED OFF 2026-08-18 — posterior circulation stroke + the infective six.
+//   ⚠  Round 2 awaiting review — the neoplastic seven.
 export const PATHOLOGY_NEXT = {
   // ---- PROMOTED INTO TRANCHE 1 ON CLINICAL GROUNDS (owner ruling, 2026-08-18) ----
   // Only 2 host sites, so reuse count would have left it until tranche 3. It is nonetheless the app's
@@ -247,6 +251,249 @@ export const PATHOLOGY_NEXT = {
       skull_base_petrous_apex: {
         level: "eye abduction and facial sensation",
         flavour: "petrous apex involvement reproduces Gradenigo's triad, and here it is infective rather than neoplastic",
+      },
+    },
+  }),
+
+  // ---- NEOPLASTIC TRANCHE (2026-08-18) ----
+  // Four of these canonicalise onto the coarse `Metastases` entity but are genuinely different workups —
+  // a vertebral metastasis and a perineural spread share almost nothing — so they are authored separately
+  // and deliberately NOT aliased.
+  "Glioma / metastasis": dz("Glioma / metastasis", {
+    confirmatory: [
+      "MRI brain WITH contrast — the question a plain scan cannot answer is whether this is one lesion or many, and that changes the whole pathway",
+      "If the lesions are multiple, the working diagnosis is metastatic until proven otherwise: hunt the primary with CT chest, abdomen and pelvis before biopsying the brain",
+      "If the lesion is solitary, tissue is what settles it — discuss with neuro-oncology and neurosurgery, since resection and biopsy answer different questions",
+      "Advanced sequences (perfusion, spectroscopy) help separate tumour from abscess and from demyelination where the ring enhancement is ambiguous — {flavour}",
+    ],
+    monitoring: [
+      "Seizure risk is high in cortical lesions: ask specifically about focal events the patient has not reported as seizures, and counsel about DRIVING, which is a legal obligation and is regularly overlooked",
+      "Track {level} — a progressive deficit over days rather than weeks suggests haemorrhage into the lesion or expanding oedema, not tumour growth",
+      "SAFETY NET: morning headache, vomiting or a falling conscious level is raised intracranial pressure and needs urgent reimaging",
+    ],
+    urgency: "urgent",
+    referral: "Neuro-oncology multidisciplinary team, with neurosurgery",
+    bySite: {
+      cortex_temporal: {
+        level: "memory, comprehension and behaviour",
+        flavour: "in the temporal lobe the differential includes an abscess, which restricts on diffusion where a necrotic tumour does not",
+      },
+      cortex_motor_facearm: {
+        level: "face and arm power",
+        flavour: "a lesion on the motor strip makes the resection question a functional one — functional MRI or awake mapping may be needed to define the margin",
+      },
+      cortex_occipital: {
+        level: "visual fields, formally rather than to confrontation",
+        flavour: "an occipital lesion is a common site for a metastasis and the field defect is often the only sign",
+      },
+      cortex_arcuate: {
+        level: "repetition, naming and fluency separately",
+        flavour: "a lesion in the arcuate fasciculus is white-matter disease — infiltrative glioma and demyelination look far more alike here than at the cortex",
+      },
+    },
+  }),
+
+  "Nerve sheath tumour (schwannoma / neurofibroma)": dz("Nerve sheath tumour (schwannoma / neurofibroma)", {
+    confirmatory: [
+      "ULTRASOUND of the nerve is the accessible first test and often diagnostic — a fusiform swelling continuous with the nerve, with the fascicles entering and leaving it",
+      "MRI of the affected segment with contrast for anything deep, large, or where ultrasound is equivocal",
+      "Nerve conduction studies and EMG localise the block to the lesion and give a baseline against which recovery after surgery is judged",
+      "Examine {level}, and look for the features of a tumour-predisposition syndrome — café-au-lait macules, axillary freckling, and lesions on more than one nerve",
+    ],
+    monitoring: [
+      "SAFETY NET: rapid growth, new PAIN in a previously painless lump, or a sudden progressive deficit suggests malignant transformation and needs urgent reimaging — this is the one thing that changes an indolent lesion into an emergency",
+      "A slowly progressive deficit over months to years is expected; document {level} at intervals so that a change of pace is visible rather than inferred",
+      "{flavour}",
+    ],
+    urgency: "routine",
+    referral: "Peripheral nerve surgery (plastics or neurosurgery), with genetics where more than one nerve is involved",
+    bySite: {
+      nerve_peroneal_deep: {
+        level: "ankle dorsiflexion, great-toe extension and the first web space",
+        flavour: "a Tinel's sign FIXED at one point along the nerve, rather than migrating with recovery, is what distinguishes a mass from a compressive palsy",
+      },
+      nerve_ulnar_wrist: {
+        level: "the intrinsic hand muscles and sensation in the ulnar one and a half digits",
+        flavour: "at the wrist a ganglion in Guyon's canal produces the same picture — imaging is what tells them apart",
+      },
+      nerve_pudendal: {
+        level: "perineal sensation, sphincter tone and the anal wink",
+        flavour: "a pelvic lesion here needs MRI rather than ultrasound, and warrants early specialist involvement given the functional stakes",
+      },
+      nerve_lat_fem_cutaneous: {
+        level: "sensation over the lateral thigh — there is nothing motor to test",
+        flavour: "a purely sensory nerve makes serial examination unreliable; imaging carries more of the follow-up here",
+      },
+    },
+  }),
+
+  "Perineural spread of head-and-neck malignancy": dz("Perineural spread of head-and-neck malignancy", {
+    confirmatory: [
+      "ASK ABOUT PREVIOUS FACIAL SKIN CANCER, however minor and however long ago — an excised lesion years earlier is the history that makes this diagnosis, and patients do not volunteer it",
+      "MRI skull base with contrast and FAT SATURATION, tracking the nerve back to the skull base foramina — fat saturation is what makes the enhancing nerve visible against marrow, and a study without it can be reported as normal",
+      "Look for the indirect signs: foraminal widening, loss of the normal fat pad at the foramen, and denervation change in the muscles supplied — {flavour}",
+      "Tissue diagnosis where the primary is unknown, in discussion with head-and-neck surgery; PET-CT may find the primary when imaging of the nerve does not",
+    ],
+    monitoring: [
+      "Track {level} by name at each review — spread is CONTIGUOUS along the nerve, so the sequence in which nerves fail maps the direction of travel",
+      "SAFETY NET: progressive facial numbness WITH PAIN is malignant until proven otherwise; a normal first scan does not exclude it, and a repeat scan after an interval is often what makes the diagnosis",
+      "Watch the eye where the ophthalmic division is involved — a numb cornea loses its blink reflex and ulcerates silently",
+    ],
+    urgency: "urgent",
+    referral: "Head-and-neck oncology multidisciplinary team, with neurology and ophthalmology as the nerves dictate",
+    bySite: {
+      pons_lateral_trigeminal: {
+        level: "facial sensation in all three divisions, corneal reflex, and the muscles of mastication",
+        flavour: "disease reaching the pons has travelled the whole length of the nerve — image the entire course, not the brainstem alone",
+      },
+      skull_base_vii_parotid: {
+        level: "each facial branch separately, since spread picks off branches one at a time",
+        flavour: "a facial palsy that is PROGRESSIVE, painful, or involves branches unequally is not Bell's palsy — image the parotid",
+      },
+      skull_base_cpa: {
+        level: "hearing, facial sensation and facial movement",
+        flavour: "involvement at the cerebellopontine angle means intracranial extension and changes the treatment intent",
+      },
+      skull_base_optic_canal: {
+        level: "acuity and colour vision, which fail before the field does",
+        flavour: "optic canal involvement threatens vision irreversibly and is the finding that makes this urgent rather than routine",
+      },
+    },
+  }),
+
+  "Schwannoma / meningioma / metastasis": dz("Schwannoma / meningioma / metastasis", {
+    confirmatory: [
+      "MRI skull base with contrast and thin slices through {level} — the three diagnoses in this heading look different on imaging, and the point of the scan is to separate them rather than confirm 'a mass'",
+      "A schwannoma follows the nerve and expands its foramen; a meningioma sits on dura with a tail and may hyperostose the adjacent bone; a metastasis destroys bone and rarely respects a compartment",
+      "CT adds what MRI cannot show — bone erosion versus hyperostosis, which is often the discriminator",
+      "Where a metastasis is plausible, look for the primary before biopsying the skull base",
+    ],
+    monitoring: [
+      "These are typically slow: document {flavour} at intervals so the RATE is measurable, since rate is what drives the decision to treat rather than watch",
+      "SAFETY NET: an abrupt change of pace, new pain, or involvement of a second nerve argues against a benign lesion and warrants earlier reimaging",
+      "Watch for the deficits the patient compensates for and does not report — a slowly progressive palsy is often only found on examination",
+    ],
+    urgency: "routine",
+    referral: "Skull-base multidisciplinary team (neurosurgery with ENT), and neuro-oncology where metastasis is likely",
+    bySite: {
+      skull_base_trochlear_cisternal: {
+        level: "the cisternal course of the fourth nerve",
+        flavour: "vertical diplopia, the head tilt, and the fundus for any sign of raised pressure",
+      },
+      skull_base_orbital_apex: {
+        level: "the orbital apex and superior orbital fissure",
+        flavour: "acuity, colour vision, proptosis and each eye movement separately",
+      },
+      skull_base_vii_parotid: {
+        level: "the parotid and the stylomastoid foramen",
+        flavour: "each facial branch, and the parotid itself for a palpable mass",
+      },
+      skull_base_xii_neck: {
+        level: "the hypoglossal canal and the upper neck",
+        flavour: "tongue protrusion for deviation, and the tongue at rest for wasting and fasciculation",
+      },
+    },
+  }),
+
+  "Vertebral metastasis or myeloma": dz("Vertebral metastasis or myeloma", {
+    confirmatory: [
+      "MRI the WHOLE SPINE, not the symptomatic level alone — metastatic disease is multi-level in a large share of cases, and a second, higher lesion changes the plan entirely",
+      "Myeloma screen — serum and urine electrophoresis with free light chains — alongside FBC, calcium, renal function and ESR",
+      "CT chest, abdomen and pelvis for a primary, and consider bone-specific imaging where the plain films look normal but the pain is convincing",
+      "Plain films are NOT reassuring here: substantial trabecular bone must be lost before a lesion is visible, so a normal X-ray with night pain means image again, better",
+    ],
+    monitoring: [
+      "SAFETY NET: this is the pathway to METASTATIC SPINAL CORD COMPRESSION. New or progressive weakness, a sensory level, or bladder or bowel dysfunction is an emergency — image the whole spine the same day, do not wait for a clinic slot",
+      "Check CALCIUM: hypercalcaemia is common, presents as confusion, constipation and thirst rather than as anything neurological, and is readily treatable",
+      "Track {level} and the pain pattern — {flavour}",
+    ],
+    urgency: "urgent",
+    referral: "Oncology and spinal surgery jointly; haematology where myeloma is likely",
+    bySite: {
+      root_t4: {
+        level: "for any sensory LEVEL on the trunk, not just the radicular band",
+        flavour: "thoracic pain worse at night and on lying flat is the classic warning, and the thoracic cord is the commonest site of compression",
+      },
+      root_l5: {
+        level: "ankle dorsiflexion, great-toe extension and hip abduction",
+        flavour: "below the conus a lesion gives a cauda equina rather than a cord picture — ask directly about saddle sensation and sphincter function",
+      },
+      root_s1: {
+        level: "plantarflexion, the ankle jerk, and saddle sensation",
+        flavour: "sacral involvement sits closest to the sphincters, so the safety-netting questions matter most here",
+      },
+      root_l1: {
+        level: "hip flexion, and the conus reflexes",
+        flavour: "the conus sits around this level, and a conus lesion produces early sphincter failure with relatively little weakness",
+      },
+    },
+  }),
+
+  "Nerve-root schwannoma or neurofibroma": dz("Nerve-root schwannoma or neurofibroma", {
+    confirmatory: [
+      "MRI of the relevant spinal segment WITH contrast — the lesion is typically a dumbbell mass widening the exit foramen, which is what separates it from a disc",
+      "Nerve conduction studies and EMG confirm the root level where imaging shows more than one candidate",
+      "Look for a predisposition syndrome: café-au-lait macules, axillary freckling, and lesions at more than one root point to neurofibromatosis and change the follow-up",
+      "Examine {level} to document the baseline deficit before any intervention",
+    ],
+    monitoring: [
+      "The discriminating history is pain worse at NIGHT AND AT REST which does NOT ease on lying down — {flavour}",
+      "SAFETY NET: rapid growth or a sudden change in pain character raises malignant peripheral nerve sheath tumour, particularly in neurofibromatosis, and needs urgent reimaging",
+      "A preserved reflex alongside progressive weakness over months to years is characteristic; re-examine {level} at intervals so the rate is documented",
+    ],
+    urgency: "routine",
+    referral: "Spinal neurosurgery, with genetics where more than one lesion is present",
+    bySite: {
+      root_c5: {
+        level: "shoulder abduction and the biceps jerk",
+        flavour: "unlike a C5 disc, the pain does not ease on lying down, and the biceps jerk is often preserved longer than the weakness would suggest",
+      },
+      root_l5: {
+        level: "ankle dorsiflexion, great-toe extension and hip abduction",
+        flavour: "a foot drop with a PRESERVED ankle jerk and night pain that lying flat does not relieve is the pattern that should prompt imaging rather than physiotherapy",
+      },
+      root_s2: {
+        level: "saddle sensation, sphincter tone and the anal wink",
+        flavour: "a sacral root lesion threatens sphincter function early, so the threshold for imaging is lower here than the indolent history suggests",
+      },
+      root_t1: {
+        level: "the small muscles of the hand, and the sympathetic supply — look for a Horner's syndrome",
+        flavour: "a T1 lesion with Horner's raises an apical lung tumour as the competing diagnosis, and that must be excluded first",
+      },
+    },
+  }),
+
+  "Nasopharyngeal carcinoma": dz("Nasopharyngeal carcinoma", {
+    confirmatory: [
+      "NASENDOSCOPY WITH BIOPSY of the fossa of Rosenmüller — this is the test that makes the diagnosis, and it is the step most often delayed while imaging is repeated",
+      "MRI skull base and nasopharynx with contrast, plus CT for bone erosion at {level}",
+      "Examine the NECK for nodes — a painless upper cervical node is frequently the presenting sign and is the easiest thing to biopsy",
+      "Ask about the ear: unilateral serous otitis media in an adult is obstruction of the Eustachian tube until proven otherwise, and warrants nasendoscopy rather than grommets alone",
+      "Epstein-Barr virus serology and plasma EBV DNA support the diagnosis and are used to monitor response in endemic disease",
+    ],
+    monitoring: [
+      "Track {level} by name — {flavour} — since sequential cranial neuropathy maps the direction of spread",
+      "SAFETY NET: a sixth-nerve palsy with deep facial or retro-orbital pain, a blocked ear, epistaxis or a neck node is this diagnosis until nasendoscopy says otherwise; an isolated sixth-nerve palsy attributed to microvascular disease that does not recover needs reassessment",
+      "Hearing, swallow and nutrition through treatment, all of which are affected by the disease and by its treatment",
+    ],
+    urgency: "urgent",
+    referral: "Head-and-neck oncology multidisciplinary team, urgently",
+    bySite: {
+      skull_base_vi_petrous_apex: {
+        level: "the petrous apex and Dorello's canal",
+        flavour: "eye abduction and facial sensation — the sixth nerve is characteristically the first to go",
+      },
+      skull_base_v3_ovale: {
+        level: "the foramen ovale",
+        flavour: "sensation over the chin and jaw, and the muscles of mastication — numb chin is a sinister sign",
+      },
+      skull_base_collet_sicard: {
+        level: "the jugular foramen and hypoglossal canal together",
+        flavour: "swallow, voice, shoulder shrug and tongue movement — four nerves failing together means extensive skull-base disease",
+      },
+      skull_base_hypoglossal_canal: {
+        level: "the hypoglossal canal",
+        flavour: "tongue protrusion and the tongue at rest, for deviation and wasting",
       },
     },
   }),
