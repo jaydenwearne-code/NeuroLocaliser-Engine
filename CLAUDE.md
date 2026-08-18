@@ -454,6 +454,32 @@ acknowledgment copy. The gate and every feedback email now carry `v0.9.0`.
 Spec/plan: `docs/superpowers/specs/2026-08-16-brand-and-beta-design.md`,
 `docs/superpowers/plans/2026-08-16-brand-and-beta.md`.
 
+## Worked examples (DONE 2026-08-16)
+
+Four one-click cases in the Localise empty state, in `app/examples.js` (pure data). They **replace stale
+copy** that had promised examples ever since presets were removed in the 2026-07-25 UI restructure.
+
+Chosen so **each demonstrates a different output card**, not to be the four commonest presentations:
+Wallenberg → *Where*; **Foot drop → the narrowing**; Cauda equina → *Next steps*; Two lesions → *Together*.
+
+**Foot drop is the important one:** it loads ONLY the findings L5 and peroneal share, so three candidates
+appear and none wins — adding weak hip abduction pins the root, adding deep peroneal sensory pins the
+nerve. Verified in the browser: **3 candidates → 1 on one click.** The interaction model shown rather than
+described.
+
+**`test/examples.test.js` asserts BEHAVIOUR, not just that tokens parse** — candidate counts, urgency,
+cover size, and that adding a discriminator actually narrows. Hand-typed tokens were wrong first time
+(Wallenberg resolved to Marie-Foix explaining 2 of 5), and the anatomy tables are actively edited, so a
+worked example could silently start teaching the wrong thing. Tokens are derived from each site's
+`expectedFindings`, then trimmed to a realistic bedside subset — Wallenberg ships as 6 of its 13 findings,
+because nobody records 13 at the bedside.
+
+**Trap worth knowing:** `test/brand.test.js` scans the stylesheet as TEXT, comments included, so writing
+`var(--terra)` in a CSS *comment* fails the allowlist. Name the colour in prose instead.
+
+Spec/plan: `docs/superpowers/specs/2026-08-16-worked-examples-design.md`,
+`docs/superpowers/plans/2026-08-16-worked-examples.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`

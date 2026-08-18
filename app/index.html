@@ -261,6 +261,18 @@
     border-radius:999px;padding:2px 7px;}
   .gate-ver{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);}
   @media (max-width:560px){ .lockup{gap:8px;} }
+  /* worked examples: the empty-state on-ramp. Deliberately no brand accent here — the allowlist test in
+     test/brand.test.js scans the stylesheet as TEXT, comments included, so even naming the token trips it. */
+  .egs{margin-bottom:4px;}
+  .egs-lead{display:block;font-size:var(--fs-meta);color:var(--faint);margin-bottom:7px;}
+  .egs-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .eg{display:flex;flex-direction:column;align-items:flex-start;gap:1px;font:inherit;text-align:left;
+    border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:6px 10px;cursor:pointer;
+    transition:border-color .12s,background .12s;}
+  .eg b{font-size:var(--fs-meta);font-weight:700;color:var(--ink);}
+  .eg span{font-size:var(--fs-cap);color:var(--faint);}
+  .eg:hover{border-color:var(--navy-2);background:var(--band);}
+  @media (max-width:560px){ .eg{flex:1 1 45%;} }
   /* code-stroke worksheet */
   .cs-banner{border:1px solid var(--gold);background:var(--gold-bg);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:var(--fs-meta);margin:10px 0;}
   .cs-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px;}
