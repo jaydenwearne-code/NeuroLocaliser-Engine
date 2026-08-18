@@ -5,7 +5,7 @@
 // selected, while immediate + first-line stay site-level (they are what GET you the cause).
 import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
 import { CAUSES } from "../src/data/causes.js";
-import { resolveUrgency, nextStepsFor } from "../src/data/nextSteps.js";
+import { resolveUrgency, nextStepsFor, pathologyNextStepsFor } from "../src/data/nextSteps.js";
 import { candidateSites } from "../src/engine/inverse.js";
 
 let pass = 0, fail = 0;
@@ -91,6 +91,39 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
        resolveUrgency(redHost, redCause.name) !== "routine");
     delete PATHOLOGY_NEXT[redCause.name];
   }
+}
+
+// --- 5: the public API — tier split, fallback flag, and no regression when nothing is selected ---
+{
+  const sites = candidateSites();
+  const causesAt = s => CAUSES[s.id] || CAUSES[`${s.level}_${s.part}`] || [];
+  const host = sites.find(s => causesAt(s).some(c => c.name === "Spinal epidural abscess"));
+  ok("a site carrying the exemplar pathology exists", !!host);
+
+  // Nothing selected => byte-identical to today's card.
+  const plain = pathologyNextStepsFor(host, null), today = nextStepsFor(host);
+  for (const k of ["immediate", "investigations", "confirmatory", "monitoring", "urgency", "referral"])
+    ok(`null pathology leaves \`${k}\` identical to nextStepsFor`,
+       JSON.stringify(plain[k]) === JSON.stringify(today[k]));
+  ok("null pathology reports no pathology", plain.pathology === null);
+
+  // Selected + curated => lower tiers swap, upper tiers do not.
+  const sel = pathologyNextStepsFor(host, "Spinal epidural abscess");
+  ok("immediate stays site-level", JSON.stringify(sel.immediate) === JSON.stringify(today.immediate));
+  ok("first-line stays site-level", JSON.stringify(sel.investigations) === JSON.stringify(today.investigations));
+  ok("confirmatory swaps to the pathology", JSON.stringify(sel.confirmatory) !== JSON.stringify(today.confirmatory));
+  ok("monitoring swaps to the pathology", JSON.stringify(sel.monitoring) !== JSON.stringify(today.monitoring));
+  ok("pathologyCurated is true for an authored plan", sel.pathologyCurated === true);
+  ok("the pathology name is carried", sel.pathology === "Spinal epidural abscess");
+
+  // Selected + uncurated => site tiers, flagged so the UI can label them.
+  const uncurated = causesAt(host).map(c => c.name).find(n => !PATHOLOGY_NEXT[n] && !PATHOLOGY_ALIAS[n]);
+  ok("an uncurated cause exists at that site to test the fallback", !!uncurated);
+  const fb = pathologyNextStepsFor(host, uncurated);
+  ok("uncurated falls back to the site confirmatory",
+     JSON.stringify(fb.confirmatory) === JSON.stringify(today.confirmatory));
+  ok("uncurated is flagged so the UI can label it", fb.pathologyCurated === false);
+  ok("uncurated still carries the name for the label", fb.pathology === uncurated);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

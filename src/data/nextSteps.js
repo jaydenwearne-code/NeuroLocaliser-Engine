@@ -2315,6 +2315,32 @@ export function nextStepsFor(site) {
   };
 }
 
+// The same plan, narrowed to ONE pathology (spec 2026-08-18). Immediate and first-line stay site-level —
+// they are performed before the cause is known, and are what identify it. Confirmatory, monitoring,
+// urgency and referral become pathology-level where a plan is authored.
+//
+// Where no plan is authored the lower tiers fall back to the SITE plan and `pathologyCurated` goes false,
+// so the card can label it honestly ("General plan for this site — not specific to X"). It never derives
+// generic pathology content: the generic sieve filler was deleted engine-wide on 2026-08-11 and must not
+// reappear in another shape.
+//
+// `causeName: null` returns exactly what nextStepsFor() returns, so the card has ONE code path and the
+// no-selection view cannot drift from the pre-2026-08-18 behaviour.
+export function pathologyNextStepsFor(site, causeName) {
+  const base = nextStepsFor(site);
+  if (!causeName) return { ...base, pathology: null, pathologyCurated: false };
+  const plan = pathologyPlanFor(causeName, site);
+  return {
+    ...base,
+    confirmatory: plan ? plan.confirmatory : base.confirmatory,
+    monitoring:   plan ? plan.monitoring   : base.monitoring,
+    urgency:      resolveUrgency(site, causeName),
+    referral:     (plan && plan.referral) || base.referral,
+    pathology: causeName,
+    pathologyCurated: !!plan,
+  };
+}
+
 // ---- CROSS-SITE WORKUP (spec 2026-08-14 §6) ----
 // One plan for a multifocal picture. The urgency is the MOST urgent across the set, never an average —
 // a cord site plus a nerve site is a cord-urgency workup, and averaging would under-call it.
