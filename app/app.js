@@ -20,6 +20,7 @@ import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js"
 import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName, shortFindingLabel } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
+import { EXAMPLES } from "./examples.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -189,9 +190,33 @@ function markSides() {
   const acc = document.getElementById("acc"); if (!acc) return;
   acc.querySelectorAll("button[data-f]").forEach(b => b.classList.toggle("on", S.tokens.has(`${b.dataset.f}@${b.dataset.s}`)));
 }
+// Loading an example is just setting state — it round-trips through the case URL like any hand-entered
+// case, so a tester can share the exact example they were looking at. renderLocalise() rather than a
+// narrower re-render, because an example may introduce a cord finding and so need the level inputs mounted.
+function loadExample(id) {
+  const ex = EXAMPLES.find(e => e.id === id); if (!ex) return;
+  S.tokens = new Set(ex.tokens);
+  S.onset = ex.onset || "";
+  S.course = ex.course || "";
+  S.selected = undefined;
+  S.pinned = new Set();
+  S.scope = "site";
+  renderLocalise();
+}
+
 function renderChips() {
   const el = document.getElementById("chips");
-  if (!S.tokens.size) { el.innerHTML = `<span class="fd" style="color:var(--faint);font-size:11.5px">No findings yet — tick from the exam steps, or try a worked example above.</span>`; return; }
+  if (!S.tokens.size) {
+    // The on-ramp, not furniture: only ever shown while the pane is empty, gone the moment the user enters
+    // anything. The old copy pointed at examples that had not existed since presets were removed in the
+    // 2026-07-25 UI restructure — it promised something the app could not deliver.
+    el.innerHTML = `<div class="egs"><span class="egs-lead">No findings yet — tick from the exam steps, or start from a case:</span>
+      <div class="egs-row">${EXAMPLES.map(e =>
+        `<button class="eg" data-eg="${esc(e.id)}"><b>${esc(e.label)}</b><span>${esc(e.teaches)}</span></button>`
+      ).join("")}</div></div>`;
+    el.onclick = e => { const b = e.target.closest("[data-eg]"); if (b) loadExample(b.dataset.eg); };
+    return;
+  }
   el.innerHTML = [...S.tokens].map(t => { const [f,s]=t.split("@");
     return `<span class="chip" title="${esc(f)} — ${esc(desc(f))}"><span class="sd">${sideTag(s)}</span>${esc(shortFindingLabel(f))}<span class="x" data-t="${t}">×</span></span>`; }).join("");
   el.onclick = e => { const t = e.target.dataset.t; if (t) toggleToken(t); };
