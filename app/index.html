@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NeuroLocaliser</title>
 <style>
-  :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--ink:#16283f;--muted:#5d6c7e;--faint:#8d8b84;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
+  :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--on-danger:#ffffff;--ink:#16283f;--muted:#5d6c7e;--faint:#8d8b84;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
     --ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;
     --red:#b32b1c;--red-bg:#fbe9e7;--shadow:0 1px 2px rgba(29,49,77,.05),0 6px 20px rgba(29,49,77,.06);--radius:12px;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -14,11 +14,11 @@
        uppercase micro-captions and mono tokens. Exceptions, deliberate: the wordmark and the code-stroke
        clock, which are doing a different job. */
     --fs-answer:17px;--fs-body:13px;--fs-meta:11px;--fs-cap:10px;}
-  @media (prefers-color-scheme:dark){:root{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--ink:#e9edf3;--muted:#96a3b5;--faint:#6f819c;--line:#26364d;--band:#1b2942;--mimic:#7fbcd6;--iatro:#d296b8;
-    --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#d24a33;--red-bg:#3a2318;
+  @media (prefers-color-scheme:dark){:root{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--on-danger:#ffffff;--ink:#e9edf3;--muted:#96a3b5;--faint:#6f819c;--line:#26364d;--band:#1b2942;--mimic:#7fbcd6;--iatro:#d296b8;
+    --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
-  :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#5d6c7e;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#8d8b84;--mimic:#3f7f96;--iatro:#9c5a86;}
-  :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#96a3b5;--line:#26364d;--band:#1b2942;--terra:#e79075;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#d24a33;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#6f819c;--mimic:#7fbcd6;--iatro:#d296b8;}
+  :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#5d6c7e;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--on-danger:#ffffff;--ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#8d8b84;--mimic:#3f7f96;--iatro:#9c5a86;}
+  :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#96a3b5;--line:#26364d;--band:#1b2942;--terra:#e79075;--on-danger:#ffffff;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#6f819c;--mimic:#7fbcd6;--iatro:#d296b8;}
   *{box-sizing:border-box;} body{margin:0;font-family:var(--sans);color:var(--ink);line-height:1.5;
     background:radial-gradient(1100px 560px at 100% -10%,color-mix(in srgb,var(--navy) 4%,transparent),transparent 60%),var(--cream);min-height:100vh;}
   .wrap{max-width:1200px;margin:0 auto;padding:clamp(14px,3vw,32px);}
@@ -64,7 +64,12 @@
   .multi{border:1px dashed var(--contra);border-radius:9px;padding:9px 10px;margin-top:8px;font-size:var(--fs-body);background:var(--contra-bg);}
   /* causes */
   .catgrp{margin-bottom:9px;} .cathead{display:flex;align-items:center;gap:7px;font-size:var(--fs-meta);font-weight:800;letter-spacing:.03em;text-transform:uppercase;margin-bottom:3px;} .catdot{width:9px;height:9px;border-radius:50%;flex:none;}
-  .cause{font-size:var(--fs-body);padding:3px 0 3px 16px;} .cline{display:flex;align-items:baseline;gap:8px;} .cause .cn{flex:1;} .cause .tp{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);} .cause .lk{font-size:var(--fs-cap);font-weight:700;letter-spacing:.03em;color:var(--muted);} .cause .rf{font-size:var(--fs-cap);font-weight:800;color:var(--red);background:var(--red-bg);border-radius:4px;padding:0 5px;}
+  .cause{font-size:var(--fs-body);padding:3px 0 3px 16px;} .cline{display:flex;align-items:baseline;gap:8px;} .cause .cn{flex:1;} .cause .tp{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);} .cause .lk{font-size:var(--fs-cap);font-weight:700;letter-spacing:.03em;color:var(--muted);}
+  /* The must-not-miss is distinguished by FORM, not hue: a tired reader should never have to tell
+     #d36d52 from #b32b1c at 10px. Filled chip + glyph, everywhere a red flag appears. */
+  .rf{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-cap);font-weight:800;
+    letter-spacing:.04em;color:var(--on-danger);background:var(--red);border-radius:4px;padding:1px 6px;
+    white-space:nowrap;}
   .cfeat{font-size:var(--fs-cap);color:var(--muted);line-height:1.4;margin-top:1px;padding-right:6px;}
   .cpath{display:flex;gap:6px;align-items:flex-start;font-size:var(--fs-cap);line-height:1.4;margin-top:3px;padding:4px 8px;
     border-left:2px solid var(--gold);background:var(--gold-bg);border-radius:0 6px 6px 0;color:var(--ink);}
@@ -220,6 +225,9 @@
   .secnav a:hover{color:var(--navy);background:var(--band);}
   .urg-pill{flex:none;align-self:flex-start;font-size:var(--fs-cap);font-weight:800;letter-spacing:.04em;
     text-decoration:none;border:1px solid;border-radius:999px;padding:3px 9px;white-space:nowrap;}
+  /* EMERGENCY is the same class of signal as a red flag, so it gets the same treatment. URGENT and
+     routine stay outlined — only the top of the scale is filled, or the fill stops meaning anything. */
+  .urg-pill.urg-emergency{color:var(--on-danger);background:var(--red);border-color:var(--red);}
   .out-card{scroll-margin-top:44px;} /* so a jump does not land under the sticky nav */
   /* the sticky nav would collide with the sticky safety bar on a phone, where the single column already
      puts the sections next to each other */

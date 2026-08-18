@@ -72,6 +72,26 @@ const TERRA_ALLOWED = [
      offenders.length === 0, offenders.slice(0, 8).join(" | "));
 }
 
+// ---- the danger chip must be READABLE, in both themes ----
+// The chip is filled, so its text sits on saturated red. Using --paper for that text worked in light
+// (near-white) and was unreadable in dark (dark navy) — hence a dedicated --on-danger. Measured before
+// the fix: dark #d24a33 on white was 4.40:1, under the 4.5 needed for small bold text.
+{
+  const lum = hex => {
+    const n = parseInt(hex.slice(1), 16);
+    const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+      .map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  for (const [i, b] of blocks.entries()) {
+    const red = tokenIn(b, "red"), on = tokenIn(b, "on-danger");
+    if (!red || !on) { ok(`palette block ${i + 1}: defines --red and --on-danger`, false, `${red} / ${on}`); continue; }
+    const r = ratio(red, on);
+    ok(`palette block ${i + 1}: danger chip clears 4.5:1 (${r.toFixed(2)}:1)`, r >= 4.5, `${on} on ${red}`);
+  }
+}
+
 console.log("\nNeuroLocaliser — BRAND\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}${r.detail ? "  → " + r.detail : ""}`);
 console.log("=".repeat(52));
