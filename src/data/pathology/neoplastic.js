@@ -235,7 +235,7 @@ const NECK_MEDIASTINAL_SPINE = {
     "Nasendoscopy or laryngoscopy where voice or swallow is affected: it confirms the palsy, documents the side, and may show the primary",
   ],
   monitoring: [
-    "SAFETY NET: a hoarse voice lasting more than about three weeks in a smoker needs laryngoscopy and imaging, not reassurance or another course of treatment for reflux — this is the commonest way a mediastinal malignancy is missed",
+    "SAFETY NET: PROLONGED or progressive hoarseness in a smoker needs laryngoscopy and imaging, not reassurance or another course of treatment for reflux — this is the commonest way a mediastinal malignancy is missed",
     "SWALLOW and aspiration risk where the vagus or lower cranial nerves are involved: silent aspiration is common and pneumonia is what actually harms the patient",
     "Track {level}, and reassess the voice formally rather than by listening — objective assessment picks up progression that conversation does not",
     "Watch for the neighbouring structures the same lesion will reach: sympathetic chain for a Horner's, phrenic nerve for the diaphragm, and brachial plexus for the arm",
