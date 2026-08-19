@@ -155,7 +155,8 @@ export default {
     },
     "AICA territory infarct": {
       slots: { level: "hearing, facial power and crossed sensory loss",
-               flavour: "AICA is the one brainstem stroke that DEAFENS — sudden hearing loss with vertigo and crossed signs is AICA, not a labyrinthitis" },
+               flavour: "AICA is the one brainstem stroke that DEAFENS, because the labyrinthine artery arises from it — but hearing loss does NOT separate it from a labyrinthitis, which is cochlear by definition and deafens too. What separates them is everything ELSE: ipsilateral facial weakness, crossed sensory loss, limb ataxia, or a Horner's syndrome, none of which a labyrinthitis produces" },
+      confirmatoryExtra: ["Where the only findings are vertigo and hearing loss, HINTS is what decides: a NORMAL head impulse, direction-changing nystagmus or skew deviation points central, and a labyrinthitis cannot produce any of them"],
     },
     "AICA territory infarct involving the trigeminal complex": {
       slots: { level: "facial sensation and the corneal reflex, with the contralateral limbs",
@@ -178,11 +179,10 @@ export default {
                flavour: "define WHICH territory: an SCA infarct sits above the horizontal fissure and an inferior infarct below it, and the swelling risk differs" },
       monitoringExtra: ["POSTERIOR-FOSSA SWELLING obstructs the fourth ventricle — watch conscious level through days 2-4 and involve neurosurgery early if the infarct is large"],
     },
-    "Cerebellar infarct or haemorrhage": {
-      slots: { level: "conscious level and truncal stability",
-               flavour: "the FIRST CT settles which of the two this is, and that changes the surgical conversation — but the posterior-fossa monitoring below is the same either way, which is why they sit together here" },
-      confirmatoryExtra: ["If the CT shows HAEMORRHAGE rather than infarct, stop the ischaemic pathway: reverse anticoagulation urgently and involve neurosurgery immediately — a cerebellar haematoma is one of the clearest indications for evacuation"],
-      monitoringExtra: ["POSTERIOR-FOSSA SWELLING obstructs the fourth ventricle and causes fatal herniation with little warning — hourly conscious level, and a low threshold for repeat imaging"],
+    "Cerebellar infarct (vermian)": {
+      slots: { level: "conscious level and truncal stability — a vermian lesion can leave the LIMBS almost normal",
+               flavour: "a midline infarct with little limb ataxia is easily dismissed as non-neurological; truncal instability severe enough to prevent sitting unsupported is the sign that matters" },
+      monitoringExtra: ["POSTERIOR-FOSSA SWELLING obstructs the fourth ventricle and causes fatal herniation with little warning, peaking at 2-4 days — hourly conscious level THROUGH THAT WINDOW even once the deficit has plateaued, and a low threshold for repeat imaging"],
     },
 
     // ---- the thalamus and hypothalamus ----
@@ -224,6 +224,38 @@ export default {
       confirmatory: cordInfarct("the conus and cauda equina",
         "At the conus the artery of Adamkiewicz territory is the vulnerable watershed — and sphincter failure appears EARLY here, disproportionate to the leg weakness"),
       monitoringExtra: ["Sphincter function is the outcome that matters most at this level — document it explicitly at every review rather than recording 'legs unchanged'"],
+    },
+  }),
+
+  // Split out of "Cerebellar infarct or haemorrhage" on 2026-08-18 (owner ruling). It is NOT a member of
+  // the infarct family: the first move diverges completely — reverse the anticoagulation and call the
+  // surgeon, rather than ask about reperfusion. Round 2 may fold it into the haemorrhage family; until
+  // then it stands alone, which is the honest shape for a single disease with its own answer.
+  "Cerebellar haemorrhage": dz("Cerebellar haemorrhage", {
+    confirmatory: [
+      "NON-CONTRAST CT is immediate and diagnostic — and here it is not merely excluding blood, it IS the diagnosis and it changes the next hour completely",
+      "MEASURE THE HAEMATOMA and look at the fourth ventricle: size and brainstem compression, not the deficit, are what drive the surgical decision — a patient can look well and still need evacuation. {flavour}",
+      "Establish anticoagulant exposure IMMEDIATELY and reverse it — this is the single most time-critical action, ahead of any further imaging",
+      "CT angiography where the patient is young, normotensive, or the haematoma sits atypically, looking for an underlying vascular malformation",
+      "Delayed MRI once stable, for an underlying cavernoma, tumour or amyloid angiopathy the acute blood conceals",
+    ],
+    monitoring: [
+      "SAFETY NET: the posterior fossa has no room. Deterioration can be abrupt and irreversible, so a falling conscious level is a call to the surgeon and the scanner in the same breath — not an observation to repeat in an hour",
+      "Hourly observations tracking {level}, with an explicit escalation threshold agreed with neurosurgery in advance",
+      "Watch for obstructive hydrocephalus from fourth-ventricle compression, which is treatable and is what usually kills here",
+      "Blood pressure control, glucose and temperature as for any acute intracerebral haemorrhage",
+    ],
+    urgency: "emergency",
+    referral: "Emergency neurosurgery — posterior-fossa haematomas are evacuated on size and brainstem compression, so refer before the patient deteriorates",
+    bySite: {
+      cerebellum_vermis: {
+        level: "conscious level, with the fourth ventricle on every scan",
+        flavour: "a MIDLINE haematoma sits directly on the fourth ventricle, so obstructive hydrocephalus arrives EARLY and may dominate before any brainstem sign appears",
+      },
+      cerebellum_hemisphere: {
+        level: "conscious level, and the ipsilateral limbs for worsening ataxia",
+        flavour: "a HEMISPHERIC haematoma compresses the brainstem laterally — this is the classic setting in which size and brainstem distortion, rather than the neurological deficit, drive the decision to evacuate",
+      },
     },
   }),
 

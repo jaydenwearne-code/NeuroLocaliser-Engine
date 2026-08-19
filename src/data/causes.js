@@ -447,8 +447,14 @@ export const CAUSES = {
       "Years of heavy alcohol use with a wide-based unsteady GAIT and truncal ataxia, while the arms are relatively spared — the anterior vermis bears the brunt"),
     c("Medulloblastoma", "neoplastic", ["subacute","chronic"], "common", true,
       "A CHILD with truncal ataxia, morning headache and vomiting — a midline posterior-fossa mass obstructing the fourth ventricle, causing hydrocephalus"),
-    c("Cerebellar infarct or haemorrhage", "vascular", ["hyperacute","acute"], "common", true,
-      "Abrupt truncal ataxia with headache and vomiting; posterior-fossa SWELLING can obstruct the fourth ventricle and cause fatal herniation, so conscious level must be watched closely"),
+    // SPLIT 2026-08-18 (owner ruling): these were one entry, "Cerebellar infarct or haemorrhage". They
+    // share the posterior-fossa danger but not the first move — the initial CT separates them, and a
+    // haematoma is reversed and evacuated where an infarct is not. One cause naming two diseases cannot
+    // carry one honest workup.
+    c("Cerebellar infarct (vermian)", "vascular", ["hyperacute","acute"], "common", true,
+      "Abrupt truncal ataxia with headache and vomiting, often with little limb ataxia; posterior-fossa SWELLING peaks at 2-4 days and can obstruct the fourth ventricle, so conscious level must be watched well after the deficit itself has plateaued"),
+    c("Cerebellar haemorrhage", "vascular", ["hyperacute","acute"], "common", true,
+      "Sudden occipital headache and vomiting with truncal ataxia and NO hemiparesis — hypertension or anticoagulation is the usual setting, and a haematoma over about 3cm obstructing the fourth ventricle is among the clearest indications for surgical evacuation"),
     c("Paraneoplastic cerebellar degeneration", "neoplastic", ["subacute"], "rare", false,
       "Subacute ataxia over weeks with anti-Yo or anti-Hu antibodies; look for an underlying breast, ovarian or lung malignancy"),
     c("Post-infectious acute cerebellitis", "infective", ["acute","subacute"], "common", false,
