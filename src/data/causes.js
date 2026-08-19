@@ -413,7 +413,7 @@ export const CAUSES = {
   thalamus_arousal_paramedian: [ // artery of Percheron
     c("Artery of Percheron infarct", "vascular", ["hyperacute","acute"], "common", true,
       "Sudden coma or hypersomnolence with vertical gaze palsy and dense amnesia — a single perforator supplies BOTH paramedian thalami, so one small occlusion gives bilateral infarcts; the early CT is often normal"),
-    c("Deep cerebral venous thrombosis (internal cerebral veins / straight sinus / vein of Galen)", "vascular", ["acute","subacute"], "uncommon", true,
+    c("Deep cerebral venous thrombosis", "vascular", ["acute","subacute"], "uncommon", true,
       "BILATERAL thalamic change should always prompt venous imaging — headache, a prothrombotic state or pregnancy, with oedema that does not respect an arterial territory; it is treatable with anticoagulation, so it must not be missed"),
     c("Bilateral thalamic glioma", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive drowsiness and cognitive decline over weeks to months with bilateral thalamic expansion"),
@@ -1106,6 +1106,8 @@ export const CAUSES = {
       "Fever, confusion and seizures with temporal lobe change on MRI — give aciclovir empirically"),
     c("Delirium", "mimic", ["acute","subacute"], "common", false,
       "Fluctuating attention with a systemic trigger — unlike Wernicke's aphasia, comprehension and naming are not SELECTIVELY lost in an otherwise fully alert patient"),
+    c("Transverse or sigmoid sinus thrombosis (vein of Labbe)", "vascular", ["acute","subacute"], "uncommon", true,
+      "Fluent aphasia with headache and seizures, with temporal oedema or haemorrhage that does NOT respect the MCA territory — image the VENOUS sinuses, because the arterial study will be normal and the diagnosis is treatable"),
     c("Postictal aphasia after a focal temporal seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
       "Language failure that fluctuates and improves over minutes to hours after a witnessed seizure or automatisms"),
   ],
@@ -1121,6 +1123,12 @@ export const CAUSES = {
       "New seizures in an adult with progressive memory or language difficulty over weeks to months"),
     c("MCA inferior division infarct", "vascular", ["hyperacute","acute"], "common", false,
       "Abrupt onset of memory or language disturbance, often with a superior quadrantanopia from Meyer's loop"),
+    // ADDED 2026-08-18 (owner request): the temporal / vein of Labbe venous pattern was the one classic
+    // CVST location absent from the model. It matters because it presents with aphasia and seizures in a
+    // young patient and is worked up as HSV encephalitis or an inferior-division infarct — the two
+    // diagnoses already sitting beside it in this list.
+    c("Transverse or sigmoid sinus thrombosis (vein of Labbe)", "vascular", ["acute","subacute"], "uncommon", true,
+      "Headache with seizures and aphasia in a YOUNGER patient, often with a preceding ear infection or a prothrombotic state — a temporal haemorrhage or oedema that CROSSES ARTERIAL TERRITORIES is venous until the venogram says otherwise, and it is treatable with anticoagulation"),
     c("Alzheimer's disease (medial temporal)", "degenerative", ["chronic"], "common", false,
       "Years of insidious episodic memory loss with medial temporal atrophy; the tempo separates it from encephalitis"),
   ],
@@ -2613,7 +2621,7 @@ export const CAUSES = {
       "Younger patient with sensory symptoms evolving over days and prior demyelinating episodes"),
     c("Small metastasis / glioma", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive sensory symptoms over weeks; an enhancing thalamic lesion"),
-    c("Deep cerebral venous thrombosis (internal cerebral veins / straight sinus)", "vascular", ["acute","subacute"], "rare", true,
+    c("Deep cerebral venous thrombosis", "vascular", ["acute","subacute"], "rare", true,
       "BILATERAL thalamic swelling with headache, drowsiness and a course that deteriorates over days in a younger patient — a venous rather than arterial pattern that crosses arterial territories, so image the venous sinuses and look for a prothrombotic state"),
     c("Fabry disease", "congenital", ["chronic"], "rare", false,
       "Stroke in a young adult with burning acroparaesthesiae of the hands and feet, hypohidrosis and renal impairment — an X-linked, enzyme-replaceable cause of early stroke that goes unrecognised for years; the 'pulvinar sign' (symmetrical high T1 signal in the posterior thalamus) supports it on MRI",

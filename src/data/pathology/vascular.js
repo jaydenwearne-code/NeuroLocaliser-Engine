@@ -96,6 +96,33 @@ const ANEURYSM_SPINE = {
   referral: "Emergency neurosurgery / neurointervention — an unsecured aneurysm is secured, not observed",
 };
 
+// ---- PROMOTED from round 5 on clinical grounds (owner ruling, 2026-08-18) ----
+// Cerebral venous thrombosis is the treatable stroke that gets missed, because it breaks every arterial
+// rule the reader has been taught: the deficit crosses territories, the patient is young, the CT looks
+// wrong for an infarct, and the arterial study is normal. It is also the cause that legitimately fires
+// the fundal-photography prompt at the parasagittal sites, so it was already load-bearing in the app
+// while having no workup of its own.
+//
+// CAVERNOUS sinus thrombosis is INCLUDED — it is a dural venous sinus thrombosis and shares the venogram,
+// the anticoagulation question and the source hunt — but it overrides heavily, because the orbit and the
+// septic source dominate its first hour.
+const CVST_SPINE = {
+  confirmatory: [
+    "CT or MR VENOGRAM — the arterial study will be normal and is not reassurance. If venous thrombosis is being considered at all, the venous phase must be asked for explicitly, because it is not part of a standard stroke protocol",
+    "A haemorrhage or oedema that CROSSES ARTERIAL TERRITORIES, or sits where no single artery would put it, is the imaging signature: {flavour}",
+    "Hunt the cause: a prothrombotic state, pregnancy or the puerperium, the combined oral contraceptive, dehydration, malignancy, and a LOCAL source such as sinusitis, mastoiditis or a dental infection",
+    "Thrombophilia screening has a place, but timing matters — acute thrombosis and anticoagulation both distort the results, so it is usually deferred rather than sent in the first hours",
+  ],
+  monitoring: [
+    "ANTICOAGULATION IS THE TREATMENT EVEN WHERE THERE IS HAEMORRHAGE — this is the counter-intuitive point of the whole diagnosis, and the venous blood is a consequence of the obstruction rather than a contraindication to relieving it",
+    "Track {level}, and watch for the deterioration that comes from propagating thrombus rather than from the original lesion",
+    "SAFETY NET: raised intracranial pressure is the parallel problem — headache, vomiting, a falling conscious level or visual obscurations mean reimaging, and papilloedema here threatens VISION independently of the stroke",
+    "Seizures are common and often the presenting event; treat them, and do not attribute a post-ictal deficit to progression without reimaging",
+  ],
+  urgency: "emergency",
+  referral: "Acute stroke or neurology service, with haematology; neurosurgery if there is mass effect or hydrocephalus",
+};
+
 const INFARCT_SPINE = {
   confirmatory: [
     "Establish the TIME LAST KNOWN WELL before anything else — it is what decides whether reperfusion is on the table, and it cannot be reconstructed later",
@@ -124,6 +151,106 @@ const cordInfarct = (where, clue) => [
 ];
 
 export default {
+  // ---- CEREBRAL VENOUS THROMBOSIS: the treatable stroke that breaks the arterial rules ----
+  ...family("venous-sinus-thrombosis", CVST_SPINE, {
+    "Superior sagittal sinus thrombosis": {
+      slots: { level: "leg power in BOTH legs, and conscious level",
+               flavour: "PARASAGITTAL and often BILATERAL, straddling the midline — a bilateral leg deficit that no single arterial territory explains, with the empty delta sign on contrast" },
+      monitoringExtra: ["Papilloedema is common here because the sagittal sinus drains the arachnoid granulations — check the discs at presentation and again, since visual loss is a separate and preventable outcome"],
+      bySite: {
+        cortex_motor_leg:    { level: "both legs, tested separately — asymmetry does not exclude it" },
+        cortex_sensory_leg:  { level: "sensation in both legs, and the sensory level if one seems to be present" },
+        cortex_paracentral:  { level: "leg power and CONTINENCE, which the paracentral lobule governs" },
+        cortex_sma:          { level: "initiation and spontaneous movement, which can look like reduced consciousness" },
+        cortex_aca:          { level: "leg power, initiation and continence together" },
+      },
+    },
+    "Deep cerebral venous thrombosis": {
+      slots: { level: "conscious level and memory, which recover slowly if at all",
+               flavour: "BILATERAL THALAMIC swelling — the internal cerebral veins, vein of Galen and straight sinus drain both thalami, so bilateral thalamic change should prompt a venogram before anything else. The differential is artery of Percheron infarction, and the venogram is what separates them" },
+      monitoringExtra: ["This is the deep venous pattern with the worst prognosis, and conscious level can deteriorate over days — a falling GCS here is thrombus propagation until reimaged"],
+      bySite: {
+        thalamus_arousal_paramedian: { level: "conscious level and the sleep-wake cycle" },
+        thalamus_limbic:             { level: "memory and behaviour once arousal permits testing" },
+        aphasia_subcortical_thalamic:{ level: "language — fluctuating, with intact repetition" },
+        subcortex_thalamus:          { level: "conscious level, sensation and gaze together" },
+      },
+    },
+    "Transverse or sigmoid sinus thrombosis (vein of Labbe)": {
+      slots: { level: "language, and any seizure activity",
+               flavour: "a TEMPORAL haemorrhage or oedema that does not respect the MCA territory — the vein of Labbe drains the temporal lobe into the transverse sinus, and this is the pattern most often worked up as HSV encephalitis or an inferior-division infarct" },
+      confirmatoryExtra: ["Look at the MASTOID and middle ear on the same scan: an adjacent infection is both the cause and a separate surgical problem, and it is easy to overlook once the intracranial finding has been seen"],
+      bySite: {
+        cortex_temporal:        { level: "comprehension, memory and seizure activity" },
+        cortex_temporoparietal: { level: "comprehension and repetition, and any neglect" },
+      },
+    },
+    "Cortical vein thrombosis": {
+      slots: { level: "the focal deficit, and whether it fluctuates",
+               flavour: "an ISOLATED cortical vein thrombosis without sinus involvement — a juxtacortical haemorrhage with disproportionate surrounding oedema, and the cord sign of the thrombosed vein itself" },
+      confirmatoryExtra: ["Blood-sensitive sequences (SWI or gradient-echo) are more sensitive than the venogram for an isolated cortical vein, so ask for them specifically when the venogram is normal but the picture is convincing"],
+      bySite: {
+        cortex_sensory_hand: { level: "cortical sensory function in the hand" },
+        cortex_hand_knob:    { level: "isolated hand function, which mimics a peripheral nerve lesion" },
+      },
+    },
+    "Jugular vein thrombosis": {
+      slots: { level: "swallow, voice and palatal elevation",
+               flavour: "thrombosis at the jugular bulb compresses the lower cranial nerves as they leave the skull base — look for a central line, a recent neck procedure, or an adjacent deep neck infection" },
+    },
+    "Jugular vein thrombosis or dissection": {
+      slots: { level: "voice, swallow and shoulder shrug",
+               flavour: "the two mechanisms look identical on the nerve examination — the vessel imaging separates them, and dissection additionally raises the question of an embolic source" },
+      confirmatoryExtra: ["If it is a DISSECTION rather than a thrombosis, the concern shifts to distal embolism and the antithrombotic decision changes — image the arteries as well as the veins"],
+    },
+    // Cavernous sinus thrombosis: still a dural sinus thrombosis, but the orbit and the source dominate.
+    "Cavernous sinus thrombosis": {
+      slots: { level: "each eye movement separately, plus acuity and the pupil",
+               flavour: "PROPTOSIS, chemosis and a painful ophthalmoplegia — and because the two cavernous sinuses communicate, a picture that starts on one side and CROSSES to the other is close to diagnostic" },
+      confirmatory: [
+        "URGENT contrast MRI or CT of the ORBITS AND CAVERNOUS SINUS with venography — this is an orbital emergency as much as an intracranial one",
+        "FIND THE SOURCE: the sinuses, the face, the orbit and the teeth. Spread from the danger triangle of the face is the classic route, and the source needs treating in its own right",
+        "Blood cultures before antibiotics, plus inflammatory markers; aspirate or biopsy the source where there is one to sample",
+        "Formal ophthalmology assessment — acuity, pupil and intraocular pressure — because vision is the function most likely to be lost and the least likely to return",
+      ],
+      monitoringExtra: ["Watch the OTHER eye: bilateral involvement means the thrombus has crossed and marks a substantial deterioration, and it is what distinguishes this from an orbital cellulitis"],
+      referral: "Emergency ophthalmology and ENT with infectious diseases, plus neurology — and the anticoagulation decision is a specialist one here rather than automatic",
+      bySite: {
+        pupil_cn3_compressive:      { level: "the third nerve and the PUPIL specifically" },
+        skull_base_cavernous_sinus: { level: "all of III, IV, VI and the V1/V2 sensory territories, one at a time" },
+      },
+    },
+    "Septic cavernous sinus thrombosis": {
+      slots: { level: "each eye movement, acuity, the pupil, and the systemic observations",
+               flavour: "the septic form — fever and rigors with proptosis and ophthalmoplegia, usually from a facial, sinus or dental source that must be found and drained" },
+      confirmatory: [
+        "BLOOD CULTURES BEFORE ANTIBIOTICS, and imaging of the orbits, cavernous sinus AND paranasal sinuses in one study",
+        "Identify and DRAIN the source — antimicrobial treatment alone frequently fails while a collection remains, and Staphylococcus aureus is the usual organism",
+        "Lumbar puncture where meningitis is a possibility and there is no contraindication, since the two coexist",
+        "Formal ophthalmology assessment for acuity, pupil and intraocular pressure",
+      ],
+      monitoringExtra: ["Watch for the metastatic complications of a staphylococcal bacteraemia — endocarditis, septic emboli and abscesses elsewhere — which are missed while attention is on the orbit"],
+      referral: "Emergency ENT and ophthalmology with infectious diseases and neurosurgery",
+    },
+  }),
+
+  // ARTERIAL, not venous — it sits in the thrombosis word-cluster and nowhere near its workup.
+  "Subclavian or axillary artery aneurysm with thrombosis": dz("Subclavian or axillary artery aneurysm with thrombosis", {
+    confirmatory: [
+      "This is a VASCULAR problem presenting as a nerve problem: image the subclavian and axillary arteries with duplex ultrasound and CT angiography, not the brachial plexus alone",
+      "Examine the LIMB as well as the nerve — pulses, capillary refill, temperature and blood pressure in both arms; distal emboli from the aneurysm are what threaten the hand",
+      "Chest imaging for a CERVICAL RIB or fibrous band: thoracic outlet compression is the usual cause of a subclavian aneurysm in a younger patient, and it is correctable",
+      "Nerve conduction studies define the plexus deficit, but they are the second question, not the first",
+    ],
+    monitoring: [
+      "SAFETY NET: the limb outranks the nerve. Acute ischaemia — a cold, pale, pulseless hand — is a vascular emergency and must not wait behind a neurological work-up",
+      "Watch for recurrent distal embolism, which can present as fluctuating hand symptoms and is often attributed to the plexus lesion",
+      "The neurological recovery follows the vascular repair, so set that expectation rather than pursuing the nerve deficit separately",
+    ],
+    urgency: "emergency",
+    referral: "Vascular surgery urgently; thoracic surgery where a cervical rib is found, with neurology for the plexus injury",
+  }),
+
   // ---- INTRAPARENCHYMAL haemorrhage: blood inside the brain ----
   ...family("intraparenchymal-haemorrhage", INTRAPARENCHYMAL_SPINE, {
     "Thalamic haemorrhage": {
