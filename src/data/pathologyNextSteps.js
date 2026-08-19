@@ -40,6 +40,10 @@ export const PATHOLOGY_ALIAS = {
   // duplicate survived the causes sweep unnoticed. The plan is authored under "Demyelination" and the MS
   // spelling resolves onto it, so the two can never drift apart into two half-maintained workups.
   "Demyelination (MS)": "Demyelination",
+  // Round 6: two more exact synonyms — the same disease with the parenthetical swapped, which is exactly
+  // the pattern that produced the MS duplicate.
+  "Central pontine myelinolysis (osmotic demyelination)": "Osmotic demyelination syndrome (central pontine myelinolysis)",
+  "PRES (posterior reversible encephalopathy)": "Posterior reversible encephalopathy syndrome (PRES)",
 };
 
 export const PATHOLOGY_NEXT = {
