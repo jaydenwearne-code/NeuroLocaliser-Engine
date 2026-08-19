@@ -9,7 +9,8 @@
 //
 // REVIEW STATUS:
 //   ✅ the 8 tranche-1 plans — SIGNED OFF 2026-08-18.
-//   ⚠  MALIGNANT CNS COMPRESSION (9) and THORACIC INLET / PANCOAST (9) — tranche 2, AWAITING REVIEW.
+//   ⚠  MALIGNANT CNS COMPRESSION (9) and THORACIC INLET / PANCOAST (9) — tranche 2 round 3a, AWAITING REVIEW.
+//   ⚠  SKULL-BASE / PERINEURAL SPREAD (19) and PARANEOPLASTIC (6) — tranche 2 round 3b, AWAITING REVIEW.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 3a (tranche 2) ----
@@ -56,7 +57,196 @@ const PANCOAST_SPINE = {
   referral: "Thoracic oncology multidisciplinary team; neurology or plexus surgery for the neurological deficit",
 };
 
+// ---- ROUND 3b (tranche 2) ----
+
+// SKULL-BASE AND PERINEURAL MALIGNANT SPREAD. The unifying idea is that tumour travels along ANATOMICAL
+// CORRIDORS — nerves, foramina and fat planes — rather than by pushing through tissue. That is why the
+// imaging must follow the corridor rather than photograph the deficit, and why the history of a small
+// skin cancer excised years ago is the single most useful question in the whole encounter.
+const SKULL_BASE_SPINE = {
+  confirmatory: [
+    "MRI skull base with contrast AND FAT SATURATION, following the nerve or corridor back to its foramen — fat saturation is what makes an enhancing nerve visible against marrow, and a study without it is reported as normal often enough to matter",
+    "ASK ABOUT PREVIOUS HEAD AND NECK CANCER, however small and however long ago — an excised facial skin lesion years earlier is the history that makes this diagnosis, and patients never volunteer it because nobody told them it mattered",
+    "Look for the indirect signs rather than a mass: foraminal widening or erosion, loss of the normal fat pad at the foramen, and DENERVATION change in the muscles supplied — {flavour}",
+    "CT for the BONE alongside the MRI for soft tissue: erosion versus remodelling separates malignant from benign, and they answer different questions",
+    "Tissue where the primary is unknown, with PET-CT to find it — and biopsy the accessible site rather than the skull base wherever that is possible",
+  ],
+  monitoring: [
+    "Track {level} BY NAME at every review — spread along a corridor is CONTIGUOUS, so the sequence in which structures fail maps the direction of travel and predicts what goes next",
+    "SAFETY NET: progressive cranial neuropathy WITH PAIN is malignant until proven otherwise, and a normal first scan does not exclude it — a repeat study after an interval is frequently what makes the diagnosis",
+    "Protect the eye wherever corneal sensation is lost: a numb cornea ulcerates silently and the patient will not report it, because the warning symptom is the one thing they cannot feel",
+    "Nutrition and swallow where the lower cranial nerves are involved — this is where the avoidable harm accumulates while the tumour is being staged",
+  ],
+  urgency: "urgent",
+  referral: "Head-and-neck oncology multidisciplinary team, with skull-base surgery; ophthalmology where the orbit or cornea is involved",
+};
+
+// PARANEOPLASTIC. The neurology is the PRESENTING feature of a cancer that is usually small and often not
+// yet found. Two things follow: the antibody defines the search rather than the diagnosis, and a negative
+// antibody panel does not exclude the syndrome.
+const PARANEOPLASTIC_SPINE = {
+  confirmatory: [
+    "PAIRED SERUM AND CSF for the onconeural and cell-surface antibody panels — some antibodies are found only in CSF, so serum alone misses cases, and the panel should be sent as a panel rather than picked one at a time",
+    "HUNT THE TUMOUR, and keep hunting: CT chest, abdomen and pelvis first, then PET-CT, plus the examinations the specific antibody directs — {flavour}",
+    "A NEGATIVE ANTIBODY PANEL DOES NOT EXCLUDE THIS. Seronegative paraneoplastic and autoimmune syndromes are well recognised, and a convincing clinical picture warrants the tumour search regardless",
+    "The antibody tells you WHERE TO LOOK rather than what to do: anti-Yo points to breast and ovary, anti-Hu to small cell lung, anti-Ma2 to testis in a young man — examine the testes, and image them",
+  ],
+  monitoring: [
+    "SAFETY NET: TREATING THE TUMOUR is the treatment of the neurology, and delay costs function that does not return — so the tumour search is urgent even when the neurological syndrome is stable",
+    "Track {level} against a documented baseline; established deficits often persist even when the tumour is treated, which is why early recognition matters more here than almost anywhere",
+    "If the first tumour search is negative, REPEAT IT rather than abandoning the diagnosis — the cancer may not be radiologically apparent for months after the neurology begins",
+    "Escalate the discussion early to neurology and oncology together: immunotherapy decisions and the oncological work-up are not sequential here, they run in parallel",
+  ],
+  urgency: "urgent",
+  referral: "Neurology with oncology; the specific tumour team once the primary is identified",
+};
+
 export default {
+  // ---- SKULL-BASE AND PERINEURAL MALIGNANT SPREAD ----
+  ...family("skull-base-malignancy", SKULL_BASE_SPINE, {
+    "Perineural tumour spread": {
+      slots: { level: "each trigeminal division separately, plus the corneal reflex and the muscles of mastication",
+               flavour: "tumour tracking back along the trigeminal branches — image from the face to the brainstem, because the deficit marks where it has reached, not where it began" },
+      bySite: {
+        skull_base_v_ganglion:  { level: "all three divisions and the corneal reflex" },
+        skull_base_v1_division: { level: "forehead sensation and the corneal reflex — the eye is what is at risk here" },
+      },
+    },
+    "Perineural tumour spread along V2": {
+      slots: { level: "sensation over the cheek, upper lip and upper teeth",
+               flavour: "V2 runs through the foramen rotundum from the pterygopalatine fossa — image that fossa specifically, because it is the junction where spread from a facial or sinus primary becomes intracranial" },
+    },
+    "Perineural tumour spread / skull base malignancy": {
+      slots: { level: "sensation over the chin and jaw, plus the muscles of mastication",
+               flavour: "V3 leaves through the foramen ovale — a NUMB CHIN is a sinister sign and warrants imaging rather than dental review" },
+    },
+    "Perineural or skull base tumour spread": {
+      slots: { level: "forehead and corneal sensation, with eye abduction",
+               flavour: "at the petrous apex the fifth and sixth nerves lie together, so facial numbness with a lateral rectus palsy localises tightly" },
+    },
+    "Tumour / metastasis / perineural spread": {
+      slots: { level: "every eye movement separately, plus V1 sensation",
+               flavour: "the superior orbital fissure carries III, IV, VI and V1 — a painful total ophthalmoplegia with a numb forehead is the fissure syndrome" },
+    },
+    "Tumour / perineural spread": {
+      slots: { level: "acuity and colour vision FIRST, then the eye movements",
+               flavour: "at the orbital apex the optic nerve is involved as well as the fissure contents — and acuity is what is lost irreversibly, so it is the finding that sets the urgency" },
+      urgency: "emergency",
+    },
+    "Orbital tumour or metastasis": {
+      slots: { level: "acuity, colour vision, proptosis and each eye movement",
+               flavour: "an orbital mass displaces as well as infiltrates — measure the PROPTOSIS and look for restriction of movement, which distinguishes a mechanical from a neural cause" },
+      bySite: {
+        pupil_ciliary_ganglion:   { level: "the pupil, near response and accommodation" },
+        skull_base_iii_orbit_sup: { level: "lid elevation and the superior rectus" },
+        skull_base_iii_orbit_inf: { level: "the inferior and medial recti, and the pupil" },
+      },
+      urgency: "emergency",
+    },
+    "Skull base metastasis": {
+      slots: { level: "the cranial nerves of that corridor, one at a time",
+               flavour: "a metastasis in skull-base BONE — CT shows the destruction and MRI the soft tissue and marrow, and a bone scan or PET finds the others" },
+      bySite: {
+        skull_base_ix_jugular:      { level: "gag, palate and swallow" },
+        skull_base_hypoglossal_canal:{ level: "tongue protrusion, for deviation and wasting" },
+        skull_base_collet_sicard:   { level: "IX, X, XI and XII together — four nerves means extensive disease" },
+      },
+    },
+    "Skull base metastasis or nasopharyngeal carcinoma": {
+      slots: { level: "the affected nerves plus the ear and the neck",
+               flavour: "two possibilities with one first move — NASENDOSCOPY, because the nasopharynx is examinable and biopsy-able in clinic while the skull base is not" },
+      bySite: {
+        skull_base_v_ganglion: { level: "the trigeminal divisions and the corneal reflex" },
+        skull_base_x_jugular:  { level: "palate, voice and swallow" },
+      },
+    },
+    "Skull base tumour or nasopharyngeal carcinoma": {
+      slots: { level: "eye abduction, and the ear and neck for the primary",
+               flavour: "an isolated sixth-nerve palsy attributed to microvascular disease that does NOT recover in the expected months needs reassessment, not reassurance" },
+    },
+    "Skull base tumour or metastasis": {
+      slots: { level: "sternocleidomastoid and trapezius separately",
+               flavour: "an accessory nerve palsy from skull-base disease usually comes with its jugular foramen neighbours — if XI is failing alone, look again at the posterior triangle instead" },
+    },
+    "Skull base or retroparotid metastasis": {
+      slots: { level: "IX, X, XI and XII, plus the sympathetic supply for a Horner's",
+               flavour: "Villaret's syndrome — the four lower cranial nerves WITH a Horner's localises to the retroparotid space, and the Horner's is what distinguishes it from a jugular foramen lesion" },
+    },
+    "Metastasis / skull-base infiltration": {
+      slots: { level: "gag, palate, voice and shoulder shrug",
+               flavour: "the jugular foramen carries IX, X and XI — and hoarseness or aspiration may be the presenting complaint rather than anything the patient calls neurological" },
+    },
+    "Nasopharyngeal carcinoma or parotid malignancy": {
+      slots: { level: "the lower cranial nerves and the facial nerve, with the parotid on palpation",
+               flavour: "examine the PAROTID and the nasopharynx — both are accessible, and one of them usually holds the answer without recourse to the skull base" },
+    },
+    "Parotid malignancy": {
+      slots: { level: "each facial branch separately, and palpate the gland",
+               flavour: "a facial palsy that is PROGRESSIVE, painful, or spares some branches while taking others is NOT Bell's palsy — a benign parotid tumour does not usually cause facial weakness, so weakness implies malignancy" },
+    },
+    "Parotid tumour / malignant infiltration": {
+      slots: { level: "all facial branches, and the gland for a mass",
+               flavour: "at the stylomastoid foramen the whole face is affected — the discriminator from Bell's palsy is the TEMPO and the pain, not the pattern" },
+    },
+    "Maxillary sinus tumour": {
+      slots: { level: "cheek sensation, and the upper teeth and palate",
+               flavour: "sinonasal malignancy presents late because the sinus is a silent space — unilateral nasal obstruction, epistaxis or a loose upper tooth with facial numbness deserves endoscopy" },
+    },
+    "Esthesioneuroblastoma or sinonasal malignancy": {
+      slots: { level: "SMELL, formally rather than by asking",
+               flavour: "a tumour arising from the olfactory epithelium and growing through the cribriform plate — unilateral anosmia with nasal obstruction or epistaxis is the presentation, and smell is almost never tested" },
+    },
+    "Petrous apex lesion (Gradenigo's, cholesteatoma, tumour)": {
+      slots: { level: "eye abduction, facial sensation, and the EAR",
+               flavour: "three causes at one place, and the ear examination separates them — Gradenigo's follows otitis media, a cholesteatoma erodes, and a tumour destroys" },
+    },
+  }),
+
+  // ---- PARANEOPLASTIC ----
+  ...family("paraneoplastic", PARANEOPLASTIC_SPINE, {
+    "Paraneoplastic cerebellar degeneration": {
+      slots: { level: "gait, limb coordination and eye movements",
+               flavour: "anti-Yo points to BREAST AND OVARY and anti-Hu to small cell lung — so the search is pelvic imaging and mammography, or chest CT, rather than a general scan" },
+      monitoringExtra: ["This is the paraneoplastic syndrome that most often leaves a permanent deficit, and it can progress over weeks — which is why the tumour search is measured in days rather than in outpatient appointments"],
+      bySite: {
+        cerebellum_vermis:        { level: "truncal stability and gait, which go first" },
+        cerebellum_pancerebellar: { level: "gait, all four limbs, speech and eye movements together" },
+      },
+    },
+    "Anti-Ma2 (paraneoplastic) diencephalitis": {
+      slots: { level: "conscious level, the sleep-wake cycle and vertical gaze",
+               flavour: "anti-Ma2 in a YOUNG MAN means TESTICULAR germ cell tumour until excluded — examine the testes and image them, and remember the tumour can be microscopic and found only on orchidectomy" },
+      confirmatoryExtra: ["Excessive daytime sleepiness with vertical gaze problems and hypothalamic features is close to an anti-Ma2 signature, and it is regularly first labelled as a primary sleep disorder or a psychiatric presentation"],
+    },
+    "Anti-Ma2 paraneoplastic or autoimmune hypothalamitis": {
+      slots: { level: "appetite, weight, temperature, sodium and the sleep-wake cycle",
+               flavour: "hypothalamic involvement declares itself ENDOCRINE before it declares itself neurological — so the abnormal result usually arrives before the sign" },
+      confirmatoryExtra: ["Full anterior pituitary and hypothalamic axis testing alongside the antibodies — hypopituitarism here is treatable and is missed while the neurology is being investigated"],
+    },
+    "Limbic / autoimmune encephalitis (LGI1, NMDA receptor, paraneoplastic)": {
+      slots: { level: "memory, behaviour and seizure activity",
+               flavour: "the cell-surface antibodies matter most because they are the TREATABLE ones — LGI1 with faciobrachial dystonic seizures, NMDA receptor with a psychiatric prodrome and movement disorder in a young woman with an ovarian teratoma" },
+      confirmatoryExtra: [
+        "Image the OVARIES in a young woman with NMDA receptor encephalitis — a teratoma may be small, and removing it changes the outcome",
+        "EEG and MRI support the diagnosis but neither excludes it: treatment is frequently started on the clinical picture while the antibodies are awaited",
+      ],
+      urgency: "emergency",
+    },
+    "Small cell lung carcinoma (paraneoplastic LEMS)": {
+      slots: { level: "proximal power, tendon reflexes, and power AFTER brief exercise",
+               flavour: "post-exercise FACILITATION is the bedside signature — an absent reflex that returns after ten seconds of contraction is close to diagnostic, and it is the opposite of what myasthenia does" },
+      confirmatoryExtra: [
+        "Voltage-gated calcium channel antibodies, and neurophysiology with HIGH-FREQUENCY repetitive stimulation showing an incremental response",
+        "LEMS PRECEDES the cancer diagnosis in most cases — so a negative initial chest CT means repeated screening over the following couple of years, not reassurance",
+      ],
+    },
+    "Paraneoplastic autonomic neuropathy": {
+      slots: { level: "lying and standing blood pressure, pupils, sweating and gut function",
+               flavour: "a pandysautonomia with a tonic pupil, anhidrosis and orthostatic hypotension — ganglionic acetylcholine receptor antibodies, and small cell lung cancer or thymoma behind it" },
+      confirmatoryExtra: ["Formal autonomic testing quantifies what the bedside suggests, and gastric emptying studies where gut failure dominates — the autonomic burden is often what disables the patient rather than the tumour"],
+    },
+  }),
+
   // ---- MALIGNANT COMPRESSION OF THE CNS ----
   ...family("malignant-cns-compression", COMPRESSION_SPINE, {
     "Metastatic spinal cord compression": {

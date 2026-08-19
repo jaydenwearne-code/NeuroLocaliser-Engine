@@ -249,7 +249,7 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 // for all fourteen authoring rounds of tranche 2. The count starts at 337, falls with every round, and
 // NEVER rises. At 0 the ratchet retires into a hard gate — and it keeps working long after tranche 2,
 // since it stops a future red cause being added with no workup behind it.
-const RED_WITHOUT_PLAN_CEILING = 245;   // LOWER this with each round; never raise it
+const RED_WITHOUT_PLAN_CEILING = 220;   // LOWER this with each round; never raise it
 // 337 at the start of tranche 2 -> 309 after round 1 (the 28-member infarct family) -> 308 once
 // "Cerebellar infarct or haemorrhage" was SPLIT, which also covered a pre-existing unplanned
 // "Cerebellar haemorrhage" at cerebellum_hemisphere -> 277 after round 2 (haemorrhage/haematoma,
@@ -261,7 +261,7 @@ const RED_WITHOUT_PLAN_CEILING = 245;   // LOWER this with each round; never rai
 // other 5 are outside the tranche-2 red target and were added because the group is only
 // coherent whole) -> 245 after round 3a (malignant CNS compression 9 + thoracic inlet 9). The
 // neoplastic red set turned out to be 74 names, not the 24 the plan estimated, so round 3 runs
-// as several.
+// as several -> 220 after round 3b (skull-base/perineural 19 + paraneoplastic 6).
 {
   const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
   const redNames = new Set();
