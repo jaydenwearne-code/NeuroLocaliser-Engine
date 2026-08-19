@@ -249,13 +249,14 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 // for all fourteen authoring rounds of tranche 2. The count starts at 337, falls with every round, and
 // NEVER rises. At 0 the ratchet retires into a hard gate — and it keeps working long after tranche 2,
 // since it stops a future red cause being added with no workup behind it.
-const RED_WITHOUT_PLAN_CEILING = 267;   // LOWER this with each round; never raise it
+const RED_WITHOUT_PLAN_CEILING = 265;   // LOWER this with each round; never raise it
 // 337 at the start of tranche 2 -> 309 after round 1 (the 28-member infarct family) -> 308 once
 // "Cerebellar infarct or haemorrhage" was SPLIT, which also covered a pre-existing unplanned
 // "Cerebellar haemorrhage" at cerebellum_hemisphere -> 277 after round 2 (haemorrhage/haematoma,
 // 31 names across FOUR families plus one singleton) -> 267 once venous thrombosis was PROMOTED
 // from round 5 (9 names), which also absorbed a new vein-of-Labbe cause and normalised three
-// spellings of deep cerebral venous thrombosis into one.
+// spellings of deep cerebral venous thrombosis into one -> 265 with the vascular-malformation
+// family, which also introduced the app's first arteriovenous malformation and cranial dAVF.
 {
   const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
   const redNames = new Set();

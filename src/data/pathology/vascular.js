@@ -106,6 +106,32 @@ const ANEURYSM_SPINE = {
 // CAVERNOUS sinus thrombosis is INCLUDED — it is a dural venous sinus thrombosis and shares the venogram,
 // the anticoagulation question and the source hunt — but it overrides heavily, because the orbit and the
 // septic source dominate its first hour.
+// ---- VASCULAR MALFORMATIONS: the abnormal shunt that is often CURABLE ----
+// Closes the loop the aetiology line opened. That line tells the reader "in a young or normotensive
+// patient, look for an arteriovenous malformation, cavernoma or aneurysm" — and until 2026-08-18 the app
+// had NO arteriovenous malformation anywhere to find, so the instruction pointed at nothing.
+//
+// What unites these: an abnormal connection or vessel cluster that BLED, or will. The workup question is
+// always the same two — what exactly is the lesion, and does treating it carry less risk than leaving it.
+// The Chiari and Dandy-Walker entries match the word "malformation" and belong nowhere near this: they
+// are structural, not vascular.
+const MALFORMATION_SPINE = {
+  confirmatory: [
+    "CATHETER ANGIOGRAPHY is the reference standard for a shunting lesion — CT and MR angiography can both miss a small fistula, and a normal non-invasive study does not exclude one when the picture is convincing",
+    "MRI with blood-sensitive sequences (SWI or gradient-echo) for the lesion itself and for OLD, silent haemorrhage — previous bleeding changes the risk calculation more than any other single finding: {flavour}",
+    "Establish whether there is CORTICAL VENOUS DRAINAGE or reflux, since that is what converts an indolent lesion into one that bleeds",
+    "Screen for MULTIPLE lesions and for a familial syndrome — multiple cavernomas suggest the familial form, and that changes the conversation with the family as well as the patient",
+  ],
+  monitoring: [
+    "Track {level}, and document a clear baseline: the decision to treat rests on the risk of the NEXT bleed against the risk of the intervention, and that arithmetic needs a starting point",
+    "SAFETY NET: a new or worsening deficit, a new headache, or a first seizure means reimaging — a rebleed is the event these lesions are managed to prevent",
+    "Seizure risk is substantial for supratentorial lesions: counsel about DRIVING, which is a legal obligation and is routinely forgotten in the discussion about the lesion itself",
+    "Management is a multidisciplinary decision — resection, embolisation, radiosurgery or observation — and 'observation' is a legitimate active choice here, not a failure to treat",
+  ],
+  urgency: "urgent",
+  referral: "Neurovascular / neurosurgical multidisciplinary team, with neurointervention",
+};
+
 const CVST_SPINE = {
   confirmatory: [
     "CT or MR VENOGRAM — the arterial study will be normal and is not reassurance. If venous thrombosis is being considered at all, the venous phase must be asked for explicitly, because it is not part of a standard stroke protocol",
@@ -151,6 +177,111 @@ const cordInfarct = (where, clue) => [
 ];
 
 export default {
+  ...family("vascular-malformation", MALFORMATION_SPINE, {
+    "Arteriovenous malformation": {
+      slots: { level: "the focal deficit and any seizure activity",
+               flavour: "a nidus with feeding arteries and draining veins, and flow voids on MRI — the Spetzler-Martin grade (size, eloquence, venous drainage) is what the surgical conversation turns on" },
+      confirmatoryExtra: ["An UNRUPTURED arteriovenous malformation is a genuinely contested treatment decision, and intervening is not automatically better than observing — this belongs in a specialist discussion, not in a first-line plan"],
+      bySite: {
+        cortex_occipital:     { level: "the visual field, formally" },
+        cortex_parietal:      { level: "cortical sensation, neglect and the field" },
+        cerebellum_hemisphere:{ level: "limb coordination and conscious level",
+                                flavour: "in the posterior fossa the MASS EFFECT on the fourth ventricle threatens life before the malformation itself does, so the acute question is surgical rather than endovascular" },
+      },
+    },
+    "Dural arteriovenous fistula": {
+      slots: { level: "the focal deficit, and ask directly about the tinnitus",
+               flavour: "a shunt within the DURA rather than the parenchyma — often invisible on routine MRI, which is why the catheter angiogram matters here more than anywhere else in this family" },
+      confirmatoryExtra: [
+        "ASK ABOUT PULSATILE TINNITUS and auscultate over the mastoid and orbit — it is the symptom patients do not think to mention and the one that makes the diagnosis",
+        "The grading that matters is whether it drains into CORTICAL VEINS: without that it is a nuisance, with it the annual haemorrhage risk is substantial and treatment is usually recommended",
+      ],
+      bySite: {
+        cortex_temporal:  { level: "language, seizures, and the tinnitus" },
+        cortex_occipital: { level: "the visual field, and the tinnitus" },
+      },
+    },
+    "Spinal dural arteriovenous fistula": {
+      slots: { level: "gait, sphincter function and the sensory level",
+               flavour: "the commonest spinal vascular malformation and the most missed — a slowly PROGRESSIVE myelopathy in a middle-aged or older man, worse with exertion or standing, with cord oedema and serpiginous flow voids on the dorsal surface" },
+      confirmatory: [
+        "MRI of the whole cord: T2 hyperintensity extending over several segments with dilated perimedullary vessels on the DORSAL surface — the flow voids are the finding, and they are missed if only the symptomatic level is imaged",
+        "SPINAL CATHETER ANGIOGRAPHY is required to find the feeding segmental artery and is what makes treatment possible — MRA is a screening test, not a substitute",
+        "This is repeatedly mistaken for transverse myelitis and treated with steroids, which can make it WORSE — a progressive myelopathy that deteriorated on steroids should send you back to look for a fistula",
+        "Ask about exertional or postural worsening, which reflects venous hypertension and is the historical clue",
+      ],
+      monitoringExtra: ["Deficits become irreversible with time because the mechanism is chronic venous congestion, so the delay to diagnosis is itself the prognosis — this is a diagnosis to make early rather than confidently"],
+      referral: "Neurointervention and spinal neurosurgery — it is treatable, and often curable, by embolisation or ligation",
+      bySite: {
+        cord_anterior: {
+          level: "gait, power and the sensory level, with the ANTERIOR cord pattern",
+          flavour: "venous congestion hits the anterior cord hardest because it is the watershed — so the picture imitates an anterior spinal artery syndrome, but arrives over months rather than minutes",
+        },
+        conus_medullaris: {
+          level: "sphincter function and saddle sensation FIRST, then the legs",
+          flavour: "the conus is the commonest site, and sphincter symptoms often precede the gait problem by months — an older man with progressive urinary difficulty and subtle leg signs is the presentation that gets attributed to the prostate",
+        },
+      },
+    },
+    "Cavernous malformation": {
+      slots: { level: "the focal deficit and any seizures",
+               flavour: "a popcorn-like lesion with a complete haemosiderin rim on blood-sensitive sequences, and NO flow voids — it is angiographically OCCULT, so a normal angiogram does not exclude it" },
+      bySite: {
+        medulla_lateral:        { level: "swallow, and the crossed sensory pattern" },
+        midbrain_lateral:       { level: "the third nerve and contralateral limb signs" },
+        pons_lateral:           { level: "hearing, facial power and crossed signs" },
+        pons_lateral_trigeminal:{ level: "facial sensation and the corneal reflex" },
+      },
+    },
+    "Cavernous malformation with recurrent bleeds": {
+      slots: { level: "the deficit after each event, compared against the last",
+               flavour: "REPEATED bleeding is the defining feature and the argument for intervening — brainstem cavernomas rebleed more often than those elsewhere, and each event may leave a little more behind" },
+      monitoringExtra: ["Document the deficit after EVERY event, not just the first: the treatment decision rests on the trajectory across bleeds rather than on any single one"],
+      bySite: {
+        guillain_mollaret_rubral:   { level: "tremor, palate and eye movements" },
+        guillain_mollaret_dentate:  { level: "limb coordination and any tremor" },
+        guillain_mollaret_triangle: { level: "palatal tremor specifically, which may appear MONTHS after the bleed" },
+      },
+    },
+    "Haemorrhage / cavernous malformation": {
+      slots: { level: "the third nerve, pupils and conscious level",
+               flavour: "the name holds both possibilities and the blood-sensitive MRI settles it — a complete haemosiderin rim around the blood says the lesion was there first" },
+    },
+    "Brainstem stroke / cavernoma (with hypertrophic olivary degeneration)": {
+      slots: { level: "palatal tremor, and the limbs for coordination",
+               flavour: "hypertrophic olivary degeneration is a DELAYED consequence — the olive enlarges and becomes T2-bright months after the original lesion, so an enlarging olive here is expected rather than alarming" },
+      confirmatoryExtra: ["Do not mistake the enlarging olive for a new tumour: it is the downstream effect of the original Guillain-Mollaret triangle lesion and needs no separate work-up"],
+    },
+    // A fistula, but the orbit dominates: direct high-flow shunting into the cavernous sinus.
+    "Carotid-cavernous fistula": {
+      slots: { level: "eye movements, acuity, the pupil and intraocular pressure",
+               flavour: "PULSATILE PROPTOSIS with a bruit over the orbit, chemosis and dilated corkscrew episcleral vessels — a direct fistula usually follows head trauma, an indirect one arises spontaneously in older patients" },
+      confirmatory: [
+        "URGENT ophthalmology assessment including INTRAOCULAR PRESSURE — vision is the function at risk, and raised pressure with venous congestion is what destroys it",
+        "CT or MR angiography of the orbits and cavernous sinus showing a dilated superior ophthalmic vein, then CATHETER ANGIOGRAPHY to define the fistula and plan treatment",
+        "Ask about HEAD TRAUMA, which precedes the direct high-flow type, and examine for a bruit the patient may have been describing for weeks",
+        "Assess cortical venous drainage: as elsewhere in this family, it is what converts an eye problem into a haemorrhage risk",
+      ],
+      monitoringExtra: ["Track acuity and intraocular pressure at defined intervals — deterioration in either is the indication to treat, and the deficit becomes irreversible once the optic nerve is compromised"],
+      urgency: "emergency",
+      referral: "Neurointervention with ophthalmology — endovascular closure is the definitive treatment",
+      bySite: {
+        skull_base_iii_orbit_sup: {
+          level: "elevation of the lid and the superior rectus, with the pupil",
+          flavour: "a superior division third-nerve deficit here reflects congestion at the orbital apex rather than compression, so it can improve once the fistula is closed",
+        },
+        skull_base_sup_orbital_fissure: {
+          level: "every eye movement separately, plus V1 sensation and corneal sensation",
+          flavour: "at the fissure the fistula affects III, IV, VI and V1 together — a painful total ophthalmoplegia with a numb forehead, which is the fissure syndrome rather than an isolated palsy",
+        },
+        skull_base_cavernous_sinus: {
+          level: "III, IV, VI and the V1/V2 territories one at a time, with acuity and pressure",
+          flavour: "within the sinus the SIXTH nerve runs free in the venous blood rather than in the wall, which is why it is affected earliest and most often",
+        },
+      },
+    },
+  }),
+
   // ---- CEREBRAL VENOUS THROMBOSIS: the treatable stroke that breaks the arterial rules ----
   ...family("venous-sinus-thrombosis", CVST_SPINE, {
     "Superior sagittal sinus thrombosis": {
