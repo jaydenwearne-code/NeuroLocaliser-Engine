@@ -87,25 +87,34 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   // BELOW the site's urgency. Tested with a stub plan rather than by waiting for content to exist, so the
   // rule is pinned from day one and cannot be silently reversed by a later refactor.
   {
+    // SAVE AND RESTORE, never delete. These blocks install a stub plan to test a rule; deleting it
+    // afterwards DESTROYS a real plan whenever the chosen cause already has one. That went unnoticed for
+    // eight rounds because the chosen causes happened to be unauthored — and surfaced the moment tranche 2
+    // reached near-complete coverage, as a phantom "1 red cause without a plan" that no direct
+    // measurement could reproduce.
+    const withStub = (name, fn) => {
+      const had = Object.prototype.hasOwnProperty.call(PATHOLOGY_NEXT, name);
+      const saved = PATHOLOGY_NEXT[name];
+      PATHOLOGY_NEXT[name] = { name, confirmatory: ["stub"], monitoring: ["stub"],
+                               urgency: "routine", referral: "stub", bySite: {}, slots: {} };
+      try { fn(); } finally { if (had) PATHOLOGY_NEXT[name] = saved; else delete PATHOLOGY_NEXT[name]; }
+    };
+
     const host = sites.find(s => nextStepsFor(s).urgency === "emergency" && causesAt(s).some(c => !c.red));
     ok("an emergency-badged site with a non-red cause exists", !!host);
     if (host) {
       const benign = causesAt(host).find(c => !c.red);
-      PATHOLOGY_NEXT[benign.name] = { name: benign.name, confirmatory: ["stub"], monitoring: ["stub"],
-                                      urgency: "routine", referral: "stub", bySite: {} };
-      ok("an authored routine urgency descends below an emergency site badge",
-         resolveUrgency(host, benign.name) === "routine");
-      delete PATHOLOGY_NEXT[benign.name];
+      withStub(benign.name, () =>
+        ok("an authored routine urgency descends below an emergency site badge",
+           resolveUrgency(host, benign.name) === "routine"));
     }
 
     // ...but a RED cause may never be descended below the floor, even by an authored plan.
     const redHost = sites.find(s => causesAt(s).some(c => c.red));
     const redCause = causesAt(redHost).find(c => c.red);
-    PATHOLOGY_NEXT[redCause.name] = { name: redCause.name, confirmatory: ["stub"], monitoring: ["stub"],
-                                      urgency: "routine", referral: "stub", bySite: {} };
-    ok("the red floor overrides an authored routine urgency",
-       resolveUrgency(redHost, redCause.name) !== "routine");
-    delete PATHOLOGY_NEXT[redCause.name];
+    withStub(redCause.name, () =>
+      ok("the red floor overrides an authored routine urgency",
+         resolveUrgency(redHost, redCause.name) !== "routine"));
   }
 }
 
@@ -244,47 +253,22 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   }
 }
 
-// --- 9: THE RED RATCHET — every must-not-miss must end up with a workup ---
-// Asserted as a CEILING rather than an end state, because a plain "all red causes have a plan" would fail
-// for all fourteen authoring rounds of tranche 2. The count starts at 337, falls with every round, and
-// NEVER rises. At 0 the ratchet retires into a hard gate — and it keeps working long after tranche 2,
-// since it stops a future red cause being added with no workup behind it.
-const RED_WITHOUT_PLAN_CEILING = 25;   // LOWER this with each round; never raise it
-// 337 at the start of tranche 2 -> 309 after round 1 (the 28-member infarct family) -> 308 once
-// "Cerebellar infarct or haemorrhage" was SPLIT, which also covered a pre-existing unplanned
-// "Cerebellar haemorrhage" at cerebellum_hemisphere -> 277 after round 2 (haemorrhage/haematoma,
-// 31 names across FOUR families plus one singleton) -> 267 once venous thrombosis was PROMOTED
-// from round 5 (9 names), which also absorbed a new vein-of-Labbe cause and normalised three
-// spellings of deep cerebral venous thrombosis into one -> 265 with the vascular-malformation
-// family, which also introduced the app's first arteriovenous malformation and cranial dAVF
-// -> 263 with the hindbrain/craniocervical family (7 members, but only 2 of them RED — the
-// other 5 are outside the tranche-2 red target and were added because the group is only
-// coherent whole) -> 245 after round 3a (malignant CNS compression 9 + thoracic inlet 9). The
-// neoplastic red set turned out to be 74 names, not the 24 the plan estimated, so round 3 runs
-// as several -> 220 after round 3b (skull-base/perineural 19 + paraneoplastic 6) -> 198 after
-// round 3c (intra-axial 7, meningioma 4, sellar/hypothalamic 6, pineal/third-ventricle 5) -> 173
-// after round 3d, which CLOSED the neoplastic red set (herniation 6, deep-cavity mass 7,
-// neck/mediastinal 6, plus 4 singletons and 2 folded into existing families) -> 137 after round 4,
-// which CLOSED the infective red set (abscess 7, encephalitis 7, skull-base/ENT 11, deep
-// soft-tissue 4, plus 8 singletons) -> 102 after round 5 (dissection 8, large-vessel occlusion 13,
-// compressive aneurysm 5, perforator disease 3, central vestibular 4, plus 3 singletons) -> 71
-// after round 6, which CLOSED the metabolic red set (thiamine 4, metabolic myelopathy 6,
-// toxidrome 8, hypoxic-ischaemic 5, plus 6 singletons and 2 new aliases) -> 47 after round 7,
-// which CLOSED the inflammatory red set (autoimmune encephalitis 6, NMOSD/MOG 3, vasculitis 5,
-// granulomatous 5, inflammatory neuromuscular 5) -> 25 after round 8, which CLOSED the traumatic
-// red set (head injury 4, spinal trauma 10, skull-base/orbital 4, plus 4 singletons).
+// --- 9: THE RED GATE — every must-not-miss has a workup ---
+// THE RATCHET HAS RETIRED. It ran from 337 down to 0 across tranche 2, as a ceiling that could fall and
+// never rise, because a plain end-state assertion would have failed for every authoring round. At 0 it
+// becomes what it was always climbing towards: a HARD GATE.
+//
+// Its durable value starts now. A future red cause added to CAUSES with no workup behind it fails here
+// immediately, which is exactly the hole tranche 1 left open and tranche 2 closed.
 {
   const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
   const redNames = new Set();
   for (const list of Object.values(CAUSES)) for (const c of list) if (c.red) redNames.add(c.name);
   const unplanned = [...redNames].filter(n => !planned.has(n));
 
-  ok(`RED RATCHET: red causes without a plan is ${unplanned.length}, ceiling ${RED_WITHOUT_PLAN_CEILING}`,
-     unplanned.length <= RED_WITHOUT_PLAN_CEILING,
-     `went UP — a red cause was added without a workup: ${unplanned.slice(0, 3).join(" ; ")}`);
-  ok(`RED RATCHET is tight (ceiling should equal the actual ${unplanned.length})`,
-     RED_WITHOUT_PLAN_CEILING === unplanned.length,
-     "lower RED_WITHOUT_PLAN_CEILING to the actual count — a slack ceiling stops ratcheting");
+  ok(`RED GATE: every one of the ${redNames.size} must-not-miss causes has an authored workup`,
+     unplanned.length === 0,
+     `${unplanned.length} without a plan: ${unplanned.slice(0, 5).join(" ; ")}`);
 }
 
 // ---- REPORT (not an assertion): the red / non-red authoring split ----

@@ -962,6 +962,19 @@ export default {
       slots: { level: "the visual field, formally",
                flavour: "a lesion at the geniculate is deep and small — the field defect may be the only sign, and a normal CT does not exclude an aneurysm nearby" },
     },
+    "Anterior communicating artery aneurysm rupture": {
+      slots: { level: "personality, initiation and continence, plus conscious level",
+               flavour: "the ACOM complex sits against the medial frontal lobes, so rupture here characteristically leaves a BEHAVIOURAL syndrome — apathy, disinhibition and amnesia — long after the physical recovery looks complete" },
+      confirmatoryExtra: ["Warn the family explicitly about the frontal syndrome: it is the commonest long-term disability after ACOM rupture, it is invisible to a physical examination, and families interpret it as personality change or laziness unless told"],
+    },
+    "Ruptured anterior communicating artery aneurysm": {
+      slots: { level: "personality, judgement and SMELL, which is almost never tested",
+               flavour: "orbitofrontal damage from the rupture or from surgical access — anosmia is common, permanent, and rarely recorded, so patients discover it themselves months later" },
+    },
+    "Anterior communicating artery aneurysm (rupture ± vasospasm)": {
+      slots: { level: "leg power and initiation, plus conscious level",
+               flavour: "the ACOM supplies the medial frontal lobes through its perforators, so vasospasm here produces a LEG-predominant deficit days after the bleed rather than at the moment of it" },
+    },
     "ACA vasospasm after subarachnoid haemorrhage": {
       slots: { level: "leg power and initiation, which is where ACA territory declares itself",
                flavour: "this is a LATE complication, not the initial bleed — a new leg-predominant deficit at days 4-14 after a subarachnoid haemorrhage is vasospasm until proven otherwise" },
@@ -1162,6 +1175,19 @@ export default {
       confirmatory: cordInfarct("the cord, with sagittal and axial diffusion",
         "Ask specifically about a preceding interscapular or radicular PAIN at onset — it is present in a majority and is the feature that most distinguishes infarction from myelitis"),
       monitoringExtra: ["Bladder function from the outset — retention is often established before the patient reports it"],
+    },
+    "Aortic surgery, dissection or profound hypotension": {
+      slots: { level: "power and pinprick against the sensory level, with sphincters" },
+      confirmatory: cordInfarct("the whole cord, urgently",
+        "THE AORTA IS THE DIAGNOSIS — image it. Cord infarction after aortic surgery or dissection follows loss of the segmental supply, and the artery of Adamkiewicz territory is the watershed that fails"),
+      confirmatoryExtra: ["Where this follows aortic surgery, CSF DRAINAGE and raising the perfusion pressure are established measures to improve cord perfusion — so this is a diagnosis with an intervention, not merely a prognosis"],
+      monitoringExtra: ["Blood pressure is kept UP rather than down, and a delayed deficit hours to days after apparently successful surgery is well recognised — so the cord is watched after the aorta is fixed"],
+    },
+    "Fibrocartilaginous embolism": {
+      slots: { level: "power and pinprick, with the onset timing" },
+      confirmatory: cordInfarct("the cord, with diffusion sequences",
+        "Nucleus pulposus material embolising into the cord vessels — typically a YOUNG patient, often after minor exertion or a Valsalva, with SEVERE AXIAL PAIN at onset followed by a rapidly progressive deficit"),
+      confirmatoryExtra: ["A diagnosis of exclusion made largely on the story and the pattern: young, abrupt, painful, and no other cause found — and it is the reason a young person with a sudden myelopathy is not automatically inflammatory"],
     },
     "Cord infarct at the conus": {
       slots: { level: "sphincter tone, saddle sensation and the ankle jerks" },

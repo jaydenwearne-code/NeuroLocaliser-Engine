@@ -4,12 +4,13 @@
 // Teaching prompts, not directives: no doses, no definitive management.
 //
 // REVIEW STATUS:
-//   ⚠  the HINDBRAIN / CRANIOCERVICAL MALFORMATION family (7) — tranche 2, AWAITING REVIEW.
+//   ⚠  the HINDBRAIN / CRANIOCERVICAL MALFORMATION family (7) — tranche 2 round 2b, AWAITING REVIEW.
+//   ⚠  7 further singletons — tranche 2 round 9, AWAITING REVIEW.
 //
 // NOTE ON SCOPE: tranche 2 targets the 337 RED must-not-miss causes, and only 2 of the 7 here are red.
 // The other 5 were added at the owner's request (2026-08-18) because the group is only coherent whole —
 // authoring Chiari without the syrinx it causes would teach half a mechanism.
-import { family } from "./builders.js";
+import { dz, family } from "./builders.js";
 
 // ---- HINDBRAIN AND CRANIOCERVICAL DEVELOPMENTAL MALFORMATIONS ----
 // These are NOT vascular malformations and are deliberately kept out of that family: they share only the
@@ -37,6 +38,128 @@ const HINDBRAIN_SPINE = {
 };
 
 export default {
+  // ---- ROUND 9 SINGLETONS ----
+
+  "Neurofibromatosis type 2": dz("Neurofibromatosis type 2", {
+    confirmatory: [
+      "MRI OF THE INTERNAL AUDITORY MEATI WITH CONTRAST AND THIN SLICES — BILATERAL vestibular schwannomas are diagnostic, and a standard brain study does not resolve a small intracanalicular tumour",
+      "Image the WHOLE NEURAXIS: meningiomas and spinal ependymomas travel with it, and finding them changes the surveillance plan and sometimes the order of operations",
+      "Audiometry and vestibular testing as a baseline — hearing preservation is the central goal of management, and decisions are made against a documented starting point",
+      "Examine {level}, and examine the SKIN and EYES: cataracts and skin schwannomas support it, and NF2 has few of the café-au-lait macules of NF1, which is a common source of confusion",
+    ],
+    monitoring: [
+      "SAFETY NET: the decision is rarely to remove everything — it is to preserve HEARING and function for as long as possible, so watchful waiting with serial imaging is a legitimate active plan and often the right one",
+      "Track {level} and hearing serially; growth rate rather than size drives intervention",
+      "GENETIC counselling and screening of first-degree relatives is part of the diagnosis, not an add-on — and a substantial proportion of cases are new mutations, which changes what families are told",
+      "Plan for the eventual loss of hearing: early discussion of communication strategies and auditory implantation is kinder than raising it once deafness is established",
+    ],
+    urgency: "urgent",
+    referral: "A specialist NF2 service where one exists — skull-base neurosurgery, ENT, audiology and genetics together",
+    bySite: {
+      skull_base_iam: { level: "hearing, speech discrimination, and facial movement",
+        flavour: "an intracanalicular tumour is small and hearing-threatening — this is the stage where hearing preservation surgery or radiosurgery is still possible, so finding it early matters" },
+      skull_base_cpa: { level: "hearing, facial sensation, facial movement and coordination",
+        flavour: "extension into the cerebellopontine angle means the tumour has outgrown the canal, and the fifth nerve and brainstem are now in question as well as hearing" },
+    },
+  }),
+
+  "Obstructive hydrocephalus / shunt failure": dz("Obstructive hydrocephalus / shunt failure", {
+    confirmatory: [
+      "URGENT CT AND COMPARE IT WITH THE PATIENT'S OWN PREVIOUS SCANS — ventricular size is meaningless in isolation here, and the comparison is the investigation",
+      "IN A SHUNTED PATIENT, ASSUME SHUNT FAILURE UNTIL PROVEN OTHERWISE. Take the parents' or carer's account seriously: they recognise the pattern earlier than any scan, and 'this is how it was last time' is high-quality clinical information",
+      "SHUNT SERIES radiographs to look for disconnection or migration, and neurosurgical assessment of the valve and reservoir",
+      "Examine {level}, plus conscious level, and check the FUNDI for papilloedema",
+    ],
+    monitoring: [
+      "SAFETY NET: shunt failure can deteriorate from headache to coma over HOURS, and slit-ventricle syndrome means the ventricles may barely enlarge despite dangerously raised pressure — so a normal-looking scan does not exclude it",
+      "Track {level} and conscious level continuously while the diagnosis is in doubt; escalate to neurosurgery on the trajectory rather than the images",
+      "Ask about the classic triad in a shunted patient — headache, vomiting and drowsiness — and treat that combination as failure until the shunt is shown to work",
+    ],
+    urgency: "emergency",
+    referral: "Emergency neurosurgery — a blocked shunt is revised, not observed",
+  }),
+
+  "Obstructive hydrocephalus compressing the pretectum": dz("Obstructive hydrocephalus compressing the pretectum", {
+    confirmatory: [
+      "URGENT imaging with attention to the ventricles AND the aqueduct — dilated lateral and third ventricles with a normal fourth localises the obstruction to the aqueduct",
+      "The pretectal signs ARE the monitoring tool: upgaze failure, light-near dissociation and lid retraction appear as pressure rises and resolve as it is relieved — {flavour}",
+      "Look for the CAUSE of the obstruction — a pineal or tectal mass, aqueduct stenosis, or a shunt that has stopped working",
+      "Examine {level}, and check the fundi; in a child, measure the head circumference and ask about the SETTING-SUN sign",
+    ],
+    monitoring: [
+      "SAFETY NET: NEW OR WORSENING UPGAZE FAILURE IS A PRESSURE SIGN, not an eye problem — it is one of the most useful bedside markers of decompensating hydrocephalus and it is not looked for unless someone has said so",
+      "Track {level} and conscious level; diversion of CSF is the treatment and it is urgent",
+      "Once the pressure is relieved the eye signs usually improve, so their persistence suggests the obstruction has not been adequately treated",
+    ],
+    urgency: "emergency",
+    referral: "Emergency neurosurgery for CSF diversion",
+  }),
+
+  "Sickle cell disease": dz("Sickle cell disease", {
+    confirmatory: [
+      "FULL BLOOD COUNT, RETICULOCYTES AND HAEMOGLOBIN ELECTROPHORESIS — and in a patient already known to have it, establish the baseline haemoglobin and the recent transfusion history",
+      "URGENT vessel imaging: sickle cell causes a large-vessel VASCULOPATHY with stenosis of the distal internal carotid and proximal MCA, which is a moyamoya-like picture rather than simple small-vessel occlusion",
+      "MRI with diffusion, and remember that SILENT INFARCTS are common and cumulative — so a first clinical stroke frequently sits on top of years of unrecognised injury",
+      "Examine {level}, and look for the precipitant: infection, dehydration, hypoxia, acute chest syndrome or a recent crisis",
+    ],
+    monitoring: [
+      "SAFETY NET: THE TREATMENT OF ACUTE STROKE HERE IS URGENT EXCHANGE TRANSFUSION, which is a haematological intervention rather than a neurological one — involve haematology immediately rather than routing this through the standard stroke pathway alone",
+      "Track {level}; and maintain oxygenation, hydration and normothermia, all of which reduce further sickling",
+      "TRANSCRANIAL DOPPLER screening identifies children at high risk BEFORE a stroke and is an established preventive programme — a child presenting with stroke should prompt asking whether screening happened",
+      "Long-term prevention is transfusion or hydroxycarbamide rather than antiplatelet therapy, which is a genuinely different secondary-prevention pathway from atherosclerotic stroke",
+    ],
+    urgency: "emergency",
+    referral: "Haematology and acute stroke together — exchange transfusion is the treatment",
+  }),
+
+  "Sickle cell disease or hyperviscosity": dz("Sickle cell disease or hyperviscosity", {
+    confirmatory: [
+      "FULL BLOOD COUNT with film, ESR, and haemoglobin electrophoresis; plus paraprotein screen, white cell count and platelets where hyperviscosity is possible",
+      "FUNDOSCOPY IS THE INVESTIGATION — dilated tortuous 'sausage-link' veins, scattered haemorrhages and a boxcar appearance are visible signs of hyperviscosity, and they are seen rather than measured",
+      "Identify which mechanism: sickling, a paraproteinaemia (myeloma or Waldenström), leukaemia with a very high blast count, or polycythaemia — each has a different urgent treatment",
+      "Examine {level}, including acuity and the fields, and ask about the systemic symptoms of hyperviscosity: headache, mucosal bleeding, blurred vision and confusion",
+    ],
+    monitoring: [
+      "SAFETY NET: symptomatic hyperviscosity is a HAEMATOLOGICAL EMERGENCY treated by plasmapheresis, leukapheresis or exchange transfusion — the eye is the presenting organ but the treatment is systemic and urgent",
+      "Track {level} and the vision; visual loss from retinal vascular occlusion here can be prevented by treating the viscosity rather than the eye",
+      "Avoid transfusing red cells before reducing the viscosity in a hyperviscous patient — it can make things acutely worse, which is counter-intuitive and easily done",
+    ],
+    urgency: "emergency",
+    referral: "Haematology urgently, with ophthalmology",
+  }),
+
+  "Azygos (unpaired) ACA supplying both hemispheres": dz("Azygos (unpaired) ACA supplying both hemispheres", {
+    confirmatory: [
+      "ANGIOGRAPHY (CT or MR) to demonstrate the ANATOMY — a single unpaired anterior cerebral artery supplying both hemispheres, which is why one occlusion produces a BILATERAL deficit",
+      "This is an anatomical VARIANT rather than a disease: the workup is the stroke workup, and the variant explains the pattern rather than changing the acute treatment",
+      "Examine {level} — bilateral leg weakness with abulia and incontinence, a picture that is repeatedly investigated as a cord lesion because the arms are spared",
+      "Note the variant prominently in the record: it carries a higher association with anterior communicating aneurysms, which matters for any future imaging",
+    ],
+    monitoring: [
+      "SAFETY NET: bilateral leg weakness with preserved arms sends most readers to the spine — if the cord MRI is normal, image the BRAIN before anything else",
+      "Track {level}; and manage as a stroke, since the variant changes the explanation rather than the pathway",
+      "Rehabilitation for the abulia and incontinence matters as much as for the weakness, and is more often overlooked because it is not obviously neurological",
+    ],
+    urgency: "emergency",
+    referral: "Acute stroke pathway",
+  }),
+
+  "Pantothenate kinase-associated neurodegeneration (PKAN)": dz("Pantothenate kinase-associated neurodegeneration (PKAN)", {
+    confirmatory: [
+      "MRI BRAIN LOOKING FOR THE 'EYE OF THE TIGER' SIGN — central hyperintensity within a hypointense globus pallidus on T2. It is close to specific and it is the reason to image rather than to test blindly",
+      "GENETIC testing for PANK2, which confirms it; and blood film for acanthocytes, which points instead to the neuroacanthocytosis syndromes",
+      "Examine {level}, and look for the associated features: dystonia (particularly oromandibular), pigmentary retinopathy, and pyramidal signs",
+      "Exclude the TREATABLE brain-iron and metal disorders that resemble it — Wilson's disease above all, since missing that one is the costly error",
+    ],
+    monitoring: [
+      "SAFETY NET: STATUS DYSTONICUS is the life-threatening complication — unremitting spasms causing rhabdomyolysis, renal failure and exhaustion. It is precipitated by infection, pain or a medication change, and it is what actually kills",
+      "Track {level} and the dystonia severity; symptomatic treatment genuinely helps, and deep brain stimulation benefits selected patients, so this is not a diagnosis to make and then abandon",
+      "GENETIC counselling for the family, and coordinate the multidisciplinary care — feeding, communication, posture and pain are where quality of life is won or lost",
+    ],
+    urgency: "urgent",
+    referral: "Movement disorder service with genetics; a paediatric neurology service in a child",
+  }),
+
   ...family("hindbrain-craniocervical-malformation", HINDBRAIN_SPINE, {
     "Chiari I malformation": {
       slots: { level: "gait, the lower cranial nerves, and any dissociated sensory loss in the arms",
