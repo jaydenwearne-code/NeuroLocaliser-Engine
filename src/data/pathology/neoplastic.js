@@ -289,8 +289,11 @@ export default {
     },
     "Metastasis to the pituitary stalk": {
       slots: { level: "thirst, urine output, sodium and the anterior pituitary axis",
-               flavour: "DIABETES INSIPIDUS with a stalk lesion suggests metastasis or infiltration rather than an adenoma — pituitary adenomas hardly ever cause it, so its presence redirects the whole differential" },
-      confirmatoryExtra: ["Look for the primary — breast and lung dominate — and expect other metastases: an isolated pituitary metastasis is uncommon"],
+               flavour: "DIABETES INSIPIDUS AT PRESENTATION redirects the differential away from an adenoma and towards infiltration — metastasis, germinoma, histiocytosis or hypophysitis. The anatomy is why: an adenoma arises in the ANTERIOR lobe and DISPLACES the stalk rather than transecting it, and vasopressin can still be released above the compression, so an adenoma big enough to take the chiasm and the anterior axis usually leaves water balance intact" },
+      confirmatoryExtra: [
+        "Look for the primary — breast and lung dominate — and expect other metastases: an isolated pituitary metastasis is uncommon",
+        "THE QUALIFIER MATTERS: this applies to diabetes insipidus AT PRESENTATION. Post-operative DI is common after pituitary surgery and is frequently transient — it does not mean the original diagnosis was wrong",
+      ],
     },
     "Langerhans cell histiocytosis": {
       slots: { level: "thirst and urine output, plus growth in a child",
@@ -315,8 +318,8 @@ export default {
     },
     "Third ventricular tumour or colloid cyst": {
       slots: { level: "conscious level and memory, with careful attention to POSTURAL headache",
-               flavour: "a COLLOID CYST can obstruct intermittently at the foramen of Monro — positional headache with transient loss of consciousness or drop attacks, and it is capable of causing sudden death, which is why an incidental one is not simply observed" },
-      confirmatoryExtra: ["Where a colloid cyst is found incidentally, the size and the ventricular calibre drive the decision — this is a neurosurgical discussion rather than a watch-and-wait by default"],
+               flavour: "a COLLOID CYST can obstruct intermittently at the foramen of Monro — positional headache with transient loss of consciousness or drop attacks. Acute deterioration is well described and is why the lesion is taken seriously; but the risk is STRATIFIED rather than uniform, and a small asymptomatic cyst with normal ventricles is a different proposition from a large one with ventriculomegaly" },
+      confirmatoryExtra: ["Where a colloid cyst is found incidentally, SIZE and VENTRICULAR CALIBRE drive the decision, and it warrants a neurosurgical opinion rather than either automatic surgery or unexamined observation — many small asymptomatic cysts are appropriately watched"],
     },
     "Dorsal midbrain (pretectal) lesion": {
       slots: { level: "vertical gaze, light-near dissociation and lid position",
