@@ -194,6 +194,46 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   ok("a member inherits the spine's referral", fam["A infarct"].referral === "Acute stroke pathway");
   ok("each plan carries its own name", fam["B infarct"].name === "B infarct");
   ok("monitoring interpolates too", fam["A infarct"].monitoring[0] === "Watch conscious level");
+
+  // The fixture registered itself in the module-level FAMILIES. Remove it, so the real-content
+  // invariants below see only real families — rather than exempting it by a name prefix, which would
+  // silently excuse any future family that happened to be named the same way.
+  delete FAMILIES["test-infarct"];
+}
+
+// --- 8: family invariants — a family is a CLINICAL CLAIM, not a string match ---
+{
+  for (const [label, names] of Object.entries(FAMILIES)) {
+    ok(`family \`${label}\` has at least 3 members (${names.length})`, names.length >= 3,
+       "two plans sharing a spine is two plans with extra indirection");
+    const rendered = names.map(n => JSON.stringify({
+      c: PATHOLOGY_NEXT[n].confirmatory, m: PATHOLOGY_NEXT[n].monitoring,
+      u: PATHOLOGY_NEXT[n].urgency, r: PATHOLOGY_NEXT[n].referral,
+    }));
+    ok(`family \`${label}\` has no two members emitting an identical plan`,
+       new Set(rendered).size === rendered.length,
+       "identical members mean the family is duplication wearing a hat");
+  }
+}
+
+// --- 9: THE RED RATCHET — every must-not-miss must end up with a workup ---
+// Asserted as a CEILING rather than an end state, because a plain "all red causes have a plan" would fail
+// for all fourteen authoring rounds of tranche 2. The count starts at 337, falls with every round, and
+// NEVER rises. At 0 the ratchet retires into a hard gate — and it keeps working long after tranche 2,
+// since it stops a future red cause being added with no workup behind it.
+const RED_WITHOUT_PLAN_CEILING = 337;   // LOWER this with each round; never raise it
+{
+  const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
+  const redNames = new Set();
+  for (const list of Object.values(CAUSES)) for (const c of list) if (c.red) redNames.add(c.name);
+  const unplanned = [...redNames].filter(n => !planned.has(n));
+
+  ok(`RED RATCHET: red causes without a plan is ${unplanned.length}, ceiling ${RED_WITHOUT_PLAN_CEILING}`,
+     unplanned.length <= RED_WITHOUT_PLAN_CEILING,
+     `went UP — a red cause was added without a workup: ${unplanned.slice(0, 3).join(" ; ")}`);
+  ok(`RED RATCHET is tight (ceiling should equal the actual ${unplanned.length})`,
+     RED_WITHOUT_PLAN_CEILING === unplanned.length,
+     "lower RED_WITHOUT_PLAN_CEILING to the actual count — a slack ceiling stops ratcheting");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
