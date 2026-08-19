@@ -826,6 +826,11 @@ export default {
     "Lung or mediastinal malignancy": {
       slots: { level: "the diaphragm — and measure it, with erect and supine vital capacity rather than by inspection",
                flavour: "a raised hemidiaphragm on a chest film is the finding, and a phrenic palsy from malignancy means mediastinal involvement until proven otherwise" },
+      // THE ONE SURVIVING FIGURE IN THIS LAYER, kept deliberately (owner ruling, 2026-08-18). Specific
+      // numbers were removed elsewhere — the 3cm cerebellar evacuation threshold, the three-week
+      // hoarseness interval — because management cut-offs and referral intervals date. This one is
+      // different in kind: it tells the reader how to INTERPRET a number they have just generated,
+      // rather than setting a threshold for an action. Do not "tidy" it away.
       confirmatoryExtra: ["Erect and SUPINE spirometry: a fall of more than about a fifth on lying flat indicates significant diaphragmatic weakness, and it is the measurement that decides whether breathlessness is being under-called"],
       urgency: "urgent",
     },
