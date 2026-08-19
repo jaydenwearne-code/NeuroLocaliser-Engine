@@ -12,6 +12,7 @@
 //   ⚠  MALIGNANT CNS COMPRESSION (9) and THORACIC INLET / PANCOAST (9) — tranche 2 round 3a, AWAITING REVIEW.
 //   ⚠  SKULL-BASE / PERINEURAL SPREAD (19) and PARANEOPLASTIC (6) — tranche 2 round 3b, AWAITING REVIEW.
 //   ⚠  INTRA-AXIAL (7), MENINGIOMA (4), SELLAR/HYPOTHALAMIC (6), PINEAL/THIRD-VENTRICLE (5) — round 3c.
+//   ⚠  HERNIATION/RAISED ICP (6), PELVIC/RETROPERITONEAL (7), NECK/MEDIASTINAL (6) + 4 singletons — round 3d.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 3a (tranche 2) ----
@@ -182,7 +183,251 @@ const PINEAL_SPINE = {
   referral: "Neurosurgery urgently for the hydrocephalus; neuro-oncology for the tumour",
 };
 
+// ---- ROUND 3d (tranche 2): closing the neoplastic set ----
+
+// HERNIATION AND RAISED INTRACRANIAL PRESSURE. These are not diagnoses — they are the MASS EFFECT of
+// something else, and the whole workup is a redirection: find and treat what is causing the pressure.
+// Grouped here because each is a sign that gets mistaken for a focal lesion at the site where it appears.
+const HERNIATION_SPINE = {
+  confirmatory: [
+    "THIS IS A SIGN, NOT A DIAGNOSIS. The urgent question is WHAT IS RAISING THE PRESSURE — image the whole head, and read the scan for the CAUSE rather than for the structure that is failing",
+    "CT immediately, assessing midline shift, basal cistern effacement and ventricular size — and remember that a false localising sign means the lesion is somewhere OTHER than where the deficit points: {flavour}",
+    "FUNDOSCOPY for papilloedema, at presentation and again — it is the bedside measure of pressure and it is skipped more often than any other part of this examination",
+    "Where imaging is normal and the pressure is still suspected, consider idiopathic intracranial hypertension and venous sinus thrombosis — and image the VENOUS phase, since a normal arterial study does not exclude it",
+  ],
+  monitoring: [
+    "SAFETY NET: treatment of raised pressure should not wait for the imaging to be reported. Pupils, conscious level and respiratory pattern are the observations that matter, and a fixed dilated pupil with a falling conscious level is an emergency already in progress",
+    "Track {level}, but interpret it as a PRESSURE measure rather than as localisation — improvement follows treatment of the cause, not of the nerve",
+    "VISION is at risk independently of the underlying lesion where papilloedema is present: acuity and fields need following, because visual loss from chronic raised pressure is preventable and permanent",
+    "Avoid lumbar puncture until imaging excludes a mass with shift — and where the pressure is being relieved, watch for the deterioration that follows too rapid a decompression",
+  ],
+  urgency: "emergency",
+  referral: "Neurosurgery and acute neurology; ophthalmology where vision is threatened",
+};
+
+// PELVIC, RETROPERITONEAL AND AXILLARY MASSES. A nerve or plexus deficit whose answer is in the ABDOMEN,
+// PELVIS OR AXILLA — and the recurring failure is investigating the limb while the cause sits in a body
+// cavity nobody has imaged.
+const DEEP_MASS_SPINE = {
+  confirmatory: [
+    "IMAGE THE CAVITY, NOT THE LIMB — CT or MRI of the abdomen, pelvis or axilla as the anatomy dictates. A plexus or nerve deficit with no compressive lesion at the usual entrapment point should send you inward, not to repeat neurophysiology",
+    "MRI defines the relationship to the nerve and to the surrounding structures better than CT, and is what determines whether the lesion is compressing or infiltrating: {flavour}",
+    "Examine {level}, and take a MALIGNANCY history explicitly — a previously treated pelvic or breast cancer changes this from an unexplained neuropathy into a recurrence until disproved",
+    "Neurophysiology localises and grades the deficit, but it is the second question — it should not delay the imaging that makes the diagnosis",
+  ],
+  monitoring: [
+    "SAFETY NET: PAIN out of proportion, pain that is worse at NIGHT, or a progressive deficit is malignant infiltration until imaged — and in a previously irradiated field the distinction from radiation injury turns on pain and on myokymia",
+    "Track {level} against a documented baseline, since the trajectory is what separates a compressive from an infiltrative process",
+    "Ask directly about bladder, bowel and sexual function where the lumbosacral plexus or pudendal nerve is involved — these are rarely volunteered and are what most affect quality of life",
+    "Involve pain services early: deep pelvic and plexus pain from malignancy is severe, neuropathic, and routinely under-treated while the diagnosis is pursued",
+  ],
+  urgency: "urgent",
+  referral: "The relevant tumour multidisciplinary team, with neurology for the nerve injury and pain services alongside",
+};
+
+// NECK AND MEDIASTINAL MALIGNANCY. The nerve is long and the lesion is remote: a palsy here means imaging
+// the WHOLE COURSE of the nerve, which frequently leaves the neck entirely.
+const NECK_MEDIASTINAL_SPINE = {
+  confirmatory: [
+    "IMAGE THE WHOLE COURSE OF THE NERVE, not the symptomatic end — these nerves travel far, and the lesion is regularly outside the field of the first scan requested",
+    "CT neck AND chest with contrast: the recurrent laryngeal nerve on the left loops under the AORTIC ARCH, so a left vocal cord palsy demands mediastinal imaging that a neck study will miss entirely — {flavour}",
+    "Examine the NECK properly — thyroid, cervical nodes and the supraclavicular fossa — and biopsy an accessible node in preference to anything deeper",
+    "Nasendoscopy or laryngoscopy where voice or swallow is affected: it confirms the palsy, documents the side, and may show the primary",
+  ],
+  monitoring: [
+    "SAFETY NET: a hoarse voice lasting more than about three weeks in a smoker needs laryngoscopy and imaging, not reassurance or another course of treatment for reflux — this is the commonest way a mediastinal malignancy is missed",
+    "SWALLOW and aspiration risk where the vagus or lower cranial nerves are involved: silent aspiration is common and pneumonia is what actually harms the patient",
+    "Track {level}, and reassess the voice formally rather than by listening — objective assessment picks up progression that conversation does not",
+    "Watch for the neighbouring structures the same lesion will reach: sympathetic chain for a Horner's, phrenic nerve for the diaphragm, and brachial plexus for the arm",
+  ],
+  urgency: "urgent",
+  referral: "Head-and-neck or thoracic oncology as the anatomy dictates, with ENT for the airway and voice",
+};
+
 export default {
+  // ---- HERNIATION AND RAISED INTRACRANIAL PRESSURE: signs, not diagnoses ----
+  ...family("herniation-raised-icp", HERNIATION_SPINE, {
+    "Mass effect with transtentorial herniation": {
+      slots: { level: "conscious level, pupils and respiratory pattern",
+               flavour: "the brainstem is being pushed through the tentorial hiatus — so the deficit reflects DISPLACEMENT rather than a brainstem lesion, and it is reversible if the cause is removed in time" },
+    },
+    "Uncal herniation": {
+      slots: { level: "the PUPIL first, then eye movements and conscious level",
+               flavour: "the medial temporal lobe compresses the third nerve against the tentorial edge — and because the PUPILLARY fibres run superficially, a dilating pupil precedes the ophthalmoplegia and is the earliest warning there is" },
+      monitoringExtra: ["A NEW UNILATERAL DILATED PUPIL IN A DROWSY PATIENT IS HERNIATION UNTIL DISPROVED — this is the single observation that most often buys the time to intervene, and it is why pupils are checked at every set of neurological observations"],
+    },
+    "Partially or late-presenting compressive lesion": {
+      slots: { level: "the pupil, lid and each extraocular movement of the third nerve separately",
+               flavour: "the teaching that a pupil-sparing third-nerve palsy is safely microvascular holds only for a COMPLETE palsy in a vasculopath — a partial palsy, or one that progresses, needs vessel imaging whatever the pupil is doing" },
+      confirmatoryExtra: ["CT or MR angiography for a posterior communicating artery aneurysm: the consequence of missing one is subarachnoid haemorrhage, which is why the threshold for imaging is low and falling"],
+    },
+    "Raised intracranial pressure (false localising sign)": {
+      slots: { level: "eye abduction on both sides, and the discs",
+               flavour: "the sixth nerve has the longest intracranial course, so it fails from PRESSURE rather than from a lesion at the point of failure — a sixth-nerve palsy therefore localises nowhere and demands that the pressure be explained" },
+    },
+    "Raised intracranial pressure": {
+      slots: { level: "abduction, facial sensation and the ear",
+               flavour: "at the petrous apex the sixth nerve is tethered under the petroclinoid ligament, which is why raised pressure catches it here — but exclude the local causes at that point too, since Gradenigo's produces the same palsy" },
+    },
+    "Tumour or raised intracranial pressure": {
+      slots: { level: "vertical diplopia and head tilt, with the discs",
+               flavour: "the fourth nerve is the thinnest and the only one to leave dorsally, so it too fails from raised pressure — and a fourth-nerve palsy with papilloedema is a pressure problem rather than a trochlear one" },
+    },
+  }),
+
+  // ---- PELVIC, RETROPERITONEAL AND AXILLARY MASSES ----
+  ...family("deep-cavity-mass", DEEP_MASS_SPINE, {
+    "Pelvic or retroperitoneal tumour": {
+      slots: { level: "hip flexion, knee extension, adduction and thigh sensation",
+               flavour: "the lumbar plexus lies WITHIN the psoas, so a retroperitoneal mass reaches it early — and the psoas sign, a hip held flexed and painful to extend, is the bedside clue" },
+    },
+    "Pelvic malignancy (cervical, rectal, prostate, sarcoma)": {
+      slots: { level: "ankle movement, hip extension, and sphincter function",
+               flavour: "the sacral plexus sits on the pelvic sidewall where cervical, rectal and prostatic tumours reach it — and a lumbosacral plexopathy in a treated pelvic cancer is recurrence until proven otherwise" },
+    },
+    "Pelvic tumour infiltration": {
+      slots: { level: "perineal sensation, sphincter tone and the anal wink",
+               flavour: "the pudendal nerve runs through Alcock's canal — the functional stakes are sexual, urinary and faecal, so the history has to be asked for directly and without embarrassment" },
+    },
+    "Retroperitoneal tumour or abscess (psoas)": {
+      slots: { level: "knee extension and the knee jerk, with anterior thigh sensation",
+               flavour: "tumour and abscess occupy the same compartment with opposite treatments — FEVER and inflammatory markers separate them, and both compress the femoral nerve in the iliacus compartment where it cannot escape" },
+    },
+    "Pelvic tumour or obturator hernia": {
+      slots: { level: "hip ADDUCTION, and sensation over the medial thigh",
+               flavour: "an obturator hernia in a thin elderly woman produces medial thigh pain relieved by hip flexion (the Howship-Romberg sign) — a mechanical cause that is easy to overlook while a tumour is being sought" },
+    },
+    "Pelvic or gluteal tumour": {
+      slots: { level: "everything below the knee, plus hamstrings and the ankle jerk",
+               flavour: "a sciatic lesion in the pelvis or buttock rather than a disc — the giveaway is a deficit spanning BOTH peroneal and tibial divisions with a normal lumbar MRI" },
+    },
+    "Tumour or mass in the axilla": {
+      slots: { level: "elbow, wrist and finger extension, with the triceps jerk",
+               flavour: "a radial palsy at the AXILLA weakens triceps, which a spiral-groove palsy spares — that single muscle localises the lesion proximally and should prompt imaging of the axilla" },
+    },
+  }),
+
+  // ---- NECK AND MEDIASTINAL MALIGNANCY ----
+  ...family("neck-mediastinal-malignancy", NECK_MEDIASTINAL_SPINE, {
+    "Neck malignancy or lymphadenopathy": {
+      slots: { level: "the affected nerves, with careful palpation of the neck",
+               flavour: "the retropharyngeal and carotid spaces carry the lower cranial nerves alongside the great vessels, so a neck mass takes them in combinations that name the space" },
+      bySite: {
+        skull_base_xii_neck:      { level: "tongue protrusion, for deviation and wasting" },
+        skull_base_carotid_space: { level: "IX, X, XI, XII and the sympathetic chain — a Horner's here says the lesion is in the carotid space" },
+      },
+    },
+    "Metastatic cervical lymphadenopathy": {
+      slots: { level: "trapezius specifically — shoulder shrug and scapular position",
+               flavour: "the accessory nerve runs SUPERFICIALLY through the posterior triangle, which is also why it is injured by node biopsy there — so establish whether this is the tumour or its previous surgery" },
+    },
+    "Mediastinal or apical lymphadenopathy": {
+      slots: { level: "the pupil, lid and facial sweating",
+               flavour: "a preganglionic Horner's with ANHIDROSIS over the face localises the lesion to the chest or neck rather than to the head, and points the imaging at the mediastinum" },
+    },
+    "Lung malignancy (left recurrent laryngeal)": {
+      slots: { level: "voice, cough and swallow, with laryngoscopy",
+               flavour: "the LEFT recurrent laryngeal nerve loops under the aortic arch, so a left cord palsy means the mediastinum — a normal neck scan does not begin to exclude it" },
+    },
+    "Thyroid malignancy or large goitre": {
+      slots: { level: "voice and swallow, and the thyroid on palpation",
+               flavour: "a hoarse voice with a thyroid mass suggests malignant rather than benign disease — a goitre may compress, but INVASION of the nerve implies carcinoma" },
+    },
+    "Oesophageal or mediastinal malignancy": {
+      slots: { level: "voice and swallow together",
+               flavour: "hoarseness WITH progressive dysphagia points to the mediastinum rather than the larynx — and the dysphagia is the symptom that will be attributed to age or to reflux for months" },
+    },
+  }),
+
+  // ---- SINGLETONS: each has its own answer and no family to belong to ----
+
+  // CSF-borne rather than solid: the workup is the CSF and the whole neuraxis, not a single lesion.
+  "Leptomeningeal metastasis": dz("Leptomeningeal metastasis", {
+    confirmatory: [
+      "MRI of the WHOLE NEURAXIS with contrast BEFORE lumbar puncture — post-LP dural enhancement mimics the diagnosis exactly, so the order of tests is part of the test",
+      "CSF CYTOLOGY, and repeat it: a single sample misses a substantial share, and three separate large-volume samples are the accepted standard before calling it negative",
+      "Send CSF volume as large as is safe, with cell count, protein, glucose and flow cytometry where lymphoma is possible — the yield rises with volume, which is why a small sample is a wasted procedure",
+      "Look for the nodular deposits and the 'sugar-coating' of the cord and cauda on the spinal sequences — a normal brain study does not exclude it, and the cauda is where the deposits are most often visible. {flavour}",
+    ],
+    monitoring: [
+      "SAFETY NET: HYDROCEPHALUS from CSF obstruction is the treatable complication and presents as a declining conscious level rather than a focal sign — it is the thing to watch for as everything else is being staged",
+      "Multiple cranial nerve palsies at different levels, with radicular symptoms, is the pattern — track them by name, since new nerves mark progression. Here, follow {level}",
+      "Pain control and honest prognostication belong early here: this usually means widespread disease, and treatment is often about function and comfort rather than cure",
+      "Discuss an intrathecal route with oncology if treatment is planned — and remember that anything given intrathecally will not reach disease behind a CSF block, so the block matters",
+    ],
+    urgency: "urgent",
+    referral: "Neuro-oncology with the primary tumour team; neurosurgery for CSF diversion or an access device",
+    bySite: {
+      root_t10: { level: "the sensory band and any girdle pain",
+                  flavour: "a thoracic radicular pattern from deposits on the roots — pain in a band, often multiple and asymmetric, which is what distinguishes it from a single compressive lesion" },
+      root_l4:  { level: "knee extension, the knee jerk and thigh sensation",
+                  flavour: "lumbar deposits give a patchy, asymmetric polyradiculopathy — the asymmetry across several roots is the signature" },
+      root_s1:  { level: "plantarflexion and the ankle jerk, both sides",
+                  flavour: "the lumbosacral roots are the commonest place to SEE the deposits, so image the cauda even when the symptoms are cranial" },
+      root_s3:  { level: "saddle sensation and sphincter function",
+                  flavour: "sacral deposits threaten the sphincters, and this is where the deficit is least likely to recover" },
+    },
+  }),
+
+  // Not a malignancy at all — an erosive keratinising lesion. It sits here because it is the mass at the
+  // ear that must not be mistaken for one, and because its complications are the dangerous part.
+  "Cholesteatoma": dz("Cholesteatoma", {
+    confirmatory: [
+      "OTOSCOPY IS THE DIAGNOSIS: a retraction pocket or attic crust with painless, offensive, chronically discharging ear — and the discharge is what the patient reports, so the drum must actually be examined rather than treated blind",
+      "CT temporal bones defines the EROSION — ossicles, the facial canal, the lateral semicircular canal and the tegmen — and that is what determines the operation",
+      "MRI (diffusion-weighted) distinguishes residual or recurrent cholesteatoma from granulation and fluid after surgery, which CT cannot do",
+      "Audiometry to document the conductive loss, and examine {level} — a facial palsy here means erosion into the facial canal and changes the urgency completely",
+    ],
+    monitoring: [
+      "SAFETY NET: the danger is not the lesion but its COMPLICATIONS — facial palsy, labyrinthine fistula with vertigo, and intracranial spread to meningitis, a temporal lobe abscess or sinus thrombosis. New headache, fever or vertigo in a chronically discharging ear is an emergency",
+      "It is locally destructive but BENIGN — so the framing to the patient is surgical cure rather than cancer, while being clear that it will not resolve medically",
+      "Recurrence is common and follow-up is long-term, with imaging or second-look surgery depending on what was done",
+    ],
+    urgency: "urgent",
+    referral: "ENT — definitive treatment is surgical; urgent if there is facial palsy, vertigo or any intracranial feature",
+    bySite: {
+      skull_base_vii_tympanic: { level: "facial movement AND taste on the anterior tongue, with the stapedial reflex",
+                                 flavour: "in the tympanic segment the lesion sits against the horizontal facial canal — taste and hyperacusis localise it above the stylomastoid foramen" },
+      skull_base_vii_mastoid:  { level: "facial movement, with the ear and mastoid for tenderness and discharge",
+                                 flavour: "mastoid involvement means the disease has eroded posteriorly — check for a post-auricular swelling and for the tenderness that signals coalescent mastoiditis" },
+    },
+  }),
+
+  // A tumour whose neurology is a paraneoplastic autoimmune syndrome, not compression.
+  "Thymoma": dz("Thymoma", {
+    confirmatory: [
+      "CT CHEST looking specifically at the ANTERIOR MEDIASTINUM — this is not part of a standard neurological work-up and has to be requested deliberately, in every newly diagnosed myasthenic",
+      "Acetylcholine receptor antibodies, and MuSK where they are negative; neurophysiology with repetitive stimulation and single-fibre EMG where the diagnosis is not secure",
+      "Examine {level} — and test for FATIGABILITY rather than absolute weakness, since that is what distinguishes this and it is missed on a single static examination",
+      "Screen for the associated autoimmune disease that travels with it, thyroid disease in particular, and for the red cell aplasia and hypogammaglobulinaemia thymoma can cause",
+    ],
+    monitoring: [
+      "SAFETY NET: MYASTHENIC CRISIS is the emergency — monitor FORCED VITAL CAPACITY, not oxygen saturation, because saturation falls late and by then the patient is in trouble. Bulbar weakness with a falling FVC needs critical care involvement before it becomes an intubation in extremis",
+      "Track {level} and the bulbar functions — swallow and voice — at every review",
+      "THYMECTOMY is part of the treatment of the myasthenia and not only of the tumour, so it is a neurological decision as much as a surgical one",
+      "Be alert to the drugs that unmask or worsen myasthenia, including several common antibiotics — a deterioration after a new prescription is a recognised pattern rather than a coincidence",
+    ],
+    urgency: "urgent",
+    referral: "Neurology with thoracic surgery; critical care early if the vital capacity is falling",
+  }),
+
+  // The diagnosis that is treated as inflammatory and is actually a mass.
+  "Compressive optic neuropathy masquerading as neuritis": dz("Compressive optic neuropathy masquerading as neuritis", {
+    confirmatory: [
+      "MRI ORBITS AND CHIASM with contrast and FAT SATURATION — the study that separates them, and the one that is skipped when the picture is assumed to be optic neuritis",
+      "THE FEATURES THAT SHOULD STOP YOU CALLING IT NEURITIS: painless loss, slowly PROGRESSIVE rather than nadir-and-recovery, an older patient, optic atrophy already present at first assessment, or optociliary shunt vessels on the disc",
+      "Examine {level} — acuity, colour vision, the pupil and formal fields — and look at the OTHER eye, since a chiasmal lesion produces a subtle contralateral defect that confirms the site",
+      "Consider the compressive causes by frequency: meningioma of the sheath or sphenoid wing, pituitary adenoma, aneurysm, and thyroid eye disease at the orbital apex",
+    ],
+    monitoring: [
+      "SAFETY NET: optic neuritis should RECOVER. Vision that fails to improve over the expected weeks, or continues to deteriorate, means reimaging rather than a further course of steroids",
+      "Steroids may transiently improve a compressive lesion too, so a response does NOT confirm an inflammatory cause — this is the trap that costs the most time",
+      "Track {level} formally at defined intervals; compressive visual loss becomes irreversible, so the interval between assessments is itself part of the prognosis",
+    ],
+    urgency: "urgent",
+    referral: "Neuro-ophthalmology, with neurosurgery or the pituitary team as the lesion dictates",
+  }),
+
   // ---- INTRA-AXIAL TUMOUR ----
   ...family("intra-axial-tumour", INTRAAXIAL_SPINE, {
     "Butterfly glioma or lymphoma": {
@@ -421,6 +666,10 @@ export default {
       slots: { level: "SMELL, formally rather than by asking",
                flavour: "a tumour arising from the olfactory epithelium and growing through the cribriform plate — unilateral anosmia with nasal obstruction or epistaxis is the presentation, and smell is almost never tested" },
     },
+    "Cavernous sinus or superior orbital fissure lesion": {
+      slots: { level: "forehead sensation and the corneal reflex, with every eye movement",
+               flavour: "V1 is affected in both compartments, so the DISCRIMINATOR is what accompanies it — optic nerve involvement places the lesion at the apex rather than in the sinus" },
+    },
     "Petrous apex lesion (Gradenigo's, cholesteatoma, tumour)": {
       slots: { level: "eye abduction, facial sensation, and the EAR",
                flavour: "three causes at one place, and the ear examination separates them — Gradenigo's follows otitis media, a cholesteatoma erodes, and a tumour destroys" },
@@ -486,6 +735,10 @@ export default {
     "Compressive lesion (tumour or disc)": {
       slots: { level: "the asymmetry between the two sides, and the sensory level",
                flavour: "a hemicord picture — the MRI distinguishes tumour from disc, but the decompression question and its clock are identical for both" },
+    },
+    "Compressive myelopathy (disc / mass / abscess)": {
+      slots: { level: "power, pinprick and the sensory level, with sphincters",
+               flavour: "three causes and one urgent question — and send inflammatory markers WITH the imaging request, because an abscess changes the operation as well as the antibiotics" },
     },
     "Compressive lesion (tumour, disc or abscess)": {
       slots: { level: "vibration and proprioception, plus gait with the eyes closed",
