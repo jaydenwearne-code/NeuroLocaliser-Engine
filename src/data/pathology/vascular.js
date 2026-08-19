@@ -34,6 +34,7 @@ const INTRAPARENCHYMAL_SPINE = {
     "NON-CONTRAST CT is immediate and diagnostic — here it is not excluding blood, it IS the diagnosis, and it changes the next hour completely",
     "ESTABLISH ANTICOAGULANT AND ANTIPLATELET EXPOSURE AND REVERSE IT — the most time-critical action of all, ahead of any further imaging",
     "CT angiography looking for an underlying vascular lesion and for contrast extravasation within the haematoma, which predicts expansion — {flavour}",
+    "THE LOCATION IS THE AETIOLOGY, and it should be read off the first scan: DEEP (basal ganglia, thalamus, pons, cerebellum) says HYPERTENSIVE; LOBAR in an OLDER patient says CEREBRAL AMYLOID ANGIOPATHY; and ANY location in a YOUNG or normotensive patient says look for an ARTERIOVENOUS MALFORMATION, cavernoma or aneurysm until the vessels have been imaged. Here: {aetiology}",
     "Delayed MRI with blood-sensitive sequences once stable, for the cause the acute blood conceals: cavernoma, underlying tumour, or the lobar microbleeds of amyloid angiopathy",
   ],
   monitoring: [
@@ -127,7 +128,8 @@ export default {
   ...family("intraparenchymal-haemorrhage", INTRAPARENCHYMAL_SPINE, {
     "Thalamic haemorrhage": {
       slots: { level: "conscious level, gaze and the sensory deficit",
-               flavour: "a thalamic bleed sits next to the third ventricle — look for intraventricular extension and hydrocephalus, which is what usually decides the outcome" },
+               flavour: "a thalamic bleed sits next to the third ventricle — look for intraventricular extension and hydrocephalus, which is what usually decides the outcome",
+               aetiology: "DEEP, so hypertensive is the working diagnosis — but a thalamic bleed in a normotensive patient should still prompt vessel imaging, and a deep venous thrombosis can produce a thalamic bleed that looks arterial" },
       monitoringExtra: ["A thalamic bleed classically gives DOWNWARD and inward gaze deviation with small unreactive pupils — a striking sign that is often the first thing to change"],
       bySite: {
         thalamus_vpm: { level: "facial and limb sensation, and any evolving central pain" },
@@ -139,7 +141,8 @@ export default {
     },
     "Pontine haemorrhage": {
       slots: { level: "conscious level, pupils and respiratory pattern",
-               flavour: "a pontine bleed is usually hypertensive and central — pinpoint reactive pupils with coma is the classic picture, and prognosis relates closely to volume" },
+               flavour: "a pontine bleed is usually hypertensive and central — pinpoint reactive pupils with coma is the classic picture, and prognosis relates closely to volume",
+               aetiology: "DEEP and central — the most characteristically hypertensive location of all, so the chronic blood pressure is the finding to establish, not just today's reading" },
       monitoringExtra: ["AIRWAY FIRST: a pontine haemorrhage threatens ventilation and swallow before anything else, and critical care involvement should not wait for the neurosurgical opinion"],
       bySite: {
         pons_medial: { level: "eye movements, facial power and swallow" },
@@ -150,7 +153,8 @@ export default {
     },
     "Midbrain haemorrhage": {
       slots: { level: "the third nerve, pupils and vertical gaze",
-               flavour: "a midbrain bleed sits at the aqueduct — look specifically for obstructive hydrocephalus, which is treatable and easily missed while attention is on the deficit" },
+               flavour: "a midbrain bleed sits at the aqueduct — look specifically for obstructive hydrocephalus, which is treatable and easily missed while attention is on the deficit",
+               aetiology: "deep, but the midbrain is a RARE site for a hypertensive bleed — that rarity raises a cavernoma or arteriovenous malformation proportionally, so image the vessels rather than assume" },
       bySite: {
         midbrain_lateral: { level: "the third nerve with contralateral limb signs" },
         midbrain_hemi: { level: "conscious level, pupils and all four limbs" },
@@ -159,7 +163,8 @@ export default {
     },
     "Deep hypertensive haemorrhage": {
       slots: { level: "power, and language where the dominant side is involved",
-               flavour: "a deep bleed in the basal ganglia or internal capsule with a hypertensive history is the commonest pattern of all — but in a NORMOTENSIVE patient, image the vessels for an underlying lesion" },
+               flavour: "a deep bleed in the basal ganglia or internal capsule with a hypertensive history is the commonest pattern of all — but in a NORMOTENSIVE patient, image the vessels for an underlying lesion",
+               aetiology: "the archetypal DEEP hypertensive location — but in a NORMOTENSIVE patient this same picture demands vessel imaging, because the location no longer explains itself" },
       bySite: {
         aphasia_subcortical_striatocapsular: { level: "language and power together" },
         subcortex_anterior_choroidal: { level: "power, sensation and the visual field — the triad of that territory" },
@@ -168,7 +173,8 @@ export default {
     },
     "Large intracerebral haemorrhage": {
       slots: { level: "conscious level above all else",
-               flavour: "volume is the strongest single predictor — measure it on the first scan so expansion on the second is unambiguous" },
+               flavour: "volume is the strongest single predictor — measure it on the first scan so expansion on the second is unambiguous",
+               aetiology: "read where the bulk of it SITS: deep points to hypertension, lobar in an older patient to amyloid angiopathy, and either in a young patient to an underlying malformation" },
       monitoringExtra: ["A large hemispheric haematoma behaves like a malignant infarct: watch for midline shift and herniation, and involve neurosurgery early rather than at deterioration"],
       bySite: {
         cortex_aphasia_global: { level: "language and conscious level" },
@@ -177,7 +183,8 @@ export default {
     },
     "Occipital haemorrhage": {
       slots: { level: "the visual fields, formally rather than to confrontation",
-               flavour: "a LOBAR occipital bleed in an older patient raises cerebral amyloid angiopathy — look for the lobar microbleeds on the delayed blood-sensitive sequences" },
+               flavour: "a LOBAR occipital bleed in an older patient raises cerebral amyloid angiopathy — look for the lobar microbleeds on the delayed blood-sensitive sequences",
+               aetiology: "LOBAR — so cerebral amyloid angiopathy in an older patient, and an arteriovenous malformation in a younger one. The occipital lobe is also a favoured site for both" },
       bySite: {
         cortex_pca: { level: "the visual field and any higher visual disturbance" },
         cortex_occipital: { level: "the field defect, and whether the patient is AWARE of it" },
@@ -185,7 +192,8 @@ export default {
     },
     "Hypothalamic stroke or haemorrhage": {
       slots: { level: "temperature, sodium, and conscious level",
-               flavour: "a hypothalamic lesion declares itself through the ENDOCRINE and autonomic axes rather than through a focal deficit, so the abnormal result usually arrives before the sign" },
+               flavour: "a hypothalamic lesion declares itself through the ENDOCRINE and autonomic axes rather than through a focal deficit, so the abnormal result usually arrives before the sign",
+               aetiology: "a deep midline location that is unusual for simple hypertension — consider a pituitary or suprasellar lesion bleeding, and image the sella specifically" },
       monitoringExtra: ["Check sodium, cortisol and thyroid function early: diabetes insipidus and adrenal insufficiency here are life-threatening and entirely treatable"],
       bySite: {
         hypothalamus_thermoregulatory: { level: "core temperature, which can swing in either direction" },
@@ -194,46 +202,56 @@ export default {
     },
     "Hypertensive pontine haemorrhage": {
       slots: { level: "conscious level, pupils and the gag reflex",
-               flavour: "the hypertensive pontine bleed is the archetype — central, and the blood pressure that caused it must still be treated" },
+               flavour: "the hypertensive pontine bleed is the archetype — central, and the blood pressure that caused it must still be treated",
+               aetiology: "DEEP and central: the name states the mechanism, and the job is to confirm the hypertension is chronic and to treat it, not merely to record it" },
       monitoringExtra: ["AIRWAY AND VENTILATION FIRST — this is the bleed most likely to need intubation before the imaging is complete"],
     },
     "Small pontine haemorrhage": {
       slots: { level: "eye movements and the crossed signs specifically",
-               flavour: "a small pontine bleed can produce a deficit out of all proportion to its size — do not be reassured by the volume here as you would in the hemisphere" },
+               flavour: "a small pontine bleed can produce a deficit out of all proportion to its size — do not be reassured by the volume here as you would in the hemisphere",
+               aetiology: "DEEP, so hypertensive — but a SMALL pontine bleed in a young or normotensive patient is a cavernoma until the blood-sensitive MRI says otherwise" },
     },
     "Medullary haemorrhage": {
       slots: { level: "swallow, tongue movement and the respiratory pattern",
-               flavour: "medullary bleeds are rare and disproportionately raise an underlying CAVERNOMA or arteriovenous malformation — image the vessels rather than assuming hypertension" },
+               flavour: "medullary bleeds are rare and disproportionately raise an underlying CAVERNOMA or arteriovenous malformation — image the vessels rather than assuming hypertension",
+               aetiology: "a RARE location, and rarity is itself the clue — an underlying cavernoma or arteriovenous malformation is proportionally far more likely here than hypertension" },
       monitoringExtra: ["Respiratory drive and swallow are the functions at risk, and both can fail without a dramatic change in conscious level"],
     },
     "Brainstem haemorrhage": {
       slots: { level: "conscious level, pupils and eye movements",
-               flavour: "in the brainstem the compartment is tiny, so an underlying lesion is proportionally more likely than in a hemispheric bleed — the delayed MRI matters more here" },
+               flavour: "in the brainstem the compartment is tiny, so an underlying lesion is proportionally more likely than in a hemispheric bleed — the delayed MRI matters more here",
+               aetiology: "deep, but in a small compartment where an underlying lesion is proportionally more likely — the delayed blood-sensitive MRI matters more here than anywhere else" },
     },
     "Haemorrhage into the subthalamic region": {
       slots: { level: "the involuntary movements, and their amplitude over time",
-               flavour: "a subthalamic bleed produces HEMIBALLISMUS — violent proximal flinging that is exhausting and occasionally dangerous in its own right" },
+               flavour: "a subthalamic bleed produces HEMIBALLISMUS — violent proximal flinging that is exhausting and occasionally dangerous in its own right",
+               aetiology: "DEEP — the classic hypertensive small-vessel territory, sitting beside the internal capsule" },
       monitoringExtra: ["Severe hemiballismus can cause rhabdomyolysis and exhaustion — monitor creatine kinase and hydration, not just the movement itself"],
     },
     "Hypertensive haemorrhage": {
       slots: { level: "pure motor power, without cortical signs",
-               flavour: "a capsular bleed gives a dense PURE MOTOR deficit with no language or neglect — the absence of cortical signs is the localising information" },
+               flavour: "a capsular bleed gives a dense PURE MOTOR deficit with no language or neglect — the absence of cortical signs is the localising information",
+               aetiology: "DEEP, in the capsular territory of the lenticulostriate perforators — the commonest hypertensive site after the putamen" },
     },
     "Hypertensive deep haemorrhage": {
       slots: { level: "power across face, arm and leg equally",
-               flavour: "a corona radiata bleed sits in white matter, so the deficit is motor and the higher functions are spared" },
+               flavour: "a corona radiata bleed sits in white matter, so the deficit is motor and the higher functions are spared",
+               aetiology: "deep white matter — hypertensive small-vessel disease, and the same vessels that produce lacunes" },
     },
     "Deep haemorrhage": {
       slots: { level: "the visual field",
-               flavour: "a bleed into the optic radiation gives a field defect with little else — easily missed unless the fields are formally tested" },
+               flavour: "a bleed into the optic radiation gives a field defect with little else — easily missed unless the fields are formally tested",
+               aetiology: "deep white matter rather than cortex, so hypertensive rather than amyloid — amyloid angiopathy spares the deep structures, which is the discriminator" },
     },
     "Haemorrhage": {
       slots: { level: "speech output, and face and arm power",
-               flavour: "an opercular bleed threatens speech disproportionately to its size" },
+               flavour: "an opercular bleed threatens speech disproportionately to its size",
+               aetiology: "LOBAR — cortical and superficial, so cerebral amyloid angiopathy in an older patient and an underlying malformation in a younger one" },
     },
     "Cerebellar haemorrhage": {
       slots: { level: "conscious level and truncal stability",
-               flavour: "MEASURE THE HAEMATOMA and look at the fourth ventricle: in the posterior fossa, SIZE AND BRAINSTEM COMPRESSION rather than the deficit drive the surgical decision, and a patient can look well and still need evacuation" },
+               flavour: "MEASURE THE HAEMATOMA and look at the fourth ventricle: in the posterior fossa, SIZE AND BRAINSTEM COMPRESSION rather than the deficit drive the surgical decision, and a patient can look well and still need evacuation",
+               aetiology: "DEEP, in the posterior fossa — hypertensive is the commonest by far, though a cerebellar bleed in a young patient still warrants vessel imaging" },
       monitoringExtra: [
         "THE POSTERIOR FOSSA HAS NO ROOM: deterioration can be abrupt and irreversible, so a falling conscious level is a call to the surgeon and the scanner in the same breath",
         "Watch for obstructive hydrocephalus from fourth-ventricle compression — treatable, and what usually kills here",
@@ -249,17 +267,20 @@ export default {
     // The "or cavernoma" names: same acute answer, plus the lesion hunt that changes the FUTURE.
     "Pontine haemorrhage or cavernoma": {
       slots: { level: "facial sensation and eye movements",
-               flavour: "a small brainstem bleed in a YOUNGER, normotensive patient is a cavernoma until the blood-sensitive MRI says otherwise" },
+               flavour: "a small brainstem bleed in a YOUNGER, normotensive patient is a cavernoma until the blood-sensitive MRI says otherwise",
+               aetiology: "deep, but the name already names the alternative — a small brainstem bleed in a young normotensive patient is a cavernoma" },
       confirmatoryExtra: ["Delayed MRI with SWI or gradient-echo is the study that finds the cavernoma, and it also screens for the multiple lesions of the FAMILIAL form — which changes the conversation with the family, not just the patient"],
     },
     "Brainstem haemorrhage or cavernoma": {
       slots: { level: "tremor, palate and eye movements",
-               flavour: "a lesion in the Guillain-Mollaret triangle may declare itself late, as palatal tremor developing months after the bleed" },
+               flavour: "a lesion in the Guillain-Mollaret triangle may declare itself late, as palatal tremor developing months after the bleed",
+               aetiology: "deep and small-volume, which in the brainstem points to a cavernoma rather than to hypertension" },
       confirmatoryExtra: ["Blood-sensitive MRI for a cavernoma, and screen for multiple lesions — brainstem cavernomas rebleed at a materially higher rate than those elsewhere, which drives the surgical discussion"],
     },
     "Brainstem or cerebellar haemorrhage / cavernoma": {
       slots: { level: "limb coordination and any tremor",
-               flavour: "a dentate lesion gives ipsilateral limb ataxia; blood here also threatens the fourth ventricle, so look at it explicitly" },
+               flavour: "a dentate lesion gives ipsilateral limb ataxia; blood here also threatens the fourth ventricle, so look at it explicitly",
+               aetiology: "posterior fossa — hypertensive if large and deep, cavernoma if small and in a younger patient" },
       confirmatoryExtra: ["Blood-sensitive MRI for an underlying cavernoma, and assess the fourth ventricle for obstruction on the acute scan"],
     },
   }),

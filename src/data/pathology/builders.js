@@ -7,7 +7,10 @@
 //   family(label, spine, members) ONE authored spine -> SEVERAL named plans
 
 // Slot defaults used when a site has no `bySite` entry. Neutral, never invented specifics.
-export const DEFAULTS = { level: "the affected region", flavour: "the appearance expected for this lesion" };
+export const DEFAULTS = { level: "the affected region", flavour: "the appearance expected for this lesion",
+  // `aetiology` carries the LOCATION-DERIVED cause. Its default never asserts a mechanism, because
+  // guessing one from an unknown location is precisely the error the slot exists to prevent.
+  aetiology: "read the location against the rule above before assuming a mechanism" };
 
 export const fill = (str, slots) => str.replace(/\{([a-z]+)\}/g, (_, k) => slots[k] ?? DEFAULTS[k] ?? "");
 
