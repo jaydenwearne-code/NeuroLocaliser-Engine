@@ -8,7 +8,10 @@
 //
 // REVIEW STATUS:
 //   ✅ Posterior circulation stroke, Intracerebral haemorrhage — SIGNED OFF 2026-08-18 (tranche 1).
-//   ⚠  the INFARCT family (28 members) — tranche 2 round 1, AWAITING REVIEW.
+//   ⚠  the INFARCT family — tranche 2 round 1, AWAITING REVIEW.
+//   ⚠  haemorrhage/haematoma (4 families) — round 2; venous thrombosis, vascular malformations — round 2b.
+//   ⚠  dissection, large-vessel occlusion, compressive aneurysm, perforator disease, central vestibular
+//      stroke + singletons — round 5, AWAITING REVIEW.
 import { dz, family } from "./builders.js";
 
 // ---- the INFARCT family (tranche 2, round 1) ----
@@ -149,6 +152,104 @@ const CVST_SPINE = {
   referral: "Acute stroke or neurology service, with haematology; neurosurgery if there is mass effect or hydrocephalus",
 };
 
+// ---- ROUND 5 (tranche 2): the rest of the vascular red set ----
+
+// ARTERIAL DISSECTION. A tear in the wall, in a patient who is usually YOUNG and has no vascular risk
+// factors. Two mechanisms follow from it — distal embolism and local occlusion — and the pain precedes
+// the stroke, which is the window everyone misses.
+const DISSECTION_SPINE = {
+  confirmatory: [
+    "ASK ABOUT PAIN AND ITS TIMING — neck, face or occipital pain, often days BEFORE the deficit. That interval is the diagnostic window, and it is routinely dismissed as musculoskeletal or migrainous",
+    "CT or MR ANGIOGRAPHY of the neck AND head, with fat-saturated axial T1 for the intramural haematoma — the crescent of blood in the wall is the finding, and a standard angiogram can miss it: {flavour}",
+    "Ask about the precipitant: trauma, but also trivial events — coughing, vomiting, sport, chiropractic manipulation, or nothing at all",
+    "Examine {level}, and look for a HORNER'S SYNDROME, which accompanies a carotid dissection and is the sign that makes the diagnosis before any imaging",
+  ],
+  monitoring: [
+    "SAFETY NET: the deficit that matters is the EMBOLIC one that follows, and it can arrive days after the pain — a patient sent home with 'neck pain' who returns with a stroke is the pattern this diagnosis is known for",
+    "Track {level}; antithrombotic treatment is the mainstay and the choice between antiplatelet and anticoagulation is a specialist one, but starting something promptly matters more than which",
+    "Where the dissection extends INTRACRANIALLY, subarachnoid haemorrhage becomes a risk and anticoagulation becomes hazardous — so the extent changes the treatment",
+    "Screen for a connective-tissue disorder where there is no trauma, recurrence, or a family history — fibromuscular dysplasia, Ehlers-Danlos and Marfan syndrome all present this way",
+  ],
+  urgency: "emergency",
+  referral: "Acute stroke pathway with neurointervention; vascular surgery where the aorta or subclavian is involved",
+};
+
+// LARGE-VESSEL OCCLUSION, STENOSIS AND GLOBAL HYPOPERFUSION. The lesion is proximal and the deficit is
+// downstream — so imaging the brain alone answers the wrong question. THE VESSEL IS THE DIAGNOSIS.
+const LVO_SPINE = {
+  confirmatory: [
+    "CT ANGIOGRAPHY FROM ARCH TO VERTEX — the plain scan shows the consequence, the angiogram shows the cause, and only the second decides whether thrombectomy is possible",
+    "Establish the TIME LAST KNOWN WELL before anything else; and where the window is uncertain, PERFUSION imaging may still identify salvageable tissue",
+    "Define the MECHANISM, because it dictates prevention: cardiac rhythm monitoring for atrial fibrillation, echocardiography, and imaging of the carotid and vertebral origins — {flavour}",
+    "Examine {level}, and check blood pressure in BOTH arms plus the peripheral pulses where an arch or subclavian lesion is possible",
+  ],
+  monitoring: [
+    "SAFETY NET: a FLUCTUATING or stepwise deficit in large-vessel disease means the territory is being perfused marginally — lying the patient FLAT and avoiding hypotension is a treatment, and sitting them up can extend the infarct",
+    "Track {level} frequently; deterioration means reimaging for extension, malignant oedema or haemorrhagic transformation",
+    "Blood pressure management here is the reverse of the usual instinct while the vessel is occluded: permissive hypertension supports collateral flow until reperfusion is achieved",
+    "Secondary prevention starts on the ward, not in clinic — antithrombotics, lipids, glucose, and the carotid intervention decision all have their own clocks",
+  ],
+  urgency: "emergency",
+  referral: "Acute stroke pathway with neurointervention; vascular surgery for carotid intervention",
+};
+
+// ANEURYSM CAUSING MASS EFFECT rather than haemorrhage. The deficit is the WARNING, and the window before
+// rupture is what the whole workup exists to use.
+const COMPRESSIVE_ANEURYSM_SPINE = {
+  confirmatory: [
+    "URGENT CT or MR ANGIOGRAPHY — a compressive cranial neuropathy from an aneurysm is a WARNING of imminent rupture, and the interval before it is the reason this cannot wait for an outpatient scan",
+    "Where non-invasive imaging is negative and the clinical picture is convincing, CATHETER ANGIOGRAPHY: a small aneurysm can be missed, and the consequence of missing it is subarachnoid haemorrhage",
+    "Examine {level} with particular attention to the PUPIL — {flavour}",
+    "Assess the aneurysm's size, site and morphology with the neurovascular team, since these determine whether clipping or coiling is appropriate",
+  ],
+  monitoring: [
+    "SAFETY NET: a NEW SEVERE HEADACHE in a patient with a known unsecured aneurysm is a sentinel bleed until proven otherwise — CT then lumbar puncture for xanthochromia, and do not attribute it to the known lesion",
+    "Track {level}: a progressing compressive deficit suggests the aneurysm is enlarging, which raises the rupture risk further",
+    "Once SECURED, the neurological deficit may recover over weeks to months — recovery is better the earlier the aneurysm is treated, which is another reason speed matters",
+    "Screen first-degree relatives where there is a family history of aneurysm or subarachnoid haemorrhage",
+  ],
+  urgency: "emergency",
+  referral: "Emergency neurosurgery and neurointervention — an unsecured symptomatic aneurysm is secured, not observed",
+};
+
+// PERFORATOR DISEASE. Small vessels, big consequences, and a course that FLUCTUATES and progresses over
+// hours to days — which is why these are repeatedly discharged after a normal early scan.
+const PERFORATOR_SPINE = {
+  confirmatory: [
+    "EARLY IMAGING IS OFTEN NORMAL — a small perforator infarct may not appear on DWI for hours, and a normal early scan in a convincing story is not reassurance. Repeat it rather than reconsidering the diagnosis",
+    "MRI with DWI, and vessel imaging to distinguish a true small-vessel lacune from BRANCH ATHEROMATOUS DISEASE at the perforator's ORIGIN — the second behaves differently and is not the same illness: {flavour}",
+    "Full stroke work-up regardless, since a proximal plaque occluding a perforator origin is an atherosclerotic rather than a small-vessel problem",
+    "Examine {level} repeatedly and document each time — the trajectory is the diagnostic information here",
+  ],
+  monitoring: [
+    "SAFETY NET: THIS IS THE GROUP THAT DETERIORATES AFTER ADMISSION. Stuttering, fluctuating or stepwise progression over hours to days is characteristic, and a patient who was mild on arrival can be severely disabled by day two",
+    "Track {level} hourly while it is fluctuating; avoid hypotension and keep the patient FLAT, because perfusion of a marginal territory is pressure-dependent",
+    "Reimage on progression — and reconsider the mechanism, since progression suggests branch atheroma or a proximal source rather than simple lipohyalinosis",
+    "Counsel honestly at the outset that worsening over the first days is expected rather than a complication, so that neither the family nor the team treats it as an error",
+  ],
+  urgency: "emergency",
+  referral: "Acute stroke pathway",
+};
+
+// CENTRAL CAUSES OF THE ACUTE VESTIBULAR SYNDROME. The whole point is that the BEDSIDE EXAMINATION
+// outperforms early imaging here, which is the opposite of the reader's instinct.
+const CENTRAL_VESTIBULAR_SPINE = {
+  confirmatory: [
+    "HINTS AT THE BEDSIDE OUTPERFORMS EARLY MRI in the acute vestibular syndrome: a NORMAL head impulse, direction-changing nystagmus, or skew deviation each point CENTRAL, and together they are more sensitive than DWI in the first 48 hours",
+    "MRI with DWI is still needed, but a NEGATIVE early scan does NOT exclude a posterior-fossa stroke — up to a fifth are missed in the first day, so a central examination outranks a normal scan: {flavour}",
+    "CT or MR angiography of the vertebrobasilar circulation, looking for dissection and for basilar disease",
+    "Examine {level}, and specifically test whether the patient can SIT OR WALK UNAIDED — inability to do so in an acute vestibular syndrome is a central sign and is easy to omit from the bed",
+  ],
+  monitoring: [
+    "SAFETY NET: a fluctuating posterior-circulation picture can herald BASILAR OCCLUSION, and posterior-fossa infarcts swell at 2-4 days — deterioration in conscious level is a neurosurgical emergency, not a nursing observation",
+    "Track {level}; and watch for the hydrocephalus that follows fourth-ventricle compression",
+    "Do not let a diagnosis of peripheral vertigo be made by the absence of other signs alone — the commonest error is treating a stroke as labyrinthitis because nothing else was found on a limited examination",
+    "Swallow screen before anything by mouth where the brainstem may be involved",
+  ],
+  urgency: "emergency",
+  referral: "Acute stroke pathway; neurosurgery if posterior-fossa swelling develops",
+};
+
 const INFARCT_SPINE = {
   confirmatory: [
     "Establish the TIME LAST KNOWN WELL before anything else — it is what decides whether reperfusion is on the table, and it cannot be reconstructed later",
@@ -177,6 +278,261 @@ const cordInfarct = (where, clue) => [
 ];
 
 export default {
+  // ---- ROUND 5 SINGLETONS ----
+
+  // A vascular event inside a pituitary lesion. Sight and life are both at stake, and the treatment is
+  // endocrine before it is surgical.
+  "Pituitary apoplexy": dz("Pituitary apoplexy", {
+    confirmatory: [
+      "GIVE STEROIDS FIRST, IMAGE SECOND. Acute adrenal insufficiency is what kills here, the treatment is safe, and waiting for confirmation is the error this diagnosis is known for",
+      "URGENT PITUITARY MRI — CT frequently misses the haemorrhage, so a normal CT does not exclude it in a patient with the syndrome",
+      "FULL PITUITARY AXIS BLOODS TAKEN BEFORE STEROIDS where that causes no delay: cortisol, thyroid, prolactin and gonadal axis — but never delay treatment to obtain them",
+      "Examine {level} — acuity, colour vision, FORMAL FIELDS and each eye movement, since the expanding lesion takes the chiasm and the cavernous sinus contents together",
+    ],
+    monitoring: [
+      "SAFETY NET: sudden severe headache with visual loss and ophthalmoplegia is the syndrome, and it is regularly admitted as subarachnoid haemorrhage or meningitis — a normal CT and a normal CSF should send you to the pituitary rather than to the ward",
+      "Track {level} and the fields at defined intervals: deteriorating vision is the main indication for urgent decompression, and the recovery is better the earlier it happens",
+      "Watch SODIUM and fluid balance; and remember that most survivors need lifelong hormone replacement, which is the part that gets lost at discharge",
+    ],
+    urgency: "emergency",
+    referral: "Endocrinology and neurosurgery together, with ophthalmology — steroids do not wait for either",
+    bySite: {
+      visual_pathway_chiasm: {
+        level: "FORMAL visual fields and acuity, both eyes",
+        flavour: "upward expansion takes the chiasm — a bitemporal defect appearing over hours rather than months, which is what marks it as apoplexy rather than an adenoma discovered late",
+      },
+      pupil_cn3_compressive: {
+        level: "the third nerve including the PUPIL, and the other cavernous nerves",
+        flavour: "lateral expansion into the cavernous sinus takes III first — a painful third-nerve palsy here is apoplexy rather than an aneurysm, and the pituitary is where to look on the scan",
+      },
+    },
+  }),
+
+  // The one cause of visual loss where treatment saves the OTHER eye, and the window is measured in hours.
+  "Arteritic AION — giant-cell arteritis": dz("Arteritic AION — giant-cell arteritis", {
+    confirmatory: [
+      "ESR AND CRP IMMEDIATELY, and START HIGH-DOSE STEROIDS ON SUSPICION — the second eye is what is being protected, it can go within days, and the loss is permanent. Treatment does not wait for the biopsy",
+      "TEMPORAL ARTERY BIOPSY within about the first fortnight of starting steroids — the yield persists that long, so treatment first and biopsy second is the correct order, and a long segment is taken because skip lesions are common",
+      "Ask the questions that make the diagnosis and are not volunteered: JAW CLAUDICATION (the most specific), scalp tenderness, temporal headache, and the proximal ache of polymyalgia rheumatica",
+      "Examine {level} — acuity, colour vision, the pupil and the DISC. A pale, swollen disc distinguishes the arteritic form from the non-arteritic, in which the disc is hyperaemic",
+    ],
+    monitoring: [
+      "SAFETY NET: TRANSIENT visual loss or diplopia in this context is the warning before permanent infarction — it is an emergency in its own right and must not be triaged as a symptom that has resolved",
+      "Track {level} in BOTH eyes; the fellow eye is the one the treatment exists to save",
+      "Steroids here run for many months with a slow taper, so bone protection, glucose monitoring and gastric protection are part of the plan from day one rather than afterthoughts",
+      "Watch for the large-vessel complications — aortitis and aneurysm — which develop later and are missed once the eye has stabilised",
+    ],
+    urgency: "emergency",
+    referral: "Same-day ophthalmology and rheumatology — steroids before either",
+  }),
+
+  // A structural lesion at the sympathetic outflow, listed here because it presents as a Horner's.
+  "Cervical cord or T1-T2 lesion": dz("Cervical cord or T1-T2 lesion", {
+    confirmatory: [
+      "MRI of the cervical cord and cervicothoracic junction — a preganglionic Horner's from a CENTRAL lesion means the cord itself, and the level is where the sympathetic outflow leaves",
+      "Examine {level}, and look for the long-tract signs that distinguish a cord lesion from an apical or neck cause — a Horner's WITH pyramidal signs is intramedullary until imaged",
+      "Ask about ANHIDROSIS and its extent: a preganglionic lesion affects the face, which is what separates it from a postganglionic one",
+      "Consider the causes at this level — syringomyelia, demyelination, intramedullary tumour, and trauma — which look identical at the pupil and different on the scan",
+    ],
+    monitoring: [
+      "SAFETY NET: a Horner's syndrome is never a diagnosis, only a localiser — the work-up is not complete until the level is established, and the causes at each level run from benign to lethal",
+      "Track {level}; a progressive cord deficit changes the urgency regardless of what the pupil is doing",
+      "Where a syrinx is found, look above it for the craniocervical junction abnormality that usually causes it",
+    ],
+    urgency: "urgent",
+    referral: "Neurology with neurosurgery or spinal surgery as the cause dictates",
+  }),
+
+  // ---- ARTERIAL DISSECTION ----
+  ...family("arterial-dissection", DISSECTION_SPINE, {
+    "Carotid artery dissection": {
+      slots: { level: "the lower cranial nerves and the sympathetic supply",
+               flavour: "a painful HORNER'S with lower cranial nerve palsies and no other explanation is a carotid dissection until the neck angiogram says otherwise — the nerves are stretched over the expanded vessel" },
+      bySite: {
+        skull_base_carotid_space: { level: "IX, X, XI, XII and the pupil together" },
+        skull_base_villaret:      { level: "the four lower nerves WITH a Horner's — the retroparotid combination" },
+      },
+    },
+    "Internal carotid artery dissection": {
+      slots: { level: "the hemispheric deficit, plus the pupil and lid for a Horner's",
+               flavour: "the classic triad is unilateral head or neck pain, a partial Horner's, and cerebral ischaemia hours to days later — any two of the three should trigger the angiogram" },
+    },
+    "Carotid dissection or aneurysm": {
+      slots: { level: "tongue movement, with the pupil and the neck",
+               flavour: "the hypoglossal nerve crosses the carotid, so an isolated tongue palsy with neck pain points at the vessel rather than at the skull base" },
+    },
+    "Carotid or ophthalmic artery dissection": {
+      slots: { level: "acuity, the fundus, and the pupil",
+               flavour: "TRANSIENT MONOCULAR VISUAL LOSS with neck pain in a young patient is a dissection until imaged — and the retinal examination may show the embolus that came from it" },
+    },
+    "Vertebral artery dissection": {
+      slots: { level: "the crossed brainstem signs, and the neck for pain",
+               flavour: "OCCIPITAL or posterior neck pain preceding a lateral medullary syndrome — and in a young patient with a Wallenberg picture, dissection is more likely than atherosclerosis" },
+    },
+    "Vertebral dissection": {
+      slots: { level: "tongue, swallow and the long tracts",
+               flavour: "the vertebral supplies the medial medulla through its perforators, so a medial medullary syndrome in a young patient warrants the same neck angiogram" },
+    },
+    "Vertebral artery occlusion or dissection": {
+      slots: { level: "all the medullary functions — swallow, tongue, and the crossed pattern",
+               flavour: "occlusion and dissection produce the same deficit; the angiogram separates them, and only dissection changes the antithrombotic conversation and the advice about neck manipulation" },
+    },
+    "Basilar artery dissection": {
+      slots: { level: "conscious level, eye movements and all four limbs",
+               flavour: "dissection of the basilar is rare and dangerous — it can occlude perforators progressively, and intracranial extension makes anticoagulation hazardous because of the subarachnoid risk" },
+      bySite: {
+        pons_medial:            { level: "eye movements, facial power and swallow" },
+        locked_in_ventral_pons: { level: "VERTICAL eye movements and blinking — the only channel left" },
+      },
+    },
+  }),
+
+  // ---- LARGE-VESSEL OCCLUSION, STENOSIS AND HYPOPERFUSION ----
+  ...family("large-vessel-occlusion", LVO_SPINE, {
+    "Basilar artery occlusion": {
+      slots: { level: "conscious level, pupils, eye movements and all four limbs",
+               flavour: "the deadliest occlusion and the most often missed, because it presents as confusion, dizziness or fluctuating drowsiness rather than as a hemiparesis" },
+      monitoringExtra: ["A FLUCTUATING posterior-circulation picture is basilar thrombosis until the angiogram says otherwise — the fluctuation is the warning, not the reassurance, and the window for intervention is wider here than in the anterior circulation"],
+      bySite: {
+        pons_hemi:              { level: "all four limbs, eye movements and conscious level" },
+        locked_in_ventral_pons: { level: "vertical gaze and blinking — and ESTABLISH COMMUNICATION before assuming the patient is unaware" },
+      },
+    },
+    "Top-of-the-basilar embolism": {
+      slots: { level: "conscious level, pupils, vertical gaze and the visual fields",
+               flavour: "a bewildering mixture of visual, oculomotor and behavioural signs with PRESERVED POWER — the pattern itself is the diagnosis, and it is regularly called delirium" },
+    },
+    "Top-of-the-basilar occlusion": {
+      slots: { level: "conscious level, the third nerve and all four limbs",
+               flavour: "distal basilar occlusion strikes the midbrain and both thalami at once, which is why bilateral signs with preserved power should send you to the vessel" },
+    },
+    "Proximal MCA (M1) / carotid-T occlusion": {
+      slots: { level: "gaze deviation, power, language and the field",
+               flavour: "the archetypal thrombectomy target — a dense hemiparesis with gaze deviation and cortical signs, where the angiogram rather than the plain CT decides what happens next" },
+    },
+    "Severe carotid stenosis or occlusion": {
+      slots: { level: "PROXIMAL limb power, and blood pressure",
+               flavour: "a border-zone pattern means the mechanism is HAEMODYNAMIC — so the question is what dropped the perfusion, and the carotid is where to look" },
+      bySite: {
+        cortex_watershed_anterior:  { level: "proximal arm and leg — the man-in-a-barrel pattern" },
+        cortex_watershed_posterior: { level: "the visual field and higher visual processing" },
+      },
+    },
+    "Critical carotid stenosis or occlusion": {
+      slots: { level: "language — specifically REPETITION, which is preserved",
+               flavour: "a transcortical picture with preserved repetition means the perisylvian language cortex is spared while everything around it is not — the 'isolation of the speech area' of severe hypoperfusion" },
+    },
+    "Global cerebral hypoperfusion (watershed 'isolation of the speech area')": {
+      slots: { level: "repetition against spontaneous speech and comprehension",
+               flavour: "the patient echoes but cannot generate or understand — a striking and specific sign that the whole border zone around the language cortex has been under-perfused" },
+    },
+    "Cardiac arrest / profound global hypoperfusion": {
+      slots: { level: "conscious level, brainstem reflexes and the visual fields",
+               flavour: "hypoxic-ischaemic injury affects the watershed and the selectively vulnerable regions — and PROGNOSTICATION must not be attempted early, since sedation, hypothermia and organ failure all confound the examination" },
+      confirmatoryExtra: ["Multimodal prognostication no earlier than the accepted interval after rewarming and off sedation — clinical examination, EEG, somatosensory evoked potentials and neuron-specific enolase together, never a single test"],
+    },
+    "Moyamoya disease": {
+      slots: { level: "the deficit and its RELATION TO HYPERVENTILATION or crying in a child",
+               flavour: "progressive stenosis of the distal carotids with a basal collateral network — the 'puff of smoke' on angiography, and in children it presents with ischaemia while in adults it more often bleeds" },
+      confirmatoryExtra: [
+        "CATHETER ANGIOGRAPHY defines the collateral pattern and stages the disease — this is one place where non-invasive imaging is genuinely not enough, because surgical planning depends on it",
+        "Avoid HYPERVENTILATION and dehydration, both of which precipitate ischaemia here — and mention it explicitly to anaesthetics before any procedure",
+      ],
+      bySite: {
+        cortex_aphasia_mixed_transcortical: { level: "repetition against spontaneous speech" },
+        cortex_watershed_anterior:          { level: "proximal limb power" },
+      },
+      urgency: "urgent",
+      referral: "Neurosurgery with a cerebrovascular service — revascularisation is the definitive treatment",
+    },
+    "Anterior choroidal or carotid-origin atherosclerosis": {
+      slots: { level: "power, sensation and the visual field — the triad of that territory",
+               flavour: "the anterior choroidal artery arises from the internal carotid, so its territory infarct warrants imaging the CAROTID rather than being filed as small-vessel disease" },
+    },
+    "Carotid atherosclerosis with artery-to-artery embolism": {
+      slots: { level: "acuity and the FUNDUS, looking along the arterioles",
+               flavour: "a bright refractile plaque at an arteriolar bifurcation is a Hollenhorst plaque — visible proof of the embolic source, and an indication to image the carotid urgently" },
+      confirmatoryExtra: ["Transient monocular visual loss is a TIA of the eye and carries the same early stroke risk as any other TIA — the carotid work-up is urgent, not routine"],
+    },
+    "Cardioembolism (atrial fibrillation, valve disease, endocarditis)": {
+      slots: { level: "the fundus and acuity, with a full cardiac examination",
+               flavour: "a retinal embolus with a murmur or an irregular pulse redirects the work-up to the HEART — and endocarditis in particular changes everything about the antithrombotic decision" },
+      confirmatoryExtra: ["Blood cultures and echocardiography where endocarditis is possible: anticoagulating an infected embolic source risks haemorrhage, so the diagnosis must come before the treatment"],
+    },
+    "Cardioembolism": {
+      slots: { level: "power, sensation and the field together",
+               flavour: "an embolus lodging in a deep territory rather than a cortical one — prolonged rhythm monitoring is what finds the paroxysmal atrial fibrillation a single ECG misses" },
+    },
+  }),
+
+  // ---- ANEURYSM CAUSING MASS EFFECT ----
+  ...family("compressive-aneurysm", COMPRESSIVE_ANEURYSM_SPINE, {
+    "Posterior communicating artery aneurysm": {
+      slots: { level: "the third nerve, and the PUPIL above all",
+               flavour: "the pupillary fibres run superficially, so an aneurysm compressing the third nerve DILATES THE PUPIL — a painful third-nerve palsy with a fixed pupil is this until the angiogram excludes it" },
+    },
+    "Internal carotid aneurysm": {
+      slots: { level: "the visual FIELDS formally, plus acuity",
+               flavour: "a carotid or ophthalmic-segment aneurysm compresses the chiasm or optic nerve — and the field defect may be asymmetric and atypical rather than the textbook bitemporal pattern" },
+    },
+    "Carotid aneurysm": {
+      slots: { level: "III, IV, VI and the V1/V2 territories one at a time",
+               flavour: "within the cavernous sinus an aneurysm produces a painful ophthalmoplegia — and rupture here gives a carotid-cavernous fistula rather than subarachnoid haemorrhage, which is a different emergency" },
+    },
+    "Aortic arch or subclavian artery aneurysm": {
+      slots: { level: "the pupil and lid, plus facial sweating and the arm",
+               flavour: "a preganglionic Horner's with arm symptoms points BELOW the neck — image the chest, and check the blood pressure in both arms" },
+      referral: "Vascular or cardiothoracic surgery urgently, with neurology for the sympathetic deficit",
+    },
+    "Aortic arch aneurysm or cardiac enlargement (Ortner's syndrome)": {
+      slots: { level: "voice and swallow, with laryngoscopy",
+               flavour: "ORTNER'S SYNDROME — the left recurrent laryngeal nerve compressed between the aorta and pulmonary artery by an aneurysm or an enlarged left atrium. A cardiac cause of hoarseness, and one nobody looks for" },
+      confirmatoryExtra: ["Echocardiography as well as CT: a dilated left atrium in mitral disease compresses the same nerve, and that is a cardiological rather than a surgical problem"],
+      urgency: "urgent",
+      referral: "Cardiology and cardiothoracic surgery, with ENT for the voice",
+    },
+  }),
+
+  // ---- PERFORATOR DISEASE ----
+  ...family("perforator-disease", PERFORATOR_SPINE, {
+    "Capsular warning syndrome": {
+      slots: { level: "power in face, arm and leg, with NO cortical signs",
+               flavour: "REPEATED, stereotyped, fully resolving pure-motor episodes over hours — an unstable perforator that is about to complete, and one of the highest early-stroke-risk presentations there is" },
+      monitoringExtra: ["ADMIT. These episodes recur and a large proportion end in a completed capsular infarct within days — this is not a TIA to be worked up as an outpatient"],
+    },
+    "Branch atheromatous disease of the lenticulostriate origin": {
+      slots: { level: "power across face, arm and leg equally",
+               flavour: "a plaque at the ORIGIN of the perforator rather than disease within it — the infarct extends to the ventricular surface, which is the imaging clue, and it behaves like large-vessel disease" },
+    },
+    "Basilar perforator disease with progression": {
+      slots: { level: "power, eye movements and swallow, hourly",
+               flavour: "a paramedian pontine infarct reaching the ventral surface — this is the classic stuttering deficit that worsens over the first day and is repeatedly attributed to something else" },
+    },
+  }),
+
+  // ---- CENTRAL CAUSES OF THE ACUTE VESTIBULAR SYNDROME ----
+  ...family("central-vestibular-stroke", CENTRAL_VESTIBULAR_SPINE, {
+    "Posterior circulation stroke (the must-not-miss)": {
+      slots: { level: "gaze holding, skew, and truncal stability",
+               flavour: "a peripheral-looking acute vestibular syndrome that is actually a stroke — the reason the whole HINTS examination exists" },
+    },
+    "Cerebellar / brainstem stroke (PICA / AICA)": {
+      slots: { level: "gaze-evoked nystagmus, limb coordination and gait",
+               flavour: "PICA gives vertigo with ataxia, AICA adds HEARING LOSS — and deafness with vertigo is a brainstem stroke sign, not a reason to diagnose labyrinthitis" },
+    },
+    "Vertebrobasilar TIA": {
+      slots: { level: "the deficit at the time, and whether it has fully resolved",
+               flavour: "RECURRENT brief episodes of vertigo with other posterior-circulation symptoms — isolated recurrent vertigo can be a TIA, and it is the warning before the completed stroke" },
+      monitoringExtra: ["Treat this as a stroke warning rather than a benign episode: the early recurrence risk is front-loaded into the first days, so the work-up is urgent and admission is often appropriate"],
+    },
+    "Central lesion causing DOWNBEAT nystagmus": {
+      slots: { level: "the nystagmus in different gaze positions, plus gait and coordination",
+               flavour: "DOWNBEAT nystagmus is a CRANIOCERVICAL JUNCTION or floccular sign and is never peripheral — the differential is Chiari, cerebellar degeneration, stroke, and drugs, so image the junction" },
+      confirmatoryExtra: ["Review the DRUG CHART: lithium, phenytoin and carbamazepine all produce downbeat nystagmus, and stopping the drug is easier than anything else on this list"],
+      urgency: "urgent",
+    },
+  }),
+
   ...family("vascular-malformation", MALFORMATION_SPINE, {
     "Arteriovenous malformation": {
       slots: { level: "the focal deficit and any seizure activity",
