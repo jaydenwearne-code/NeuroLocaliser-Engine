@@ -3,7 +3,7 @@
 // The Next steps card was keyed by SITE, so it unioned every pathology that could produce a lesion there.
 // This layer keys the confirmatory / monitoring / urgency / referral tiers by the pathology the user
 // selected, while immediate + first-line stay site-level (they are what GET you the cause).
-import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
+import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor, family, FAMILIES } from "../src/data/pathologyNextSteps.js";
 import { CAUSES } from "../src/data/causes.js";
 import { resolveUrgency, nextStepsFor, pathologyNextStepsFor } from "../src/data/nextSteps.js";
 import { candidateSites } from "../src/engine/inverse.js";
@@ -158,6 +158,42 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
     ok(`\`${name}\` differentiates across its ${hosts.length} sites`, rendered.size > 1,
        `identical text at all ${hosts.length} sites — add bySite entries`);
   }
+}
+
+// --- 7: family() — one authored spine, several NAMED plans (spec 2026-08-18) ---
+// dz() handles ONE name across many sites. family() handles SEVERAL names sharing a workup, which is what
+// the must-not-miss set is full of (28 infarcts, 24 haemorrhages). A member diverges at one of three
+// levels: slots (same workup, different anatomy), *Extra (same plus something), or a full override.
+{
+  const spine = {
+    confirmatory: ["Image {level} urgently", "Establish the time of onset"],
+    monitoring:   ["Watch {flavour}"],
+    urgency: "emergency",
+    referral: "Acute stroke pathway",
+  };
+  const fam = family("test-infarct", spine, {
+    "A infarct": { slots: { level: "the brain", flavour: "conscious level" } },
+    "B infarct": { slots: { level: "the cord", flavour: "the sensory level" },
+                   confirmatoryExtra: ["Check the aorta"] },
+    "C infarct": { slots: { level: "the brain", flavour: "conscious level" },
+                   confirmatory: ["A completely different workup"], urgency: "urgent" },
+  });
+
+  ok("family emits one plan per member", Object.keys(fam).length === 3);
+  ok("family records itself in the registry", FAMILIES["test-infarct"].length === 3);
+  ok("a member interpolates the spine's slots",
+     fam["A infarct"].confirmatory[0] === "Image the brain urgently");
+  ok("members interpolate DIFFERENTLY",
+     fam["B infarct"].confirmatory[0] === "Image the cord urgently");
+  ok("confirmatoryExtra APPENDS to the spine",
+     fam["B infarct"].confirmatory.length === 3 && fam["B infarct"].confirmatory[2] === "Check the aorta");
+  ok("confirmatory REPLACES the spine outright",
+     JSON.stringify(fam["C infarct"].confirmatory) === JSON.stringify(["A completely different workup"]));
+  ok("a member inherits the spine's urgency", fam["A infarct"].urgency === "emergency");
+  ok("a member may override urgency", fam["C infarct"].urgency === "urgent");
+  ok("a member inherits the spine's referral", fam["A infarct"].referral === "Acute stroke pathway");
+  ok("each plan carries its own name", fam["B infarct"].name === "B infarct");
+  ok("monitoring interpolates too", fam["A infarct"].monitoring[0] === "Watch conscious level");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -34,7 +34,7 @@ export const FAMILIES = {};
 //
 // A FAMILY IS A CLINICAL CLAIM, NOT A STRING MATCH. Two invariants keep it honest: no two members may
 // emit an identical plan, and a family must have at least three members. Where members do not genuinely
-// share a workup, the fix is to author them as singletons — never to loosen the invariant.
+// share a workup the fix is to author them as singletons — never to loosen the invariant.
 export const family = (label, spine, members) => {
   FAMILIES[label] = Object.keys(members);
   return Object.fromEntries(
