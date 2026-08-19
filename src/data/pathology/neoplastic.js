@@ -11,6 +11,7 @@
 //   ✅ the 8 tranche-1 plans — SIGNED OFF 2026-08-18.
 //   ⚠  MALIGNANT CNS COMPRESSION (9) and THORACIC INLET / PANCOAST (9) — tranche 2 round 3a, AWAITING REVIEW.
 //   ⚠  SKULL-BASE / PERINEURAL SPREAD (19) and PARANEOPLASTIC (6) — tranche 2 round 3b, AWAITING REVIEW.
+//   ⚠  INTRA-AXIAL (7), MENINGIOMA (4), SELLAR/HYPOTHALAMIC (6), PINEAL/THIRD-VENTRICLE (5) — round 3c.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 3a (tranche 2) ----
@@ -101,7 +102,228 @@ const PARANEOPLASTIC_SPINE = {
   referral: "Neurology with oncology; the specific tumour team once the primary is identified",
 };
 
+// ---- ROUND 3c (tranche 2): the intracranial masses ----
+// Four families that are all "a mass inside the skull", separated by the question each one actually poses.
+
+// INTRA-AXIAL: within the brain substance. The first question is one lesion or many, because that alone
+// splits primary from metastatic and changes the whole pathway.
+const INTRAAXIAL_SPINE = {
+  confirmatory: [
+    "MRI brain WITH contrast — the question a plain scan cannot answer is ONE lesion or MANY, and that alone splits primary from metastatic before any tissue is taken",
+    "If MULTIPLE: metastatic until proven otherwise — CT chest, abdomen and pelvis for the primary BEFORE biopsying the brain, since an accessible primary is easier and safer to sample",
+    "If SOLITARY: tissue is what settles it, and resection and biopsy answer different questions — discuss with neurosurgery and neuro-oncology together rather than sequentially",
+    "Advanced sequences separate tumour from abscess and from demyelination where ring enhancement is ambiguous — {flavour}",
+  ],
+  monitoring: [
+    "Track {level}, and reimage on a change of PACE rather than on a schedule — deterioration over days rather than weeks suggests haemorrhage into the lesion or expanding oedema, not growth",
+    "SAFETY NET: morning headache, vomiting or a falling conscious level is raised intracranial pressure and needs urgent imaging",
+    "Ask specifically about focal events the patient has not called seizures, and counsel about DRIVING — a legal obligation that is routinely forgotten while the tumour is discussed",
+    "Steroids relieve oedema but confound the histology of lymphoma — if CNS lymphoma is a possibility, discuss BEFORE giving them, because a treated lesion can become unbiopsiable",
+  ],
+  urgency: "urgent",
+  referral: "Neuro-oncology multidisciplinary team with neurosurgery",
+};
+
+// MENINGIOMA and the dural extra-axial mimics. Usually benign, usually slow, and the decision is as often
+// to WATCH as to operate — so the reflex to treat is the thing to examine.
+const MENINGIOMA_SPINE = {
+  confirmatory: [
+    "MRI with contrast showing an extra-axial, dural-based mass with a DURAL TAIL — extra-axial is the key observation, because it changes the differential completely and is visible on the first scan",
+    "CT for the BONE: hyperostosis supports meningioma, while destruction argues for metastasis or another dural malignancy — {flavour}",
+    "Assess the VENOUS anatomy where the lesion sits near a sinus: involvement of the superior sagittal sinus determines what can safely be resected and is the commonest reason a parasagittal lesion is not simply removed",
+    "Where the dural lesion may not be a meningioma at all, consider the mimics — dural metastasis, lymphoma, and IgG4 or granulomatous disease — which need tissue rather than observation",
+  ],
+  monitoring: [
+    "GROWTH RATE decides, not size — many are found incidentally and never need treating, so serial imaging at increasing intervals is a legitimate active plan rather than indecision",
+    "Track {level}, and treat a NEW deficit as the trigger to reconsider, since the lesion's size may not have changed much when function starts to go",
+    "Seizure risk is real for convexity and parasagittal lesions: ask about focal events, and counsel about driving",
+    "SAFETY NET: rapid growth, new pain, or oedema out of proportion to size argues against a simple meningioma and warrants tissue rather than another scan",
+  ],
+  urgency: "routine",
+  referral: "Neurosurgery, with neuro-oncology where the diagnosis is uncertain",
+};
+
+// SELLAR / SUPRASELLAR / HYPOTHALAMIC. The distinguishing feature of this region is that ENDOCRINE and
+// VISUAL failure arrive before anything a neurologist would call a deficit — and both are reversible if
+// caught, which is why the bloods and the fields are the urgent tests, not the scan.
+const SELLAR_SPINE = {
+  confirmatory: [
+    "FULL PITUITARY AXIS BLOODS URGENTLY — cortisol above all, plus thyroid, prolactin, gonadal axis and IGF-1. Untreated adrenal insufficiency kills, it is trivially treatable, and it is invisible on the scan everyone reaches for first",
+    "FORMAL VISUAL FIELDS by perimetry, not confrontation: a bitemporal defect starts in the superior temporal quadrants and is easily missed at the bedside, and it is the other reversible loss here",
+    "Dedicated pituitary MRI with thin slices and contrast — a standard brain study does not resolve this region: {flavour}",
+    "Check SODIUM and fluid balance, and ask about thirst and nocturia — diabetes insipidus points to a stalk or hypothalamic lesion rather than an adenoma, and that changes the differential toward germinoma, histiocytosis and metastasis",
+  ],
+  monitoring: [
+    "SAFETY NET: acute deterioration with severe headache and visual loss is PITUITARY APOPLEXY — an endocrine and surgical emergency, and steroid replacement comes before imaging",
+    "Track {level} plus the fields and the endocrine axis together — this region needs all three followed, and the neurological examination alone will look reassuring while function is being lost",
+    "In a child or young adult, growth and puberty are part of the follow-up and are the measures most likely to reveal a slowly growing lesion",
+    "After treatment, hormone replacement is usually lifelong and is where long-term harm accumulates — including the hypothalamic obesity and behavioural change that follow craniopharyngioma surgery",
+  ],
+  urgency: "urgent",
+  referral: "Pituitary multidisciplinary team — endocrinology, neurosurgery and ophthalmology together",
+};
+
+// PINEAL / TECTAL / THIRD VENTRICLE. One anatomical fact dominates: they sit on the CSF pathway, so
+// HYDROCEPHALUS is the emergency and the tumour is the diagnosis. Those are different clocks.
+const PINEAL_SPINE = {
+  confirmatory: [
+    "ASSESS THE VENTRICLES FIRST. These lesions obstruct CSF at the aqueduct or foramina, and the hydrocephalus is what threatens life in the next hours while the tumour is what threatens it over months",
+    "MRI brain and WHOLE SPINE with contrast — germ cell tumours and ependymomas seed the CSF, so the spine is part of staging rather than an afterthought: {flavour}",
+    "TUMOUR MARKERS in serum AND CSF — alpha-fetoprotein and beta-hCG. A raised marker can make the diagnosis without a biopsy and moves the patient straight to chemoradiotherapy, which is why they are sent before tissue is sought",
+    "CSF cytology where it is safe to obtain it — but never before the imaging, because these are the lesions in which lumbar puncture risks herniation",
+  ],
+  monitoring: [
+    "SAFETY NET: headache, vomiting, a falling conscious level or new vertical gaze failure means the hydrocephalus is decompensating — that is a neurosurgical emergency independent of the tumour diagnosis",
+    "Track {level}, and examine the pupils and vertical gaze at every review: Parinaud's syndrome is the earliest sign that the tectal plate is being compressed",
+    "In a young person, discuss FERTILITY PRESERVATION before chemoradiotherapy — it is time-critical, easily overlooked in an acute admission, and cannot be revisited later",
+    "Long-term endocrine and neurocognitive follow-up after cranial radiotherapy, particularly in children",
+  ],
+  urgency: "emergency",
+  referral: "Neurosurgery urgently for the hydrocephalus; neuro-oncology for the tumour",
+};
+
 export default {
+  // ---- INTRA-AXIAL TUMOUR ----
+  ...family("intra-axial-tumour", INTRAAXIAL_SPINE, {
+    "Butterfly glioma or lymphoma": {
+      slots: { level: "cognition, personality and any disconnection signs",
+               flavour: "a lesion crossing the CORPUS CALLOSUM narrows the field sharply — glioblastoma and CNS lymphoma are the two that do this, and lymphoma is the one that MELTS with steroids, taking the histology with it" },
+      confirmatoryExtra: ["HIV testing and an ophthalmology slit-lamp examination for vitreoretinal involvement: CNS lymphoma can sometimes be diagnosed from the eye or the CSF without a brain biopsy at all"],
+      bySite: {
+        corpus_callosum_anterior: { level: "left-hand apraxia to command, and agraphia" },
+        corpus_callosum_splenium: { level: "reading, and any left-sided visual naming failure" },
+      },
+    },
+    "Brainstem glioma": {
+      slots: { level: "eye movements, facial power, swallow and the long tracts",
+               flavour: "in the brainstem the appearance often stands as the diagnosis, because biopsy carries real risk — a diffuse expanding pontine lesion in a child is treated on imaging alone" },
+      confirmatoryExtra: ["Biopsy here is a considered decision rather than a default step: discuss with neurosurgery whether the histology would actually change management before accepting the risk"],
+    },
+    "Frontal tumour (glioma, meningioma, metastasis)": {
+      slots: { level: "executive function and personality, which the family notices long before the patient does",
+               flavour: "the contrast pattern separates the three named here — and it matters, because a meningioma is extra-axial and often curable while the other two are not" },
+      monitoringExtra: ["Take a COLLATERAL history: frontal tumours present as changed behaviour, apathy or poor judgement, and are repeatedly managed as depression or early dementia for months"],
+    },
+    "Frontal glioma or metastasis": {
+      slots: { level: "smell, personality and executive function",
+               flavour: "an orbitofrontal lesion — test SMELL, which is almost never examined and is the sign that localises this to the floor of the anterior fossa" },
+    },
+    "Large tumour or metastasis with oedema": {
+      slots: { level: "language and conscious level",
+               flavour: "the OEDEMA rather than the tumour is usually what produces the deficit here, which is why the response to steroids can be dramatic and can also mislead about the underlying lesion" },
+      monitoringExtra: ["Watch for midline shift and herniation as you would for a large haematoma — and remember that improvement on steroids is symptomatic relief, not treatment of the tumour"],
+    },
+    "Medulloblastoma": {
+      slots: { level: "truncal stability, and conscious level for hydrocephalus",
+               flavour: "a midline posterior-fossa tumour in a CHILD, obstructing the fourth ventricle — morning headache and vomiting with truncal ataxia, and the vomiting is often treated as gastroenteritis first" },
+      confirmatoryExtra: ["Image the WHOLE NEURAXIS and send CSF cytology: medulloblastoma seeds the CSF, and staging determines treatment from the outset"],
+      urgency: "emergency",
+      bySite: {
+        cerebellum_vermis:          { level: "truncal ataxia, which can leave the limbs almost normal" },
+        cerebellum_flocculonodular: { level: "gait, nystagmus and conscious level" },
+      },
+    },
+    "Fourth ventricular ependymoma": {
+      slots: { level: "conscious level, gait, and the lower cranial nerves",
+               flavour: "arising from the ventricular floor and growing to fill it — it characteristically extrudes through the foramina like toothpaste, which is what distinguishes it on imaging" },
+      confirmatoryExtra: ["Whole-neuraxis imaging and CSF cytology, as for any tumour with access to the CSF; and the extent of resection is the strongest prognostic factor, so the operative plan matters"],
+      urgency: "emergency",
+    },
+  }),
+
+  // ---- MENINGIOMA AND THE DURAL MIMICS ----
+  ...family("meningioma-dural", MENINGIOMA_SPINE, {
+    "Parasagittal / falx meningioma": {
+      slots: { level: "leg power in both legs, and continence",
+               flavour: "a parasagittal lesion produces a LEG-predominant, often bilateral deficit that is regularly investigated as a cord problem — image the head before the spine when both legs are weak and the arms are not" },
+      bySite: {
+        cortex_sma:         { level: "initiation and spontaneous movement, which can look like reduced consciousness" },
+        cortex_paracentral: { level: "leg power and continence together" },
+      },
+    },
+    "Falx / parasagittal meningioma": {
+      slots: { level: "personality, initiation and continence",
+               flavour: "a medial frontal lesion — apathy and incontinence with relatively preserved power, which is repeatedly attributed to depression or to age" },
+    },
+    "Subfrontal / olfactory groove meningioma": {
+      slots: { level: "SMELL, formally, plus acuity and personality",
+               flavour: "the classic FOSTER KENNEDY syndrome — ipsilateral optic atrophy with contralateral papilloedema, plus anosmia. Rare intact, but each component is worth seeking because together they are close to diagnostic" },
+      confirmatoryExtra: ["Fundoscopy of BOTH discs explicitly: a pale disc on one side and a swollen one on the other is the finding, and it is only visible if both are examined"],
+      urgency: "urgent",
+    },
+    "Falx metastasis or lymphoma": {
+      slots: { level: "leg power and continence",
+               flavour: "a dural lesion that is NOT a meningioma — no dural tail, bone destroyed rather than hyperostotic, and oedema out of proportion. That combination should prompt tissue rather than surveillance" },
+      urgency: "urgent",
+    },
+  }),
+
+  // ---- SELLAR / SUPRASELLAR / HYPOTHALAMIC ----
+  ...family("sellar-hypothalamic", SELLAR_SPINE, {
+    "Craniopharyngioma or germinoma": {
+      slots: { level: "fields, the endocrine axis, and thirst and urine output",
+               flavour: "both sit in the suprasellar cistern and both hit the stalk — CALCIFICATION and a cystic component favour craniopharyngioma, while a germinoma may be radiologically unremarkable and betray itself only through markers" },
+      confirmatoryExtra: ["Send alpha-fetoprotein and beta-hCG in serum and CSF: a germinoma is exquisitely treatable and can be diagnosed on markers, so this is a test that can spare a young patient an operation"],
+      bySite: {
+        hypothalamus_supraoptic: { level: "thirst, urine output and sodium — the vasopressin axis specifically" },
+        hypothalamus_tuberal:    { level: "the full anterior pituitary axis, and growth in a child" },
+      },
+    },
+    "Craniopharyngioma (and its surgical treatment)": {
+      slots: { level: "weight, appetite, behaviour and the endocrine axis",
+               flavour: "the name says it: the TREATMENT causes much of the long-term harm — hypothalamic obesity, rage and disturbed sleep after resection are the recognised outcome, which is why aggressive surgery is no longer automatic" },
+      monitoringExtra: ["Weight, behaviour and sleep as formal outcomes at every review — hypothalamic obesity is largely resistant to conventional measures, and families need to know it is a consequence of the disease and its treatment rather than a failure of effort"],
+    },
+    "Hypothalamic tumour or infiltration": {
+      slots: { level: "temperature, appetite, sodium and the sleep-wake cycle",
+               flavour: "hypothalamic lesions declare themselves through the ENDOCRINE and autonomic axes rather than through a focal deficit, so the abnormal blood result usually precedes any sign" },
+      bySite: {
+        hypothalamus_thermoregulatory: { level: "core temperature, which can swing either way" },
+        hypothalamus_lateral:          { level: "appetite, weight and arousal" },
+      },
+    },
+    "Hypothalamic glioma or germinoma": {
+      slots: { level: "the endocrine axis, fields, and growth in a child",
+               flavour: "in a child, consider the DIENCEPHALIC SYNDROME — profound emaciation despite normal intake, in a child who is alert and euphoric, which is so counter-intuitive that it is regularly investigated as a gastrointestinal or psychiatric problem" },
+      confirmatoryExtra: ["Check for neurofibromatosis type 1: optic pathway and hypothalamic gliomas are strongly associated with it, so examine the skin and take a family history"],
+    },
+    "Metastasis to the pituitary stalk": {
+      slots: { level: "thirst, urine output, sodium and the anterior pituitary axis",
+               flavour: "DIABETES INSIPIDUS with a stalk lesion suggests metastasis or infiltration rather than an adenoma — pituitary adenomas hardly ever cause it, so its presence redirects the whole differential" },
+      confirmatoryExtra: ["Look for the primary — breast and lung dominate — and expect other metastases: an isolated pituitary metastasis is uncommon"],
+    },
+    "Langerhans cell histiocytosis": {
+      slots: { level: "thirst and urine output, plus growth in a child",
+               flavour: "an infiltrative rather than neoplastic mass — diabetes insipidus with a thickened stalk, and the diagnosis is usually made from a more accessible lesion elsewhere" },
+      confirmatoryExtra: ["SKELETAL SURVEY and a skin examination: lytic bone lesions and a seborrhoeic-looking rash are where the biopsy should be taken from, rather than the pituitary stalk"],
+    },
+  }),
+
+  // ---- PINEAL / TECTAL / THIRD VENTRICLE ----
+  ...family("pineal-third-ventricle", PINEAL_SPINE, {
+    "Tumour (pineal or tectal)": {
+      slots: { level: "vertical gaze, the pupils, and conscious level",
+               flavour: "a tectal lesion may be tiny and still obstruct the aqueduct — so the ventricles can be dramatic while the mass is barely visible, and the scan must be read for both" },
+    },
+    "Pineal region tumour (germinoma)": {
+      slots: { level: "vertical gaze and convergence-retraction nystagmus, with the pupils",
+               flavour: "PARINAUD'S SYNDROME with hydrocephalus — and a germinoma is the most treatable of the pineal tumours, which is exactly why the markers are sent before anyone considers a biopsy" },
+    },
+    "Pineal region tumour with hydrocephalus": {
+      slots: { level: "conscious level FIRST, then the eye signs",
+               flavour: "the name puts them in the right order — the hydrocephalus is the emergency and the tumour is the diagnosis, and they run on different clocks" },
+    },
+    "Third ventricular tumour or colloid cyst": {
+      slots: { level: "conscious level and memory, with careful attention to POSTURAL headache",
+               flavour: "a COLLOID CYST can obstruct intermittently at the foramen of Monro — positional headache with transient loss of consciousness or drop attacks, and it is capable of causing sudden death, which is why an incidental one is not simply observed" },
+      confirmatoryExtra: ["Where a colloid cyst is found incidentally, the size and the ventricular calibre drive the decision — this is a neurosurgical discussion rather than a watch-and-wait by default"],
+    },
+    "Dorsal midbrain (pretectal) lesion": {
+      slots: { level: "vertical gaze, light-near dissociation and lid position",
+               flavour: "the pretectal syndrome — pupils that react poorly to light but briskly to near, with upgaze failure and lid retraction. In a young person this points to a pineal mass, in an older one to hydrocephalus or a small stroke" },
+    },
+  }),
+
   // ---- SKULL-BASE AND PERINEURAL MALIGNANT SPREAD ----
   ...family("skull-base-malignancy", SKULL_BASE_SPINE, {
     "Perineural tumour spread": {
