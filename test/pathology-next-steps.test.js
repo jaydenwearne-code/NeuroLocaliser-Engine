@@ -148,15 +148,27 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 // or the layer says no more than the site card it replaced.
 {
   const sites = candidateSites();
-  const sitesWith = name => sites.filter(s =>
-    (CAUSES[s.id] || CAUSES[`${s.level}_${s.part}`] || []).some(c => c.name === name));
+  // Compare across distinct PLACES (level_part), not across sided site objects. left_X and right_X are
+  // the same place for workup purposes — laterality never changes the investigation — so counting them as
+  // two sites demands a differentiation that would be clinically meaningless. Corrected 2026-08-18 when
+  // tranche 2 added the first plans sitting at exactly ONE CAUSES key; every tranche-1 plan happened to
+  // span two or more, so the flaw never bit.
+  const placesWith = name => {
+    const seen = new Map();
+    for (const s of sites) {
+      const key = CAUSES[s.id] ? s.id : `${s.level}_${s.part}`;
+      if (seen.has(key)) continue;
+      if ((CAUSES[key] || []).some(c => c.name === name)) seen.set(key, s);
+    }
+    return [...seen.values()];
+  };
 
   for (const name of Object.keys(PATHOLOGY_NEXT)) {
-    const hosts = sitesWith(name);
+    const hosts = placesWith(name);
     if (hosts.length < 2) continue;
     const rendered = new Set(hosts.map(s => JSON.stringify(pathologyPlanFor(name, s))));
-    ok(`\`${name}\` differentiates across its ${hosts.length} sites`, rendered.size > 1,
-       `identical text at all ${hosts.length} sites — add bySite entries`);
+    ok(`\`${name}\` differentiates across its ${hosts.length} places`, rendered.size > 1,
+       `identical text at all ${hosts.length} places — add bySite entries`);
   }
 }
 
@@ -181,10 +193,21 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 
   ok("family emits one plan per member", Object.keys(fam).length === 3);
   ok("family records itself in the registry", FAMILIES["test-infarct"].length === 3);
-  ok("a member interpolates the spine's slots",
-     fam["A infarct"].confirmatory[0] === "Image the brain urgently");
+  // Slots are applied at RENDER time, never at build time — pre-filling would consume the placeholders and
+  // leave bySite nothing to override, which is the bug this asserts against.
+  ok("the built plan keeps its placeholders for bySite to override",
+     fam["A infarct"].confirmatory[0] === "Image {level} urgently");
+  ok("the member's slots ride along on the plan", fam["A infarct"].slots.level === "the brain");
+  const rendered = n => ({ ...fam[n], bySite: fam[n].bySite });
+  const renderOf = (n) => {
+    const p = rendered(n);
+    const sl = { level: p.slots.level, flavour: p.slots.flavour };
+    return p.confirmatory.map(x => x.replace(/\{([a-z]+)\}/g, (_, k) => sl[k]));
+  };
+  ok("a member interpolates its own slots when rendered",
+     renderOf("A infarct")[0] === "Image the brain urgently");
   ok("members interpolate DIFFERENTLY",
-     fam["B infarct"].confirmatory[0] === "Image the cord urgently");
+     renderOf("B infarct")[0] === "Image the cord urgently");
   ok("confirmatoryExtra APPENDS to the spine",
      fam["B infarct"].confirmatory.length === 3 && fam["B infarct"].confirmatory[2] === "Check the aorta");
   ok("confirmatory REPLACES the spine outright",
@@ -193,7 +216,7 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   ok("a member may override urgency", fam["C infarct"].urgency === "urgent");
   ok("a member inherits the spine's referral", fam["A infarct"].referral === "Acute stroke pathway");
   ok("each plan carries its own name", fam["B infarct"].name === "B infarct");
-  ok("monitoring interpolates too", fam["A infarct"].monitoring[0] === "Watch conscious level");
+  ok("monitoring carries its placeholder too", fam["A infarct"].monitoring[0] === "Watch {flavour}");
 
   // The fixture registered itself in the module-level FAMILIES. Remove it, so the real-content
   // invariants below see only real families — rather than exempting it by a name prefix, which would
@@ -206,10 +229,15 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   for (const [label, names] of Object.entries(FAMILIES)) {
     ok(`family \`${label}\` has at least 3 members (${names.length})`, names.length >= 3,
        "two plans sharing a spine is two plans with extra indirection");
-    const rendered = names.map(n => JSON.stringify({
-      c: PATHOLOGY_NEXT[n].confirmatory, m: PATHOLOGY_NEXT[n].monitoring,
-      u: PATHOLOGY_NEXT[n].urgency, r: PATHOLOGY_NEXT[n].referral,
-    }));
+    // Compare what the READER SEES — the plan rendered at that member's own first host site. Comparing the
+    // built objects would see the un-interpolated spine text and report every member as identical.
+    const allSites = candidateSites();
+    const firstHost = n => allSites.find(s =>
+      (CAUSES[s.id] || CAUSES[`${s.level}_${s.part}`] || []).some(c => c.name === n));
+    const rendered = names.map(n => {
+      const h = firstHost(n);
+      return JSON.stringify(h ? pathologyPlanFor(n, h) : PATHOLOGY_NEXT[n]);
+    });
     ok(`family \`${label}\` has no two members emitting an identical plan`,
        new Set(rendered).size === rendered.length,
        "identical members mean the family is duplication wearing a hat");
@@ -221,7 +249,8 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 // for all fourteen authoring rounds of tranche 2. The count starts at 337, falls with every round, and
 // NEVER rises. At 0 the ratchet retires into a hard gate — and it keeps working long after tranche 2,
 // since it stops a future red cause being added with no workup behind it.
-const RED_WITHOUT_PLAN_CEILING = 337;   // LOWER this with each round; never raise it
+const RED_WITHOUT_PLAN_CEILING = 309;   // LOWER this with each round; never raise it
+// 337 at the start of tranche 2 -> 309 after round 1 (the 28-member infarct family).
 {
   const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
   const redNames = new Set();

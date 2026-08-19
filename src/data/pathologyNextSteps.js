@@ -49,7 +49,10 @@ export function pathologyPlanFor(name, site) {
   const key = PATHOLOGY_ALIAS[name] || name;
   const p = PATHOLOGY_NEXT[key];
   if (!p) return null;
-  const slots = { ...DEFAULTS, ...(p.bySite[site?.id] || p.bySite[`${site?.level}_${site?.part}`] || {}) };
+  // DEFAULTS < the plan's own slots < the per-site override. A family member carries its slots on the
+  // plan rather than baked into the text, so bySite still has placeholders to fill.
+  const slots = { ...DEFAULTS, ...(p.slots || {}),
+                  ...(p.bySite[site?.id] || p.bySite[`${site?.level}_${site?.part}`] || {}) };
   return {
     confirmatory: p.confirmatory.map(s => fill(s, slots)),
     monitoring: p.monitoring.map(s => fill(s, slots)),

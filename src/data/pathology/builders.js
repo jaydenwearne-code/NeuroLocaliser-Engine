@@ -11,8 +11,12 @@ export const DEFAULTS = { level: "the affected region", flavour: "the appearance
 
 export const fill = (str, slots) => str.replace(/\{([a-z]+)\}/g, (_, k) => slots[k] ?? DEFAULTS[k] ?? "");
 
-export const dz = (name, { confirmatory = [], monitoring = [], urgency = null, referral = null, bySite = {} }) =>
-  ({ name, confirmatory, monitoring, urgency, referral, bySite });
+// `slots` are the plan's DEFAULT interpolation values, applied at RENDER time and overridden per site by
+// `bySite`. They must NOT be applied when the plan is built: pre-filling consumes the {level} / {flavour}
+// placeholders, leaving bySite nothing to interpolate into, so every site renders identically. That bug
+// shipped in the first draft of family() and was caught by the per-site differentiation invariant.
+export const dz = (name, { confirmatory = [], monitoring = [], urgency = null, referral = null, bySite = {}, slots = {} }) =>
+  ({ name, confirmatory, monitoring, urgency, referral, bySite, slots });
 
 // Every family() call registers its members here, so the invariants in test/pathology-next-steps.test.js
 // can check membership without each content file declaring it a second time (which could drift from the
@@ -39,10 +43,13 @@ export const family = (label, spine, members) => {
   FAMILIES[label] = Object.keys(members);
   return Object.fromEntries(
     Object.entries(members).map(([name, m]) => [name, dz(name, {
+      // NOT pre-filled — the member's slots ride along on the plan and are applied at render time, so a
+      // bySite entry can still override {level} / {flavour} for a particular site.
+      slots: m.slots || {},
       confirmatory: m.confirmatory
-        ?? [...(spine.confirmatory || []).map(s => fill(s, m.slots || {})), ...(m.confirmatoryExtra || [])],
+        ?? [...(spine.confirmatory || []), ...(m.confirmatoryExtra || [])],
       monitoring: m.monitoring
-        ?? [...(spine.monitoring || []).map(s => fill(s, m.slots || {})), ...(m.monitoringExtra || [])],
+        ?? [...(spine.monitoring || []), ...(m.monitoringExtra || [])],
       urgency:  m.urgency  ?? spine.urgency,
       referral: m.referral ?? spine.referral,
       bySite:   m.bySite   ?? {},
