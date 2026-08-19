@@ -7,10 +7,162 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS: ✅ all 8 plans here SIGNED OFF 2026-08-18 (tranche 1, round 2, round 3).
-import { dz } from "./builders.js";
+// REVIEW STATUS:
+//   ✅ the 8 tranche-1 plans — SIGNED OFF 2026-08-18.
+//   ⚠  MALIGNANT CNS COMPRESSION (9) and THORACIC INLET / PANCOAST (9) — tranche 2, AWAITING REVIEW.
+import { dz, family } from "./builders.js";
+
+// ---- ROUND 3a (tranche 2) ----
+// The neoplastic red set is 74 names, not the 24 the plan estimated — the original clustering matched only
+// "metastasis|carcinoma" and missed most of it. It decomposes into roughly nine families, so it runs as
+// several rounds. These are the first two, chosen because both are time-critical and both are diagnoses
+// where the delay, rather than the tumour, is what costs the patient function.
+
+// MALIGNANT COMPRESSION OF THE CNS. One question dominates and it has a clock on it: is the cord, cauda or
+// brainstem being compressed, and how fast. The tumour type matters afterwards.
+const COMPRESSION_SPINE = {
+  confirmatory: [
+    "MRI THE WHOLE SPINE, not the symptomatic level — malignant compression is multi-level in a substantial share of cases, and a second, higher lesion changes the radiotherapy field and the surgical plan entirely",
+    "Do not wait for the MRI to start treatment where the picture is convincing: {flavour}",
+    "Establish the ONCOLOGICAL context in parallel — known primary, staging, performance status and the patient's own wishes all bear on whether surgery or radiotherapy is the right answer",
+    "Where no primary is known, CT chest, abdomen and pelvis, and tissue from the most accessible site rather than the most alarming one",
+  ],
+  monitoring: [
+    "SAFETY NET: the strongest predictor of walking afterwards is whether the patient was walking BEFORE treatment — this is why the delay matters more than almost anything else you can control",
+    "Serial examination of {level}, documented at defined intervals, so progression is measured rather than remembered",
+    "Bladder and bowel function explicitly at every review — retention is often established before the patient volunteers it, and once lost it rarely returns",
+    "Pressure areas, venous thromboembolism prophylaxis and analgesia are not afterthoughts here: an immobile patient with malignant disease accumulates preventable harm quickly",
+  ],
+  urgency: "emergency",
+  referral: "Acute oncology with spinal surgery and radiotherapy — a same-day discussion, not a clinic letter",
+};
+
+// THORACIC INLET / PANCOAST. A nerve problem whose answer is in the CHEST, and one of the great missed
+// diagnoses: months of shoulder and arm pain treated as musculoskeletal before anyone images the apex.
+const PANCOAST_SPINE = {
+  confirmatory: [
+    "IMAGE THE LUNG APEX — a plain chest film is NOT adequate here and is the commonest reason this is missed: the apex is obscured by the clavicle and first rib, so CT chest with dedicated apical views is the test",
+    "MRI of the brachial plexus and thoracic inlet defines what the tumour has actually invaded — the plexus, the vertebral bodies, the subclavian vessels — and that is what determines resectability: {flavour}",
+    "Look for HORNER'S SYNDROME, and examine {level} — the combination of lower plexus signs with a Horner's is close to diagnostic and is what should have triggered the imaging",
+    "Tissue diagnosis before treatment, and full staging including PET-CT and brain imaging, since management is often multimodal and starts with chemoradiotherapy rather than surgery",
+  ],
+  monitoring: [
+    "SAFETY NET: this is repeatedly treated as frozen shoulder, cervical radiculopathy or ulnar neuropathy for months. SHOULDER OR ARM PAIN THAT WAKES THE PATIENT AT NIGHT, in a smoker, with lower plexus signs, means image the chest — not another course of physiotherapy",
+    "Track {level}, and ask about weight loss, haemoptysis and smoking history at the first visit rather than the third",
+    "Pain here is frequently severe and neuropathic and is under-treated while the diagnosis is pursued — involve pain services early rather than at the end",
+    "Watch for the complications that follow the anatomy: vertebral invasion threatening the cord, and subclavian involvement threatening the limb",
+  ],
+  urgency: "urgent",
+  referral: "Thoracic oncology multidisciplinary team; neurology or plexus surgery for the neurological deficit",
+};
 
 export default {
+  // ---- MALIGNANT COMPRESSION OF THE CNS ----
+  ...family("malignant-cns-compression", COMPRESSION_SPINE, {
+    "Metastatic spinal cord compression": {
+      slots: { level: "power, the sensory level and sphincter function",
+               flavour: "this is THE oncological emergency of the spine — steroids are started on clinical suspicion, and the imaging confirms rather than permits" },
+      monitoringExtra: ["Ask about the symptom that precedes compression by weeks: BACK PAIN WORSE AT NIGHT AND ON LYING FLAT. Any patient with cancer and that history warrants imaging before they develop a deficit, not after"],
+    },
+    "Metastatic or primary tumour": {
+      slots: { level: "saddle sensation, sphincter tone and the anal wink",
+               flavour: "below the conus this is a cauda equina syndrome — the deficit is lower motor neurone and the sphincters are what is at stake" },
+    },
+    "Compressive lesion (tumour or disc)": {
+      slots: { level: "the asymmetry between the two sides, and the sensory level",
+               flavour: "a hemicord picture — the MRI distinguishes tumour from disc, but the decompression question and its clock are identical for both" },
+    },
+    "Compressive lesion (tumour, disc or abscess)": {
+      slots: { level: "vibration and proprioception, plus gait with the eyes closed",
+               flavour: "three causes, one urgent question — and send inflammatory markers with the imaging request, because an abscess changes the operation as well as the antibiotics" },
+    },
+    "Compressive lesion at T12-L1 (disc, tumour or metastasis)": {
+      slots: { level: "sphincter function first, then the legs",
+               flavour: "the conus sits here, and a conus lesion gives EARLY sphincter failure with relatively little weakness — so the deficit can be severe while the legs still look reasonable" },
+    },
+    "Intramedullary metastasis": {
+      slots: { level: "the long tracts, and any dissociated sensory pattern",
+               flavour: "WITHIN the cord rather than compressing it — surgery is rarely the answer, so the pathway is radiotherapy and systemic treatment, and the prognosis conversation is different and more honest earlier" },
+      confirmatoryExtra: ["Intramedullary disease usually means widespread systemic disease — image the brain as well, because leptomeningeal and cerebral deposits frequently coexist and change the plan"],
+    },
+    "Vertebral or intradural tumour": {
+      slots: { level: "sacral sensation, sphincter tone and the ankle jerks",
+               flavour: "distinguish VERTEBRAL (bone, usually metastatic) from INTRADURAL (usually a nerve sheath tumour or meningioma, often benign and resectable) — the prognosis and the operation are entirely different" },
+      bySite: {
+        root_s2: { level: "sphincter tone, the anal wink and the bulbocavernosus reflex",
+                   flavour: "at S2 the sphincters are the function at stake, so the threshold for urgent imaging is lower than the indolent history suggests" },
+        root_s3: { level: "perineal sensation and bladder function specifically",
+                   flavour: "S3 is central to bladder control — urodynamics may show loss before the patient reports it, and that is the deficit least likely to recover" },
+      },
+    },
+    "Foramen-magnum meningioma": {
+      slots: { level: "all four limbs and the lower cranial nerves",
+               flavour: "the classic and classically missed presentation is a deficit that marches AROUND the limbs in sequence, often starting in one arm — and it is a benign, resectable tumour, so the delay is the tragedy" },
+      urgency: "urgent",
+      referral: "Skull-base neurosurgery — usually benign and often curable by resection",
+    },
+    "Craniocervical junction compression (foramen-magnum meningioma, basilar invagination)": {
+      slots: { level: "all four limbs, the tongue, and respiratory pattern in sleep",
+               flavour: "the name holds a tumour and a bony anomaly — CT for the BONE and MRI for the cord answer different questions here and are not alternatives" },
+      urgency: "urgent",
+    },
+  }),
+
+  // ---- THORACIC INLET / PANCOAST ----
+  ...family("thoracic-inlet-malignancy", PANCOAST_SPINE, {
+    "Pancoast (superior sulcus) tumour": {
+      slots: { level: "the small muscles of the hand and the T1 sensory territory",
+               flavour: "an apical tumour invading the lower plexus, sympathetic chain and often the first ribs and vertebral bodies" },
+      bySite: {
+        sympathetic_preganglionic: { level: "the pupil and the eyelid — and ask about ANHIDROSIS over the face, which localises the lesion pre-ganglionic" },
+        root_c8:                   { level: "finger flexion and the medial hand" },
+        root_t1:                   { level: "the intrinsic hand muscles, and the pupil for a Horner's" },
+        plexus_lower_trunk:        { level: "all the intrinsics with medial forearm sensation — the true lower trunk pattern" },
+      },
+    },
+    "Apical lung (superior sulcus) carcinoma": {
+      slots: { level: "the sympathetic supply — pupil, lid and facial sweating",
+               flavour: "the same tumour named for its origin rather than its syndrome; a Horner's syndrome with arm pain in a smoker is the presentation" },
+    },
+    "Metastasis to the lung apex or chest wall": {
+      slots: { level: "the pupil and lid, with the lower plexus",
+               flavour: "a metastasis rather than a primary means the staging question is already answered — find the primary, and expect systemic rather than surgical treatment" },
+    },
+    "Mesothelioma or chest wall tumour": {
+      slots: { level: "the sympathetic chain and the lower plexus",
+               flavour: "ask about ASBESTOS EXPOSURE explicitly, including indirect and occupational exposure decades earlier — it changes the differential and it carries compensation implications the patient should be told about" },
+    },
+    "Malignant infiltration of the lower plexus / root": {
+      slots: { level: "the intrinsic hand muscles and the T1 territory",
+               flavour: "in a previously irradiated field the question is infiltration versus RADIATION plexopathy — PAIN and a Horner's favour tumour, myokymia on EMG favours radiation" },
+      confirmatoryExtra: ["EMG looking for MYOKYMIC discharges is the most useful single discriminator from radiation injury, and PET-CT helps where it remains unresolved"],
+    },
+    "Neoplastic infiltration": {
+      slots: { level: "the muscles of that plexus element specifically",
+               flavour: "infiltration rather than compression — the plexus is invaded rather than displaced, so the MRI shows thickening and enhancement rather than a discrete mass" },
+      bySite: {
+        plexus_upper_trunk:    { level: "shoulder abduction and elbow flexion" },
+        plexus_middle_trunk:   { level: "elbow and wrist extension" },
+        plexus_lateral_cord:   { level: "elbow flexion and forearm pronation, with lateral forearm sensation" },
+        plexus_posterior_cord: { level: "shoulder abduction, elbow extension and wrist extension together" },
+      },
+    },
+    "Neoplastic infiltration (breast, lymphoma, metastasis)": {
+      slots: { level: "the intrinsic hand muscles and medial forearm sensation",
+               flavour: "the lower trunk in a patient with treated breast cancer or lymphoma — and the previous treatment field is the first thing to establish, because it decides whether this is recurrence or radiation injury" },
+    },
+    "Neoplastic infiltration (Pancoast, breast, lymphoma)": {
+      slots: { level: "the medial cord distribution — intrinsics with medial forearm sensation",
+               flavour: "three primaries reach the medial cord by different routes: from above (apical lung), from the axilla (breast), and from nodes (lymphoma) — so image the apex AND the axilla" },
+    },
+    "Lung or mediastinal malignancy": {
+      slots: { level: "the diaphragm — and measure it, with erect and supine vital capacity rather than by inspection",
+               flavour: "a raised hemidiaphragm on a chest film is the finding, and a phrenic palsy from malignancy means mediastinal involvement until proven otherwise" },
+      confirmatoryExtra: ["Erect and SUPINE spirometry: a fall of more than about a fifth on lying flat indicates significant diaphragmatic weakness, and it is the measurement that decides whether breathlessness is being under-called"],
+      urgency: "urgent",
+    },
+  }),
+
   // ---- NEOPLASTIC TRANCHE (2026-08-18) ----
   // Four of these canonicalise onto the coarse `Metastases` entity but are genuinely different workups —
   // a vertebral metastasis and a perineural spread share almost nothing — so they are authored separately
