@@ -3,10 +3,9 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ✅ the 3 tranche-1 plans — SIGNED OFF 2026-08-18.
-//   ⚠  AUTOIMMUNE ENCEPHALITIS (6), NMOSD/MOG (3), VASCULITIS (5), GRANULOMATOUS (5),
-//      INFLAMMATORY NEUROPATHY & NMJ (5) — tranche 2 round 7, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 1 — 3 plans. Tranche 2 (round 7) — autoimmune encephalitis, NMOSD/MOG, vasculitis,
+//   granulomatous disease, and inflammatory neuromuscular. The inflammatory red set is complete.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 7 (tranche 2): the inflammatory red set ----

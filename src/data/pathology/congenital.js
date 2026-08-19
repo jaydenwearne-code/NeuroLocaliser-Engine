@@ -3,9 +3,9 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ⚠  the HINDBRAIN / CRANIOCERVICAL MALFORMATION family (7) — tranche 2 round 2b, AWAITING REVIEW.
-//   ⚠  7 further singletons — tranche 2 round 9, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 2 — the hindbrain/craniocervical malformation family (round 2b) and seven singletons
+//   (round 9). The congenital red set is complete.
 //
 // NOTE ON SCOPE: tranche 2 targets the 337 RED must-not-miss causes, and only 2 of the 7 here are red.
 // The other 5 were added at the owner's request (2026-08-18) because the group is only coherent whole —

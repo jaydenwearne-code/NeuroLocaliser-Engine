@@ -3,8 +3,8 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ⚠  4 singletons — tranche 2 round 9, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 2 (round 9) — four singletons. The degenerative red set is complete.
 //
 // These are singletons rather than a family, deliberately: a degenerative label is the END of a
 // diagnostic process, and what they share is not a workup but an obligation — to EXCLUDE THE TREATABLE

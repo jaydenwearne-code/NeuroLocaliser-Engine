@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**67 test suites / 4470 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**67 test suites / 4943 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -581,7 +581,7 @@ across a multifocal set.
 Spec/plan: `docs/superpowers/specs/2026-08-18-per-pathology-next-steps-design.md`,
 `docs/superpowers/plans/2026-08-18-per-pathology-next-steps.md`.
 
-## Pathology tranche 2 — IN PROGRESS (2026-08-18) — ⚠ AWAITING CLINICAL REVIEW
+## Pathology tranche 2 — DONE (2026-08-18) — ✅ CLINICALLY SIGNED OFF
 
 **Branch `feat/pathology-tranche-2`, not merged.** Tranche 1 shipped 24 plans keyed by pathology; this is
 the content programme that fills them in, plus two mechanism changes it needed.
@@ -617,17 +617,27 @@ excuse; if the non-red share ever looks like a second unplanned tranche, that is
 compressive extra-axial, retroperitoneal, aneurysm/SAH) plus a singleton. `tumour` was rejected as a family
 outright. The neoplastic set was estimated at 24 names and turned out to be 74 across seven families.
 
-**Progress: ratchet 337 → 173, 198 plans, 513/1294 rows (40%), 19 families. The NEOPLASTIC red set is
-CLOSED (0 remaining).** Rounds so far: infarct (28); haemorrhage/haematoma (31, four families); venous
-thrombosis PROMOTED from round 5 (9); vascular malformations (8); hindbrain/craniocervical (7); and the
-neoplastic set in four rounds (18 + 25 + 22 + 23).
+**COMPLETE. Ratchet 337 → 0 across nine rounds: EVERY ONE OF THE 353 MUST-NOT-MISS CAUSES NOW HAS AN
+AUTHORED WORKUP.** 369 plans, 42 families, 722/1294 rows (56%). Nine sieve categories closed —
+vascular, neoplastic, infective, metabolic, inflammatory, traumatic, congenital, degenerative,
+iatrogenic and mimic.
 
-**`causes.js` HAS CHANGED — seven edits, in a file whose review gate closed 2026-08-11**, each on the
+**THE RATCHET HAS RETIRED INTO A HARD GATE.** `test/pathology-next-steps.test.js` now asserts outright
+that no red cause lacks a plan. Its durable value starts here: a future red cause added to `causes.js`
+with no workup behind it fails the suite immediately, which is the hole tranche 1 left open.
+
+**`causes.js` HAS CHANGED — ten edits, in a file whose review gate closed 2026-08-11**, each on the
 owner's explicit instruction: the cerebellar infarct/haemorrhage split; the vein-of-Labbé venous pattern at
 two temporal sites (the one classic CVST location absent from the model); the deep-venous name
 normalisation; **the app's first arteriovenous malformation** at three sites; cranial dural AVF at two; the
-AVM recategorised vascular; and the 3cm evacuation threshold removed. The AVM addition closed a real
-contradiction — the haemorrhage workup instructs the reader to look for one, and none existed.
+AVM recategorised vascular; the 3cm evacuation threshold removed; and THREE MISCATEGORISATIONS fixed
+(non-convulsive status epilepticus was `vascular` at one site while `mimic` at its three others, and both
+visceral-mimic entries were `vascular`). The AVM addition closed a real contradiction — the haemorrhage
+workup instructs the reader to look for one, and none existed.
+
+> **✅ CLINICALLY SIGNED OFF (2026-08-18) by the owner (a clinician): ALL tranche-2 content, reviewed
+> round by round as it was authored rather than in one batch at the end.** Each category file carries its
+> own review-status header. The gate is CLOSED — do not re-flag this content as unreviewed.
 
 **Two content rules the owner set, now load-bearing:**
 - **THE LOCATION IS THE AETIOLOGY** — deep says hypertensive, lobar in an older patient says amyloid

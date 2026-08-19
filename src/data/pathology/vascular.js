@@ -6,12 +6,11 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ✅ Posterior circulation stroke, Intracerebral haemorrhage — SIGNED OFF 2026-08-18 (tranche 1).
-//   ⚠  the INFARCT family — tranche 2 round 1, AWAITING REVIEW.
-//   ⚠  haemorrhage/haematoma (4 families) — round 2; venous thrombosis, vascular malformations — round 2b.
-//   ⚠  dissection, large-vessel occlusion, compressive aneurysm, perforator disease, central vestibular
-//      stroke + singletons — round 5, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 1 — posterior circulation stroke, intracerebral haemorrhage.
+//   Tranche 2 — the infarct family (round 1); the four haemorrhage/haematoma families (round 2); venous
+//   thrombosis and the vascular malformations (round 2b); and dissection, large-vessel occlusion,
+//   compressive aneurysm, perforator disease and central vestibular stroke (round 5).
 import { dz, family } from "./builders.js";
 
 // ---- the INFARCT family (tranche 2, round 1) ----

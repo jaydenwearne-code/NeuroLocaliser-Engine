@@ -6,10 +6,10 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ✅ the 8 tranche-1 plans — SIGNED OFF 2026-08-18.
-//   ⚠  CNS ABSCESS (7), ENCEPHALITIS (7), SKULL-BASE/ENT (11), DEEP SOFT-TISSUE (4) + singletons —
-//      tranche 2 round 4, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 1 — 8 plans. Tranche 2 (round 4) — CNS abscess, encephalitis/rhombencephalitis,
+//   skull-base/ENT infection, deep soft-tissue collections, and eight singletons. The infective red set
+//   is complete.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 4 (tranche 2): the infective red set ----

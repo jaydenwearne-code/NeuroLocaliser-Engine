@@ -7,12 +7,11 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ✅ the 8 tranche-1 plans — SIGNED OFF 2026-08-18.
-//   ⚠  MALIGNANT CNS COMPRESSION (9) and THORACIC INLET / PANCOAST (9) — tranche 2 round 3a, AWAITING REVIEW.
-//   ⚠  SKULL-BASE / PERINEURAL SPREAD (19) and PARANEOPLASTIC (6) — tranche 2 round 3b, AWAITING REVIEW.
-//   ⚠  INTRA-AXIAL (7), MENINGIOMA (4), SELLAR/HYPOTHALAMIC (6), PINEAL/THIRD-VENTRICLE (5) — round 3c.
-//   ⚠  HERNIATION/RAISED ICP (6), PELVIC/RETROPERITONEAL (7), NECK/MEDIASTINAL (6) + 4 singletons — round 3d.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 1 — 8 plans. Tranche 2 (round 3, in four parts) — malignant CNS compression and thoracic
+//   inlet; skull-base/perineural spread and paraneoplastic; intra-axial, meningioma, sellar/hypothalamic
+//   and pineal/third-ventricle; herniation/raised ICP, pelvic/retroperitoneal, neck/mediastinal and four
+//   singletons. The neoplastic red set is complete.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 3a (tranche 2) ----

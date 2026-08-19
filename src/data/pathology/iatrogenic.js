@@ -4,9 +4,8 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ✅ Radiation plexopathy — SIGNED OFF 2026-08-18 (tranche 1).
-//   ⚠  PROCEDURE-RELATED INJURY (3) — tranche 2 round 9, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 1 — radiation plexopathy. Tranche 2 (round 9) — procedure-related injury.
 import { dz, family } from "./builders.js";
 
 

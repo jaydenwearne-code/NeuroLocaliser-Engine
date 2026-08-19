@@ -1,7 +1,7 @@
 # Pathology tranche 2: a workup for every must-not-miss
 
 **Date:** 2026-08-18
-**Status:** designed — not yet implemented
+**Status:** COMPLETE and clinically signed off, 2026-08-18 — ratchet 337 → 0
 **Scope:** `src/data/pathologyNextSteps.js` split into `src/data/pathology/`, a new `family()` builder, and 337 authored plans
 **Follows:** `2026-08-18-per-pathology-next-steps-design.md` (tranche 1: 24 plans, 21% of rows, merged and live)
 
@@ -208,6 +208,31 @@ second unplanned tranche rather than the seams of the first, that is the signal 
 at the owner's explicit instruction, in a file whose clinical review gate closed on 2026-08-11. Those
 additions want a short focused re-review before this branch merges; they are listed in the branch's
 commits.
+
+## Outcome
+
+**The red set is closed.** All 353 must-not-miss causes have an authored workup, across nine rounds and
+42 families. 369 plans, 722/1294 rows (56%). The ratchet retired into a hard gate at 0.
+
+The estimates in this spec held in shape but not in detail, and the differences are the useful record:
+
+| The spec said | What happened |
+|---|---|
+| 337 red causes | 353 — the set grew as `causes.js` gained entries during the work |
+| 18 head-noun families | **42 families** — nearly every cluster split on mechanism |
+| Round 2 = "haemorrhage + haematoma, 30" | 31 names across **four** families plus a singleton |
+| Round 3 = "metastasis + carcinoma, 24" | **74 names** across seven families, run as four rounds |
+| ~14 rounds | 9 rounds |
+
+**The rule that did the work was "a family is a clinical claim, not a string match."** Head-noun
+clustering was a useful way to find candidates and a poor way to group them: what actually separates
+these diseases is the FIRST MOVE, not the noun. `tumour` was rejected as a family outright; `haemorrhage`
+split four ways; `thrombosis` split venous from arterial.
+
+**Clinical review ran round by round**, as the owner had established in tranche 1, and produced
+corrections that a batch review at the end would have missed — including a wrong claim that hearing loss
+separates AICA infarction from labyrinthitis, an overstated colloid cyst line that contradicted its own
+next sentence, and three numeric thresholds removed as figures that date.
 
 ## Out of scope
 

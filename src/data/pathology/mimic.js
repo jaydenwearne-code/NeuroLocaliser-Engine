@@ -6,7 +6,8 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS: ✅ all 1 plans here SIGNED OFF 2026-08-18 (tranche 1, round 3).
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 1 — hypoglycaemia. Tranche 2 (round 9) — the not-a-lesion-here family.
 import { dz, family } from "./builders.js";
 
 

@@ -3,9 +3,9 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ⚠  HEAD INJURY (4), SPINAL TRAUMA (10), SKULL-BASE / ORBITAL (4) + 4 singletons —
-//      tranche 2 round 8, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 2 (round 8) — head injury, spinal trauma, skull-base/orbital trauma, and four singletons.
+//   The traumatic red set is complete.
 //
 // The organising fact of this category: the mechanism is already known, so the workup is not about WHAT
 // happened but about what ELSE was injured, and about preventing the SECOND insult. Trauma patients have

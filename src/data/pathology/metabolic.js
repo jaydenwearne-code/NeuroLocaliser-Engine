@@ -6,10 +6,9 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS:
-//   ✅ Wernicke's encephalopathy — SIGNED OFF 2026-08-18 (tranche 1).
-//   ⚠  THIAMINE/NUTRITIONAL (4), METABOLIC MYELOPATHY (6), TOXIDROME (8), HYPOXIC-ISCHAEMIC (5)
-//      + 6 singletons — tranche 2 round 6, AWAITING REVIEW.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+//   Tranche 1 — Wernicke's encephalopathy. Tranche 2 (round 6) — thiamine/nutritional, metabolic
+//   myelopathy, toxidrome, hypoxic-ischaemic, and six singletons. The metabolic red set is complete.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 6 (tranche 2): the metabolic red set ----
