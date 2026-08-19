@@ -182,10 +182,17 @@ const out={};
 for (const n of Object.keys(P.PATHOLOGY_NEXT))
   for (const s of candidateSites()) out[n+"@"+s.id]=P.pathologyPlanFor(n,s);
 const {readFileSync}=await import("node:fs");
-const before=readFileSync("/tmp/pathology-baseline.json","utf8").trim();
-console.log(JSON.stringify(out)===before ? "IDENTICAL — the move changed nothing" : "DRIFT — the move altered output");'
+const before=JSON.parse(readFileSync("/tmp/pathology-baseline.json","utf8"));
+// Compare KEY BY KEY, never as strings. The split changes INSERTION ORDER, so a whole-string comparison
+// reports drift on an identical, correct move — it did exactly that the first time this was run.
+const kb=Object.keys(before), kn=Object.keys(out);
+const missing=kb.filter(k=>!(k in out)), added=kn.filter(k=>!(k in before));
+const differing=kb.filter(k=>k in out && JSON.stringify(before[k])!==JSON.stringify(out[k]));
+console.log(missing.length+added.length+differing.length===0
+  ? `IDENTICAL — ${kb.length} keys, content unchanged`
+  : `DRIFT — missing ${missing.length}, added ${added.length}, differing ${differing.length}: ${differing.slice(0,3)}`);'
 ```
-Expected: `IDENTICAL — the move changed nothing`.
+Expected: `IDENTICAL — 9048 keys, content unchanged`.
 
 - [ ] **Step 6: Run the full suite, untouched**
 
