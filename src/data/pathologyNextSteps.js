@@ -29,6 +29,7 @@ import inflammatory from "./pathology/inflammatory.js";
 import metabolic from "./pathology/metabolic.js";
 import iatrogenic from "./pathology/iatrogenic.js";
 import mimic from "./pathology/mimic.js";
+import congenital from "./pathology/congenital.js";
 
 export { dz, family, FAMILIES } from "./pathology/builders.js";
 
@@ -43,6 +44,7 @@ export const PATHOLOGY_ALIAS = {
 
 export const PATHOLOGY_NEXT = {
   ...vascular, ...neoplastic, ...infective, ...inflammatory, ...metabolic, ...iatrogenic, ...mimic,
+  ...congenital,
 };
 
 export function pathologyPlanFor(name, site) {
