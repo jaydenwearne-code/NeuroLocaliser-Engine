@@ -135,6 +135,13 @@ argument plus what each member changes about it, so a round is larger in output 
 | 6 | trauma + fracture + herniation | 16 |
 | 7 | vasculitis + sarcoid + myelitis + deficiency + toxicity | 20 |
 
+**What the first rounds actually did**, since the table above is a plan and not a record: round 1 ran as
+written (infarct, 28). **Round 2 did NOT run as one family** — its 31 names split into four
+(intraparenchymal 20, compressive 5, retroperitoneal 3, aneurysm/SAH 3) plus a singleton, because they
+have four different first moves. **Venous thrombosis was then PROMOTED out of round 5** on the owner's
+ruling, taking the vascular-malformation and hindbrain/craniocervical families with it. Expect the
+remaining rows to move similarly: the table is an ordering heuristic, not a contract.
+
 **Phase 2 — singletons, by sieve category**, which is also the file boundary, so a round opens one file.
 
 | Round | Category | Names |
@@ -163,6 +170,44 @@ shape (author into a category file, run the suite, lower the ratchet, commit, ow
 further planning; they are executed against this spec directly, exactly as tranche 1's three rounds were.
 That keeps the plan to something a fresh engineer can hold in context, instead of a fourteen-part document
 whose later parts are copies of its earlier ones.
+
+## Amendment, 2026-08-18: a family is authored WHOLE
+
+**The stated target — "the 337 red must-not-miss causes, and stop there" — did not survive contact, and
+the honest fix is to amend it rather than let the work quietly drift from the spec.**
+
+What happened: three of the first families could not be authored to the red set alone without teaching
+half a mechanism.
+
+- The **hindbrain / craniocervical** family has 7 members and only **2** are red. Authoring Chiari without
+  the syringomyelia it causes would present a mechanism with its consequence removed.
+- The **vascular malformation** family needed an arteriovenous malformation that did not exist in `CAUSES`
+  at all — and which the haemorrhage workup was already instructing the reader to look for.
+- The **venous thrombosis** family needed the vein-of-Labbé pattern, absent entirely, to stop the temporal
+  presentation resolving to HSV encephalitis or an inferior-division infarct.
+
+**The amended rule:** the target remains the red set, but **a family is authored whole**. Where a family's
+clinical coherence requires non-red members, they are in scope — the unit of authoring is the mechanism,
+not the individual row. Scope creep is authoring a non-red pathology that no family needs; completing a
+family is not creep.
+
+**The accounting must stay visible, or this becomes an excuse.** `test/pathology-next-steps.test.js`
+reports the split on every run:
+
+```
+plans authored: 109
+  RED (the tranche-2 target): 90 of 353  -> 263 remaining
+  non-red (family coherence): 19 of 504
+```
+
+The RED RATCHET continues to gate only the red count — danger is still the metric that matters, and the
+non-red line is reporting rather than a target. If the non-red share grows large enough to look like a
+second unplanned tranche rather than the seams of the first, that is the signal to stop and re-scope.
+
+**Note also that `CAUSES` itself has grown during tranche 2** — six additions and one normalisation, each
+at the owner's explicit instruction, in a file whose clinical review gate closed on 2026-08-11. Those
+additions want a short focused re-review before this branch merges; they are listed in the branch's
+commits.
 
 ## Out of scope
 

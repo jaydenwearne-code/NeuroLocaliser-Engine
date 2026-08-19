@@ -274,5 +274,21 @@ const RED_WITHOUT_PLAN_CEILING = 263;   // LOWER this with each round; never rai
      "lower RED_WITHOUT_PLAN_CEILING to the actual count — a slack ceiling stops ratcheting");
 }
 
+// ---- REPORT (not an assertion): the red / non-red authoring split ----
+// Tranche 2 targets the RED must-not-miss set, but a family is authored WHOLE (spec amendment
+// 2026-08-18), so non-red members arrive as the seams of a family rather than as new scope. This line
+// keeps that visible: if the non-red share ever looks like a second unplanned tranche rather than the
+// edges of the first, that is the signal to stop and re-scope rather than to keep going quietly.
+{
+  const redNames = new Set(), otherNames = new Set();
+  for (const l of Object.values(CAUSES)) for (const c of l) (c.red ? redNames : otherNames).add(c.name);
+  for (const n of redNames) otherNames.delete(n);          // red anywhere counts as red
+  const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
+  const pr = [...planned].filter(n => redNames.has(n)).length;
+  const pn = [...planned].filter(n => otherNames.has(n)).length;
+  console.log(`\nREPORT  plans ${planned.size} = ${pr} red (of ${redNames.size}, ${redNames.size - pr} left) ` +
+              `+ ${pn} non-red for family coherence`);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
