@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**67 test suites / 3895 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**67 test suites / 4943 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -580,6 +580,83 @@ across a multifocal set.
 
 Spec/plan: `docs/superpowers/specs/2026-08-18-per-pathology-next-steps-design.md`,
 `docs/superpowers/plans/2026-08-18-per-pathology-next-steps.md`.
+
+## Pathology tranche 2 — DONE (2026-08-18) — ✅ CLINICALLY SIGNED OFF
+
+**Branch `feat/pathology-tranche-2`, not merged.** Tranche 1 shipped 24 plans keyed by pathology; this is
+the content programme that fills them in, plus two mechanism changes it needed.
+
+**THE DECISION THAT SHAPES IT: author by DANGER, not by coverage.** Reuse is exhausted — of the 831
+remaining names, **709 appear at exactly ONE site**, so "finish the coverage" is ~35x the authoring of
+tranche 1 for 4x the rows. Tranche 2 instead targets the **337 causes flagged `red`** and stops there. The
+other 494 keep the labelled site fallback, which is honest and already correct.
+
+**Two mechanism changes:**
+- **Content split into `src/data/pathology/`, one file per sieve category** (+ `builders.js`). At ~37
+  lines per plan a single file would reach ~13,000 lines. A review round now opens exactly one file. The
+  move was proven lossless against a captured baseline: 9048 renders, 0 differing, and every test passed
+  **untouched**, which is the real proof.
+- **`family(label, spine, members)`** — `dz()` handles ONE name across many sites; `family()` handles
+  SEVERAL NAMES sharing a workup, which is what the red set is full of. A member diverges at one of three
+  levels: `slots` (same workup, different anatomy), `*Extra` (same plus something), or a full override.
+  The third exists because meningioma and metastasis share a head noun and diverge on the investigations.
+
+**THE RED RATCHET.** `RED_WITHOUT_PLAN_CEILING` in `test/pathology-next-steps.test.js` starts at 337, falls
+with every round, and may NEVER rise. It is a ceiling rather than an end-state assertion because a plain
+"all red causes have a plan" would fail for every authoring round; at 0 it retires into a hard gate. Its
+durable value is that it stops a future red cause being added with no workup behind it.
+
+**AMENDMENT — A FAMILY IS AUTHORED WHOLE.** The "337 and stop" target did not survive contact: Chiari
+without the syringomyelia it causes is a mechanism with its consequence removed. Where a family's coherence
+needs non-red members they are in scope — the unit of authoring is the MECHANISM, not the row. The suite
+REPORTS the split every run (`plans N = X red + Y non-red for family coherence`) so this cannot become an
+excuse; if the non-red share ever looks like a second unplanned tranche, that is the signal to re-scope.
+
+**A FAMILY IS A CLINICAL CLAIM, NOT A STRING MATCH** — the rule that did the most work. Round 2's 31
+"haemorrhage|haematoma" names split into FOUR families with four different first moves (intraparenchymal,
+compressive extra-axial, retroperitoneal, aneurysm/SAH) plus a singleton. `tumour` was rejected as a family
+outright. The neoplastic set was estimated at 24 names and turned out to be 74 across seven families.
+
+**COMPLETE. Ratchet 337 → 0 across nine rounds: EVERY ONE OF THE 353 MUST-NOT-MISS CAUSES NOW HAS AN
+AUTHORED WORKUP.** 369 plans, 42 families, 722/1294 rows (56%). Nine sieve categories closed —
+vascular, neoplastic, infective, metabolic, inflammatory, traumatic, congenital, degenerative,
+iatrogenic and mimic.
+
+**THE RATCHET HAS RETIRED INTO A HARD GATE.** `test/pathology-next-steps.test.js` now asserts outright
+that no red cause lacks a plan. Its durable value starts here: a future red cause added to `causes.js`
+with no workup behind it fails the suite immediately, which is the hole tranche 1 left open.
+
+**`causes.js` HAS CHANGED — ten edits, in a file whose review gate closed 2026-08-11**, each on the
+owner's explicit instruction: the cerebellar infarct/haemorrhage split; the vein-of-Labbé venous pattern at
+two temporal sites (the one classic CVST location absent from the model); the deep-venous name
+normalisation; **the app's first arteriovenous malformation** at three sites; cranial dural AVF at two; the
+AVM recategorised vascular; the 3cm evacuation threshold removed; and THREE MISCATEGORISATIONS fixed
+(non-convulsive status epilepticus was `vascular` at one site while `mimic` at its three others, and both
+visceral-mimic entries were `vascular`). The AVM addition closed a real contradiction — the haemorrhage
+workup instructs the reader to look for one, and none existed.
+
+> **✅ CLINICALLY SIGNED OFF (2026-08-18) by the owner (a clinician): ALL tranche-2 content, reviewed
+> round by round as it was authored rather than in one batch at the end.** Each category file carries its
+> own review-status header. The gate is CLOSED — do not re-flag this content as unreviewed.
+
+**Two content rules the owner set, now load-bearing:**
+- **THE LOCATION IS THE AETIOLOGY** — deep says hypertensive, lobar in an older patient says amyloid
+  angiopathy, any location in a young or normotensive patient says image the vessels. Carried as a spine
+  line plus an `{aetiology}` slot so all 20 intraparenchymal members apply it to their own location.
+- **NO SPECIFIC FIGURES** — thresholds and intervals date. One deliberate exception survives and is
+  documented at the line: the erect/supine spirometry fall, because it tells the reader how to INTERPRET a
+  measurement rather than setting a threshold for an action.
+
+**Traps that recurred and are worth knowing:**
+- Writing a `dz()` singleton by hand is where the `{level}`/`{flavour}` placeholders get forgotten, leaving
+  `bySite` nothing to interpolate so every site renders identically. Caught three times by the
+  differentiation invariant — which itself had to be corrected to compare distinct PLACES (`level_part`)
+  rather than sided sites, since left and right are the same place for a workup.
+- `family()` originally PRE-FILLED the spine with each member's slots at build time, consuming the
+  placeholders. Slots now apply at RENDER time: `DEFAULTS < plan slots < bySite`.
+
+Spec/plan: `docs/superpowers/specs/2026-08-18-pathology-tranche-2-design.md`,
+`docs/superpowers/plans/2026-08-18-pathology-tranche-2.md`.
 
 ## Commands
 

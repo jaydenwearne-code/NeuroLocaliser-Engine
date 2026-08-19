@@ -3,7 +3,7 @@
 // The Next steps card was keyed by SITE, so it unioned every pathology that could produce a lesion there.
 // This layer keys the confirmatory / monitoring / urgency / referral tiers by the pathology the user
 // selected, while immediate + first-line stay site-level (they are what GET you the cause).
-import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
+import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor, family, FAMILIES } from "../src/data/pathologyNextSteps.js";
 import { CAUSES } from "../src/data/causes.js";
 import { resolveUrgency, nextStepsFor, pathologyNextStepsFor } from "../src/data/nextSteps.js";
 import { candidateSites } from "../src/engine/inverse.js";
@@ -87,25 +87,34 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   // BELOW the site's urgency. Tested with a stub plan rather than by waiting for content to exist, so the
   // rule is pinned from day one and cannot be silently reversed by a later refactor.
   {
+    // SAVE AND RESTORE, never delete. These blocks install a stub plan to test a rule; deleting it
+    // afterwards DESTROYS a real plan whenever the chosen cause already has one. That went unnoticed for
+    // eight rounds because the chosen causes happened to be unauthored — and surfaced the moment tranche 2
+    // reached near-complete coverage, as a phantom "1 red cause without a plan" that no direct
+    // measurement could reproduce.
+    const withStub = (name, fn) => {
+      const had = Object.prototype.hasOwnProperty.call(PATHOLOGY_NEXT, name);
+      const saved = PATHOLOGY_NEXT[name];
+      PATHOLOGY_NEXT[name] = { name, confirmatory: ["stub"], monitoring: ["stub"],
+                               urgency: "routine", referral: "stub", bySite: {}, slots: {} };
+      try { fn(); } finally { if (had) PATHOLOGY_NEXT[name] = saved; else delete PATHOLOGY_NEXT[name]; }
+    };
+
     const host = sites.find(s => nextStepsFor(s).urgency === "emergency" && causesAt(s).some(c => !c.red));
     ok("an emergency-badged site with a non-red cause exists", !!host);
     if (host) {
       const benign = causesAt(host).find(c => !c.red);
-      PATHOLOGY_NEXT[benign.name] = { name: benign.name, confirmatory: ["stub"], monitoring: ["stub"],
-                                      urgency: "routine", referral: "stub", bySite: {} };
-      ok("an authored routine urgency descends below an emergency site badge",
-         resolveUrgency(host, benign.name) === "routine");
-      delete PATHOLOGY_NEXT[benign.name];
+      withStub(benign.name, () =>
+        ok("an authored routine urgency descends below an emergency site badge",
+           resolveUrgency(host, benign.name) === "routine"));
     }
 
     // ...but a RED cause may never be descended below the floor, even by an authored plan.
     const redHost = sites.find(s => causesAt(s).some(c => c.red));
     const redCause = causesAt(redHost).find(c => c.red);
-    PATHOLOGY_NEXT[redCause.name] = { name: redCause.name, confirmatory: ["stub"], monitoring: ["stub"],
-                                      urgency: "routine", referral: "stub", bySite: {} };
-    ok("the red floor overrides an authored routine urgency",
-       resolveUrgency(redHost, redCause.name) !== "routine");
-    delete PATHOLOGY_NEXT[redCause.name];
+    withStub(redCause.name, () =>
+      ok("the red floor overrides an authored routine urgency",
+         resolveUrgency(redHost, redCause.name) !== "routine"));
   }
 }
 
@@ -148,16 +157,134 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 // or the layer says no more than the site card it replaced.
 {
   const sites = candidateSites();
-  const sitesWith = name => sites.filter(s =>
-    (CAUSES[s.id] || CAUSES[`${s.level}_${s.part}`] || []).some(c => c.name === name));
+  // Compare across distinct PLACES (level_part), not across sided site objects. left_X and right_X are
+  // the same place for workup purposes — laterality never changes the investigation — so counting them as
+  // two sites demands a differentiation that would be clinically meaningless. Corrected 2026-08-18 when
+  // tranche 2 added the first plans sitting at exactly ONE CAUSES key; every tranche-1 plan happened to
+  // span two or more, so the flaw never bit.
+  const placesWith = name => {
+    const seen = new Map();
+    for (const s of sites) {
+      const key = CAUSES[s.id] ? s.id : `${s.level}_${s.part}`;
+      if (seen.has(key)) continue;
+      if ((CAUSES[key] || []).some(c => c.name === name)) seen.set(key, s);
+    }
+    return [...seen.values()];
+  };
 
   for (const name of Object.keys(PATHOLOGY_NEXT)) {
-    const hosts = sitesWith(name);
+    const hosts = placesWith(name);
     if (hosts.length < 2) continue;
     const rendered = new Set(hosts.map(s => JSON.stringify(pathologyPlanFor(name, s))));
-    ok(`\`${name}\` differentiates across its ${hosts.length} sites`, rendered.size > 1,
-       `identical text at all ${hosts.length} sites — add bySite entries`);
+    ok(`\`${name}\` differentiates across its ${hosts.length} places`, rendered.size > 1,
+       `identical text at all ${hosts.length} places — add bySite entries`);
   }
+}
+
+// --- 7: family() — one authored spine, several NAMED plans (spec 2026-08-18) ---
+// dz() handles ONE name across many sites. family() handles SEVERAL names sharing a workup, which is what
+// the must-not-miss set is full of (28 infarcts, 24 haemorrhages). A member diverges at one of three
+// levels: slots (same workup, different anatomy), *Extra (same plus something), or a full override.
+{
+  const spine = {
+    confirmatory: ["Image {level} urgently", "Establish the time of onset"],
+    monitoring:   ["Watch {flavour}"],
+    urgency: "emergency",
+    referral: "Acute stroke pathway",
+  };
+  const fam = family("test-infarct", spine, {
+    "A infarct": { slots: { level: "the brain", flavour: "conscious level" } },
+    "B infarct": { slots: { level: "the cord", flavour: "the sensory level" },
+                   confirmatoryExtra: ["Check the aorta"] },
+    "C infarct": { slots: { level: "the brain", flavour: "conscious level" },
+                   confirmatory: ["A completely different workup"], urgency: "urgent" },
+  });
+
+  ok("family emits one plan per member", Object.keys(fam).length === 3);
+  ok("family records itself in the registry", FAMILIES["test-infarct"].length === 3);
+  // Slots are applied at RENDER time, never at build time — pre-filling would consume the placeholders and
+  // leave bySite nothing to override, which is the bug this asserts against.
+  ok("the built plan keeps its placeholders for bySite to override",
+     fam["A infarct"].confirmatory[0] === "Image {level} urgently");
+  ok("the member's slots ride along on the plan", fam["A infarct"].slots.level === "the brain");
+  const rendered = n => ({ ...fam[n], bySite: fam[n].bySite });
+  const renderOf = (n) => {
+    const p = rendered(n);
+    const sl = { level: p.slots.level, flavour: p.slots.flavour };
+    return p.confirmatory.map(x => x.replace(/\{([a-z]+)\}/g, (_, k) => sl[k]));
+  };
+  ok("a member interpolates its own slots when rendered",
+     renderOf("A infarct")[0] === "Image the brain urgently");
+  ok("members interpolate DIFFERENTLY",
+     renderOf("B infarct")[0] === "Image the cord urgently");
+  ok("confirmatoryExtra APPENDS to the spine",
+     fam["B infarct"].confirmatory.length === 3 && fam["B infarct"].confirmatory[2] === "Check the aorta");
+  ok("confirmatory REPLACES the spine outright",
+     JSON.stringify(fam["C infarct"].confirmatory) === JSON.stringify(["A completely different workup"]));
+  ok("a member inherits the spine's urgency", fam["A infarct"].urgency === "emergency");
+  ok("a member may override urgency", fam["C infarct"].urgency === "urgent");
+  ok("a member inherits the spine's referral", fam["A infarct"].referral === "Acute stroke pathway");
+  ok("each plan carries its own name", fam["B infarct"].name === "B infarct");
+  ok("monitoring carries its placeholder too", fam["A infarct"].monitoring[0] === "Watch {flavour}");
+
+  // The fixture registered itself in the module-level FAMILIES. Remove it, so the real-content
+  // invariants below see only real families — rather than exempting it by a name prefix, which would
+  // silently excuse any future family that happened to be named the same way.
+  delete FAMILIES["test-infarct"];
+}
+
+// --- 8: family invariants — a family is a CLINICAL CLAIM, not a string match ---
+{
+  for (const [label, names] of Object.entries(FAMILIES)) {
+    ok(`family \`${label}\` has at least 3 members (${names.length})`, names.length >= 3,
+       "two plans sharing a spine is two plans with extra indirection");
+    // Compare what the READER SEES — the plan rendered at that member's own first host site. Comparing the
+    // built objects would see the un-interpolated spine text and report every member as identical.
+    const allSites = candidateSites();
+    const firstHost = n => allSites.find(s =>
+      (CAUSES[s.id] || CAUSES[`${s.level}_${s.part}`] || []).some(c => c.name === n));
+    const rendered = names.map(n => {
+      const h = firstHost(n);
+      return JSON.stringify(h ? pathologyPlanFor(n, h) : PATHOLOGY_NEXT[n]);
+    });
+    ok(`family \`${label}\` has no two members emitting an identical plan`,
+       new Set(rendered).size === rendered.length,
+       "identical members mean the family is duplication wearing a hat");
+  }
+}
+
+// --- 9: THE RED GATE — every must-not-miss has a workup ---
+// THE RATCHET HAS RETIRED. It ran from 337 down to 0 across tranche 2, as a ceiling that could fall and
+// never rise, because a plain end-state assertion would have failed for every authoring round. At 0 it
+// becomes what it was always climbing towards: a HARD GATE.
+//
+// Its durable value starts now. A future red cause added to CAUSES with no workup behind it fails here
+// immediately, which is exactly the hole tranche 1 left open and tranche 2 closed.
+{
+  const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
+  const redNames = new Set();
+  for (const list of Object.values(CAUSES)) for (const c of list) if (c.red) redNames.add(c.name);
+  const unplanned = [...redNames].filter(n => !planned.has(n));
+
+  ok(`RED GATE: every one of the ${redNames.size} must-not-miss causes has an authored workup`,
+     unplanned.length === 0,
+     `${unplanned.length} without a plan: ${unplanned.slice(0, 5).join(" ; ")}`);
+}
+
+// ---- REPORT (not an assertion): the red / non-red authoring split ----
+// Tranche 2 targets the RED must-not-miss set, but a family is authored WHOLE (spec amendment
+// 2026-08-18), so non-red members arrive as the seams of a family rather than as new scope. This line
+// keeps that visible: if the non-red share ever looks like a second unplanned tranche rather than the
+// edges of the first, that is the signal to stop and re-scope rather than to keep going quietly.
+{
+  const redNames = new Set(), otherNames = new Set();
+  for (const l of Object.values(CAUSES)) for (const c of l) (c.red ? redNames : otherNames).add(c.name);
+  for (const n of redNames) otherNames.delete(n);          // red anywhere counts as red
+  const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
+  const pr = [...planned].filter(n => redNames.has(n)).length;
+  const pn = [...planned].filter(n => otherNames.has(n)).length;
+  console.log(`\nREPORT  plans ${planned.size} = ${pr} red (of ${redNames.size}, ${redNames.size - pr} left) ` +
+              `+ ${pn} non-red for family coherence`);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

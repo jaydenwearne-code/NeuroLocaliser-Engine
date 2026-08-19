@@ -413,7 +413,7 @@ export const CAUSES = {
   thalamus_arousal_paramedian: [ // artery of Percheron
     c("Artery of Percheron infarct", "vascular", ["hyperacute","acute"], "common", true,
       "Sudden coma or hypersomnolence with vertical gaze palsy and dense amnesia — a single perforator supplies BOTH paramedian thalami, so one small occlusion gives bilateral infarcts; the early CT is often normal"),
-    c("Deep cerebral venous thrombosis (internal cerebral veins / straight sinus / vein of Galen)", "vascular", ["acute","subacute"], "uncommon", true,
+    c("Deep cerebral venous thrombosis", "vascular", ["acute","subacute"], "uncommon", true,
       "BILATERAL thalamic change should always prompt venous imaging — headache, a prothrombotic state or pregnancy, with oedema that does not respect an arterial territory; it is treatable with anticoagulation, so it must not be missed"),
     c("Bilateral thalamic glioma", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive drowsiness and cognitive decline over weeks to months with bilateral thalamic expansion"),
@@ -447,8 +447,14 @@ export const CAUSES = {
       "Years of heavy alcohol use with a wide-based unsteady GAIT and truncal ataxia, while the arms are relatively spared — the anterior vermis bears the brunt"),
     c("Medulloblastoma", "neoplastic", ["subacute","chronic"], "common", true,
       "A CHILD with truncal ataxia, morning headache and vomiting — a midline posterior-fossa mass obstructing the fourth ventricle, causing hydrocephalus"),
-    c("Cerebellar infarct or haemorrhage", "vascular", ["hyperacute","acute"], "common", true,
-      "Abrupt truncal ataxia with headache and vomiting; posterior-fossa SWELLING can obstruct the fourth ventricle and cause fatal herniation, so conscious level must be watched closely"),
+    // SPLIT 2026-08-18 (owner ruling): these were one entry, "Cerebellar infarct or haemorrhage". They
+    // share the posterior-fossa danger but not the first move — the initial CT separates them, and a
+    // haematoma is reversed and evacuated where an infarct is not. One cause naming two diseases cannot
+    // carry one honest workup.
+    c("Cerebellar infarct (vermian)", "vascular", ["hyperacute","acute"], "common", true,
+      "Abrupt truncal ataxia with headache and vomiting, often with little limb ataxia; posterior-fossa SWELLING peaks at 2-4 days and can obstruct the fourth ventricle, so conscious level must be watched well after the deficit itself has plateaued"),
+    c("Cerebellar haemorrhage", "vascular", ["hyperacute","acute"], "common", true,
+      "Sudden occipital headache and vomiting with truncal ataxia and NO hemiparesis — hypertension or anticoagulation is the usual setting, and a LARGE haematoma obstructing the fourth ventricle is among the clearest indications for surgical evacuation"),
     c("Paraneoplastic cerebellar degeneration", "neoplastic", ["subacute"], "rare", false,
       "Subacute ataxia over weeks with anti-Yo or anti-Hu antibodies; look for an underlying breast, ovarian or lung malignancy"),
     c("Post-infectious acute cerebellitis", "infective", ["acute","subacute"], "common", false,
@@ -1023,7 +1029,7 @@ export const CAUSES = {
       "Delirium with fever and a systemic inflammatory response — in older patients confusion is frequently the ONLY sign of infection, so look for a source rather than imaging the head first"),
     c("Hypoxic-ischaemic brain injury", "metabolic", ["hyperacute","acute"], "uncommon", true,
       "Persistent coma or encephalopathy after cardiac arrest or profound hypoxia, with watershed injury on MRI"),
-    c("Non-convulsive status epilepticus", "vascular", ["acute","subacute"], "uncommon", true,
+    c("Non-convulsive status epilepticus", "mimic", ["acute","subacute"], "uncommon", true,
       "Unexplained persistent confusion or coma with no structural cause — it is only diagnosed if an EEG is requested, so consider it in any encephalopathy that does not resolve as expected"),
     c("Drug intoxication or withdrawal", "metabolic", ["acute"], "common", true,
       "Confusion with a compatible drug or alcohol history; delirium tremens and opioid or benzodiazepine effects are all readily reversible if recognised"),
@@ -1100,6 +1106,8 @@ export const CAUSES = {
       "Fever, confusion and seizures with temporal lobe change on MRI — give aciclovir empirically"),
     c("Delirium", "mimic", ["acute","subacute"], "common", false,
       "Fluctuating attention with a systemic trigger — unlike Wernicke's aphasia, comprehension and naming are not SELECTIVELY lost in an otherwise fully alert patient"),
+    c("Transverse or sigmoid sinus thrombosis (vein of Labbe)", "vascular", ["acute","subacute"], "uncommon", true,
+      "Fluent aphasia with headache and seizures, with temporal oedema or haemorrhage that does NOT respect the MCA territory — image the VENOUS sinuses, because the arterial study will be normal and the diagnosis is treatable"),
     c("Postictal aphasia after a focal temporal seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
       "Language failure that fluctuates and improves over minutes to hours after a witnessed seizure or automatisms"),
   ],
@@ -1115,6 +1123,14 @@ export const CAUSES = {
       "New seizures in an adult with progressive memory or language difficulty over weeks to months"),
     c("MCA inferior division infarct", "vascular", ["hyperacute","acute"], "common", false,
       "Abrupt onset of memory or language disturbance, often with a superior quadrantanopia from Meyer's loop"),
+    // ADDED 2026-08-18 (owner request): the temporal / vein of Labbe venous pattern was the one classic
+    // CVST location absent from the model. It matters because it presents with aphasia and seizures in a
+    // young patient and is worked up as HSV encephalitis or an inferior-division infarct — the two
+    // diagnoses already sitting beside it in this list.
+    c("Transverse or sigmoid sinus thrombosis (vein of Labbe)", "vascular", ["acute","subacute"], "uncommon", true,
+      "Headache with seizures and aphasia in a YOUNGER patient, often with a preceding ear infection or a prothrombotic state — a temporal haemorrhage or oedema that CROSSES ARTERIAL TERRITORIES is venous until the venogram says otherwise, and it is treatable with anticoagulation"),
+    c("Dural arteriovenous fistula", "vascular", ["subacute","chronic"], "rare", true,
+      "Pulsatile tinnitus with headache and seizures — a transverse or sigmoid fistula refluxing into cortical veins produces temporal venous congestion and haemorrhage, and the arterial study will look normal unless the venous phase is examined"),
     c("Alzheimer's disease (medial temporal)", "degenerative", ["chronic"], "common", false,
       "Years of insidious episodic memory loss with medial temporal atrophy; the tempo separates it from encephalitis"),
   ],
@@ -1385,7 +1401,7 @@ export const CAUSES = {
   root_t4: [
     c("Herpes zoster", "infective", ["acute"], "common", false,
       "A band of severe burning pain around the chest at the T4 (NIPPLE) level, preceding the vesicular rash by 2-3 days — before the rash appears it is frequently mistaken for cardiac or pleural pain"),
-    c("Visceral disease mimicking a dermatomal band", "vascular", ["acute","subacute"], "common", true,
+    c("Visceral disease mimicking a dermatomal band", "mimic", ["acute","subacute"], "common", true,
       "CARDIAC ischaemia, aortic dissection, pleural and oesophageal disease all refer pain to a thoracic band — exclude visceral causes before diagnosing a thoracic radiculopathy, since a T4 band is far more often cardiac than radicular"),
     c("Thoracic disc prolapse or spondylosis", "degenerative", ["subacute","chronic"], "rare", false,
       "Band-like T4 pain with a sensory level; thoracic discs are uncommon but can compress the CORD, so look for long-tract signs in the legs"),
@@ -1400,7 +1416,7 @@ export const CAUSES = {
       "A band of burning pain at the T10 (UMBILICAL) level preceding the vesicular rash by days"),
     c("Diabetic thoracic radiculopathy", "metabolic", ["subacute"], "uncommon", false,
       "Severe burning truncal pain at the T10 level with weight loss in a diabetic; abdominal wall weakness can produce a bulge mistaken for a hernia"),
-    c("Visceral / abdominal disease mimicking a band", "vascular", ["acute","subacute"], "common", true,
+    c("Visceral / abdominal disease mimicking a band", "mimic", ["acute","subacute"], "common", true,
       "Biliary, renal, pancreatic and bowel disease all refer pain to a T10 band — exclude an intra-abdominal cause before diagnosing radiculopathy"),
     c("Thoracic disc prolapse or spondylosis", "degenerative", ["subacute","chronic"], "rare", false,
       "T10 band pain with a sensory level; BEEVOR'S SIGN (the umbilicus moves UPWARD on lifting the head, because the lower abdominals are weak while the upper are intact) indicates a lesion around T10 and points to the cord rather than a single root"),
@@ -2607,7 +2623,7 @@ export const CAUSES = {
       "Younger patient with sensory symptoms evolving over days and prior demyelinating episodes"),
     c("Small metastasis / glioma", "neoplastic", ["subacute","chronic"], "rare", false,
       "Progressive sensory symptoms over weeks; an enhancing thalamic lesion"),
-    c("Deep cerebral venous thrombosis (internal cerebral veins / straight sinus)", "vascular", ["acute","subacute"], "rare", true,
+    c("Deep cerebral venous thrombosis", "vascular", ["acute","subacute"], "rare", true,
       "BILATERAL thalamic swelling with headache, drowsiness and a course that deteriorates over days in a younger patient — a venous rather than arterial pattern that crosses arterial territories, so image the venous sinuses and look for a prothrombotic state"),
     c("Fabry disease", "congenital", ["chronic"], "rare", false,
       "Stroke in a young adult with burning acroparaesthesiae of the hands and feet, hypohidrosis and renal impairment — an X-linked, enzyme-replaceable cause of early stroke that goes unrecognised for years; the 'pulvinar sign' (symmetrical high T1 signal in the posterior thalamus) supports it on MRI",
@@ -2777,6 +2793,12 @@ export const CAUSES = {
       "Severe hypertension, eclampsia or calcineurin-inhibitor exposure, with headache, seizures and cortical visual loss — reversible if the trigger is corrected"),
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Field loss progressing over weeks, often with headache or seizures; an enhancing mass on MRI"),
+    // ADDED 2026-08-18 (owner request): the app had NO arteriovenous malformation anywhere, while the
+    // haemorrhage workup instructs the reader to look for one — the two layers contradicted each other.
+    c("Arteriovenous malformation", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "A LOBAR haemorrhage or a first focal seizure in a YOUNGER, normotensive patient — the location does not explain itself, which is the whole point; occipital AVMs are common and may have caused years of migraine-like visual phenomena first"),
+    c("Dural arteriovenous fistula", "vascular", ["subacute","chronic"], "rare", true,
+      "PULSATILE TINNITUS the patient can hear and the examiner can sometimes auscultate, with headache — and if it drains into cortical veins it causes haemorrhage or venous infarction, which makes an otherwise indolent lesion dangerous and curable"),
     c("Migraine with visual aura", "mimic", ["hyperacute","acute"], "common", false,
       "A POSITIVE, moving, scintillating scotoma building over 20–30 minutes then resolving, often followed by headache — an infarct gives NEGATIVE, static field loss, maximal instantly"),
     c("Creutzfeldt-Jakob disease (Heidenhain variant)", "degenerative", ["subacute"], "rare", false,
@@ -2882,6 +2904,8 @@ export const CAUSES = {
       "Weeks of progressive cortical failure, often with focal seizures — a focal cortical syndrome without weakness still needs imaging"),
     c("Intracerebral haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Headache and vomiting with the cortical syndrome; a lobar bleed in an older patient suggests cerebral amyloid angiopathy"),
+    c("Arteriovenous malformation", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "A lobar haemorrhage or new focal seizure in a younger patient with no vascular risk factors — a flow void or serpiginous vessels on MRI, and a normal blood pressure is part of the clue rather than reassurance"),
     c("Posterior cortical atrophy (Benson's syndrome)", "degenerative", ["chronic"], "uncommon", false,
       "Years of progressive visuospatial and apraxic failure — trouble reading, judging distance and dressing — with memory relatively preserved early on"),
     c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
@@ -2896,6 +2920,8 @@ export const CAUSES = {
     c("Cerebellar infarct (SCA / PICA)", "vascular", ["hyperacute","acute"], "common", true, "Acute ataxia/vertigo; watch for swelling → 4th-ventricle compression/hydrocephalus"),
     c("Cerebellar haemorrhage", "vascular", ["acute"], "uncommon", true, "Headache, vomiting, reduced consciousness — may need urgent decompression"),
     c("Metastasis / haemangioblastoma", "neoplastic", ["chronic"], "uncommon", false, "Progressive; haemangioblastoma linked to von Hippel–Lindau"),
+    c("Arteriovenous malformation", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "A posterior-fossa haemorrhage in a YOUNGER patient — the cerebellum is a favoured site, and here the mass effect on the fourth ventricle threatens life before the malformation itself does"),
     c("Alcohol / toxic / paraneoplastic degeneration", "degenerative", ["subacute","chronic"], "uncommon", false, "Subacute midline/truncal ataxia; check history and anti-neuronal antibodies"),
     c("Cerebellar abscess", "infective", ["acute","subacute"], "rare", true,
       "Fever and headache with ipsilateral limb ataxia, classically seeded from otitis media or mastoiditis — a posterior-fossa mass in a small space, so it obstructs the fourth ventricle early"),
