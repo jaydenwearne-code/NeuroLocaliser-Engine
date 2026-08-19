@@ -20,6 +20,81 @@ import { dz, family } from "./builders.js";
 //   * the four CORD infarcts — the brain reperfusion pathway does not apply at all (full override)
 //   * malignant MCA — the decompressive-craniectomy window is the whole point (monitoringExtra)
 //   * the posterior-fossa three — swelling obstructs the fourth ventricle (monitoringExtra)
+// ---- ROUND 2 (tranche 2): haemorrhage and haematoma ----
+// The 31 names matching "haemorrhage|haematoma" are NOT one family. They split into four genuinely
+// different first moves, which is the "a family is a clinical claim, not a string match" rule biting:
+//   * INTRAPARENCHYMAL — blood inside the brain. Reverse, control pressure, hunt the underlying cause.
+//   * COMPRESSIVE (extra-axial) — blood pressing on cord or cortex. The answer is DECOMPRESSION.
+//   * RETROPERITONEAL — not intracranial at all. Anticoagulation, CT abdomen, nerve compression.
+//   * ANEURYSM / SAH — the bleed is a symptom of a vessel that will bleed again.
+// Forcing them through one spine would have produced a plan that is true of none of them.
+
+const INTRAPARENCHYMAL_SPINE = {
+  confirmatory: [
+    "NON-CONTRAST CT is immediate and diagnostic — here it is not excluding blood, it IS the diagnosis, and it changes the next hour completely",
+    "ESTABLISH ANTICOAGULANT AND ANTIPLATELET EXPOSURE AND REVERSE IT — the most time-critical action of all, ahead of any further imaging",
+    "CT angiography looking for an underlying vascular lesion and for contrast extravasation within the haematoma, which predicts expansion — {flavour}",
+    "Delayed MRI with blood-sensitive sequences once stable, for the cause the acute blood conceals: cavernoma, underlying tumour, or the lobar microbleeds of amyloid angiopathy",
+  ],
+  monitoring: [
+    "SAFETY NET: haematoma EXPANSION happens in the first hours and is the commonest cause of early deterioration — a falling conscious level means repeat imaging immediately, not observation",
+    "Blood pressure, conscious level and {level} on a frequent, defined schedule; early intensive blood-pressure lowering is a treatment here, not a background measurement",
+    "Swallow screen before anything by mouth, and watch for seizures",
+    "Record the SITE and pattern for the discharge summary — a lobar bleed in an older patient raises amyloid angiopathy and changes future anticoagulation decisions permanently",
+  ],
+  urgency: "emergency",
+  referral: "Acute stroke pathway with neurosurgery; critical care if conscious level is falling",
+};
+
+const COMPRESSIVE_SPINE = {
+  confirmatory: [
+    "URGENT MRI of {level} — the question is not whether there is blood but whether it is COMPRESSING something, and that is a surgical question",
+    "Reverse anticoagulation immediately and check clotting — most of these occur on anticoagulation, and reversal is what makes surgery possible",
+    "Refer to the surgical team IN PARALLEL with the imaging, not after it: {flavour}",
+    "Establish the precipitant — trauma, a recent procedure, spinal injection or lumbar puncture — because it changes both the risk of recurrence and the consent conversation",
+  ],
+  monitoring: [
+    "SAFETY NET: the deficit from a compressive haematoma is often REVERSIBLE, and the window is measured in hours — a progressive deficit is a call to theatre, not a reason for another scan",
+    "Serial examination of {level} at defined intervals, documented, so progression is visible rather than inferred",
+    "Track bladder and bowel function explicitly where the cord or cauda is involved — retention is frequently established before the patient reports it",
+  ],
+  urgency: "emergency",
+  referral: "Emergency neurosurgery or spinal surgery — decompression is time-critical",
+};
+
+const RETROPERITONEAL_SPINE = {
+  confirmatory: [
+    "CT ABDOMEN AND PELVIS — this is not a neurological investigation and it is the one that makes the diagnosis; a femoral or lumbar plexus palsy on anticoagulation is a retroperitoneal bleed until imaged",
+    "FBC and clotting urgently, with a haemoglobin that may be falling faster than the patient looks — and reverse the anticoagulation",
+    "Examine {level}, and check for the psoas sign: the hip held FLEXED and externally rotated, painful to extend",
+    "{flavour}",
+  ],
+  monitoring: [
+    "SAFETY NET: this is a HAEMODYNAMIC emergency before it is a neurological one — pulse, blood pressure and serial haemoglobin outrank the nerve examination in the first hours",
+    "Serial examination of {level} — the nerve deficit tracks the expanding haematoma, so a worsening deficit means the bleed is not controlled",
+    "Most recover with correction and time rather than surgery, but a deficit that deepens after the bleeding has stopped warrants a surgical opinion",
+  ],
+  urgency: "emergency",
+  referral: "Acute medicine or general surgery with haematology; neurology for the nerve injury once stable",
+};
+
+const ANEURYSM_SPINE = {
+  confirmatory: [
+    "CT ANGIOGRAPHY to find the aneurysm — the bleed is the symptom, the vessel is the diagnosis, and an unsecured aneurysm rebleeds",
+    "Where CT is negative but the history is convincing, LUMBAR PUNCTURE at least 12 hours after onset looking for XANTHOCHROMIA — a normal CT does not exclude subarachnoid haemorrhage beyond the first hours",
+    "Digital subtraction angiography where CT angiography is negative and the pattern is aneurysmal — {flavour}",
+    "Examine {level} and document it before any intervention, since it is the baseline everything afterwards is judged against",
+  ],
+  monitoring: [
+    "SAFETY NET: REBLEEDING is the early killer and VASOSPASM the late one — deterioration in the first hours suggests rebleeding, deterioration at days 4-14 suggests vasospasm, and they are managed in opposite directions",
+    "Track {level} and conscious level; a new or worsening focal deficit in the vasospasm window is an indication for urgent imaging, not for sedation",
+    "Watch sodium — hyponatraemia is common here and fluid RESTRICTION is the wrong answer, because it worsens vasospasm",
+    "Watch for hydrocephalus, which is treatable and presents as a slow decline in conscious level rather than a focal sign",
+  ],
+  urgency: "emergency",
+  referral: "Emergency neurosurgery / neurointervention — an unsecured aneurysm is secured, not observed",
+};
+
 const INFARCT_SPINE = {
   confirmatory: [
     "Establish the TIME LAST KNOWN WELL before anything else — it is what decides whether reperfusion is on the table, and it cannot be reconstructed later",
@@ -48,6 +123,240 @@ const cordInfarct = (where, clue) => [
 ];
 
 export default {
+  // ---- INTRAPARENCHYMAL haemorrhage: blood inside the brain ----
+  ...family("intraparenchymal-haemorrhage", INTRAPARENCHYMAL_SPINE, {
+    "Thalamic haemorrhage": {
+      slots: { level: "conscious level, gaze and the sensory deficit",
+               flavour: "a thalamic bleed sits next to the third ventricle — look for intraventricular extension and hydrocephalus, which is what usually decides the outcome" },
+      monitoringExtra: ["A thalamic bleed classically gives DOWNWARD and inward gaze deviation with small unreactive pupils — a striking sign that is often the first thing to change"],
+      bySite: {
+        thalamus_vpm: { level: "facial and limb sensation, and any evolving central pain" },
+        thalamus_vl: { level: "power, tremor and coordination" },
+        thalamus_pulvinar: { level: "visual attention and neglect" },
+        aphasia_subcortical_thalamic: { level: "language — fluent with intact repetition, which is the thalamic signature" },
+        subcortex_thalamus: { level: "conscious level, sensation and gaze together" },
+      },
+    },
+    "Pontine haemorrhage": {
+      slots: { level: "conscious level, pupils and respiratory pattern",
+               flavour: "a pontine bleed is usually hypertensive and central — pinpoint reactive pupils with coma is the classic picture, and prognosis relates closely to volume" },
+      monitoringExtra: ["AIRWAY FIRST: a pontine haemorrhage threatens ventilation and swallow before anything else, and critical care involvement should not wait for the neurosurgical opinion"],
+      bySite: {
+        pons_medial: { level: "eye movements, facial power and swallow" },
+        pons_lateral: { level: "hearing, facial sensation and crossed signs" },
+        pons_lateral_trigeminal: { level: "facial sensation and the corneal reflex" },
+        locked_in_ventral_pons: { level: "VERTICAL eye movements and blinking — the only channel left, and the one that distinguishes locked-in from coma" },
+      },
+    },
+    "Midbrain haemorrhage": {
+      slots: { level: "the third nerve, pupils and vertical gaze",
+               flavour: "a midbrain bleed sits at the aqueduct — look specifically for obstructive hydrocephalus, which is treatable and easily missed while attention is on the deficit" },
+      bySite: {
+        midbrain_lateral: { level: "the third nerve with contralateral limb signs" },
+        midbrain_hemi: { level: "conscious level, pupils and all four limbs" },
+        dorsal_midbrain_tectum: { level: "vertical gaze, convergence-retraction nystagmus and pupillary reactions" },
+      },
+    },
+    "Deep hypertensive haemorrhage": {
+      slots: { level: "power, and language where the dominant side is involved",
+               flavour: "a deep bleed in the basal ganglia or internal capsule with a hypertensive history is the commonest pattern of all — but in a NORMOTENSIVE patient, image the vessels for an underlying lesion" },
+      bySite: {
+        aphasia_subcortical_striatocapsular: { level: "language and power together" },
+        subcortex_anterior_choroidal: { level: "power, sensation and the visual field — the triad of that territory" },
+        subcortex_sensorimotor: { level: "power and sensation in the same distribution" },
+      },
+    },
+    "Large intracerebral haemorrhage": {
+      slots: { level: "conscious level above all else",
+               flavour: "volume is the strongest single predictor — measure it on the first scan so expansion on the second is unambiguous" },
+      monitoringExtra: ["A large hemispheric haematoma behaves like a malignant infarct: watch for midline shift and herniation, and involve neurosurgery early rather than at deterioration"],
+      bySite: {
+        cortex_aphasia_global: { level: "language and conscious level" },
+        cortex_mca: { level: "conscious level, power and gaze deviation" },
+      },
+    },
+    "Occipital haemorrhage": {
+      slots: { level: "the visual fields, formally rather than to confrontation",
+               flavour: "a LOBAR occipital bleed in an older patient raises cerebral amyloid angiopathy — look for the lobar microbleeds on the delayed blood-sensitive sequences" },
+      bySite: {
+        cortex_pca: { level: "the visual field and any higher visual disturbance" },
+        cortex_occipital: { level: "the field defect, and whether the patient is AWARE of it" },
+      },
+    },
+    "Hypothalamic stroke or haemorrhage": {
+      slots: { level: "temperature, sodium, and conscious level",
+               flavour: "a hypothalamic lesion declares itself through the ENDOCRINE and autonomic axes rather than through a focal deficit, so the abnormal result usually arrives before the sign" },
+      monitoringExtra: ["Check sodium, cortisol and thyroid function early: diabetes insipidus and adrenal insufficiency here are life-threatening and entirely treatable"],
+      bySite: {
+        hypothalamus_thermoregulatory: { level: "core temperature, which can swing in either direction" },
+        hypothalamus_lateral: { level: "appetite, weight and arousal" },
+      },
+    },
+    "Hypertensive pontine haemorrhage": {
+      slots: { level: "conscious level, pupils and the gag reflex",
+               flavour: "the hypertensive pontine bleed is the archetype — central, and the blood pressure that caused it must still be treated" },
+      monitoringExtra: ["AIRWAY AND VENTILATION FIRST — this is the bleed most likely to need intubation before the imaging is complete"],
+    },
+    "Small pontine haemorrhage": {
+      slots: { level: "eye movements and the crossed signs specifically",
+               flavour: "a small pontine bleed can produce a deficit out of all proportion to its size — do not be reassured by the volume here as you would in the hemisphere" },
+    },
+    "Medullary haemorrhage": {
+      slots: { level: "swallow, tongue movement and the respiratory pattern",
+               flavour: "medullary bleeds are rare and disproportionately raise an underlying CAVERNOMA or arteriovenous malformation — image the vessels rather than assuming hypertension" },
+      monitoringExtra: ["Respiratory drive and swallow are the functions at risk, and both can fail without a dramatic change in conscious level"],
+    },
+    "Brainstem haemorrhage": {
+      slots: { level: "conscious level, pupils and eye movements",
+               flavour: "in the brainstem the compartment is tiny, so an underlying lesion is proportionally more likely than in a hemispheric bleed — the delayed MRI matters more here" },
+    },
+    "Haemorrhage into the subthalamic region": {
+      slots: { level: "the involuntary movements, and their amplitude over time",
+               flavour: "a subthalamic bleed produces HEMIBALLISMUS — violent proximal flinging that is exhausting and occasionally dangerous in its own right" },
+      monitoringExtra: ["Severe hemiballismus can cause rhabdomyolysis and exhaustion — monitor creatine kinase and hydration, not just the movement itself"],
+    },
+    "Hypertensive haemorrhage": {
+      slots: { level: "pure motor power, without cortical signs",
+               flavour: "a capsular bleed gives a dense PURE MOTOR deficit with no language or neglect — the absence of cortical signs is the localising information" },
+    },
+    "Hypertensive deep haemorrhage": {
+      slots: { level: "power across face, arm and leg equally",
+               flavour: "a corona radiata bleed sits in white matter, so the deficit is motor and the higher functions are spared" },
+    },
+    "Deep haemorrhage": {
+      slots: { level: "the visual field",
+               flavour: "a bleed into the optic radiation gives a field defect with little else — easily missed unless the fields are formally tested" },
+    },
+    "Haemorrhage": {
+      slots: { level: "speech output, and face and arm power",
+               flavour: "an opercular bleed threatens speech disproportionately to its size" },
+    },
+    "Cerebellar haemorrhage": {
+      slots: { level: "conscious level and truncal stability",
+               flavour: "MEASURE THE HAEMATOMA and look at the fourth ventricle: in the posterior fossa, SIZE AND BRAINSTEM COMPRESSION rather than the deficit drive the surgical decision, and a patient can look well and still need evacuation" },
+      monitoringExtra: [
+        "THE POSTERIOR FOSSA HAS NO ROOM: deterioration can be abrupt and irreversible, so a falling conscious level is a call to the surgeon and the scanner in the same breath",
+        "Watch for obstructive hydrocephalus from fourth-ventricle compression — treatable, and what usually kills here",
+      ],
+      referral: "Emergency neurosurgery — posterior-fossa haematomas are evacuated on size and brainstem compression, so refer BEFORE the patient deteriorates",
+      bySite: {
+        cerebellum_vermis: { level: "conscious level, with the fourth ventricle on every scan",
+          flavour: "a MIDLINE haematoma sits directly on the fourth ventricle, so obstructive hydrocephalus arrives EARLY and may dominate before any brainstem sign appears" },
+        cerebellum_hemisphere: { level: "conscious level, and the ipsilateral limbs for worsening ataxia",
+          flavour: "a HEMISPHERIC haematoma compresses the brainstem laterally — the classic setting in which size and brainstem distortion, rather than the deficit, drive evacuation" },
+      },
+    },
+    // The "or cavernoma" names: same acute answer, plus the lesion hunt that changes the FUTURE.
+    "Pontine haemorrhage or cavernoma": {
+      slots: { level: "facial sensation and eye movements",
+               flavour: "a small brainstem bleed in a YOUNGER, normotensive patient is a cavernoma until the blood-sensitive MRI says otherwise" },
+      confirmatoryExtra: ["Delayed MRI with SWI or gradient-echo is the study that finds the cavernoma, and it also screens for the multiple lesions of the FAMILIAL form — which changes the conversation with the family, not just the patient"],
+    },
+    "Brainstem haemorrhage or cavernoma": {
+      slots: { level: "tremor, palate and eye movements",
+               flavour: "a lesion in the Guillain-Mollaret triangle may declare itself late, as palatal tremor developing months after the bleed" },
+      confirmatoryExtra: ["Blood-sensitive MRI for a cavernoma, and screen for multiple lesions — brainstem cavernomas rebleed at a materially higher rate than those elsewhere, which drives the surgical discussion"],
+    },
+    "Brainstem or cerebellar haemorrhage / cavernoma": {
+      slots: { level: "limb coordination and any tremor",
+               flavour: "a dentate lesion gives ipsilateral limb ataxia; blood here also threatens the fourth ventricle, so look at it explicitly" },
+      confirmatoryExtra: ["Blood-sensitive MRI for an underlying cavernoma, and assess the fourth ventricle for obstruction on the acute scan"],
+    },
+  }),
+
+  // ---- COMPRESSIVE (extra-axial) haematoma: the answer is DECOMPRESSION ----
+  ...family("compressive-haematoma", COMPRESSIVE_SPINE, {
+    "Spinal epidural haematoma": {
+      slots: { level: "power, sensory level and sphincter function",
+               flavour: "sudden severe back pain followed by a progressive cord or cauda syndrome, usually on anticoagulation or after a spinal procedure — the time from deficit to decompression is the strongest predictor of recovery" },
+      bySite: {
+        cord_hemi: { level: "the asymmetry between the two sides, and the sensory level" },
+        cauda_equina: { level: "saddle sensation, sphincter tone and the anal wink" },
+      },
+    },
+    "Compressive myelopathy (tumour, disc, abscess, haematoma)": {
+      slots: { level: "the sensory level, power and sphincter function",
+               flavour: "the name lists four causes and the MRI distinguishes them — but the DECOMPRESSION question is the same for all four, and it is the one with a clock on it" },
+      confirmatoryExtra: ["Once compression is confirmed, the cause changes the ADJUNCT rather than the urgency: cultures if infective, staging if malignant, reversal if haemorrhagic"],
+    },
+    "Vertex extradural haematoma": {
+      slots: { level: "both legs, and continence",
+               flavour: "a VERTEX extradural is the one that hides — it sits at the top of the head where axial CT slices are thinnest, and it is classically missed on the first read" },
+      confirmatoryExtra: ["Ask explicitly for CORONAL reformats: a vertex collection can be invisible on axial images alone, and it is often venous from a torn sagittal sinus rather than arterial"],
+    },
+    "Vertex extradural haematoma / parasagittal contusion": {
+      slots: { level: "leg power specifically, since the arm may be entirely normal",
+               flavour: "a parasagittal lesion produces a LEG-predominant deficit that is regularly mistaken for a cord problem" },
+      confirmatoryExtra: ["Coronal reformats again — and where the picture is bilateral leg weakness after trauma, image the head before the spine"],
+    },
+    "Interhemispheric (falx) subdural haematoma or parasagittal contusion": {
+      slots: { level: "leg power and initiation, with continence",
+               flavour: "an interhemispheric subdural tracks along the falx and can be a thin sliver on axial slices while producing a substantial leg deficit" },
+      confirmatoryExtra: ["In an older patient on anticoagulation, look for the second, chronic collection alongside the acute one — mixed-density collections are common and change the surgical plan"],
+    },
+  }),
+
+  // ---- RETROPERITONEAL haematoma: not intracranial at all ----
+  ...family("retroperitoneal-haematoma", RETROPERITONEAL_SPINE, {
+    "Retroperitoneal haematoma": {
+      slots: { level: "hip flexion, knee extension and the knee jerk",
+               flavour: "the classic setting is anticoagulation, sometimes after femoral arterial access — and the femoral nerve is compressed in the iliacus compartment where the psoas cannot expand" },
+      bySite: {
+        plexus_lumbar_plexus: { level: "hip flexion, knee extension, thigh adduction and sensation over the thigh" },
+        nerve_femoral: { level: "knee extension and the knee jerk, with sensation over the anterior thigh and medial calf" },
+      },
+    },
+    "Psoas abscess or retroperitoneal haematoma": {
+      slots: { level: "hip flexion and the L3 myotome",
+               flavour: "the same compartment, two causes with opposite treatments — FEVER AND INFLAMMATORY MARKERS separate abscess from haematoma, so send them before deciding" },
+      confirmatoryExtra: ["If it is an abscess: blood cultures before antibiotics, and drainage rather than reversal — the two diagnoses look identical on the nerve examination alone"],
+    },
+    "Retroperitoneal or pelvic haematoma": {
+      slots: { level: "ankle movement, hip extension and sphincter function",
+               flavour: "a pelvic collection reaches the sacral plexus, so ask explicitly about bladder, bowel and sexual function, which are rarely volunteered" },
+    },
+  }),
+
+  // ---- ANEURYSM / SAH: the bleed is a symptom of a vessel that will bleed again ----
+  ...family("aneurysm-sah", ANEURYSM_SPINE, {
+    "Aneurysm or deep haemorrhage": {
+      slots: { level: "the visual fields and the pupils",
+               flavour: "an aneurysm compressing or bleeding near the optic tract — look specifically at the posterior communicating and internal carotid, and check the third nerve including the PUPIL" },
+    },
+    "Deep haemorrhage or aneurysm": {
+      slots: { level: "the visual field, formally",
+               flavour: "a lesion at the geniculate is deep and small — the field defect may be the only sign, and a normal CT does not exclude an aneurysm nearby" },
+    },
+    "ACA vasospasm after subarachnoid haemorrhage": {
+      slots: { level: "leg power and initiation, which is where ACA territory declares itself",
+               flavour: "this is a LATE complication, not the initial bleed — a new leg-predominant deficit at days 4-14 after a subarachnoid haemorrhage is vasospasm until proven otherwise" },
+      confirmatory: [
+        "Transcranial Doppler or CT perfusion to demonstrate the spasm — but a new deficit in the window is treated on clinical grounds, not held pending a number",
+        "Exclude the alternatives that present identically: rebleeding, hydrocephalus, seizure, hyponatraemia and sepsis all mimic vasospasm and are all treatable",
+        "Confirm the aneurysm is SECURED — an unsecured aneurysm changes what can safely be done about the spasm",
+      ],
+      monitoringExtra: ["Induced hypertension is the mainstay once the aneurysm is secured, which is the reverse of the blood-pressure target for an unsecured bleed — knowing which state the patient is in is the whole decision"],
+    },
+  }),
+
+  // Duret haemorrhage is not a primary bleed at all: it is the CONSEQUENCE of herniation, so its workup
+  // is about what is pushing the brainstem down, not about the brainstem blood.
+  "Duret haemorrhage / brainstem injury from herniation": dz("Duret haemorrhage / brainstem injury from herniation", {
+    confirmatory: [
+      "THIS IS A SIGN OF HERNIATION, NOT A DIAGNOSIS IN ITSELF — the urgent question is WHAT IS PUSHING THE BRAINSTEM DOWN, so image the whole head and find the supratentorial mass, collection or oedema responsible",
+      "CT immediately, looking for the causative lesion and for the degree of midline shift and basal cistern effacement",
+      "Once the cause is identified, the decision is whether it is REVERSIBLE — an evacuable collection or hydrocephalus is treatable, established brainstem infarction is not",
+      "Examine the pupils and brainstem reflexes and document them precisely — they are the baseline against which any intervention is judged",
+    ],
+    monitoring: [
+      "SAFETY NET: this is the end of a process that was underway before the haemorrhage appeared. The clinical priority is the herniation, and treatment of raised intracranial pressure should not wait for the imaging to be reported",
+      "Pupils, conscious level and respiratory pattern continuously; a fixed dilated pupil with a falling conscious level is an emergency in progress",
+      "Involve critical care and neurosurgery together and early — and be prepared for the conversation about ceilings of care, because the prognosis once Duret haemorrhages are established is poor and the family will need that said honestly",
+    ],
+    urgency: "emergency",
+    referral: "Emergency neurosurgery and critical care together",
+  }),
+
   ...family("infarct", INFARCT_SPINE, {
     // ---- anterior circulation, cortical ----
     "MCA superior division infarct": {
@@ -227,37 +536,6 @@ export default {
     },
   }),
 
-  // Split out of "Cerebellar infarct or haemorrhage" on 2026-08-18 (owner ruling). It is NOT a member of
-  // the infarct family: the first move diverges completely — reverse the anticoagulation and call the
-  // surgeon, rather than ask about reperfusion. Round 2 may fold it into the haemorrhage family; until
-  // then it stands alone, which is the honest shape for a single disease with its own answer.
-  "Cerebellar haemorrhage": dz("Cerebellar haemorrhage", {
-    confirmatory: [
-      "NON-CONTRAST CT is immediate and diagnostic — and here it is not merely excluding blood, it IS the diagnosis and it changes the next hour completely",
-      "MEASURE THE HAEMATOMA and look at the fourth ventricle: size and brainstem compression, not the deficit, are what drive the surgical decision — a patient can look well and still need evacuation. {flavour}",
-      "Establish anticoagulant exposure IMMEDIATELY and reverse it — this is the single most time-critical action, ahead of any further imaging",
-      "CT angiography where the patient is young, normotensive, or the haematoma sits atypically, looking for an underlying vascular malformation",
-      "Delayed MRI once stable, for an underlying cavernoma, tumour or amyloid angiopathy the acute blood conceals",
-    ],
-    monitoring: [
-      "SAFETY NET: the posterior fossa has no room. Deterioration can be abrupt and irreversible, so a falling conscious level is a call to the surgeon and the scanner in the same breath — not an observation to repeat in an hour",
-      "Hourly observations tracking {level}, with an explicit escalation threshold agreed with neurosurgery in advance",
-      "Watch for obstructive hydrocephalus from fourth-ventricle compression, which is treatable and is what usually kills here",
-      "Blood pressure control, glucose and temperature as for any acute intracerebral haemorrhage",
-    ],
-    urgency: "emergency",
-    referral: "Emergency neurosurgery — posterior-fossa haematomas are evacuated on size and brainstem compression, so refer before the patient deteriorates",
-    bySite: {
-      cerebellum_vermis: {
-        level: "conscious level, with the fourth ventricle on every scan",
-        flavour: "a MIDLINE haematoma sits directly on the fourth ventricle, so obstructive hydrocephalus arrives EARLY and may dominate before any brainstem sign appears",
-      },
-      cerebellum_hemisphere: {
-        level: "conscious level, and the ipsilateral limbs for worsening ataxia",
-        flavour: "a HEMISPHERIC haematoma compresses the brainstem laterally — this is the classic setting in which size and brainstem distortion, rather than the neurological deficit, drive the decision to evacuate",
-      },
-    },
-  }),
 
   // ---- PROMOTED INTO TRANCHE 1 ON CLINICAL GROUNDS (owner ruling, 2026-08-18) ----
   // Only 2 host sites, so reuse count would have left it until tranche 3. It is nonetheless the app's
