@@ -12,6 +12,7 @@
 import { expectedFindings } from "../engine/forward.js";
 import { CAUSES } from "./causes.js";
 import { pathologyPlanFor } from "./pathologyNextSteps.js";
+import { multifocalPlanFor } from "./multifocalNextSteps.js";
 
 const ns = (investigations, urgency, referral, extra = {}) => ({ investigations, urgency, referral, ...extra });
 
@@ -2371,18 +2372,43 @@ export function pathologyNextStepsFor(site, causeName) {
 // a cord site plus a nerve site is a cord-urgency workup, and averaging would under-call it.
 const URGENCY_ORDER = ["emergency", "urgent", "routine"];
 
-export function combinedNextSteps(sites) {
+// `entityName` narrows the plan to the ONE cross-site disease the Together card named (spec 2026-08-21).
+//
+// THE TIER SPLIT. Immediate stays the site union: it is done before the cause is known. First-line is
+// ADDITIVE — `investigations` is never touched and the entity's own tests ride alongside it in
+// `entityFirstLine`, because the tests that IDENTIFY a cross-site disease (CSF oligoclonal bands, AQP4,
+// ANCA) live in first-line and no site plan will ever order them, while an urgent MRI whole spine must not
+// vanish because someone clicked MS. Confirmatory, monitoring and referral become the entity's.
+//
+// `entityName: null` returns EXACTLY the object this function returned before this argument existed — no
+// added keys — so the no-selection view has one code path and cannot drift. An unknown name degrades to
+// the same thing rather than throwing.
+export function combinedNextSteps(sites, entityName = null) {
   const all = sites.map(nextStepsFor);
   const union = key => [...new Set(all.flatMap(n => n[key] || []))];
-  const urgency = URGENCY_ORDER.find(u => all.some(n => n.urgency === u)) || "routine";
+  const siteUrgency = URGENCY_ORDER.find(u => all.some(n => n.urgency === u)) || "routine";
   const referral = [...new Set(all.map(n => n.referral).filter(Boolean))].join(" · ");
-  return {
+  const base = {
     immediate: union("immediate"),
     investigations: union("investigations"),
     confirmatory: union("confirmatory"),
     monitoring: union("monitoring"),
-    urgency,
+    urgency: siteUrgency,
     referral,
     sites: sites.map(s => s.id),
+  };
+  const plan = entityName ? multifocalPlanFor(entityName) : null;
+  if (!plan) return base;
+  // THE SITE UNION IS A FLOOR, never a ceiling — the same shape as resolveUrgency()'s red floor. Selecting
+  // a cross-site disease must not de-escalate a picture that contains an emergency-badged site.
+  const urgency = URGENCY_RANK[plan.urgency] >= URGENCY_RANK[siteUrgency] ? plan.urgency : siteUrgency;
+  return {
+    ...base,
+    entityFirstLine: plan.firstLine,
+    confirmatory: plan.confirmatory,
+    monitoring: plan.monitoring,
+    urgency,
+    referral: plan.referral,
+    entity: entityName,
   };
 }

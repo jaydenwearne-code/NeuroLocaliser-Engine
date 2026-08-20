@@ -5,6 +5,8 @@
 import { MULTIFOCAL_NEXT, multifocalPlanFor } from "../src/data/multifocalNextSteps.js";
 import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { PATHOLOGY_NEXT, pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
+import { combinedNextSteps } from "../src/data/nextSteps.js";
+import { candidateSites } from "../src/engine/inverse.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (!c && d ? `  [${d}]` : "")); };
@@ -85,6 +87,68 @@ const ENTITY_WITHOUT_PLAN_CEILING = 8;
      missing.length <= ENTITY_WITHOUT_PLAN_CEILING, missing.join(" | "));
   console.log(`\nREPORT  ${MULTIFOCAL.length - missing.length} of ${MULTIFOCAL.length} entities planned; ` +
               `${missing.length} left${missing.length ? " — " + missing.join(", ") : ""}`);
+}
+
+// ---- the combined card (spec §3) ----
+const ALL = candidateSites();
+const byId = id => ALL.find(s => s.id === id);
+const PAIR = [byId("left_skull_base_optic_neuritis"), byId("left_cord_lateral")];
+
+// --- 8: no entity means byte-identical to the pre-2026-08-21 behaviour ---
+// One code path, so the no-selection view cannot drift. Compared as JSON: an ADDED key would fail this,
+// which is why `entity` and `entityFirstLine` are absent rather than null when nothing is selected.
+{
+  ok("both fixture sites resolve", PAIR.every(Boolean));
+  const a = JSON.stringify(combinedNextSteps(PAIR));
+  const b = JSON.stringify(combinedNextSteps(PAIR, null));
+  ok("combinedNextSteps(sites) === combinedNextSteps(sites, null)", a === b);
+  ok("no entity leaves no `entity` key", !("entity" in combinedNextSteps(PAIR)));
+  ok("an unknown entity falls back to the plain union", JSON.stringify(combinedNextSteps(PAIR, "Not A Real Disease")) === a);
+}
+
+// --- 9: the tier split — immediate and first-line are site-level and UNCHANGED ---
+{
+  const plain = combinedNextSteps(PAIR);
+  const withE = combinedNextSteps(PAIR, "Multiple sclerosis");
+  ok("immediate is untouched by the selection",
+     JSON.stringify(withE.immediate) === JSON.stringify(plain.immediate));
+  ok("first-line (site) is untouched by the selection",
+     JSON.stringify(withE.investigations) === JSON.stringify(plain.investigations));
+  ok("the entity's own first-line arrives alongside it", withE.entityFirstLine.length > 0);
+  ok("the rendered first-line is a SUPERSET of the site union",
+     plain.investigations.every(i => [...withE.investigations, ...withE.entityFirstLine].includes(i)));
+  ok("confirmatory becomes the entity plan",
+     JSON.stringify(withE.confirmatory) === JSON.stringify(multifocalPlanFor("Multiple sclerosis").confirmatory));
+  ok("monitoring becomes the entity plan",
+     JSON.stringify(withE.monitoring) === JSON.stringify(multifocalPlanFor("Multiple sclerosis").monitoring));
+  ok("referral becomes the entity plan's", withE.referral === multifocalPlanFor("Multiple sclerosis").referral);
+  ok("the entity is reported back", withE.entity === "Multiple sclerosis");
+}
+
+// --- 10: THE URGENCY FLOOR — selecting an entity may raise urgency, never lower it ---
+// Swept over real pairs rather than one fixture: the failure this guards against is a chronic-sounding
+// entity silently de-escalating a picture that contains a cord site badged emergency.
+{
+  const RANK = { emergency: 3, urgent: 2, routine: 1 };
+  const sample = [byId("left_skull_base_optic_neuritis"), byId("left_cord_lateral"),
+                  byId("left_nerve_median_proximal"), byId("left_cord_hemi")].filter(Boolean);
+  let violations = 0, checked = 0;
+  for (let i = 0; i < sample.length; i++) for (let j = i + 1; j < sample.length; j++) {
+    const pair = [sample[i], sample[j]];
+    const floor = RANK[combinedNextSteps(pair).urgency];
+    for (const name of Object.keys(MULTIFOCAL_NEXT)) {
+      checked++;
+      if (RANK[combinedNextSteps(pair, name).urgency] < floor) violations++;
+    }
+  }
+  ok(`the site urgency is a FLOOR across ${checked} (pair, entity) combinations`, violations === 0, `${violations} de-escalations`);
+}
+
+// --- 11: an emergency entity RAISES a routine pair ---
+{
+  const pair = [byId("left_nerve_median_proximal"), byId("left_skull_base_optic_neuritis")].filter(Boolean);
+  const withE = combinedNextSteps(pair, "NMOSD (neuromyelitis optica spectrum disorder)");
+  ok("an emergency entity plan reaches the card", withE.urgency === "emergency");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
