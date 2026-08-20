@@ -567,15 +567,21 @@ across a multifocal set.
 > status is recorded in the `pathologyNextSteps.js` header. Content added from here is held to the same bar.
 
 **STILL OPEN, deliberately out of scope:**
-1. **The remaining 831 pathologies** (tranche 2+), in the A–H region rhythm, each with its own sign-off.
-   Much of it is REDISTRIBUTION rather than new writing: curated site `investigations` prose is often
-   already pathology-specific and merely lives in the wrong bucket for want of somewhere better.
-2. **The fundal-photography defect is only HALF fixed.** The raised-pressure route becomes a pathology
-   step, but `VISUAL_FINDING` in `nextSteps.js` still does not respect the chiasm: 22 sites fire on a
-   retro-chiasmal token alone — 4 defensibly (`optic_tract`, `lgn`, pre-/at-geniculate, so band atrophy is
-   real), 2 borderline (`anterior_choroidal`), and **16 wrongly** (post-geniculate, where the discs are
-   normal and OCT adds nothing). It also keys on PREDICTED rather than OBSERVED findings, so it can order
-   imaging to characterise a deficit the Why card simultaneously lists as "predicted but not reported".
+1. ~~**The remaining 831 pathologies**~~ — **PARTLY CLOSED by tranche 2**, which authored all 353 red
+   (must-not-miss) causes and retired the ratchet into a hard gate. What remains is the **494 non-red**
+   names, deliberately parked: 709 of the leftover names appear at exactly ONE site, so finishing the
+   coverage is ~35x the authoring of tranche 1, and the labelled site fallback they keep is honest and
+   already correct. Much of it would be REDISTRIBUTION rather than new writing: curated site
+   `investigations` prose is often already pathology-specific and merely lives in the wrong bucket.
+2. ~~**The fundal-photography defect is only HALF fixed.**~~ — **CLOSED 2026-08-18.** The chiasm half was
+   fixed on `fix/ophthalmic-imaging-chiasm` (merged): `VISUAL_FINDING` no longer contains
+   `homonymous_hemianopia` or the quadrantanopias, and the three-route trigger in `nextSteps.js` now
+   respects the chiasm — 22 firing sites → 4 → 2, and the 2 that remain are the parasagittal pair firing
+   correctly on sinus thrombosis. See the ophthalmic-imaging section above for the full account and the
+   both-directions invariant in `test/next-steps.test.js`. **What remains is benign but real:**
+   `hasFieldDefect()` still keys on `expectedFindings(site)` — PREDICTED rather than OBSERVED — so in
+   principle it can still order imaging for a deficit the Why card lists as "predicted but not reported".
+   The chiasm rule removed every case where that actually bit; revisit only if a new site reintroduces one.
 3. **`combinedNextSteps` / the Together card** — multi-site plus per-pathology needs its own design.
 
 Spec/plan: `docs/superpowers/specs/2026-08-18-per-pathology-next-steps-design.md`,
