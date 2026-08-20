@@ -74,5 +74,27 @@ ok("accepts the stroke mode", decodeCase("#m=stroke", {}).mode === "stroke");
   ok("no pathology means no px key", !/px=/.test(encodeCase({ tokens: new Set(["weak_leg@left"]) })));
 }
 
+// ---- ux= : the cross-site entity (spec 2026-08-21) ----
+{
+  const validEntities = new Set(["Multiple sclerosis", "Vasculitis (CNS or systemic)"]);
+  const enc = encodeCase({ tokens: new Set(["weak_leg@left"]), selectedEntity: "Multiple sclerosis" });
+  ok("encodes the entity as ux=", /ux=/.test(enc));
+  const back = decodeCase("#" + enc, { validFindings, validEntities });
+  ok("round-trips the entity", back.selectedEntity === "Multiple sclerosis");
+  // ux has no meaning outside the all-sites view, so its presence IS the scope.
+  ok("ux implies the all-sites scope", back.scope === "all");
+
+  const bogus = decodeCase("#ux=" + encodeURIComponent("Not A Real Disease"), { validFindings, validEntities });
+  ok("an unknown entity token is dropped", bogus.selectedEntity === undefined);
+  ok("a dropped entity implies no scope", bogus.scope === undefined);
+
+  ok("no entity means no ux key", !/ux=/.test(encodeCase({ tokens: new Set(["weak_leg@left"]) })));
+
+  // px and ux describe DIFFERENT scopes and must both survive one URL.
+  const both = decodeCase("#" + encodeCase({ selectedPathology: "Cardioembolism", selectedEntity: "Multiple sclerosis" }),
+                          { validEntities });
+  ok("px and ux coexist in one URL", both.selectedPathology === "Cardioembolism" && both.selectedEntity === "Multiple sclerosis");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

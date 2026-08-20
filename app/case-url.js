@@ -14,6 +14,7 @@ export function encodeCase(state) {
   if (state.mode && state.mode !== "localise") p.set("m", state.mode);
   if (state.selected) p.set("s", state.selected);
   if (state.selectedPathology) p.set("px", state.selectedPathology);
+  if (state.selectedEntity) p.set("ux", state.selectedEntity);
   if (state.dominant && state.dominant !== "left") p.set("dom", state.dominant);
   if (state.sensoryLevel) p.set("sl", state.sensoryLevel);
   if (state.distalReach) p.set("dr", state.distalReach);
@@ -26,6 +27,7 @@ export function decodeCase(hash, opts = {}) {
   const validFindings = opts.validFindings || null; // null = accept any finding id
   const validSites = opts.validSites || null;       // null = accept any site id
   const validPathologies = opts.validPathologies || null; // null = accept any pathology name
+  const validEntities = opts.validEntities || null;       // null = accept any entity name
   const out = {};
   let p;
   try { p = new URLSearchParams(String(hash || "").replace(/^#/, "")); } catch { return out; }
@@ -45,6 +47,13 @@ export function decodeCase(hash, opts = {}) {
   const s = p.get("s"); if (s && (!validSites || validSites.has(s))) out.selected = s;
   const px = p.get("px");
   if (px && (!validPathologies || validPathologies.has(px))) out.selectedPathology = px;
+  // `ux` is the CROSS-SITE entity named by the Together card — a different claim from `px`, which names a
+  // pathology at ONE site, so the two are separate parameters and may both appear. `ux` has no meaning
+  // outside the all-sites view, so its presence IS the scope; that is the parameter's definition, not an
+  // inference. It degrades safely — a restored case with fewer than two sites never renders the combined
+  // view at all, so the scope is simply unused.
+  const ux = p.get("ux");
+  if (ux && (!validEntities || validEntities.has(ux))) { out.selectedEntity = ux; out.scope = "all"; }
   const dom = p.get("dom"); if (dom === "left" || dom === "right") out.dominant = dom;
   const sl = p.get("sl"); if (sl) out.sensoryLevel = sl;
   const dr = p.get("dr"); if (dr) out.distalReach = dr;

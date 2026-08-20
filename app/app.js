@@ -58,15 +58,20 @@ const VALID_SITES = new Set(CANDIDATES.map(s => s.id));
 // Every cause name in the app — a hand-edited px= token that names no real pathology is dropped on
 // decode, exactly as an unknown finding or site id is.
 const VALID_PATHOLOGIES = new Set(Object.keys(CAUSES).flatMap(k => CAUSES[k].map(c => c.name)));
+// Every cross-site entity in the roster — a hand-edited ux= token that names no real entity is dropped on
+// decode, exactly as px= is.
+const VALID_ENTITIES = new Set(MULTIFOCAL.map(e => e.name));
 
 function restoreFromURL() {
-  const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES, validPathologies: VALID_PATHOLOGIES });
+  const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES, validPathologies: VALID_PATHOLOGIES, validEntities: VALID_ENTITIES });
   if (st.tokens) S.tokens = st.tokens;
   if (st.onset) S.onset = st.onset;
   if (st.course) S.course = st.course;
   if (st.mode) S.mode = st.mode;
   if (st.selected) S.selected = st.selected;
   if (st.selectedPathology) S.selectedPathology = st.selectedPathology;
+  if (st.selectedEntity) S.selectedEntity = st.selectedEntity;
+  if (st.scope) S.scope = st.scope;
   if (st.dominant) S.dominant = st.dominant;
   if (st.sensoryLevel) S.sensoryLevel = st.sensoryLevel;
   if (st.distalReach) S.distalReach = st.distalReach;
