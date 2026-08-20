@@ -17,6 +17,7 @@ import { feedbackHref } from "./feedback.js";
 import { renderCodeStroke, stopStrokeClock } from "./code-stroke.js";
 import { combinedSites } from "./combined-sites.js";
 import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
+import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName, shortFindingLabel } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
@@ -47,7 +48,7 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), selectedPathology:undefined, scope:"site",
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), selectedPathology:undefined, selectedEntity:undefined, scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
@@ -204,6 +205,7 @@ function loadExample(id) {
   S.course = ex.course || "";
   S.selected = undefined;
   S.selectedPathology = undefined;
+  S.selectedEntity = undefined;
   S.pinned = new Set();
   S.scope = "site";
   renderLocalise();
@@ -257,9 +259,11 @@ function renderResults() {
   // S.selected is the user's click-override; persist it while still shown, else the engine's default.
   let sel = list.find(c => c.site.id === S.selected) || list.find(c => c.site.id === r.defaultSite) || list[0];
   S.selected = sel.site.id;
-  syncURL();
   const tf = tractsFor(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined });
   const together = togetherCard(r, list);
+  // AFTER togetherCard, never before: the cross-site validity gate lives in that call, and the hash IS the
+  // shareable case — writing it from unpruned state would put an entity in the link the card no longer offers.
+  syncURL();
   const has = new Set(["where", "why", "what", "next"]);
   if (together) has.add("together");
   el.innerHTML = resultHeader(sel, list, total, r)
@@ -277,10 +281,20 @@ function renderResults() {
   // Selecting a cause narrows the Next card to that pathology; clicking the selected one clears it.
   // Bound on BOTH cards: the What rows and the Next card's chip carry data-px, so one handler shape
   // serves them and the chip's x needs no separate wiring. card() emits id="sec-<anchor>" (app.js:301).
-  for (const secId of ["sec-what", "sec-next"]) {
+  for (const secId of ["sec-what", "sec-next", "sec-together"]) {
     const sec = document.getElementById(secId);
     if (!sec) continue;
     sec.onclick = e => {
+      // data-ux (a cross-site entity, from the Together card or the Next card's chip) and data-px (a
+      // per-site pathology) are DIFFERENT CLAIMS and must not share a field: four entity names are also
+      // verbatim per-site cause names, so one string could not say which was meant.
+      const uxRow = e.target.closest("[data-ux]");
+      if (uxRow) {
+        const name = uxRow.dataset.ux;
+        S.selectedEntity = S.selectedEntity === name ? undefined : name;
+        renderResults();
+        return;
+      }
       const row = e.target.closest("[data-px]"); if (!row) return;
       const name = row.dataset.px;
       S.selectedPathology = S.selectedPathology === name ? undefined : name;
@@ -463,13 +477,17 @@ function clauseText(clause, sites) {
 // two cards read as one system, plus a `.dloc` line naming why each entry fits (a real site name where a
 // clause resolved to one, the clause's own descriptive text otherwise) and, when the roster names a red
 // flag, the actual SENTENCE (not just the badge) — see review Task 14 fixes B/C.
+// The row is SELECTABLE (spec 2026-08-21) — clicking it narrows the all-sites Next card to this disease.
+// `.cause.sel` carries the terracotta, reusing the allowlisted rule: the selected entity IS the answer the
+// Next card is now about, exactly as the selected per-site pathology is.
 function unifyingRow(e, sites) {
   const whyLine = e.why
     .map(w => (w.satisfiedBy && w.satisfiedBy.id) ? esc(siteName(w.satisfiedBy)) : clauseText(w.clause, sites))
     .filter(Boolean).join(" · ");
   const path = e.confirm ? `<div class="cpath"><span class="cpath-ic">🔎</span><span><b>Confirm on exam:</b> ${esc(e.confirm)}</span></div>` : "";
   const red = e.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(e.red)}</div>` : "";
-  return `<div class="cause"><div class="cline"><span class="cn">${esc(e.name)}</span><span class="lk">${esc(e.likelihood)}</span>${e.red ? `<span class="rf">⚑ RED</span>` : ""}</div>${e.feature ? `<div class="cfeat">${esc(e.feature)}</div>` : ""}${whyLine ? `<div class="dloc">${whyLine}</div>` : ""}${red}${path}</div>`;
+  const on = S.selectedEntity === e.name;
+  return `<div class="cause${on ? " sel" : ""}" data-ux="${esc(e.name)}" role="button" tabindex="0" aria-pressed="${on}"><div class="cline"><span class="cn">${esc(e.name)}</span><span class="lk">${esc(e.likelihood)}</span>${e.red ? `<span class="rf">⚑ RED</span>` : ""}</div>${e.feature ? `<div class="cfeat">${esc(e.feature)}</div>` : ""}${whyLine ? `<div class="dloc">${whyLine}</div>` : ""}${red}${path}</div>`;
 }
 
 // forcingFindings() runs one solve() per LOCALISING finding — ~190 ms on a two-lesion case, and it grew
@@ -495,9 +513,21 @@ function forcingFindingsMemo() {
 // multifocal claim, because a localising sign entered on the wrong side is the one real path to
 // over-calling. The disease list comes second, framed conditionally. Order matters and must not change:
 // guard → which sites → disease list (concordant open, tempo/course mismatches collapsed).
+// THE VALIDITY GATE. `S.selectedEntity` is a claim about the CURRENT site set, so it survives exactly as
+// long as the Together card still offers it. One rule here subsumes the enumerated clears — fewer than two
+// sites, a findings edit that stops the entity firing, a re-pin onto a pair it does not fit — because in
+// every one of those cases the roster stops returning it. Scattering `S.selectedEntity = undefined` across
+// the handlers would be four places to forget instead of one.
+//
+// A findings edit that leaves the entity STILL FIRING deliberately keeps the selection: the claim is still
+// on offer and still true, so dropping it would be busywork for the reader.
+function pruneSelectedEntity(offered) {
+  if (S.selectedEntity && !offered.has(S.selectedEntity)) S.selectedEntity = undefined;
+}
+
 function togetherCard(r, list) {
   const { sites, source } = combinedSites(r, list, S.pinned);
-  if (sites.length < 2) return "";
+  if (sites.length < 2) { S.selectedEntity = undefined; return ""; }
 
   const ff = forcingFindingsMemo();
   // The card can render on the PINNED path even when a single lesion already explains everything (the
@@ -519,6 +549,7 @@ function togetherCard(r, list) {
   const srcLine = `<div class="annot">Showing <b>${source === "pinned" ? "your selection" : "the engine's minimal cover"}</b>: ${sites.map(s => esc(siteName(s))).join(" + ")}.${source === "cover" ? " Pin two sites in the list above to test a different pair." : ""}</div>`;
 
   const u = unifyingDiagnoses(sites, S.tokens, { onset: S.onset || undefined, course: S.course || undefined });
+  pruneSelectedEntity(new Set([...u.concordant, ...u.discordant].map(e => e.name)));
   const fits = u.concordant.length
     ? u.concordant.map(e => unifyingRow(e, sites)).join("")
     : `<div class="empty">No catalogued cross-site process fits this combination — which is itself informative: consider two unrelated lesions.</div>`;
@@ -763,9 +794,11 @@ function nextCard(site, r, list) {
   // S.pinned MUST be passed — see the note in whatCard().
   const { sites } = combinedSites(r, list, S.pinned);
   const combined = sites.length >= 2 && S.scope === "all";
-  // Selection is single-site only: "whose pathology?" has no honest answer across a multifocal set, so the
-  // combined view ignores S.selectedPathology rather than picking one site's arbitrarily.
-  const nx = combined ? combinedNextSteps(sites) : pathologyNextStepsFor(site, S.selectedPathology || null);
+  // Per-site selection is single-site only; the CROSS-SITE selection is the combined view's answer to
+  // "whose pathology?" — the disease the Together card named as spanning these sites (spec 2026-08-21).
+  const nx = combined
+    ? combinedNextSteps(sites, S.selectedEntity || null)
+    : pathologyNextStepsFor(site, S.selectedPathology || null);
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
   return card(cap, nextBlock(nx, combined), "next");
 }
@@ -783,24 +816,31 @@ function nextBlock(nx, combined) {
   const tier = (title, items, scope) => (items && items.length)
     ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}${scope ? `<span class="ns-scope">— ${esc(scope)}</span>` : ""}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
   const px = !combined && nx.pathology;
+  const ux = combined && nx.entity;
   const pxHead = px
     ? `<div class="px-line">Plan for: <button class="px-chip" data-px="${esc(nx.pathology)}" title="Clear the selected pathology">${esc(nx.pathology)} <span class="px-x" aria-hidden="true">×</span></button></div>`
+    : ux
+    ? `<div class="px-line">Plan for: <button class="px-chip" data-ux="${esc(nx.entity)}" title="Clear the selected cross-site diagnosis">${esc(nx.entity)} <span class="px-x" aria-hidden="true">×</span></button></div>`
     : "";
   // The honest fallback (spec 2026-08-18): an uncurated pathology shows the SITE plan and says so, rather
-  // than deriving generic content to fill the gap.
+  // than deriving generic content to fill the gap. There is deliberately NO cross-site equivalent — every
+  // entity has an authored plan (the gate in test/multifocal-next-steps.test.js), so `ux` never falls back.
   const pxFallback = px && !nx.pathologyCurated
     ? `<p class="derived">General plan for this site — not specific to ${esc(nx.pathology)}.</p>` : "";
-  const provenance = combined
+  const provenance = ux
+    ? `<p class="derived">Immediate and first-line steps are merged from each site's own plan; the tiers below them are the workup for ${esc(nx.entity)}.</p>`
+    : combined
     ? `<p class="derived">Merged from each site's individual workup plan — see "This site" for any one site's own tiers.</p>`
     : (nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`);
   return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
     ${pxHead}
-    ${tier("Immediate / bedside", nx.immediate, px ? "site" : "")}
-    ${tier("First-line investigations", nx.investigations, px ? "site" : "")}
+    ${tier("Immediate / bedside", nx.immediate, px || ux ? "site" : "")}
+    ${tier("First-line investigations", nx.investigations, px || ux ? "site" : "")}
+    ${ux ? tier("First-line investigations", nx.entityFirstLine, nx.entity) : ""}
     ${pxFallback}
-    ${tier("Confirmatory / specialist", nx.confirmatory, px && nx.pathologyCurated ? nx.pathology : "")}
-    ${tier("Monitoring / safety-netting", nx.monitoring, px && nx.pathologyCurated ? nx.pathology : "")}
+    ${tier("Confirmatory / specialist", nx.confirmatory, px && nx.pathologyCurated ? nx.pathology : ux ? nx.entity : "")}
+    ${tier("Monitoring / safety-netting", nx.monitoring, px && nx.pathologyCurated ? nx.pathology : ux ? nx.entity : "")}
     ${provenance}`;
 }
 
