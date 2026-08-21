@@ -176,12 +176,20 @@ in §2.3 are both entity names and per-site cause names, so a single string fiel
 The entity is a claim about a **specific set of sites**, so it clears when that set stops being the one it
 was selected against.
 
-- **Cleared** on any findings change; on pinning/unpinning; when the site set drops below 2; and **when the
-  selected entity no longer appears among the Together card's rows at all**. If the picture changes so that
-  MS no longer fires, the plan for MS goes with it rather than lingering behind a card that no longer
-  offers it.
-- **Preserved** across scope-toggle flips. "All sites" → "This site" → back does not destroy it; the site
-  set never changed.
+Implemented as ONE validity gate at render time (`pruneSelectedEntity`) rather than as clears scattered
+through the handlers: the selection survives exactly as long as the Together card still offers it.
+
+- **Cleared** when the selected entity no longer appears among the Together card's rows, which subsumes the
+  cases that would otherwise each need their own clear — fewer than two sites, a findings edit that stops
+  the entity firing, a re-pin onto a pair it does not fit.
+- **Preserved** across scope-toggle flips, and across a findings edit that leaves the entity STILL FIRING —
+  the claim is still on offer and still true, so dropping it would be busywork for the reader. This is the
+  one deliberate difference from the design as first written, which said "cleared on any findings change".
+
+**`syncURL()` had to move BELOW the `togetherCard()` call** in `renderResults`. The gate lives inside that
+call and the hash IS the shareable case, so writing the hash first would publish an entity the card no
+longer offers. Verified in the browser: dropping a finding that collapses the picture to one lesion removes
+`ux=` from the hash in the same frame.
 
 ### 4.4 Two rulings that follow from all-or-none
 
