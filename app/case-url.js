@@ -15,6 +15,9 @@ export function encodeCase(state) {
   if (state.selected) p.set("s", state.selected);
   if (state.selectedPathology) p.set("px", state.selectedPathology);
   if (state.selectedEntity) p.set("ux", state.selectedEntity);
+  // Only the non-default scope is written — "site" is the default, so encoding it would add a parameter to
+  // every link to say nothing.
+  if (state.scope === "all") p.set("sc", "all");
   if (state.dominant && state.dominant !== "left") p.set("dom", state.dominant);
   if (state.sensoryLevel) p.set("sl", state.sensoryLevel);
   if (state.distalReach) p.set("dr", state.distalReach);
@@ -52,6 +55,9 @@ export function decodeCase(hash, opts = {}) {
   // outside the all-sites view, so its presence IS the scope; that is the parameter's definition, not an
   // inference. It degrades safely — a restored case with fewer than two sites never renders the combined
   // view at all, so the scope is simply unused.
+  // `sc` is read BEFORE `ux` so the two can only ever agree: both set the same value, and `ux` continues to
+  // imply the scope on its own for links written before this parameter existed.
+  const sc = p.get("sc"); if (sc === "all") out.scope = "all";
   const ux = p.get("ux");
   if (ux && (!validEntities || validEntities.has(ux))) { out.selectedEntity = ux; out.scope = "all"; }
   const dom = p.get("dom"); if (dom === "left" || dom === "right") out.dominant = dom;

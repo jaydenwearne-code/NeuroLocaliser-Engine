@@ -5,6 +5,7 @@ import { nextStepsFor } from "../src/data/nextSteps.js";
 import { causesFor } from "../src/data/causes.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
+import { compartmentOf } from "../src/model/compartments.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -687,6 +688,34 @@ for (const [lvl, part] of REGION_H_SITES) {
      missing.length === 0);
   ok(`INVARIANT: no site prompts fundal photography + OCT without one of the three routes (${unjustified.length} unjustified: ${unjustified.slice(0, 5).join(", ")})`,
      unjustified.length === 0);
+
+  // THE PREDICTED-vs-OBSERVED QUESTION, closed by construction (2026-08-21).
+  //
+  // Route (a) keys on the site's expectedFindings — PREDICTED, not observed — which was recorded as a
+  // residual hole: in principle the card could order imaging to characterise a deficit the Why card
+  // simultaneously lists as "predicted but not reported".
+  //
+  // Measured, it cannot. Every site firing via route (a) is an ANTERIOR VISUAL PATHWAY site — the optic
+  // nerve (AION, neuritis, canal), the orbital apex, the retina, the chiasm. At those places the lesion
+  // CONTAINS the retinal ganglion cell axons, so the disc and the RNFL are the right things to measure
+  // BECAUSE OF WHERE THE LESION IS, not because the patient reported a visual symptom. Ordering the test
+  // is how you confirm or refute that candidate localisation — arguably the system working rather than
+  // failing. The genuine bug was retro-chiasmal sites, and the chiasm rule above removed those.
+  //
+  // So the fix is this assertion rather than plumbing observed findings through nextStepsFor(), which
+  // would change a widely-called signature and break the byte-identical guarantees for no clinical gain.
+  // It fails the moment a POSTERIOR site starts predicting an anterior visual token — the only way the
+  // hole could reopen.
+  const ANTERIOR_COMPARTMENTS = ["optic", "skull_base"];
+  const posteriorFiringOnPrediction = [];
+  for (const s of candidateSites()) {
+    let exp; try { exp = [...expectedFindings(s)]; } catch { continue; }
+    if (!exp.some(t => ANTERIOR.test(t))) continue;          // not route (a)
+    if (PREGENIC(s)) continue;                                // route (b) is site-based, not predicted
+    if (!ANTERIOR_COMPARTMENTS.includes(compartmentOf(s))) posteriorFiringOnPrediction.push(s.id);
+  }
+  ok(`INVARIANT: only ANTERIOR-pathway sites fire on a PREDICTED visual token (${posteriorFiringOnPrediction.length} posterior: ${posteriorFiringOnPrediction.slice(0, 5).join(", ")})`,
+     posteriorFiringOnPrediction.length === 0);
 }
 
 // --- combinedNextSteps: one plan for a multifocal picture (spec 2026-08-14 §6) ---

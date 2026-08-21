@@ -96,5 +96,28 @@ ok("accepts the stroke mode", decodeCase("#m=stroke", {}).mode === "stroke");
   ok("px and ux coexist in one URL", both.selectedPathology === "Cardioembolism" && both.selectedEntity === "Multiple sclerosis");
 }
 
+// ---- sc= : the scope toggle (2026-08-21) ----
+// Previously scope did not round-trip at all, so sharing an "All N sites" view landed the recipient in
+// "This site" — the link showed a different card than the one the sender was reading.
+{
+  const enc = encodeCase({ tokens: new Set(["weak_leg@left"]), scope: "all" });
+  ok("encodes the all-sites scope as sc=", /sc=all/.test(enc));
+  ok("round-trips the scope", decodeCase("#" + enc, { validFindings }).scope === "all");
+
+  ok("the default scope emits no sc key", !/sc=/.test(encodeCase({ tokens: new Set(["weak_leg@left"]), scope: "site" })));
+  ok("an absent scope emits no sc key", !/sc=/.test(encodeCase({ tokens: new Set(["weak_leg@left"]) })));
+
+  // Hand-edited junk is dropped, exactly as an unknown finding or site id is.
+  ok("a bogus sc value is dropped", decodeCase("#sc=banana", { validFindings }).scope === undefined);
+
+  // ux still implies the scope on its own, so links written before sc= existed keep working.
+  const validEntities = new Set(["Multiple sclerosis"]);
+  ok("ux alone still implies the all-sites scope",
+     decodeCase("#ux=" + encodeURIComponent("Multiple sclerosis"), { validEntities }).scope === "all");
+  // And the two agree rather than fighting when both are present.
+  const both = decodeCase("#" + encodeCase({ scope: "all", selectedEntity: "Multiple sclerosis" }), { validEntities });
+  ok("sc and ux agree when both are present", both.scope === "all" && both.selectedEntity === "Multiple sclerosis");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
