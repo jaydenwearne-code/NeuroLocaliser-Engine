@@ -6,7 +6,8 @@
 import { CROSSES, NON_LATERALISED, isFinding } from "../src/model/findings.js";
 import { LOCALISING } from "../src/engine/score.js";
 import { STRUCTURES } from "../src/model/structures.js";
-import { solve } from "../src/engine/inverse.js";
+import { solve, candidateSites } from "../src/engine/inverse.js";
+import { expectedFindings } from "../src/engine/forward.js";
 import { nameForSite } from "../src/data/syndromes.js";
 
 let pass = 0, fail = 0;
@@ -39,6 +40,24 @@ ok("Foville (gaze palsy + cn7 + hemiparesis) -> pons medial", /pons_medial/.test
 
 // ---- report ----
 console.log("\nNeuroLocaliser — TIER 2 · BRAINSTEM REFINEMENTS (pseudobulbar · abducens nucleus)\n" + "=".repeat(52));
+// --- THE SUPERIOR CEREBELLAR PEDUNCLE DECUSSATES (owner ruling, 2026-08-21) ---
+// Cerebellar signs are ipsilateral as a rule, and `limb_ataxia` defaults to ipsilateral because of it. The
+// SCP is the exception: it crosses in the caudal midbrain, so at this level its fibres have ALREADY
+// crossed and a lesion gives CONTRALATERAL limb ataxia. The model hedged ("contralateral/ipsilateral") in
+// a note while silently emitting ipsilateral, and NO TEST CAUGHT IT — the whole suite passed on the fix,
+// which is why this one exists.
+{
+  const toks = [...expectedFindings(candidateSites().find(s => s.id === "left_midbrain_medial"))]
+    .filter(t => t.startsWith("limb_ataxia"));
+  ok("a LEFT midbrain SCP lesion gives RIGHT limb ataxia (it has decussated)", toks.includes("limb_ataxia@right"));
+  ok("...and NOT ipsilateral ataxia", !toks.includes("limb_ataxia@left"));
+
+  // The contrast that proves the rule is about the LEVEL, not the finding: below the decussation the
+  // inferior cerebellar peduncle keeps the ipsilateral default.
+  const icp = [...expectedFindings(candidateSites().find(s => s.id === "left_medulla_lateral"))];
+  ok("the medullary ICP is still IPSILATERAL (below the decussation)", icp.includes("limb_ataxia@left"));
+}
+
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);
 console.log("=".repeat(52));
 console.log(`${pass} passed, ${fail} failed\n`);
