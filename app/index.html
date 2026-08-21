@@ -288,6 +288,13 @@
   .eg span{font-size:var(--fs-cap);color:var(--faint);}
   .eg:hover{border-color:var(--navy-2);background:var(--band);}
   @media (max-width:560px){ .eg{flex:1 1 45%;} }
+  /* The 13 cross-site archetypes sit behind a disclosure: the on-ramp stays the four cards chosen so each
+     teaches a different output card, and 13 more would bury that. Deliberately no accent colour here —
+     an on-ramp is neither the product's identity nor the answer. */
+  .egs-more{margin-top:8px;}
+  .egs-more>summary{font-size:var(--fs-cap);color:var(--faint);cursor:pointer;list-style:revert;}
+  .egs-more>summary:hover{color:var(--ink);}
+  .egs-more .egs-row{margin-top:7px;}
   /* code-stroke worksheet */
   .cs-banner{border:1px solid var(--gold);background:var(--gold-bg);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:var(--fs-meta);margin:10px 0;}
   .cs-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px;}

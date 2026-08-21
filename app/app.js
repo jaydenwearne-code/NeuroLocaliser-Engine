@@ -21,7 +21,7 @@ import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName, shortFindingLabel } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
-import { EXAMPLES } from "./examples.js";
+import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -204,15 +204,20 @@ function markSides() {
 // case, so a tester can share the exact example they were looking at. renderLocalise() rather than a
 // narrower re-render, because an example may introduce a cord finding and so need the level inputs mounted.
 function loadExample(id) {
-  const ex = EXAMPLES.find(e => e.id === id); if (!ex) return;
+  const ex = EXAMPLES.find(e => e.id === id) || CROSS_SITE_EXAMPLES.find(e => e.id === id);
+  if (!ex) return;
   S.tokens = new Set(ex.tokens);
   S.onset = ex.onset || "";
   S.course = ex.course || "";
   S.selected = undefined;
   S.selectedPathology = undefined;
-  S.selectedEntity = undefined;
-  S.pinned = new Set();
-  S.scope = "site";
+  // A CROSS-SITE archetype arrives with its claim already made — pinned pair, all-sites scope, entity
+  // selected — so the case opens on the workup it exists to teach rather than making the reader rebuild it.
+  // The validity gate still governs: if the entity does not fire, pruneSelectedEntity drops it on the first
+  // render, so a stale archetype degrades to an ordinary two-lesion case instead of lying.
+  S.pinned = new Set(ex.pinned || []);
+  S.selectedEntity = ex.entity || undefined;
+  S.scope = ex.entity ? "all" : "site";
   renderLocalise();
 }
 
@@ -222,10 +227,15 @@ function renderChips() {
     // The on-ramp, not furniture: only ever shown while the pane is empty, gone the moment the user enters
     // anything. The old copy pointed at examples that had not existed since presets were removed in the
     // 2026-07-25 UI restructure — it promised something the app could not deliver.
+    const egBtn = e => `<button class="eg" data-eg="${esc(e.id)}"><b>${esc(e.label)}</b><span>${esc(e.teaches)}</span></button>`;
+    // The four worked cases stay the on-ramp — each teaches a different output card. The 13 cross-site
+    // archetypes sit behind a disclosure rather than beside them: they answer a narrower question ("what
+    // ONE disease hits both these places?") and putting 17 cards in one row would bury the four.
     el.innerHTML = `<div class="egs"><span class="egs-lead">No findings yet — tick from the exam steps, or start from a case:</span>
-      <div class="egs-row">${EXAMPLES.map(e =>
-        `<button class="eg" data-eg="${esc(e.id)}"><b>${esc(e.label)}</b><span>${esc(e.teaches)}</span></button>`
-      ).join("")}</div></div>`;
+      <div class="egs-row">${EXAMPLES.map(egBtn).join("")}</div>
+      <details class="egs-more"><summary>One disease, several places — ${CROSS_SITE_EXAMPLES.length} cross-site archetypes</summary>
+        <div class="egs-row">${CROSS_SITE_EXAMPLES.map(egBtn).join("")}</div>
+      </details></div>`;
     el.onclick = e => { const b = e.target.closest("[data-eg]"); if (b) loadExample(b.dataset.eg); };
     return;
   }
