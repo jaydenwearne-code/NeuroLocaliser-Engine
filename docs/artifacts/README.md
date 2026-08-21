@@ -6,16 +6,22 @@ previously kept only in a session scratchpad, which is transient; keep editing t
 
 | File | What it is | Favicon | URL (republish in place) |
 |---|---|---|---|
-| `architecture.html` | Flow diagram — input → `solve()` pipeline → output, worked Brown-Séquard example, coverage strip | 🧠 | https://claude.ai/code/artifact/4ea6afce-05fb-45a9-aba5-9ff8571c0ecc |
+| `architecture.html` | Flow diagram — input → `solve()` pipeline → output, worked Brown-Séquard example, coverage strip | 🧠 | https://claude.ai/code/artifact/51b04e18-39c3-44c2-b884-6f63a58ae049 |
 | `anatomy-model.html` | Anatomy model — every structure with its finding, crossing (IPSI/CONTRA/BILAT/MIDLINE/NONE) and territory; doubles as the neuroanatomist review sheet | 🩻 | https://claude.ai/code/artifact/8194700c-52fb-48ba-a83e-d61e48b904de |
 
 
-> **The original URLs died.** Both artifacts were first published from a session on the original Mac, and
-> by 2026-08-21 neither resolved — `WebFetch` returned "artifact not found" and the account's artifact
-> list was empty. `anatomy-model.html` was therefore republished as a NEW artifact on that date (URL in
-> the table above). **`architecture.html`'s URL below is still the dead one** and will need the same
-> treatment when it is next published. Publishing without passing `url` mints a new artifact rather than
-> updating, so always pass the URL from the table.
+> **The original URLs died, and both were replaced on 2026-08-21.** Both artifacts were first published
+> from a session on the original Mac; by that date neither resolved — `WebFetch` returned "artifact not
+> found" and the account's artifact list was empty. Both were republished as NEW artifacts, and the table
+> above now carries the live URLs. **Publishing without passing `url` mints a new artifact rather than
+> updating one**, so always pass the URL from the table — and if a URL ever 404s again, republish and
+> update the table rather than assuming the artifact is merely unshared.
+
+> **Both had drifted, and the drift was not cosmetic.** The anatomy sheet covered 29% of the model and
+> carried 39 rows for structures that no longer existed. The flow diagram's worked case could not have
+> been entered into the engine at all: its input finding (`hemiparesis`) and two of its structure ids
+> (`cst_cord`) were deleted by the raw-observations refactor. **Validate ids against the model after
+> editing either file** — the anatomy sheet by structure id, the flow diagram by every `.chip`.
 
 ## How to update (from any session)
 
