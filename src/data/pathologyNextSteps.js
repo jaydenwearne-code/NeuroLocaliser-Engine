@@ -97,6 +97,11 @@ export const PATHOLOGY_ALIAS = {
   // Round 7: one disease, two spellings, at disjoint sites — the trochlear nucleus and the nerve's
   // cisternal course. Whichever way it is written, the work-up is old photographs and a fusion range.
   "Congenital fourth-nerve palsy (decompensating)": "Decompensated congenital fourth nerve palsy",
+
+  // Round 10: the same disease as the congenital-bucket plan, differing ONLY BY A HYPHEN — which is how it
+  // came to sit in two categories with two spellings and no plan. Aliased rather than re-authored.
+  "Normal-pressure hydrocephalus": "Normal pressure hydrocephalus",
+  "Normal-pressure hydrocephalus (the mimic)": "Normal pressure hydrocephalus",
 };
 
 export const PATHOLOGY_NEXT = {
