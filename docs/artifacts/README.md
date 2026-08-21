@@ -25,5 +25,26 @@ preview locally — verify statically (tag balance; cross-check structure ids ag
 
 Both are living docs. After adding a region: add its structures to `anatomy-model.html` (a region
 section + any new laterality badges), and update the coverage strip + test count in
-`architecture.html`. Current coverage: brainstem, spinal cord (core four / sensory level / central /
-cauda-conus), and the cerebral cortex.
+`architecture.html`.
+
+**Current coverage (2026-08-21): the WHOLE model — all 528 structures across 36 levels**, in 16 region
+sections. `anatomy-model.html` was rebuilt from scratch on that date because it had drifted badly: 194
+rows, of which **39 named structures that no longer existed**, while **373 model structures were
+missing** — 29% real coverage. It is the neuroanatomist review sheet, so that drift meant the one
+document meant to validate the engine described under a third of it.
+
+**If you edit it, verify against the model afterwards.** Every id in `src/model/structures.js` must
+appear exactly once; no id may appear that the model does not define; and every hemisphere-gated
+structure needs a `DOM` / `NON-DOM` marker matching its `hemisphere` field. That last check caught a real
+miss during the rebuild (`thal_pulvinar`) — and it is invisible on the page, because a gateless row looks
+perfectly plausible.
+
+**The `.fn` column is REVIEW COPY, not the model's `note` field.** The notes are engineering prose: they
+reference other structure ids inline, hedge, and explain modelling decisions. Rewrite each as the finding
+in clinical English — finding first, with the discriminator in bold (*towards* the weak side, triceps
+*spared*, inversion *intact*).
+
+**Local preview:** `node app/serve.mjs`, then open `/docs/artifacts/anatomy-model.html`. These files are
+fragments with no `<head>` of their own — the artifact platform supplies it — so correct rendering relies
+on the server sending `charset=utf-8`. It does; if em-dashes ever look like mojibake, that is the server,
+never the file.

@@ -8,8 +8,13 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = normalize(join(fileURLToPath(new URL(".", import.meta.url)), ".."));
 const PORT = process.env.PORT || 8137;
-const MIME = { ".html":"text/html", ".js":"text/javascript", ".mjs":"text/javascript",
-  ".css":"text/css", ".json":"application/json", ".svg":"image/svg+xml" };
+// charset=utf-8 on every text type. Without it the browser guesses, and a file with no <meta charset> of
+// its own renders em-dashes as mojibake — which is how docs/artifacts/*.html looked locally, since those
+// are fragments whose <head> is supplied by the artifact platform. The files were always valid UTF-8; only
+// the local preview lied. Stated here because the tempting "fix" is to mangle the content instead.
+const MIME = { ".html":"text/html; charset=utf-8", ".js":"text/javascript; charset=utf-8",
+  ".mjs":"text/javascript; charset=utf-8", ".css":"text/css; charset=utf-8",
+  ".json":"application/json; charset=utf-8", ".svg":"image/svg+xml; charset=utf-8" };
 
 const server = createServer(async (req, res) => {
   try {
