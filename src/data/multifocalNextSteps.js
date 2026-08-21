@@ -1,6 +1,6 @@
 // multifocalNextSteps.js — THE CROSS-SITE WORKUP LAYER (spec 2026-08-21).
 //
-//   multifocalPlanFor(name) -> { firstLine, confirmatory, monitoring, urgency, referral } | null
+//   multifocalPlanFor(name) -> { firstLine, confirmatory, monitoring, urgency, referral, because } | null
 //
 // The Together card names the process that spans the sites; this gives that process its own workup, so the
 // all-sites Next card can stop unioning per-site plans once the cross-site claim has been made. A union of
@@ -33,8 +33,16 @@ import { MULTIFOCAL } from "./multifocal.js";
 const URGENCY_RANK = { emergency: 3, urgent: 2, routine: 1 };
 const RED_FLOOR = "urgent";
 
-export const mfPlan = (entity, { firstLine = [], confirmatory = [], monitoring = [], urgency = "routine", referral = "" }) =>
-  ({ entity, firstLine, confirmatory, monitoring, urgency, referral });
+// `because` — OPTIONAL, and it exists because urgency now follows the SELECTION (owner ruling 2026-08-21).
+// A card that asserts its own badge should be able to say why, and for some diseases the badge is NOT
+// earned by the disease itself but by what it can cause: metastases are an emergency because of cord
+// compression, not because a deposit is inherently time-critical. Rendered directly beneath the urgency
+// band, never inside `referral` — "who to refer to" is not "why this badge", and merging them is the
+// LEVEL-is-not-its-contents error in another costume.
+//
+// Omit it where the disease IS the emergency (an embolic shower is time-critical on its own account).
+export const mfPlan = (entity, { firstLine = [], confirmatory = [], monitoring = [], urgency = "routine", referral = "", because = "" }) =>
+  ({ entity, firstLine, confirmatory, monitoring, urgency, referral, because });
 
 export const MULTIFOCAL_NEXT = {
   "Multiple sclerosis": mfPlan("Multiple sclerosis", {
@@ -160,6 +168,7 @@ export const MULTIFOCAL_NEXT = {
       "Involve oncology and palliative care in parallel, not in sequence",
     ],
     urgency: "emergency",
+    because: "Emergency for what the deposits CAN CAUSE rather than for the deposits themselves — cord compression and raised intracranial pressure are the time-critical complications, and both are still reversible at the point they are found.",
     referral: "Oncology urgently; neurosurgery or spinal surgery same-day if there is cord compression.",
   }),
 
@@ -181,6 +190,7 @@ export const MULTIFOCAL_NEXT = {
       "Palliative care alongside oncology from the point of diagnosis",
     ],
     urgency: "emergency",
+    because: "Emergency for what it CAN CAUSE — obstructive hydrocephalus and progressive cranial neuropathy — not because the meningeal deposits themselves demand treatment within hours.",
     referral: "Oncology / neuro-oncology urgently; neurosurgery if hydrocephalus develops.",
   }),
 
@@ -202,6 +212,7 @@ export const MULTIFOCAL_NEXT = {
       "Haemato-oncology referral for a methotrexate-based regimen",
     ],
     urgency: "emergency",
+    because: "Emergency for a REASON OF TIMING, not of physiology — every day before biopsy is a day someone may give steroids, and steroids dissolve the lesion and the diagnosis with it. Mass effect, where present, is the second reason.",
     referral: "Neuro-oncology / haematology urgently; neurosurgery for the biopsy.",
   }),
 
@@ -322,5 +333,5 @@ export function multifocalPlanFor(name) {
   const floored = RED_BY_ENTITY.get(name) && URGENCY_RANK[p.urgency] < URGENCY_RANK[RED_FLOOR]
     ? RED_FLOOR : p.urgency;
   return { firstLine: p.firstLine, confirmatory: p.confirmatory, monitoring: p.monitoring,
-           urgency: floored, referral: p.referral };
+           urgency: floored, referral: p.referral, because: p.because };
 }

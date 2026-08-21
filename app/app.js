@@ -849,6 +849,7 @@ function nextBlock(nx, combined) {
     : (nx.curated ? "" : `<p class="derived">Tiers derived from site type + urgency — not individually curated.</p>`);
   return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
+    ${ux && nx.entityBecause ? `<p class="derived ns-because"><b>Why this urgency:</b> ${esc(nx.entityBecause)}</p>` : ""}
     ${pxHead}
     ${tier("Immediate / bedside", nx.immediate, px || ux ? "site" : "")}
     ${tier("First-line investigations", nx.investigations, px || ux ? "site" : "")}

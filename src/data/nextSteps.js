@@ -2418,6 +2418,9 @@ export function combinedNextSteps(sites, entityName = null) {
     monitoring: plan.monitoring,
     urgency: plan.urgency,
     referral: plan.referral,
+    // Why THIS badge — present only where the urgency is earned by a complication rather than by the
+    // disease itself. Rendered under the urgency band; empty string where the disease IS the emergency.
+    entityBecause: plan.because || "",
     entity: entityName,
   };
 }

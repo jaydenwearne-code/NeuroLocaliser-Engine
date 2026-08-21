@@ -161,6 +161,24 @@ const PAIR = [byId("left_skull_base_optic_neuritis"), byId("left_cord_lateral")]
      combinedNextSteps(quietPair, "NMOSD (neuromyelitis optica spectrum disorder)").urgency === "emergency");
 }
 
+// --- 12b: `because` — the badge can say why it is what it is ---
+// Added on the owner's ruling that metastases and leptomeningeal disease are emergencies BECAUSE OF WHAT
+// THEY CAN CAUSE. It is optional by design: omitted where the disease IS the emergency.
+{
+  const withBecause = Object.keys(MULTIFOCAL_NEXT).filter(n => multifocalPlanFor(n).because);
+  ok("at least one plan explains its urgency", withBecause.length > 0);
+  for (const n of withBecause) {
+    const p = multifocalPlanFor(n);
+    ok(`\`${n}\` states why it carries its badge`, p.because.trim().length > 0);
+    // A `because` on a routine badge would be explaining nothing.
+    ok(`\`${n}\` only explains a raised badge`, p.urgency !== "routine");
+  }
+  const carried = combinedNextSteps(PAIR, "Metastases");
+  ok("the reason reaches the card", carried.entityBecause === multifocalPlanFor("Metastases").because);
+  ok("a plan without one carries an empty string, never undefined",
+     combinedNextSteps(PAIR, "Multiple sclerosis").entityBecause === "");
+}
+
 // --- 12: THE SAFETY IS IN THE TIERS, NOT THE BADGE ---
 // De-escalating the badge must never remove a bedside step. This is what makes ruling 10 safe, so it is
 // asserted rather than assumed.

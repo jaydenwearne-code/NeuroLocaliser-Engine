@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**69 test suites / 5192 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**69 test suites / 5201 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -696,6 +696,15 @@ first-line remain the union, so a quieter badge never removes a bedside step —
 assumed. The only mechanical floor left is the entity's own `red` flag: a must-not-miss cannot read routine.
 MS on an emergency-badged pair now reads *urgent*; NMOSD reads *emergency* on its own merit.
 
+**A PLAN MAY EXPLAIN ITS OWN BADGE (`because`, owner ruling 2026-08-21).** Optional, rendered directly
+under the urgency band as "Why this urgency:". It exists because urgency now follows the selection, so a
+card that asserts a badge should be able to justify it — and for three diseases the badge is earned by what
+they CAN CAUSE, not by themselves: metastases (cord compression, raised pressure), leptomeningeal disease
+(hydrocephalus), primary CNS lymphoma (a timing reason — every day before biopsy is a day someone may give
+steroids and dissolve the diagnosis). **It is deliberately NOT part of `referral`:** "who to refer to" is
+not "why this badge", and merging them is the LEVEL-is-not-its-contents error in another costume. Omitted
+where the disease IS the emergency — an embolic shower is time-critical on its own account.
+
 **NO CROSS-SITE FALLBACK STATE EXISTS.** There is no equivalent of `pathologyCurated: false` and no
 "General plan — not specific to X" label, because the hard gate guarantees every entity has a plan. Do not
 add one as a convenience: it is the seam through which "some rows behave differently from others" returns.
@@ -763,7 +772,7 @@ would mean choosing the picture to satisfy the test rather than the clinic.
 > the module header. Round 1 has had the owner's read (it produced the urgency ruling above); **rounds 2
 > and 3 have not.** The archetypes above are the intended review surface.
 
-69 suites / 5192 assertions green. Spec/plan:
+69 suites / 5201 assertions green. Spec/plan:
 `docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,
 `docs/superpowers/plans/2026-08-21-together-card-cross-site-workup.md`.
 
