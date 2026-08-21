@@ -2399,15 +2399,24 @@ export function combinedNextSteps(sites, entityName = null) {
   };
   const plan = entityName ? multifocalPlanFor(entityName) : null;
   if (!plan) return base;
-  // THE SITE UNION IS A FLOOR, never a ceiling — the same shape as resolveUrgency()'s red floor. Selecting
-  // a cross-site disease must not de-escalate a picture that contains an emergency-badged site.
-  const urgency = URGENCY_RANK[plan.urgency] >= URGENCY_RANK[siteUrgency] ? plan.urgency : siteUrgency;
+  // URGENCY FOLLOWS THE SELECTION (owner ruling, 2026-08-21 — this REVERSES the site-union floor the spec
+  // was first written with). Selecting the disease IS the claim, so the badge speaks for the disease: MS
+  // across two brainstem sites is urgent, not an emergency, even though each site alone badges emergency
+  // for its own vascular differential. This is the SAME ruling tranche 1 made for the per-site layer — "an
+  // authored plan MAY sit below the site's badge: specificity is the point, and a tool that only escalates
+  // cries wolf" — and the two layers must not disagree about it.
+  //
+  // WHAT KEEPS THIS SAFE IS THE TIER SPLIT, not the badge. `immediate` and `investigations` remain the site
+  // union above, so a de-escalated badge never removes a single emergency bedside step from the screen; it
+  // only stops the card shouting about a disease that does not warrant it. The one mechanical floor that
+  // survives is the entity's own `red` flag, applied inside multifocalPlanFor() — a must-not-miss can never
+  // render as routine.
   return {
     ...base,
     entityFirstLine: plan.firstLine,
     confirmatory: plan.confirmatory,
     monitoring: plan.monitoring,
-    urgency,
+    urgency: plan.urgency,
     referral: plan.referral,
     entity: entityName,
   };

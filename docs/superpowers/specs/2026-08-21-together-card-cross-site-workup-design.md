@@ -114,18 +114,31 @@ replacing keeps the safety floor: an urgent MRI whole spine does not vanish beca
 *disabled* rather than *unaffected*) and needs no new component. The reader sees at a glance which tests
 they would have ordered anyway and which the cross-site claim is buying.
 
-### 3.1 Urgency: the site union is a floor
+### 3.1 Urgency follows the selection
+
+> **AMENDED 2026-08-21, after the owner saw round 1 running.** This section originally made the site union a
+> hard FLOOR. That was wrong, and wrong in a way the codebase already knew about.
 
 ```
-urgency = max(entity plan urgency, most-urgent-site urgency)      // max over URGENCY_RANK, not strings
+urgency = the entity plan's own urgency        // floored ONLY by the entity's own `red` flag
 ```
 
-with a further `urgent` floor when the entity carries a `red` string. Selecting MS must never de-escalate a
-picture containing a cord site badged emergency.
+The first draft read `max(entity plan urgency, most-urgent-site urgency)`, on the reasoning that selecting a
+disease must never de-escalate a picture. The owner's correction: **MS is not imminently life-threatening,
+and if the user has selected MS the ruling should be based on the selection.** Selecting the disease IS the
+claim; the badge speaks for the claim.
 
-This is not a new rule, it is two existing ones applied together: `combinedNextSteps`'s *"urgency is the
-MOST urgent across the set, never an average"*, and `resolveUrgency`'s red floor, which *"may RAISE urgency
-and never caps it"*.
+**This restores consistency rather than breaking it.** Tranche 1 made exactly this ruling for the per-site
+layer — *"An authored plan MAY sit below the site's badge (owner ruling): specificity is the point, and a
+tool that only escalates cries wolf."* The floor version had the cross-site layer contradicting the
+per-site layer on the same question.
+
+**What keeps it safe is §3's tier split, not the badge.** `immediate` and `investigations` remain the site
+union, so a de-escalated badge never removes a single emergency bedside step from the screen — it only stops
+the card shouting about a disease that does not warrant it. Asserted directly (§5 test 12), not assumed.
+
+The one mechanical floor that survives is the entity's own `red` flag, applied inside `multifocalPlanFor()`:
+a must-not-miss can never render as routine. MS carries a red flag, so it floors at `urgent` regardless.
 
 ### 3.2 No fallback state
 
@@ -206,8 +219,11 @@ New suite `test/multifocal-next-steps.test.js`:
 3. **`combinedNextSteps(sites, null)` is byte-identical to today's `combinedNextSteps(sites)`** across a
    sweep of site pairs, captured as a baseline before the change — the technique that proved the tranche-2
    content split lossless.
-4. **The urgency floor never de-escalates** — for every (pair, entity), the resulting urgency is at least
-   the most-urgent-site urgency.
+4. **Urgency is the ENTITY's, in both directions** — for every (pair, entity), the resulting urgency equals
+   the entity plan's own, whether that raises or lowers the site badge (§3.1 as amended). Plus a named case
+   for the one the owner reported: MS de-escalates an emergency-badged pair to urgent.
+12. **The safety is in the tiers, not the badge** — every immediate and site first-line step survives a
+   de-escalation. This is what makes assertion 4 safe, so it is asserted rather than assumed.
 5. **First-line is a superset** of the site union's first-line.
 6. **The colliding names of §2.3 produce a different plan cross-site than per-site.** Asserted over the
    three that actually have a per-site plan under the same name — MND, Neurosarcoidosis, NF2. *Multiple

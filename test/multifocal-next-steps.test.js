@@ -125,30 +125,55 @@ const PAIR = [byId("left_skull_base_optic_neuritis"), byId("left_cord_lateral")]
   ok("the entity is reported back", withE.entity === "Multiple sclerosis");
 }
 
-// --- 10: THE URGENCY FLOOR — selecting an entity may raise urgency, never lower it ---
-// Swept over real pairs rather than one fixture: the failure this guards against is a chronic-sounding
-// entity silently de-escalating a picture that contains a cord site badged emergency.
+// --- 10: URGENCY FOLLOWS THE SELECTION, in both directions ---
+// Owner ruling 2026-08-21, REVERSING the site-union floor this layer was first built with: selecting the
+// disease IS the claim, so the badge speaks for the disease and may sit BELOW the site's. Same ruling
+// tranche 1 made per-site — "a tool that only escalates cries wolf" — and the two layers must agree.
+//
+// Swept over real pairs rather than one fixture, so this pins the rule and not one lucky example.
 {
-  const RANK = { emergency: 3, urgent: 2, routine: 1 };
   const sample = [byId("left_skull_base_optic_neuritis"), byId("left_cord_lateral"),
                   byId("left_nerve_median_proximal"), byId("left_cord_hemi")].filter(Boolean);
-  let violations = 0, checked = 0;
+  let mismatches = 0, checked = 0, deEscalations = 0;
   for (let i = 0; i < sample.length; i++) for (let j = i + 1; j < sample.length; j++) {
     const pair = [sample[i], sample[j]];
-    const floor = RANK[combinedNextSteps(pair).urgency];
+    const siteUrgency = combinedNextSteps(pair).urgency;
     for (const name of Object.keys(MULTIFOCAL_NEXT)) {
       checked++;
-      if (RANK[combinedNextSteps(pair, name).urgency] < floor) violations++;
+      const got = combinedNextSteps(pair, name).urgency;
+      if (got !== multifocalPlanFor(name).urgency) mismatches++;
+      if (got !== siteUrgency) deEscalations++;               // just to prove the sweep is not vacuous
     }
   }
-  ok(`the site urgency is a FLOOR across ${checked} (pair, entity) combinations`, violations === 0, `${violations} de-escalations`);
+  ok(`urgency is the ENTITY's across ${checked} (pair, entity) combinations`, mismatches === 0, `${mismatches} overridden`);
+  ok("the sweep actually exercises a change of badge", deEscalations > 0);
 }
 
-// --- 11: an emergency entity RAISES a routine pair ---
+// --- 11: an entity may sit BELOW the site badge, and may also raise it ---
+// The concrete case the owner reported: MS across sites whose own vascular differential badges emergency
+// is urgent, not an emergency. And the reverse still works — an emergency entity reaches a quieter pair.
 {
-  const pair = [byId("left_nerve_median_proximal"), byId("left_skull_base_optic_neuritis")].filter(Boolean);
-  const withE = combinedNextSteps(pair, "NMOSD (neuromyelitis optica spectrum disorder)");
-  ok("an emergency entity plan reaches the card", withE.urgency === "emergency");
+  const emergencyPair = [byId("left_cord_lateral"), byId("left_cord_hemi")].filter(Boolean);
+  const plain = combinedNextSteps(emergencyPair).urgency;
+  ok("the fixture pair badges emergency on its own", plain === "emergency");
+  ok("MS DE-ESCALATES it to urgent", combinedNextSteps(emergencyPair, "Multiple sclerosis").urgency === "urgent");
+
+  const quietPair = [byId("left_nerve_median_proximal"), byId("left_skull_base_optic_neuritis")].filter(Boolean);
+  ok("an emergency entity plan still reaches a quieter pair",
+     combinedNextSteps(quietPair, "NMOSD (neuromyelitis optica spectrum disorder)").urgency === "emergency");
+}
+
+// --- 12: THE SAFETY IS IN THE TIERS, NOT THE BADGE ---
+// De-escalating the badge must never remove a bedside step. This is what makes ruling 10 safe, so it is
+// asserted rather than assumed.
+{
+  const emergencyPair = [byId("left_cord_lateral"), byId("left_cord_hemi")].filter(Boolean);
+  const plain = combinedNextSteps(emergencyPair);
+  const deEscalated = combinedNextSteps(emergencyPair, "Multiple sclerosis");
+  ok("every immediate/bedside step survives the de-escalation",
+     plain.immediate.every(i => deEscalated.immediate.includes(i)));
+  ok("every site first-line test survives the de-escalation",
+     plain.investigations.every(i => deEscalated.investigations.includes(i)));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
