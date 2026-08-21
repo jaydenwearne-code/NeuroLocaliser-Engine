@@ -419,8 +419,13 @@ function resultHeader(sel, list, total, r) {
 // styles. They are ONE concept and get one component. The REASON text still distinguishes them, because the
 // mechanisms genuinely differ: a known-negative EXCLUDES a site, a tempo/course mismatch only DEMOTES it.
 // `reason` is trusted HTML (literal copy we control, sometimes with <b>) — never user input.
-function setAside(reason, n, body) {
-  return `<details class="setaside"><summary>Set aside — ${reason} <span class="c">${n}</span></summary>
+// `open` keeps a band expanded across a re-render. renderResults() rebuilds the whole results column, so a
+// <details> the user opened closes again on the next click — which is invisible for a purely informational
+// band, but wrong the moment the band contains something SELECTABLE: clicking a demoted cross-site entity
+// re-renders, the band snaps shut, and the row you just chose disappears while its chip quietly appears two
+// cards away. Callers pass `open` when the band holds the current selection.
+function setAside(reason, n, body, open = false) {
+  return `<details class="setaside"${open ? " open" : ""}><summary>Set aside — ${reason} <span class="c">${n}</span></summary>
     <div class="setaside-body">${body}</div></details>`;
 }
 
@@ -575,9 +580,13 @@ function togetherCard(r, list) {
     const axes = [...new Set(es.flatMap(e => e.demotions.map(d => d.axis)))];
     return axes.length === 2 ? "tempo and course" : axes[0] === "course" ? "the course" : "the tempo";
   };
+  // Held OPEN while the selection lives inside it — a demoted entity is selectable (tempo and course
+  // demote, they never drop), so the band must not close over the row the reader just picked.
+  const selectedIsDemoted = u.discordant.some(e => e.name === S.selectedEntity);
   const disc = u.discordant.length
     ? setAside(`less likely given ${esc(axisLabel(u.discordant))}`, u.discordant.length,
-        u.discordant.map(e => `${unifyingRow(e, sites)}<div class="annot">${e.demotions.map(d => `You entered <b>${esc(d.entered)}</b>; this is typically ${d.expected.map(esc).join(" / ")}.`).join(" ")}</div>`).join(""))
+        u.discordant.map(e => `${unifyingRow(e, sites)}<div class="annot">${e.demotions.map(d => `You entered <b>${esc(d.entered)}</b>; this is typically ${d.expected.map(esc).join(" / ")}.`).join(" ")}</div>`).join(""),
+        selectedIsDemoted)
     : "";
 
   // The course control lives HERE — it exists only for the cross-site roster, so it has no meaning until
