@@ -52,6 +52,35 @@ export const PATHOLOGY_ALIAS = {
   // zoster whether or not the name mentions Elsberg.
   "Tabes dorsalis (neurosyphilis)": "Neurosyphilis (tabes dorsalis)",
   "Sacral zoster (Elsberg syndrome)": "Herpes zoster (sacral)",
+
+  // ---- Round 6 (tranche 3): the DEMYELINATION spellings ----
+  // The inflammatory bucket turned out to contain NINE more spellings of one disease, each flavoured by
+  // the site it sits at — a plaque in the capsule, a juxtacortical plaque, a callosal plaque, chiasmal
+  // neuritis. They are not related-but-different entities; they are demyelination, named after where it
+  // landed. Authoring them separately is exactly how the original MS duplicate arose, so they resolve onto
+  // the tranche-1 "Demyelination" plan and can never drift apart from it.
+  //
+  // DELIBERATELY NOT ALIASED: "Demyelination / neurodegeneration" hedges between two different processes,
+  // and "Transverse myelitis (MS / NMOSD / MOG / para-infectious)" names four diseases whose work-ups
+  // genuinely diverge (AQP4 vs MOG vs para-infectious). Both get their own plans below.
+  "Demyelinating plaque": "Demyelination",
+  "Multiple sclerosis": "Demyelination",
+  "Focal cortical demyelination": "Demyelination",
+  "Juxtacortical demyelinating plaque": "Demyelination",
+  "Demyelination (multiple sclerosis)": "Demyelination",
+  "Severe brainstem demyelination": "Demyelination",
+  "Multiple sclerosis (callosal plaques)": "Demyelination",
+  "Demyelination (chiasmal neuritis)": "Demyelination",
+  "Demyelination (large juxtacortical plaque)": "Demyelination",
+
+  // Sarcoidosis at the facial nerve is neurosarcoidosis under a shorter name.
+  "Sarcoidosis": "Neurosarcoidosis",
+
+  // Two more spellings of the transverse-myelitis plan, and one of Tolosa-Hunt. Same disease, same first
+  // move — exclude compression before calling it inflammation — so they must not drift apart.
+  "Transverse myelitis (demyelinating)": "Transverse myelitis (MS / NMOSD / MOG / para-infectious)",
+  "Demyelination / transverse myelitis": "Transverse myelitis (MS / NMOSD / MOG / para-infectious)",
+  "Tolosa-Hunt (granulomatous)": "Tolosa-Hunt syndrome (granulomatous inflammation)",
 };
 
 export const PATHOLOGY_NEXT = {
