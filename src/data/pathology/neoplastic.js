@@ -12,6 +12,10 @@
 //   inlet; skull-base/perineural spread and paraneoplastic; intra-axial, meningioma, sellar/hypothalamic
 //   and pineal/third-ventricle; herniation/raised ICP, pelvic/retroperitoneal, neck/mediastinal and four
 //   singletons. The neoplastic red set is complete.
+//
+// ⚠ TRANCHE 3 (round 15, 2026-08-21) — NOT YET REVIEWED: the benign-skull-base-tumour and
+//   peripheral-nerve-mass families, 31 further members on the intra-axial spine, 7 on the sellar spine,
+//   6 on the dural spine, and three singletons. 74 names, none of them red.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 3a (tranche 2) ----

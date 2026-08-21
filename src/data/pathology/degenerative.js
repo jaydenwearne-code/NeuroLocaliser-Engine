@@ -6,6 +6,11 @@
 // REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
 //   Tranche 2 (round 9) — four singletons. The degenerative red set is complete.
 //
+// ⚠ TRANCHE 3 (round 14, 2026-08-21) — NOT YET REVIEWED: six families (degenerative-radiculopathy,
+//   degenerative-canal-stenosis, cortical-dementia, parkinsonian-degeneration, progressive-ataxia,
+//   bppv-canal) and eight singletons. 57 names, none of them red. The file below the tranche-2 block is
+//   almost entirely new content awaiting the owner's read.
+//
 // These are singletons rather than a family, deliberately: a degenerative label is the END of a
 // diagnostic process, and what they share is not a workup but an obligation — to EXCLUDE THE TREATABLE
 // MIMIC before accepting it. That obligation is different in each case, which is why one spine could not
