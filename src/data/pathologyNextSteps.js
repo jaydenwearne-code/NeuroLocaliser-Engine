@@ -111,6 +111,10 @@ export const PATHOLOGY_ALIAS = {
   "Diabetic amyotrophy (proximal diabetic neuropathy)": "Diabetic lumbosacral radiculoplexus neuropathy (amyotrophy)",
   "Diabetic or entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
   "Diabetes or other entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
+
+  // Round 12: two more pairs that are the same name written back to front.
+  "Post-DBS or post-surgical injury": "Post-surgical or post-DBS change",
+  "Post-surgical injury (anterior temporal lobectomy)": "Anterior temporal lobectomy (post-surgical)",
 };
 
 export const PATHOLOGY_NEXT = {
