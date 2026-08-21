@@ -77,16 +77,14 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   }
 }
 
-// --- 7: THE RATCHET. Entities with no plan may only ever DECREASE. ---
-// Same shape as tranche 2's RED_WITHOUT_PLAN_CEILING: a plain "every entity has a plan" would fail on every
-// authoring round, so this is a ceiling that falls with each round and retires into a hard gate at 0.
-const ENTITY_WITHOUT_PLAN_CEILING = 3;
+// --- 7: THE HARD GATE. Every roster entity has a plan. ---
+// The ratchet retired here (13 -> 8 -> 3 -> 0 across three rounds). Its durable value starts now: a future
+// entity added to MULTIFOCAL with no workup behind it fails this suite immediately. That is what keeps the
+// Together card's rows behaving alike — a card where some rows select and some do not is the rejected
+// mockup arriving through the back door.
 {
   const missing = MULTIFOCAL.filter(e => !MULTIFOCAL_NEXT[e.name]).map(e => e.name);
-  ok(`entities without a plan (${missing.length}) is at or below the ceiling (${ENTITY_WITHOUT_PLAN_CEILING})`,
-     missing.length <= ENTITY_WITHOUT_PLAN_CEILING, missing.join(" | "));
-  console.log(`\nREPORT  ${MULTIFOCAL.length - missing.length} of ${MULTIFOCAL.length} entities planned; ` +
-              `${missing.length} left${missing.length ? " — " + missing.join(", ") : ""}`);
+  ok(`GATE: all ${MULTIFOCAL.length} cross-site entities have an authored workup`, missing.length === 0, missing.join(" | "));
 }
 
 // ---- the combined card (spec §3) ----

@@ -25,8 +25,9 @@
 // keeps that safe is the tier split, not the badge: immediate and first-line stay the site union in
 // combinedNextSteps(), so nothing bedside is ever removed by a quieter badge.
 //
-// REVIEW STATUS: round 1 (inflammatory / demyelinating) and round 2 (neoplastic / degenerative /
-// congenital) — see the commit trail for each round's sign-off.
+// REVIEW STATUS: all 13 entities authored across three rounds (inflammatory / demyelinating; neoplastic /
+// degenerative / congenital; infective / vascular / paraneoplastic) — see the commit trail for each
+// round's sign-off. Content added from here is held to the same bar.
 import { MULTIFOCAL } from "./multifocal.js";
 
 const URGENCY_RANK = { emergency: 3, urgent: 2, routine: 1 };
@@ -244,6 +245,69 @@ export const MULTIFOCAL_NEXT = {
     ],
     urgency: "urgent",
     referral: "Neurology — specialist MND / neuromuscular service, with early respiratory and palliative care involvement.",
+  }),
+
+  "Neurosyphilis or HIV": mfPlan("Neurosyphilis or HIV", {
+    firstLine: [
+      "HIV TESTING AND SYPHILIS SEROLOGY (treponemal and non-treponemal together) — BOTH, in every case: they coexist, and each alters the other's course",
+      "MRI brain and spine with contrast",
+      "LUMBAR PUNCTURE with cell count, protein, CSF VDRL and treponemal testing — CSF VDRL is specific but insensitive, so a negative result does not exclude this",
+      "CD4 count and HIV viral load where HIV is confirmed",
+    ],
+    confirmatory: [
+      "CSF testing for the opportunistic infections that present the same way — JC virus PCR, toxoplasma, cryptococcal antigen, tuberculosis",
+      "Ophthalmology and audiology review: ocular and otosyphilis are treated as neurosyphilis regardless of any other finding",
+      "Sexual health services for partner notification and contact tracing",
+    ],
+    monitoring: [
+      "Warn about and observe for the Jarisch-Herxheimer reaction when treatment starts",
+      "Repeat CSF and serological testing at planned intervals to confirm the response",
+      "Watch for immune reconstitution inflammatory syndrome after antiretroviral therapy begins",
+    ],
+    urgency: "urgent",
+    referral: "Infectious diseases / sexual health, with neurology. Both are treatable — treat rather than observe.",
+  }),
+
+  "Embolic shower (cardiac or aortic source)": mfPlan("Embolic shower (cardiac or aortic source)", {
+    firstLine: [
+      "MRI BRAIN WITH DWI — scattered infarcts in MULTIPLE arterial territories OF THE SAME AGE is the finding that makes this diagnosis",
+      "ECG plus PROLONGED cardiac rhythm monitoring — a single ECG does not exclude paroxysmal atrial fibrillation",
+      "ECHOCARDIOGRAPHY, transoesophageal where the transthoracic study is unrevealing: vegetations, thrombus, aortic arch atheroma and a right-to-left shunt all live there",
+      "BLOOD CULTURES BEFORE ANTIBIOTICS, with inflammatory markers — infective endocarditis is the source you must not miss",
+    ],
+    confirmatory: [
+      "CT or MR angiography of the aortic arch and neck vessels for a proximal source",
+      "Bubble study for a right-to-left shunt where no other source is found, particularly in a younger patient",
+      "Screen for malignancy and for a hypercoagulable state once cultures and cardiac imaging are clear — non-bacterial thrombotic endocarditis presents exactly this way",
+    ],
+    monitoring: [
+      "WITHHOLD ANTICOAGULATION until endocarditis is excluded — anticoagulating an infected embolus causes haemorrhage",
+      "Serial neurological observation: the process is ongoing, and further emboli are expected rather than surprising",
+      "Secondary prevention is decided by the SOURCE, not by the infarct pattern",
+    ],
+    urgency: "emergency",
+    referral: "Stroke team with cardiology; infectious diseases urgently if endocarditis is possible.",
+  }),
+
+  "Paraneoplastic syndrome": mfPlan("Paraneoplastic syndrome", {
+    firstLine: [
+      "PARANEOPLASTIC AND NEURONAL SURFACE ANTIBODY PANELS IN SERUM AND CSF TOGETHER — the panels differ between the two compartments, and a serum-only request misses cases",
+      "MRI brain and spine with contrast — medial temporal signal change supports limbic encephalitis, but normal imaging does not exclude the diagnosis",
+      "CT chest, abdomen and pelvis as the first search for the tumour",
+      "Lumbar puncture: cell count, protein, oligoclonal bands and cytology",
+    ],
+    confirmatory: [
+      "FDG-PET when cross-sectional imaging is negative — the tumour is often small, and the neurological syndrome precedes it",
+      "Antibody-directed targeted search: examine the testes, image the pelvis and breasts, according to the antibody found",
+      "REPEAT the tumour search at intervals if the first is negative — one negative screen does not exclude an occult malignancy",
+    ],
+    monitoring: [
+      "Treating the tumour is the definitive treatment for the neurological syndrome; immunotherapy alone rarely holds",
+      "Monitor for seizures and for the psychiatric and cognitive features, which are readily attributed elsewhere",
+      "Neurological recovery lags tumour treatment — set expectations accordingly",
+    ],
+    urgency: "urgent",
+    referral: "Neurology / neuroimmunology and oncology in parallel.",
   }),
 };
 
