@@ -112,6 +112,11 @@ export const PATHOLOGY_ALIAS = {
   "Diabetic or entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
   "Diabetes or other entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
 
+  // Round 14 (degenerative): three more second spellings. Ménière's is written both with and without its
+  // accents in causes.js, which is how a duplicate survives every review — the two look identical in prose.
+  "Ménière's disease": "Meniere's disease",
+  "Motor neurone disease / ALS": "Motor neurone disease (ALS)",
+
   // Round 13 (vascular): the arterial map is written several ways in causes.js. Each of these is the SAME
   // DISEASE under a second spelling — an expansion of an abbreviation, or the territory word added — which
   // is exactly what an alias is for. Where a name adds a genuine clinical claim rather than a synonym (a

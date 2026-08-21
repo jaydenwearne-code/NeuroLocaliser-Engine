@@ -142,8 +142,16 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   ok("the pathology name is carried", sel.pathology === "Spinal epidural abscess");
 
   // Selected + uncurated => site tiers, flagged so the UI can label them.
-  const uncurated = causesAt(host).map(c => c.name).find(n => !PATHOLOGY_NEXT[n] && !PATHOLOGY_ALIAS[n]);
-  ok("an uncurated cause exists at that site to test the fallback", !!uncurated);
+  //
+  // THE FIXTURE IS SYNTHETIC, AND IT HAS TO BE. This used to pick the first real cause at `host` that had
+  // no plan, which is the trap CLAUDE.md records from the 2026-08-10 layer: a test whose fixture is an
+  // incidental GAP in the content breaks the moment the content closes the gap. Tranche 3 is closing every
+  // gap on purpose, so an unplanned cause at any particular site is a shrinking accident rather than a
+  // fact worth asserting — this broke on the day the last cause at `host` was authored (round 14). What
+  // is being tested is the FALLBACK MECHANISM, which must keep working for as long as the honest fallback
+  // exists, so the name is one that will never have a plan.
+  const uncurated = "Zz never authored pathology (test fixture)";
+  ok("the fallback fixture has no plan", !PATHOLOGY_NEXT[uncurated] && !PATHOLOGY_ALIAS[uncurated]);
   const fb = pathologyNextStepsFor(host, uncurated);
   ok("uncurated falls back to the site confirmatory",
      JSON.stringify(fb.confirmatory) === JSON.stringify(today.confirmatory));
@@ -281,7 +289,7 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 // appear at exactly ONE site, and the best reuse left in the set is six. Tranche 1 bought 11 rows per
 // plan, tranche 2 bought 2, and tranche 3 buys 1.18 — so the ceiling falls roughly one per plan authored,
 // with no families to accelerate it.
-const UNPLANNED_CEILING = 131;
+const UNPLANNED_CEILING = 74;
 {
   const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
   const names = new Set();
