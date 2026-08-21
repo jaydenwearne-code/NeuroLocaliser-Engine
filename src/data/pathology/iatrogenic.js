@@ -4,10 +4,10 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician) — tranches 1 and 2 on 2026-08-18,
+//   tranche 3 on 2026-08-21.
 //   Tranche 1 — radiation plexopathy. Tranche 2 (round 9) — procedure-related injury.
-//
-// ⚠ TRANCHE 3 (round 12, 2026-08-21) — NOT YET REVIEWED: the surgical-nerve-injury, obstetric-injury,
+//   Tranche 3 (round 12, 2026-08-21) — the surgical-nerve-injury, obstetric-injury,
 //   radiation-injury and neurosurgical-sequela families. 47 names, none of them red.
 import { dz, family } from "./builders.js";
 

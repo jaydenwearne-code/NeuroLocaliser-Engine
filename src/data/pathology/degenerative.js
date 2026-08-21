@@ -3,10 +3,10 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician) — tranches 1 and 2 on 2026-08-18,
+//   tranche 3 on 2026-08-21.
 //   Tranche 2 (round 9) — four singletons. The degenerative red set is complete.
-//
-// ⚠ TRANCHE 3 (round 14, 2026-08-21) — NOT YET REVIEWED: six families (degenerative-radiculopathy,
+//   Tranche 3 (round 14, 2026-08-21) — six families (degenerative-radiculopathy,
 //   degenerative-canal-stenosis, cortical-dementia, parkinsonian-degeneration, progressive-ataxia,
 //   bppv-canal) and eight singletons. 57 names, none of them red. The file below the tranche-2 block is
 //   almost entirely new content awaiting the owner's read.

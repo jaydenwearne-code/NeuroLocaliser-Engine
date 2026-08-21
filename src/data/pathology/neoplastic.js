@@ -7,13 +7,13 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician) — tranches 1 and 2 on 2026-08-18,
+//   tranche 3 on 2026-08-21.
 //   Tranche 1 — 8 plans. Tranche 2 (round 3, in four parts) — malignant CNS compression and thoracic
 //   inlet; skull-base/perineural spread and paraneoplastic; intra-axial, meningioma, sellar/hypothalamic
 //   and pineal/third-ventricle; herniation/raised ICP, pelvic/retroperitoneal, neck/mediastinal and four
 //   singletons. The neoplastic red set is complete.
-//
-// ⚠ TRANCHE 3 (round 15, 2026-08-21) — NOT YET REVIEWED: the benign-skull-base-tumour and
+//   Tranche 3 (round 15, 2026-08-21) — the benign-skull-base-tumour and
 //   peripheral-nerve-mass families, 31 further members on the intra-axial spine, 7 on the sellar spine,
 //   6 on the dural spine, and three singletons. 74 names, none of them red.
 import { dz, family } from "./builders.js";

@@ -6,13 +6,13 @@
 // Content only — the builders live in ./builders.js and the public API in ../pathologyNextSteps.js.
 // Teaching prompts, not directives: no doses, no definitive management.
 //
-// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
+// REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician) — tranches 1 and 2 on 2026-08-18,
+//   tranche 3 on 2026-08-21.
 //   Tranche 1 — posterior circulation stroke, intracerebral haemorrhage.
 //   Tranche 2 — the infarct family (round 1); the four haemorrhage/haematoma families (round 2); venous
 //   thrombosis and the vascular malformations (round 2b); and dissection, large-vessel occlusion,
 //   compressive aneurysm, perforator disease and central vestibular stroke (round 5).
-//
-// ⚠ TRANCHE 3 (round 13, 2026-08-21) — NOT YET REVIEWED: the lacunar-infarct and post-stroke-sequela
+//   Tranche 3 (round 13, 2026-08-21) — the lacunar-infarct and post-stroke-sequela
 //   families, microvascular cranial nerve palsy, 19 further territory members on the infarct spine, and
 //   the trigeminal neuralgia / cluster headache / cavernous sinus singletons. 48 names, none of them red.
 import { dz, family } from "./builders.js";

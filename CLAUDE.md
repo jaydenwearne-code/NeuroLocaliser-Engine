@@ -567,12 +567,10 @@ across a multifocal set.
 > status is recorded in the `pathologyNextSteps.js` header. Content added from here is held to the same bar.
 
 **STILL OPEN, deliberately out of scope:**
-1. ~~**The remaining 831 pathologies**~~ — **PARTLY CLOSED by tranche 2**, which authored all 353 red
-   (must-not-miss) causes and retired the ratchet into a hard gate. What remains is the **494 non-red**
-   names, deliberately parked: 709 of the leftover names appear at exactly ONE site, so finishing the
-   coverage is ~35x the authoring of tranche 1, and the labelled site fallback they keep is honest and
-   already correct. Much of it would be REDISTRIBUTION rather than new writing: curated site
-   `investigations` prose is often already pathology-specific and merely lives in the wrong bucket.
+1. ~~**The remaining 831 pathologies**~~ — **FULLY CLOSED.** Tranche 2 authored all 353 red
+   (must-not-miss) causes; **tranche 3 (2026-08-21) authored the remaining 485 non-red names, so all
+   1294 cause rows now carry an authored workup** and the coverage ratchet has retired into a hard gate.
+   See the tranche-3 section below. Nothing in the shipped content reaches the site fallback any more.
 2. ~~**The fundal-photography defect is only HALF fixed.**~~ — **CLOSED 2026-08-18.** The chiasm half was
    fixed on `fix/ophthalmic-imaging-chiasm` (merged): `VISUAL_FINDING` no longer contains
    `homonymous_hemianopia` or the quadrantanopias, and the three-route trigger in `nextSteps.js` now
@@ -671,7 +669,7 @@ workup instructs the reader to look for one, and none existed.
 Spec/plan: `docs/superpowers/specs/2026-08-18-pathology-tranche-2-design.md`,
 `docs/superpowers/plans/2026-08-18-pathology-tranche-2.md`.
 
-## Pathology tranche 3 — COMPLETE (2026-08-21) — ⚠ AWAITING CLINICAL REVIEW
+## Pathology tranche 3 — COMPLETE (2026-08-21) — ✅ CLINICALLY SIGNED OFF
 
 **Branch `feat/pathology-tranche-3`, NOT merged.** Tranche 2 authored by DANGER and stopped when the red
 set closed, leaving 485 non-red names on the labelled site fallback. Tranche 3 finishes the coverage.
@@ -728,11 +726,11 @@ word with and without its accents (`Meniere's` / `Ménière's`), which is how a 
 review because the two look identical in prose**. Where a name adds a real clinical claim rather than a
 spelling — a splenial extension, a Heidenhain variant — it got its own plan instead.
 
-> **⚠ NOT YET REVIEWED. Rounds 12-15 (iatrogenic, vascular, degenerative, neoplastic) are unread by the
-> owner.** Each category file carries its own `⚠ TRANCHE 3 … NOT YET REVIEWED` header naming what is new
-> in it. **Merging to `main` auto-deploys to the live app**, so this branch must not be merged until the
-> owner has read it — **one round at a time**, which is the rhythm that caught errors a batch review
-> would have missed.
+> **✅ CLINICALLY SIGNED OFF (2026-08-21) by the owner (a clinician): ALL tranche-3 content**, across
+> rounds 4-15 — the twelve sieve categories, 485 names, 592 plans. Each category file records its own
+> tranche-3 sign-off. **The review gate on the pathology workup layer is now CLOSED at every tranche —
+> do not re-flag this content as unreviewed.** Content added from here is held to the same bar and
+> flagged if uncertain.
 
 6425 assertions green.
 
@@ -981,4 +979,13 @@ Two published Claude Artifacts (a flow diagram and the anatomy review sheet) vis
 their HTML source and the update workflow (edit here, republish to the same URL) are in
 `docs/artifacts/`. Keep them in sync after each region increment.
 
-Not a medical device; not for clinical use. The anatomy tables still need neuroanatomist review.
+Not a medical device; not for clinical use.
+
+**✅ THE ANATOMY MODEL HAS BEEN REVIEWED (2026-08-21).** The owner (a clinician) read the rebuilt review
+sheet — all 528 structures across 16 regions, in one pass — and signed it off. That was the last standing
+correctness gate on the engine, and it had been open since the project began. It already paid for itself
+before the read even finished: authoring the sheet exposed a live crossing bug (`scp_midbrain` emitted
+ataxia ipsilaterally; the superior cerebellar peduncle decussates in the caudal midbrain, so it is
+CONTRALATERAL — fixed in PR #9). **Do not re-flag the anatomy tables as unreviewed.** Structures added
+from here are held to the same bar: add the row to `docs/artifacts/anatomy-model.html`, verify every id
+against `src/model/structures.js`, and flag anything uncertain for the owner.
