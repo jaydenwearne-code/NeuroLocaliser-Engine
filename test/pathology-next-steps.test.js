@@ -271,6 +271,34 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
      `${unplanned.length} without a plan: ${unplanned.slice(0, 5).join(" ; ")}`);
 }
 
+// ---- TRANCHE 3: THE COVERAGE RATCHET ----
+// Tranche 2 authored by DANGER and stopped when the red set closed. Tranche 3 goes for full coverage, one
+// sieve category at a time (owner ruling, 2026-08-21), so it needs its own ratchet — same shape as the red
+// one: a CEILING that falls with every round and may NEVER rise. It is a ceiling rather than
+// "every cause has a plan" because that assertion would fail on every round until the last.
+//
+// REUSE IS EXHAUSTED, and that is what makes this tranche different in kind: 88% of the remaining names
+// appear at exactly ONE site, and the best reuse left in the set is six. Tranche 1 bought 11 rows per
+// plan, tranche 2 bought 2, and tranche 3 buys 1.18 — so the ceiling falls roughly one per plan authored,
+// with no families to accelerate it.
+const UNPLANNED_CEILING = 465;
+{
+  const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
+  const names = new Set();
+  for (const list of Object.values(CAUSES)) for (const c of list) names.add(c.name);
+  const unplanned = [...names].filter(n => !planned.has(n));
+  ok(`TRANCHE-3 RATCHET: unplanned causes (${unplanned.length}) is at or below the ceiling (${UNPLANNED_CEILING})`,
+     unplanned.length <= UNPLANNED_CEILING,
+     `${unplanned.length} unplanned — the ceiling may only ever fall`);
+
+  const byCat = {};
+  for (const list of Object.values(CAUSES)) for (const c of list)
+    if (!planned.has(c.name)) (byCat[c.cat] ??= new Set()).add(c.name);
+  const line = Object.entries(byCat).sort((a, b) => b[1].size - a[1].size)
+    .map(([k, v]) => `${k} ${v.size}`).join(" · ");
+  console.log(`\nREPORT  tranche 3 — ${unplanned.length} names unplanned: ${line}`);
+}
+
 // ---- REPORT (not an assertion): the red / non-red authoring split ----
 // Tranche 2 targets the RED must-not-miss set, but a family is authored WHOLE (spec amendment
 // 2026-08-18), so non-red members arrive as the seams of a family rather than as new scope. This line

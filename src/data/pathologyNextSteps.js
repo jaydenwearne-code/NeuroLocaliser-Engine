@@ -46,6 +46,12 @@ export const PATHOLOGY_ALIAS = {
   // the pattern that produced the MS duplicate.
   "Central pontine myelinolysis (osmotic demyelination)": "Osmotic demyelination syndrome (central pontine myelinolysis)",
   "PRES (posterior reversible encephalopathy)": "Posterior reversible encephalopathy syndrome (PRES)",
+  // Round 5 (tranche 3): two more of the same pattern — ONE disease, two spellings, at DISJOINT sites,
+  // which is exactly how the MS duplicate survived. Neither is a separate entity: tabes dorsalis is
+  // tabes dorsalis whether the site is the pupil or the dorsal columns, and sacral zoster is sacral
+  // zoster whether or not the name mentions Elsberg.
+  "Tabes dorsalis (neurosyphilis)": "Neurosyphilis (tabes dorsalis)",
+  "Sacral zoster (Elsberg syndrome)": "Herpes zoster (sacral)",
 };
 
 export const PATHOLOGY_NEXT = {
