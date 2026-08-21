@@ -102,6 +102,15 @@ export const PATHOLOGY_ALIAS = {
   // came to sit in two categories with two spellings and no plan. Aliased rather than re-authored.
   "Normal-pressure hydrocephalus": "Normal pressure hydrocephalus",
   "Normal-pressure hydrocephalus (the mimic)": "Normal pressure hydrocephalus",
+
+  // ---- Round 11 (tranche 3): the metabolic bucket's spelling clusters ----
+  // The worst duplication found so far. FOUR spellings of diabetic amyotrophy and THREE of the
+  // entrapment-prone note, none of which is a distinct disease. They resolve onto one plan each.
+  "Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy)": "Diabetic lumbosacral radiculoplexus neuropathy (amyotrophy)",
+  "Diabetic radiculoplexus neuropathy": "Diabetic lumbosacral radiculoplexus neuropathy (amyotrophy)",
+  "Diabetic amyotrophy (proximal diabetic neuropathy)": "Diabetic lumbosacral radiculoplexus neuropathy (amyotrophy)",
+  "Diabetic or entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
+  "Diabetes or other entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
 };
 
 export const PATHOLOGY_NEXT = {

@@ -281,7 +281,7 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
 // appear at exactly ONE site, and the best reuse left in the set is six. Tranche 1 bought 11 rows per
 // plan, tranche 2 bought 2, and tranche 3 buys 1.18 — so the ceiling falls roughly one per plan authored,
 // with no families to accelerate it.
-const UNPLANNED_CEILING = 268;
+const UNPLANNED_CEILING = 226;
 {
   const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
   const names = new Set();
