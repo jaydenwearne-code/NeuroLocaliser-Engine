@@ -243,7 +243,305 @@ const NECK_MEDIASTINAL_SPINE = {
   referral: "Head-and-neck or thoracic oncology as the anatomy dictates, with ENT for the airway and voice",
 };
 
+// ---- ROUND 15 (tranche 3): THE BENIGN SKULL-BASE TUMOURS ----
+// Deliberately NOT folded into SKULL_BASE_SPINE, which works up MALIGNANCY — nasopharyngeal carcinoma,
+// perineural spread, metastasis — where the questions are staging, tissue and the primary. These are
+// slow, benign and often best LEFT ALONE, so the whole shape of the decision is different: the treatment
+// can cost more function than the tumour has, and the honest first option is frequently to watch.
+const BENIGN_SKULL_BASE_SPINE = {
+  confirmatory: [
+    "MRI SKULL BASE WITH CONTRAST AND THIN SLICES THROUGH THE RELEVANT FORAMEN, plus a CT for the BONE. The two answer different questions and both are needed: MRI shows the lesion and its extent, CT shows whether the bone is REMODELLED (benign, slow) or DESTROYED (malignant), and that distinction does more work than any other single finding. {flavour}",
+    "DOCUMENT THE FUNCTION THAT IS AT RISK BEFORE ANYTHING IS DONE TO IT, formally and in measurable terms — audiometry, facial nerve grading, a swallow assessment, the visual fields. This is a baseline as much as a description, because treatment here is judged on function preserved rather than on the tumour removed",
+    "Examine {level}, and test the NEIGHBOURING nerves the patient has not complained about. These tumours grow along a corridor, and a subclinical deficit in the next nerve along tells you the extent better than the patient's symptoms do",
+    "CONSIDER THE SYNDROMES BEHIND THE LESION: bilateral vestibular schwannomas mean NEUROFIBROMATOSIS TYPE 2, multiple or familial paragangliomas mean a succinate dehydrogenase mutation, and both change the plan from treating a tumour to managing a person and their family",
+  ],
+  monitoring: [
+    "WATCHING IS AN ACTIVE PLAN, NOT AN ABSENCE OF ONE. Many of these grow slowly or not at all, and treatment can cost hearing, facial movement or swallowing that the tumour had not yet taken — so serial imaging at lengthening intervals is a legitimate decision that should be presented as such",
+    "Track {level} with the SAME measurement each time, and treat a change in FUNCTION as the trigger to act rather than a change in millimetres — function is what the patient lives with",
+    "SAFETY NET: rapid growth, new PAIN, or a new deficit developing quickly argues against a benign lesion and warrants reassessment and tissue rather than another interval scan",
+    "PROTECT WHAT THE NERVE WAS DOING: a numb cornea needs ophthalmic protection because it ulcerates silently, a weak palate or vocal cord needs a swallow assessment before food, and hearing loss needs rehabilitation rather than a wait to see whether it worsens",
+  ],
+  urgency: "routine",
+  referral: "A skull-base multidisciplinary team — neurosurgery, ENT and radiation oncology together; audiology and ophthalmology as the deficit requires",
+};
+
+// ---- ROUND 15 (tranche 3): A MASS ON A PERIPHERAL NERVE ----
+// The clinical trap is that these present exactly as the common entrapment at the same place, and are
+// treated as one for months. What separates them is the company they keep — and ultrasound, which is
+// quick, cheap and shows a mass that nerve conduction studies never will.
+const NERVE_MASS_SPINE = {
+  confirmatory: [
+    "THIS IMITATES THE ORDINARY ENTRAPMENT AT THE SAME SITE, and that is why it is missed: the presentation is identical, so the diagnosis rests on the features that do not fit — PAIN at rest or at night, a palpable or tender swelling, a positive Tinel's over a discrete point, progression despite rest and splinting, or a deficit that is worsening rather than fluctuating. {flavour}",
+    "ULTRASOUND OF THE NERVE IS THE FIRST TEST AND IT IS UNDER-USED — it is quick, needs no radiation, images the nerve along its length, and shows a cyst, a mass or a vascular lesion that nerve conduction studies cannot. MRI where ultrasound is equivocal or the lesion is deep",
+    "NERVE CONDUCTION STUDIES LOCALISE THE BLOCK BUT DO NOT SHOW WHAT IS CAUSING IT — a normal study does not exclude a mass, and an abnormal one does not identify it. The two tests answer different questions and are ordered together rather than in sequence",
+    "Examine {level}, and take the history that names the cause: a repeated occupational or sporting movement, an old injury, anticoagulation, or symptoms that follow the MENSTRUAL CYCLE, which is close to specific for endometriosis on a nerve",
+  ],
+  monitoring: [
+    "SAFETY NET: a PROGRESSIVE motor deficit is what makes this urgent — muscle that has been denervated for many months does not fully recover even after the compression is relieved, so the window is measured in months and it closes quietly",
+    "Track {level} with graded power and a documented sensory map at each review; 'no better' is not a measurement and cannot show a trend",
+    "Where the cause is a haematoma, review ANTICOAGULATION and the clotting immediately — that is the treatable half of the problem and it is often the whole of it",
+    "Splinting, activity modification and physiotherapy while the cause is being established, and protect an insensate area from injury and pressure — the avoidable harm here is a burn or an ulcer, not the nerve lesion",
+  ],
+  urgency: "urgent",
+  referral: "Peripheral nerve surgery or neurology with neurophysiology; the relevant specialty for the underlying mass (gynaecology, haematology or sarcoma services)",
+};
+
 export default {
+  // ---- ROUND 15 (tranche 3): THE LAST THREE ----
+  // Singletons because none of them shares a work-up with anything else in this file: two intramedullary
+  // tumours, which are slow surgical lesions and NOT the oncological emergency that malignant extradural
+  // compression is, and a haematological cause of neuropathy whose whole diagnosis is a blood test.
+
+  "Intramedullary tumour (ependymoma / astrocytoma)": dz("Intramedullary tumour (ependymoma / astrocytoma)", {
+    confirmatory: [
+      "THIS IS NOT MALIGNANT CORD COMPRESSION AND THE CLOCK IS DIFFERENT. An intramedullary tumour grows INSIDE the cord over months to years — the deficit accumulates slowly, there is often no back pain, and the emergency pathway that suits an extradural metastasis does not apply. Confirm the tempo from the history before anything else",
+      "MRI OF THE WHOLE SPINE WITH CONTRAST, and the BRAIN with it: the whole neuraxis is imaged because these can be multiple, because a Chiari malformation or a tethered cord may sit with them, and because the syrinx that so often accompanies them extends well beyond the tumour",
+      "DISTINGUISH THE TUMOUR FROM ITS SYRINX. A large cyst above and below an enhancing nodule is characteristic, and it is the NODULE that is the tumour — draining the cyst alone treats nothing and the fluid reaccumulates",
+      "Examine {level}. Ependymoma is central and symmetrical and arises from the ependyma, so it usually causes a CENTRAL CORD picture with cape-like loss of pain and temperature and preserved dorsal columns; astrocytoma is more infiltrative, more eccentric and commoner in children",
+    ],
+    monitoring: [
+      "THE SURGICAL DISTINCTION IS THE PROGNOSIS, and it is worth understanding before the conversation with the patient: an EPENDYMOMA usually has a plane and can often be removed completely with a good long-term outcome, while an ASTROCYTOMA infiltrates and frequently cannot. The plan follows from which it is",
+      "SAFETY NET: rapid deterioration, a new sensory level or a change in bladder function is not the slow course of this disease and needs urgent reimaging — haemorrhage into the tumour and an expanding syrinx both do that",
+      "Track {level} with a formal, repeatable score at each review; a slow deterioration over years is invisible without comparable measurements, and it is the trajectory that decides when to operate",
+      "BLADDER, BOWEL AND SEXUAL FUNCTION at every review, asked about directly. They are lost early in central cord lesions, they are rarely volunteered, and they matter more to the patient's life than the leg power that gets recorded instead",
+    ],
+    urgency: "urgent",
+    referral: "Spinal neurosurgery with neuro-oncology; intramedullary surgery belongs in a centre that does it regularly, with intraoperative monitoring",
+    bySite: {
+      cord_lateral: { level: "the asymmetry between the two sides — power on one, pinprick on the other — and whether there is a sensory level" },
+      cord_central: { level: "the CAPE distribution of pain and temperature loss with PRESERVED joint position sense and vibration, plus the small muscles of the hands",
+                      flavour: "a central cord picture with dissociated sensory loss is the classic presentation, and it is shared with syringomyelia — so the enhancing nodule on the MRI is what separates a tumour from a cyst alone" },
+    },
+  }),
+
+  "Intramedullary tumour (ependymoma)": dz("Intramedullary tumour (ependymoma)", {
+    confirmatory: [
+      "AT THE CONUS, MYXOPAPILLARY EPENDYMOMA IS THE CHARACTERISTIC TUMOUR, and it behaves differently from ependymoma higher up: it can SEED through the CSF, so the whole neuraxis is imaged with contrast at diagnosis rather than only the symptomatic region",
+      "MRI OF THE WHOLE SPINE AND BRAIN WITH CONTRAST — this is a staging study as much as a diagnostic one, and it is done BEFORE surgery, because post-operative blood and enhancement make later imaging much harder to interpret",
+      "SPHINCTER FUNCTION IS THE DIAGNOSIS AND THE OUTCOME AT THIS LEVEL: the conus fails the bladder, the bowel and sexual function EARLY and out of proportion to the leg weakness. Ask directly, and measure a post-void residual rather than accepting a reassuring answer",
+      "Examine {level}, with saddle sensation and the anal reflex documented explicitly. Back pain, often worse lying down and at night, is common and is repeatedly treated as mechanical for a long time before anyone images",
+    ],
+    monitoring: [
+      "THE INTEGRITY OF THE CAPSULE AT SURGERY DRIVES EVERYTHING: an en-bloc removal has a good outcome, while a tumour ruptured during removal seeds the CSF and recurs. That makes the choice of surgeon and centre a clinical decision rather than a logistical one",
+      "SAFETY NET: acute urinary RETENTION, saddle numbness or rapidly progressive leg weakness is a cauda equina presentation and is assessed the same day, whatever the underlying tumour is doing",
+      "Track {level} and the sphincter function together at every review, and involve continence services early — bladder management determines independence here more than walking does",
+      "Long-term surveillance imaging of the whole neuraxis, because recurrence and CSF seeding can appear years later and are silent until they are not",
+    ],
+    urgency: "urgent",
+    referral: "Spinal neurosurgery with neuro-oncology, in a centre performing intramedullary surgery with intraoperative monitoring; continence services alongside",
+  }),
+
+  "Paraproteinaemia / monoclonal gammopathy": dz("Paraproteinaemia / monoclonal gammopathy", {
+    confirmatory: [
+      "THE DIAGNOSIS IS A BLOOD TEST AND IT IS ROUTINELY OMITTED: SERUM PROTEIN ELECTROPHORESIS WITH IMMUNOFIXATION, and serum FREE LIGHT CHAINS. Electrophoresis alone misses small bands, so immunofixation has to be requested by name — this is the treatable cause of a 'idiopathic' neuropathy that most often turns out to have been findable",
+      "IDENTIFY THE CLASS, because it decides what happens next: an IgM paraprotein associates with anti-MAG neuropathy, which is a distinct, slowly progressive, DEMYELINATING and predominantly SENSORY ATAXIC picture with tremor — so send ANTI-MAG ANTIBODIES where the paraprotein is IgM",
+      "NERVE CONDUCTION STUDIES TO SEPARATE DEMYELINATING FROM AXONAL, since that changes the diagnosis entirely: a demyelinating picture with a paraprotein raises anti-MAG neuropathy and paraproteinaemic CIDP, both of which have treatments, while an axonal picture raises amyloid and vasculitis",
+      "Examine {level}, and look for the RED FLAGS OF A HAEMATOLOGICAL MALIGNANCY behind the band — bone pain, anaemia, renal impairment, hypercalcaemia, weight loss — because a paraproteinaemia is a finding, not a diagnosis, and the marrow is what says whether it is benign",
+    ],
+    monitoring: [
+      "SAFETY NET: THINK OF POEMS SYNDROME, which is missed for years and is treatable. A progressive demyelinating neuropathy with a LAMBDA paraprotein plus any of organomegaly, endocrinopathy, skin change, papilloedema or fluid overload is POEMS — send VEGF and image for a sclerotic bone lesion, because treating the plasma cell clone treats the neuropathy",
+      "AMYLOIDOSIS IS THE OTHER MUST-NOT-MISS: a painful small-fibre neuropathy with AUTONOMIC failure, carpal tunnel syndrome in both hands, cardiac or renal involvement, in a patient with a paraprotein. It needs tissue and it needs haematology urgently, because the cardiac disease determines survival",
+      "Track {level} with a standard scale, and REFER TO HAEMATOLOGY rather than monitoring the band in a neurology clinic — the risk of progression to myeloma or lymphoma is theirs to quantify and follow",
+      "Where the neuropathy is genuinely from a benign monoclonal gammopathy, treatment decisions rest on DISABILITY rather than on the antibody titre or the paraprotein level, and much of the care is symptomatic: neuropathic pain, gait, falls and foot protection",
+    ],
+    urgency: "urgent",
+    referral: "Neurology with neurophysiology, and haematology for the paraprotein — jointly rather than sequentially",
+  }),
+
+  // ---- ROUND 15 (tranche 3): BENIGN SKULL-BASE AND CRANIAL-NERVE TUMOURS ----
+  ...family("benign-skull-base-tumour", BENIGN_SKULL_BASE_SPINE, {
+    "Vestibular schwannoma": {
+      slots: { level: "HEARING by formal audiometry, plus facial sensation, the corneal reflex and facial movement",
+               flavour: "ASYMMETRIC sensorineural hearing loss with tinnitus and imbalance — and asymmetric hearing loss is the finding that earns an MRI, because the tumour is silent otherwise. Facial WEAKNESS is unusual even in a large one, so its presence argues for a different lesion" },
+      confirmatoryExtra: ["BILATERAL vestibular schwannomas mean NEUROFIBROMATOSIS TYPE 2 until proven otherwise: image the whole neuraxis for meningiomas and spinal tumours, examine the skin and the eyes, and refer for genetic counselling. It is a diagnosis about a family, not only about an ear"],
+    },
+    "Vestibular schwannoma (intracanalicular)": {
+      slots: { level: "audiometry with speech discrimination, and the corneal reflex",
+               flavour: "a small tumour confined WITHIN the internal auditory meatus, where hearing preservation is most achievable and the argument for observation is strongest — many never grow, and treating one that would not have grown costs hearing for nothing" },
+      confirmatoryExtra: ["SPEECH DISCRIMINATION, not just the pure-tone audiogram: it can be disproportionately poor and it is what determines whether the ear is usefully serviceable, which is the number that decides between watching, radiosurgery and surgery"],
+    },
+    "Meningioma": {
+      slots: { level: "hearing, facial sensation and the corneal reflex, plus gait",
+               flavour: "at the cerebellopontine angle a meningioma is broad-based on the petrous dura with a DURAL TAIL, and it does NOT widen the internal auditory meatus — which is exactly how it is told from a schwannoma, and it changes the operation" },
+    },
+    "Meningioma / facial schwannoma": {
+      slots: { level: "FACIAL MOVEMENT graded formally, alongside hearing and the corneal reflex",
+               flavour: "facial weakness at the internal auditory meatus points AWAY from a vestibular schwannoma. A facial schwannoma follows the nerve into the labyrinthine segment on thin-slice imaging, which is the finding to ask for" },
+      confirmatoryExtra: ["A slowly PROGRESSIVE facial palsy is never Bell's palsy. Any facial weakness that progresses beyond a few weeks, recurs on the same side, or comes with hearing loss or twitching is imaged along the whole course of the nerve"],
+    },
+    "Geniculate schwannoma": {
+      slots: { level: "facial movement graded formally, taste on the anterior tongue, tear production and hearing",
+               flavour: "at the geniculate ganglion the branch anatomy is the localiser: loss of TEARING points at or above the greater petrosal nerve, while taste and stapedial reflex changes place it below — so the deficits map the segment better than the scan alone" },
+    },
+    "Facial nerve haemangioma": {
+      slots: { level: "facial movement, hearing, and the pattern of onset — fluctuating or stepwise rather than steadily progressive",
+               flavour: "a vascular malformation of the geniculate region that causes facial weakness EARLY and out of proportion to its small size, unlike a schwannoma of the same volume. That disproportion is the clue on imaging as well as at the bedside" },
+    },
+    "Trigeminal schwannoma": {
+      slots: { level: "facial sensation in all three divisions separately, the corneal reflex, and the MUSCLES OF MASTICATION",
+               flavour: "a dumbbell tumour spanning the middle and posterior fossae through Meckel's cave. FACIAL NUMBNESS rather than pain is the usual presentation, and a persistently numb face is never trigeminal neuralgia" },
+      confirmatoryExtra: ["Look for MASSETER AND TEMPORALIS WASTING and for denervation change in those muscles on the scan — motor involvement means the lesion is proximal to or at the ganglion, and it is a sign nobody finds without palpating the temple"],
+      bySite: {
+        skull_base_v_ganglion: { level: "all three divisions, the corneal reflex, and the muscles of mastication" },
+        skull_base_v3_ovale: { level: "sensation over the jaw and tongue, and jaw power and deviation on opening — a jaw that deviates towards the weak side localises to V3 at no cost" },
+      },
+    },
+    "Meningioma of Meckel's cave": {
+      slots: { level: "the three trigeminal divisions and the corneal reflex, plus the eye movements — the cavernous sinus is next door",
+               flavour: "a dural-based mass with a tail in Meckel's cave, distinguished from a trigeminal schwannoma on the scan rather than at the bedside; both present with a numb face, and the difference decides the approach" },
+    },
+    "Petrous apex tumour or cholesteatoma": {
+      slots: { level: "ABDUCTION of the eye, facial sensation, hearing, and the ear itself on otoscopy",
+               flavour: "a sixth nerve palsy with facial pain and a discharging ear is GRADENIGO'S SYNDROME — classically infective, and the same corridor is occupied by cholesteatoma and by tumour. The ear examination is part of the neurological one here" },
+      confirmatoryExtra: ["CT temporal bones alongside the MRI: expansion with smooth remodelling suggests cholesterol granuloma or cholesteatoma, while erosion suggests malignancy or infection — and a petrous apicitis is an emergency rather than a slow tumour"],
+      urgency: "urgent",
+    },
+    "Chondrosarcoma": {
+      slots: { level: "the cranial nerves in sequence along the corridor, and the eye movements",
+               flavour: "arises from the PETRO-OCCIPITAL FISSURE, which is off the midline — and that off-centre origin is the imaging feature that separates it from a chordoma, which arises in the midline clivus. Both erode bone slowly and both present as an insidious cranial neuropathy" },
+      confirmatoryExtra: ["Despite being slow and often called low-grade, this is a SARCOMA: it needs tissue, a sarcoma multidisciplinary discussion and a definitive plan, usually surgery with proton or particle radiotherapy — not the interval scanning that suits a meningioma"],
+      urgency: "urgent",
+    },
+    "Metastasis / cholesterol granuloma": {
+      slots: { level: "the cranial nerves at the apex — abduction, facial sensation and hearing",
+               flavour: "two lesions with the same address and opposite meanings: a cholesterol granuloma is benign, expansile and bright on both T1 and T2, while a metastasis destroys bone and comes with a history. The bone window and the systemic history separate them" },
+      confirmatoryExtra: ["Where METASTASIS is possible, the question is systemic before it is local: ask about a known primary, and stage with CT chest, abdomen and pelvis rather than investigating the skull base in isolation"],
+      urgency: "urgent",
+    },
+    "Glomus tympanicum tumour": {
+      slots: { level: "the ear drum on OTOSCOPY, hearing, and the facial nerve",
+               flavour: "PULSATILE TINNITUS with conductive hearing loss and a RED MASS BEHIND THE EAR DRUM. The otoscope makes this diagnosis, and the important instruction is what NOT to do — a middle-ear mass must never be biopsied through the drum, because it bleeds" },
+      confirmatoryExtra: ["DO NOT BIOPSY A VASCULAR MIDDLE-EAR MASS. Imaging characterises it: CT for the bone and MRI with angiography for the vascularity and the extent, and ENT sees it before anyone instruments the ear"],
+    },
+    "Glomus jugulare tumour (paraganglioma)": {
+      slots: { level: "the LOWER CRANIAL NERVES in sequence — palate, gag, voice, shoulder shrug and tongue — with hearing and the ear drum",
+               flavour: "a slowly growing vascular tumour at the jugular foramen: pulsatile tinnitus and hearing loss first, then hoarseness, dysphagia and shoulder weakness as it takes the ninth, tenth and eleventh nerves in turn. That sequence is the extent, so the nerves the patient has not mentioned are the ones to test" },
+      confirmatoryExtra: [
+        "SCREEN FOR CATECHOLAMINE SECRETION with plasma or urinary metanephrines BEFORE any surgery, embolisation or biopsy. A secreting paraganglioma handled without preparation can produce a hypertensive crisis on the table, and only a minority secrete — which is exactly why it must be tested rather than assumed",
+        "GENETIC TESTING AND FAMILY SCREENING: a substantial proportion carry succinate dehydrogenase mutations, which predict multiple and malignant tumours and have direct implications for relatives",
+        "Image for MULTIPLE paragangliomas — carotid body, vagal and contralateral jugular — rather than assuming the symptomatic one is the only one",
+      ],
+      bySite: {
+        skull_base_ix_jugular: { level: "the gag reflex and palatal sensation, swallow, and the ear" },
+        skull_base_x_jugular: { level: "VOICE and swallow, with laryngoscopy to see the cord — a vocal cord palsy is invisible without it and is a serious aspiration risk" },
+        skull_base_collet_sicard: { level: "all four lower cranial nerves together — palate, gag, voice, shoulder shrug and tongue. When all four fail on one side the lesion is at the jugular foramen and the hypoglossal canal together, and that combination is the localisation" },
+      },
+    },
+    "Glomus jugulare tumour": {
+      slots: { level: "shoulder shrug and sternocleidomastoid power alongside the other lower cranial nerves, plus hearing",
+               flavour: "an accessory nerve palsy from a jugular foramen mass — painless shoulder drooping and difficulty lifting the arm above the head, with scapular winging that is WORSE ON ABDUCTION, which is what separates it from a long thoracic nerve palsy" },
+      confirmatoryExtra: ["Screen for catecholamine secretion with metanephrines before any intervention, and consider genetic testing — the same rules as for any paraganglioma at this site"],
+    },
+    "Glomus jugulare (paraganglioma)": {
+      slots: { level: "the ninth, tenth and eleventh nerves as a group, and hearing — plus the ear drum, which may show the tumour",
+               flavour: "the JUGULAR FORAMEN SYNDROME (Vernet's) is what this produces when it is large: palate, voice, swallow and shoulder failing together on one side. The syndrome names the foramen, and the imaging then names the lesion" },
+      confirmatoryExtra: ["Metanephrines before intervention, imaging for further paragangliomas, and genetic counselling — the standing rules for this tumour family"],
+    },
+    "Carotid body tumour / paraganglioma": {
+      slots: { level: "the neck lump itself, the lower cranial nerves, and the SYMPATHETIC supply — the pupil, the lid and facial sweating",
+               flavour: "a painless, slowly enlarging neck mass at the carotid bifurcation that is mobile SIDE TO SIDE but not up and down, sometimes with a bruit. A Horner's or a hoarse voice means it has begun to involve what runs beside it" },
+      confirmatoryExtra: [
+        "IMAGE BEFORE ANYONE PUTS A NEEDLE IN IT. A pulsatile neck mass at the bifurcation must not have a fine-needle aspirate as its first investigation — duplex ultrasound with CT or MR angiography characterises it safely, and the splaying of the carotid bifurcation is close to diagnostic",
+        "Metanephrines and genetic testing as for any paraganglioma, and image for multiple and bilateral tumours",
+      ],
+    },
+    "Glomus or carotid body tumour": {
+      slots: { level: "all the lower cranial nerves PLUS the sympathetic chain — this is the combination that defines the syndrome",
+               flavour: "VILLARET'S SYNDROME — the four lower cranial nerves together with a HORNER'S, which places the lesion in the retroparotid space where the sympathetic chain runs alongside them. The Horner's is the extra sign that distinguishes it from a jugular foramen syndrome" },
+      confirmatoryExtra: ["Metanephrines before intervention and genetic counselling afterwards; and image the whole retroparotid and carotid space rather than the foramen alone, since the syndrome says the lesion is below the skull base"],
+    },
+    "Schwannoma": {
+      slots: { level: "the affected nerve and each of its neighbours in the same foramen",
+               flavour: "a lower cranial nerve schwannoma grows slowly and takes the nerves in sequence, and unlike a paraganglioma it is not vascular — which is what CT and the enhancement pattern separate, and it decides whether embolisation is even a consideration" },
+      bySite: {
+        skull_base_ix_jugular: { level: "the gag reflex, palatal sensation and swallow" },
+        skull_base_x_jugular: { level: "voice and swallow, with laryngoscopy to see the vocal cord" },
+      },
+    },
+    "Schwannoma / meningioma": {
+      slots: { level: "the four lower cranial nerves together, and hearing",
+               flavour: "at the jugular foramen these two are separated on imaging rather than clinically: a schwannoma expands the foramen smoothly, a meningioma is dural-based with a tail and may cause hyperostosis, and a paraganglioma is intensely vascular. All three present as the same slow lower cranial neuropathy" },
+    },
+    "Chordoma or clival tumour": {
+      slots: { level: "the TONGUE — wasting, fasciculation and deviation towards the weak side — plus the other lower cranial nerves and the eye movements",
+               flavour: "a MIDLINE clival lesion eroding bone slowly, classically presenting with an isolated hypoglossal palsy or with a sixth nerve palsy. The midline origin distinguishes it from a chondrosarcoma, which arises off-centre at the petro-occipital fissure" },
+      confirmatoryExtra: [
+        "Chordoma is LOCALLY AGGRESSIVE despite its slow growth and its benign-sounding description, and it recurs. It needs tissue, a skull-base multidisciplinary plan, and usually maximal resection with proton or particle radiotherapy — an interval-scanning approach is the wrong one here",
+        "An ISOLATED tongue wasting with no other sign is imaged along the whole course of the nerve, from the medulla through the hypoglossal canal to the neck — the canal is a small structure and a routine head scan does not resolve it",
+      ],
+      urgency: "urgent",
+    },
+    "Hearing loss with facial weakness from tumour": {
+      slots: { level: "facial movement GRADED FORMALLY, hearing by audiometry, and the ear drum",
+               flavour: "facial weakness together with hearing loss localises to the temporal bone, and the combination is what makes a tumour likely rather than a Bell's palsy. A facial palsy that PROGRESSES over weeks, or recurs on the same side, is imaged rather than treated again" },
+      confirmatoryExtra: ["Examine the EAR AND THE PAROTID, and look at the skin of the face, scalp and ear for a previously excised or neglected malignancy — perineural spread from a skin cancer is the diagnosis this picture most often turns out to be"],
+      urgency: "urgent",
+    },
+    "Benign parotid tumour with mass effect": {
+      slots: { level: "facial movement graded branch by branch, and the parotid itself — size, mobility, tenderness, and the skin over it",
+               flavour: "A BENIGN PAROTID TUMOUR DOES NOT USUALLY CAUSE FACIAL WEAKNESS, and that is the single most useful fact here: facial weakness with a parotid mass suggests MALIGNANCY until proven otherwise, whatever the lump feels like" },
+      confirmatoryExtra: [
+        "Ultrasound with fine-needle aspiration or core biopsy, and MRI for deep-lobe extension — the parotid is one of the few places where a needle is the right first move, in contrast to a vascular neck mass",
+        "Examine the whole facial and scalp skin and the regional nodes: a parotid mass is often a METASTASIS from a skin cancer of the face or scalp rather than a primary salivary tumour",
+      ],
+      urgency: "urgent",
+    },
+    "Tumour infiltration or radiotherapy": {
+      slots: { level: "TRAPEZIUS and sternocleidomastoid separately, the scapula at rest and on abduction, and the neck for scars, nodes and radiotherapy change",
+               flavour: "the accessory nerve is superficial in the posterior triangle, so it is taken by nodal disease, by surgery and by radiotherapy — and the history usually names the cause. Radiation injury appears months to years after treatment and progresses slowly, where recurrent tumour is faster and usually painful" },
+      confirmatoryExtra: [
+        "EXAMINE THE NECK AND EXAMINE THE OLD OPERATION NOTE. Iatrogenic accessory nerve injury during a posterior triangle node biopsy is a classic and is often not recognised at the time — and it changes the answer from oncology to nerve surgery",
+        "Where recurrence is possible, imaging and PET-CT rather than electrophysiology alone: nerve conduction studies show the denervation but say nothing about what caused it",
+      ],
+      urgency: "urgent",
+    },
+    "Tumour or meningeal disease at the skull base": {
+      slots: { level: "EVERY cranial nerve in turn, both sides, plus the pupil — and repeat it at each review, because progression along the base is what makes the diagnosis",
+               flavour: "a compressive third nerve palsy at the skull base means the PUPIL is the sign that matters, and MULTIPLE cranial neuropathies point away from a single tumour and towards meningeal disease" },
+      confirmatoryExtra: [
+        "WHERE SEVERAL CRANIAL NERVES ARE INVOLVED, THINK LEPTOMENINGEAL DISEASE and do a LUMBAR PUNCTURE with cytology — a single negative sample is common in a real case, so more than one is often needed. MRI with contrast of the whole neuraxis is done first to look for nodular enhancement and to exclude a mass",
+        "A PROGRESSIVE cranial neuropathy WITH PAIN and a normal first scan is malignant until proven otherwise: repeat the imaging after an interval rather than reassuring on the strength of one study",
+      ],
+      urgency: "urgent",
+    },
+  }),
+
+  // ---- ROUND 15 (tranche 3): A MASS ON A PERIPHERAL NERVE ----
+  ...family("peripheral-nerve-mass", NERVE_MASS_SPINE, {
+    "Ganglion, lipoma or other mass at the elbow": {
+      slots: { level: "finger and thumb EXTENSION with the wrist — a posterior interosseous palsy causes finger drop with RADIAL WRIST DEVIATION and NO sensory loss, because the nerve is purely motor here",
+               flavour: "the posterior interosseous nerve passes through the supinator at the arcade of Frohse, and a ganglion, lipoma or synovitis at that point produces a painless progressive finger drop with sensation entirely intact. The preserved sensation is what separates it from a radial nerve palsy higher up" },
+      confirmatoryExtra: ["Consider the rheumatological cause too: elbow SYNOVITIS in rheumatoid arthritis compresses this nerve, and the finger drop is then repeatedly attributed to tendon rupture — the discriminator is that a nerve palsy still allows passive tenodesis extension"],
+    },
+    "Compression by tumour or haematoma": {
+      slots: { level: "hip ABDUCTION and the gait — a Trendelenburg sign, with the pelvis dropping on the unsupported side",
+               flavour: "the superior gluteal nerve runs through the greater sciatic notch above the piriformis, so a pelvic or gluteal mass, or a haematoma in an anticoagulated patient, compresses it there. A painless Trendelenburg gait with no back pain is not a radiculopathy" },
+      confirmatoryExtra: ["IMAGE THE PELVIS, not the spine. A gluteal or pelvic mass and a retroperitoneal haematoma are both invisible on a lumbar spine MRI aimed at the discs, and the request has to say what is being looked for"],
+    },
+    "Endometriosis or pelvic mass (cyclical)": {
+      slots: { level: "the sciatic distribution — dorsiflexion, plantarflexion and sensation below the knee — and take a MENSTRUAL history alongside it",
+               flavour: "CYCLICAL sciatica, worse around menstruation, is close to specific for endometriosis on or near the nerve. It is a diagnosis made by asking one question that is almost never asked, and patients are treated for disc disease for years" },
+      confirmatoryExtra: [
+        "PELVIC MRI, and ask gynaecology to look specifically at the sciatic nerve and the sacral plexus — routine pelvic imaging is not reported with the nerve in mind unless the question is on the request",
+        "Keep a symptom diary against the cycle for a few months where the history is suggestive but not clear-cut: the pattern is the evidence, and it cannot be seen from a single consultation",
+      ],
+    },
+    "Ganglion cyst or nerve sheath tumour at the fibular neck": {
+      slots: { level: "dorsiflexion, eversion, and — crucially — INVERSION and hip abduction, which are the muscles that separate a peroneal palsy from an L5 root lesion",
+               flavour: "foot drop with a PALPABLE, tender swelling at the fibular neck, or foot drop in someone who has not been crossing their legs, losing weight or wearing a cast. An intraneural ganglion at this point is well described, is treatable, and is repeatedly labelled idiopathic compression" },
+      confirmatoryExtra: ["PALPATE AND SCAN THE FIBULAR NECK. Ultrasound takes minutes and shows the cyst; a foot drop attributed to compression that does not recover as expected should have the nerve imaged rather than the diagnosis repeated"],
+    },
+    "Ganglion, varicosity or space-occupying lesion in the tarsal tunnel": {
+      slots: { level: "sensation on the SOLE in the medial and lateral plantar distributions separately, toe flexion, and a TINEL'S sign behind the medial malleolus",
+               flavour: "burning pain and numbness in the sole, often worse on standing and walking and at night. Tarsal tunnel syndrome is over-diagnosed clinically and under-investigated for its cause — and unlike carpal tunnel, a structural lesion is found in a substantial share of genuine cases" },
+      confirmatoryExtra: [
+        "EXCLUDE THE COMMONER EXPLANATIONS FIRST — a length-dependent polyneuropathy, particularly diabetic, plantar fasciitis and an S1 radiculopathy all give a painful sole and all are commoner than this",
+        "Where the diagnosis holds, ULTRASOUND OR MRI OF THE TARSAL TUNNEL is what finds the ganglion, the varicosity or the accessory muscle — and finding it is what turns an intractable pain syndrome into an operable one",
+      ],
+      urgency: "routine",
+    },
+  }),
+
   // ---- HERNIATION AND RAISED INTRACRANIAL PRESSURE: signs, not diagnoses ----
   ...family("herniation-raised-icp", HERNIATION_SPINE, {
     "Mass effect with transtentorial herniation": {
@@ -429,6 +727,202 @@ export default {
 
   // ---- INTRA-AXIAL TUMOUR ----
   ...family("intra-axial-tumour", INTRAAXIAL_SPINE, {
+    // ---- ROUND 15 (tranche 3): THE REST OF THE PARENCHYMAL MASSES ----
+    // Tranche 2 authored the intra-axial tumours that kill quickly. These are the same argument at the
+    // remaining sites, and the divergence is anatomical: what the mass sits next to decides what is lost
+    // first, whether it can be biopsied at all, and whether the swelling or the tumour is the emergency.
+    "Tumour / metastasis": {
+      slots: { level: "the deficit and the conscious level together",
+               flavour: "at a deep or brainstem site the DIFFERENTIAL diagnosis matters more than usual, because a lesion here may not be biopsiable — so demyelination, abscess and lymphoma have to be argued out on imaging and serology rather than settled with tissue" },
+      bySite: {
+        midbrain_lateral: { level: "the third nerve, the pupil, and contralateral coordination and power",
+                            flavour: "a midbrain mass declares itself through crossed signs and is close to the aqueduct — so HYDROCEPHALUS is the complication with the shorter clock, and the ventricles are looked at on every scan" },
+        midbrain_hemi: { level: "conscious level, the pupils and all four limbs",
+                         flavour: "a large midbrain lesion threatens the aqueduct and the ARAS together, so a falling conscious level here is either hydrocephalus or the lesion itself, and the scan has to answer which" },
+        medulla_hemi: { level: "SWALLOW AND RESPIRATION before anything else, then the long tracts",
+                        flavour: "the medulla contains the respiratory and swallowing centres, so a mass here endangers airway and breathing long before it produces impressive limb signs" },
+        visual_pathway_lgn: { level: "the visual field formally in each eye, and the pupils",
+                              flavour: "a lesion at the lateral geniculate is small, deep and adjacent to the internal capsule — the field defect may be the only sign, and it will be missed unless perimetry is requested" },
+        subcortex_anterior_choroidal: { level: "power, sensation and the field, plus language and neglect to confirm the cortex is spared",
+                                        flavour: "a small deep mass in this territory reproduces the anterior choroidal stroke syndrome, and the discriminator is the tempo — weeks rather than minutes" },
+      },
+    },
+    "Thalamic tumour or metastasis": {
+      slots: { level: "the deficit, the conscious level, and cognition — which is what a thalamic lesion takes and what is least often tested",
+               flavour: "the thalamus sits against the third ventricle, so HYDROCEPHALUS is the complication to look for on every scan; and a thalamic lesion is deep, eloquent and often approached by BIOPSY rather than resection, which makes the differential with lymphoma and demyelination matter more" },
+      confirmatoryExtra: ["A bilateral or midline thalamic picture in an immunosuppressed or older patient raises PRIMARY CNS LYMPHOMA — and steroids given before biopsy can dissolve the diagnosis, which is why they are discussed with neurosurgery first rather than started on the ward"],
+      bySite: {
+        thalamus_vl: { level: "the tremor and any dystonic posturing, alongside power and coordination" },
+        thalamus_pulvinar: { level: "NEGLECT and visual attention — test extinction on double simultaneous stimulation, which is what a pulvinar lesion takes" },
+        thalamus_limbic: { level: "MEMORY formally, and behaviour from an informant — an anterior or dorsomedial thalamic lesion presents as amnesia and is regularly admitted as a psychiatric illness" },
+        aphasia_subcortical_thalamic: { level: "fluency, comprehension and REPETITION, tested when the patient is fully alert",
+                                        flavour: "a thalamic aphasia fluctuates with arousal, so the deficit recorded in a drowsy patient will be recorded as far worse than it is — and the same lesion is next to the third ventricle, so the ventricles are checked too" },
+      },
+    },
+    "Small metastasis / glioma": {
+      slots: { level: "the focal deficit, and whether anything else is failing alongside it",
+               flavour: "a SMALL deep lesion in an eloquent place: the deficit is out of all proportion to the size, which is why it is repeatedly assumed to be a stroke until the tempo or the contrast enhancement says otherwise" },
+      confirmatoryExtra: ["The commonest error at these sites is a lesion read as a lacunar stroke on a plain CT. A deficit that PROGRESSES over days to weeks, or enhances, is not a lacune — and CONTRAST is what settles it"],
+      bySite: {
+        subcortex_internal_capsule: { level: "power in face, arm and leg, and the absence of cortical signs" },
+        subcortex_corona_radiata: { level: "power, and the surrounding white matter for oedema, which at this site produces far more deficit than the lesion does" },
+        subcortex_thalamus: { level: "sensation across face, arm and leg, plus arousal and memory" },
+        subcortex_sensorimotor: { level: "power AND sensation together, with the cortical functions that should be spared" },
+      },
+    },
+    "Tumour (glioma / metastasis)": {
+      slots: { level: "the focal deficit and the surrounding function that is still intact",
+               flavour: "a hemispheric lesion where the EDGE matters as much as the centre: eloquent cortex nearby decides whether resection is possible, so the pre-operative mapping question is asked at the first discussion rather than at the last" },
+      bySite: {
+        subcortex_optic_radiation: { level: "the visual QUADRANTS formally — a lesion in the radiation can present with a field defect the patient has not noticed" },
+        cortex_operculum: { level: "language in full — fluency, comprehension, repetition and naming — plus face and arm power",
+                            flavour: "this is dominant-hemisphere language cortex, so awake mapping and functional imaging bear directly on what can be removed; the language assessment before surgery is a baseline as well as a description" },
+      },
+    },
+    "Midbrain tumour / metastasis": {
+      slots: { level: "the pupil, vertical gaze and the third nerve, with contralateral power",
+               flavour: "a paramedian midbrain mass gives crossed signs and sits at the aqueduct — hydrocephalus is the shorter clock, and this location is often biopsy-only, so the imaging differential has to be worked properly" },
+    },
+    "Lateral medullary tumour / metastasis": {
+      slots: { level: "SWALLOW above all, plus the crossed sensory pattern and Horner's",
+               flavour: "a slow lateral medullary syndrome — the same picture as the PICA stroke, separated only by a tempo of weeks rather than minutes, which is the history to take carefully" },
+      monitoringExtra: ["NIL BY MOUTH UNTIL FORMALLY ASSESSED: the dysphagia of a lateral medullary lesion is far worse than the rest of the examination suggests, and aspiration is what causes harm while the tumour is being investigated"],
+    },
+    "Medullary tumour / metastasis": {
+      slots: { level: "the tongue, respiration and the long tracts",
+               flavour: "a medial medullary mass takes the hypoglossal nucleus and the pyramid together — and at this level RESPIRATORY function is part of the neurological examination rather than a separate observation" },
+    },
+    "Pontine glioma (esp. children)": {
+      slots: { level: "the cranial nerves individually, the long tracts, and gait",
+               flavour: "a DIFFUSE INTRINSIC PONTINE GLIOMA in a child is diagnosed on MRI appearance and clinical picture; the classic triad is cranial neuropathies, long-tract signs and ataxia developing over weeks" },
+      confirmatoryExtra: [
+        "REFER TO A PAEDIATRIC NEURO-ONCOLOGY CENTRE IMMEDIATELY rather than completing the work-up locally — the imaging is characteristic, biopsy practice is centre-specific and now often molecularly driven, and trial access matters here more than in almost any other tumour",
+        "A child with a short history of squint, facial weakness or a clumsy gait is imaged rather than watched; the interval between the first symptom and the diagnosis in this tumour is routinely measured in months",
+      ],
+      monitoringExtra: ["The prognosis is poor and the family will ask directly. Honest, senior, unhurried conversation from the outset — and early palliative involvement alongside active treatment rather than after it — is the standard of care, not a concession"],
+      urgency: "emergency",
+    },
+    "Pontine glioma": {
+      slots: { level: "eye movements, facial power and sensation, swallow, and the long tracts",
+               flavour: "an intrinsic pontine mass expands the pons and takes the cranial nerve nuclei with the long tracts, which is what makes the picture unmistakably intra-axial rather than compressive" },
+    },
+    "Pontine glioma / metastasis": {
+      slots: { level: "power against coordination — ataxia OUT OF PROPORTION to the weakness — plus speech and swallow",
+               flavour: "a ventral pontine lesion produces the same ataxic hemiparesis as a basis pontis lacune, and the tempo is the discrimination: a deficit that accumulates over weeks is not a lacune" },
+    },
+    "Cerebellopontine angle tumour": {
+      slots: { level: "HEARING and facial SENSATION together, plus the corneal reflex and the facial nerve",
+               flavour: "a CPA mass takes the fifth and eighth nerves before the seventh — and a DEPRESSED CORNEAL REFLEX is the earliest reliable sign of a large one, which is why it is tested rather than assumed" },
+      confirmatoryExtra: [
+        "MRI WITH DEDICATED INTERNAL AUDITORY MEATUS SEQUENCES, and AUDIOMETRY: asymmetric sensorineural hearing loss is the presenting feature, and audiometry both documents it and guides whether hearing can be preserved",
+        "FACIAL WEAKNESS IS UNUSUAL IN A VESTIBULAR SCHWANNOMA even when it is large — so facial weakness at the CPA argues for a facial schwannoma, a meningioma or a malignant lesion instead, and it changes the differential rather than confirming it",
+      ],
+      bySite: {
+        pons_lateral_trigeminal: { level: "facial sensation in all three divisions and the corneal reflex, with hearing" },
+        pons_trigeminal: { level: "facial sensation, the corneal reflex, and the muscles of mastication — a numb face with a weak jaw points at the trigeminal nerve itself rather than at compression from outside" },
+      },
+    },
+    "Cerebellopontine angle tumour (vestibular schwannoma, meningioma)": {
+      slots: { level: "hearing, facial sensation, the corneal reflex, and gait",
+               flavour: "the two commonest lesions here differ on imaging rather than at the bedside — a schwannoma widens the internal auditory meatus and a meningioma is dural-based with a tail — and that difference decides the operation" },
+      confirmatoryExtra: ["Audiometry before anything else: the hearing that remains at diagnosis is what any hearing-preserving treatment is trying to keep, and it must be documented rather than described"],
+    },
+    "Paraneoplastic or posterior-fossa tumour": {
+      slots: { level: "eye movements and gaze holding, gait, and the long tracts",
+               flavour: "two very different diseases share this site, and they separate on TEMPO and on imaging: a mass is visible, while a paraneoplastic syndrome shows little or nothing on the scan and needs antibodies and a hunt for a cancer instead" },
+      confirmatoryExtra: ["Where the MRI is unremarkable, send PAIRED SERUM AND CSF antibody panels and look for the tumour — a negative panel does not exclude the syndrome, and the cancer can precede its discovery by a year or more"],
+    },
+    "Bilateral thalamic glioma": {
+      slots: { level: "CONSCIOUS LEVEL AND AROUSAL above the focal signs — a bithalamic lesion presents as hypersomnolence or as an apparent psychiatric illness rather than as a hemiparesis",
+               flavour: "a bilateral thalamic mass is a short differential and a difficult one: bithalamic glioma, primary CNS lymphoma, deep venous thrombosis with venous infarction, and an artery of Percheron stroke. The tempo and the venous imaging separate them" },
+      confirmatoryExtra: [
+        "IMAGE THE DEEP VENOUS SYSTEM — a venogram is what excludes internal cerebral vein or straight sinus thrombosis, which is treatable and looks identical on a plain scan",
+        "Watch the ventricles: a bithalamic mass obstructs the third ventricle, and the hydrocephalus is the emergency while the tumour is the diagnosis",
+      ],
+      urgency: "emergency",
+    },
+    "Brainstem tumour or trauma": {
+      slots: { level: "the tremor — a Holmes tremor is present at REST, on POSTURE and on ACTION, which no other tremor is — plus the eye movements",
+               flavour: "a lesion in the Guillain-Mollaret triangle, and the two candidates carry entirely different histories: a mass grows over weeks to months, while trauma has a moment attached to it. Ask for that moment before imaging" },
+      urgency: "urgent",
+    },
+    "Tumour or surgical injury": {
+      slots: { level: "the PALATE at rest with the mouth open, plus limb coordination and gait",
+               flavour: "palatal tremor from a lesion in the triangle — and a PREVIOUS POSTERIOR FOSSA OPERATION is the history that explains it without any new pathology, so the operation notes are worth more here than another scan" },
+      confirmatoryExtra: ["Review any prior imaging and operative record before investigating anew: symptomatic palatal tremor appears WEEKS TO MONTHS after the causative lesion, so the responsible event is usually already documented"],
+      urgency: "urgent",
+    },
+    "Small metastasis or glioma": {
+      slots: { level: "sensation in the FACE and hand, and power, to confirm it is spared",
+               flavour: "an isolated hemisensory or cheiro-oral picture from a lesion a few millimetres across. The size explains why it is missed on a plain CT and why contrast is needed to see it at all" },
+    },
+    "Tumour or demyelination": {
+      slots: { level: "the involuntary movements and their amplitude, plus power and tone",
+               flavour: "a subthalamic lesion presenting with hemiballismus, and the two candidates diverge sharply on treatment: a demyelinating plaque in a younger patient with other lesions and a suggestive history, against a mass with progressive growth" },
+      confirmatoryExtra: ["Where demyelination is plausible, image the whole neuraxis and consider CSF oligoclonal bands before any biopsy — a solitary tumefactive plaque is a well-recognised cause of an unnecessary brain biopsy"],
+    },
+    "Deep tumour or metastasis": {
+      slots: { level: "language in full, plus power — a striatocapsular lesion produces an aphasia that is often better than the imaging predicts",
+               flavour: "a deep dominant-hemisphere mass. Language deficits from subcortical lesions fluctuate and recover more than cortical ones do, so the baseline has to be recorded properly if any change is to be interpretable" },
+    },
+    "Frontal tumour / metastasis": {
+      slots: { level: "conjugate GAZE — deviation towards the lesion, and whether it overcomes with the oculocephalic manoeuvre — plus behaviour and executive function",
+               flavour: "a frontal mass is the tumour that presents to psychiatry: apathy, disinhibition or a personality change months before any weakness, with the family noticing long before the patient does" },
+      confirmatoryExtra: ["Ask an INFORMANT about behaviour and personality. A frontal tumour with a normal neurological examination is common, and the history is the only abnormal finding until it is not"],
+    },
+    "Low-grade glioma": {
+      slots: { level: "speech, and the AUTONOMIC observations — blood pressure, rhythm and conscious level — which the insula affects out of proportion",
+               flavour: "insular low-grade gliomas typically present with SEIZURES in a young adult with an otherwise normal examination, and they grow slowly enough that the surgical decision is about long-term function rather than about the next few weeks" },
+      confirmatoryExtra: [
+        "MOLECULAR MARKERS DRIVE THE PROGNOSIS AND THE TREATMENT in low-grade glioma far more than the histological grade alone, so the specimen and the discussion belong in a neuro-oncology centre from the start",
+        "The decision here is genuinely difficult: extensive early resection improves outcome, and the insula is surrounded by language, motor and vascular structures. That trade-off is a multidisciplinary conversation, not a single surgeon's judgement",
+      ],
+      urgency: "routine",
+    },
+    "Small tumour or metastasis": {
+      slots: { level: "CORTICAL sensation in the hand — two-point discrimination, stereognosis and graphaesthesia — with primary modalities intact",
+               flavour: "a small postcentral lesion gives cortical sensory loss with normal pinprick, which is dismissed as functional more often than it is investigated. The preserved primary modalities are the finding, not the reassurance" },
+    },
+    "Glioma of the medial frontal lobe": {
+      slots: { level: "initiation and spontaneous movement of the contralateral arm, plus leg power and continence",
+               flavour: "a medial frontal mass presents as akinesia, mutism or reduced initiation — the patient moves to command but not spontaneously — and it is repeatedly investigated as depression or as a cord lesion because both legs can be involved" },
+    },
+    "Bilateral tumour or metastases": {
+      slots: { level: "HEARING formally by audiometry, and comprehension of speech against comprehension of writing",
+               flavour: "cortical deafness requires BOTH superior temporal lobes, so a single lesion does not explain it — which makes bilateral disease, and therefore metastases, the leading explanation and a search for the primary the first move" },
+      confirmatoryExtra: ["Multiple lesions means metastatic until proven otherwise: CT chest, abdomen and pelvis to find the primary BEFORE any brain biopsy is considered"],
+    },
+    "Glioma / metastasis presenting with a large hemispheric deficit": {
+      slots: { level: "conscious level alongside the focal deficit — and the pupils, which is where deterioration will show first",
+               flavour: "a large hemispheric mass with surrounding oedema. The OEDEMA usually causes more deficit than the tumour, which is why steroids can produce a striking improvement that is not a change in the tumour at all" },
+      confirmatoryExtra: ["Where PRIMARY CNS LYMPHOMA is possible — an immunosuppressed patient, deep periventricular lesions, marked enhancement — DISCUSS WITH NEUROSURGERY BEFORE GIVING STEROIDS. A lesion treated first can become unbiopsiable and the diagnosis is then lost for weeks"],
+      urgency: "emergency",
+    },
+    "Tumour of the SMA / medial frontal region": {
+      slots: { level: "PROXIMAL arm and leg power, initiation, and speech output",
+               flavour: "a medial frontal mass reproduces the anterior watershed man-in-a-barrel pattern, and the discrimination from hypoperfusion is the tempo plus the absence of a haemodynamic event" },
+      confirmatoryExtra: ["Post-operative SMA SYNDROME — profound akinesia and mutism after resection here — is expected and usually recovers substantially, so warning the patient and family in advance prevents a successful operation being experienced as a catastrophe"],
+    },
+    "Small metastasis or demyelinating plaque": {
+      slots: { level: "whether the hand weakness respects any nerve or root distribution, and the reflexes on that side",
+               flavour: "the pseudo-peripheral cortical hand again, but subacute: isolated hand weakness that fits no single nerve. Two very different diseases produce it here, and they separate on age, on the rest of the neuraxis, and on whether the lesion enhances as a ring" },
+      confirmatoryExtra: ["Image the WHOLE NEURAXIS and consider CSF oligoclonal bands before any biopsy — a tumefactive demyelinating plaque is one of the classic reasons a brain biopsy is performed unnecessarily"],
+    },
+    "Metastasis / haemangioblastoma": {
+      slots: { level: "limb coordination, gait, and the CONSCIOUS LEVEL — posterior fossa swelling is what threatens life here",
+               flavour: "a cerebellar mass sits in a rigid compartment next to the fourth ventricle, so HYDROCEPHALUS and brainstem compression are the emergencies while the tumour is the diagnosis. Those are different clocks and the shorter one is measured in hours" },
+      confirmatoryExtra: [
+        "HAEMANGIOBLASTOMA RAISES VON HIPPEL-LINDAU DISEASE, particularly in a younger patient or with multiple lesions: image the whole neuraxis and the abdomen for renal cell carcinoma and phaeochromocytoma, and refer for genetic counselling. It is a family diagnosis, not just this patient's",
+        "A solitary cerebellar metastasis in a patient with controlled systemic disease may still be resected with real benefit — so a metastatic label is not by itself a reason to stop investigating",
+      ],
+      monitoringExtra: ["SAFETY NET: a falling conscious level with a posterior fossa mass is an emergency for NEUROSURGERY, not for observation — the deterioration from fourth-ventricle obstruction can be very fast"],
+      urgency: "emergency",
+    },
+    "Posterior fossa tumour": {
+      slots: { level: "gaze holding, the nystagmus in each direction, gait and truncal stability",
+               flavour: "a mass at the vestibular nuclei produces central vestibular signs — direction-changing or gaze-evoked nystagmus, skew, and truncal ataxia too severe to sit unsupported — none of which belong to a peripheral labyrinthine problem" },
+      confirmatoryExtra: ["MRI rather than CT: the posterior fossa is where CT is at its least useful, and a normal CT in a patient with central vestibular signs is not an answer"],
+    },
     "Butterfly glioma or lymphoma": {
       slots: { level: "cognition, personality and any disconnection signs",
                flavour: "a lesion crossing the CORPUS CALLOSUM narrows the field sharply — glioblastoma and CNS lymphoma are the two that do this, and lymphoma is the one that MELTS with steroids, taking the histology with it" },
@@ -477,6 +971,62 @@ export default {
 
   // ---- MENINGIOMA AND THE DURAL MIMICS ----
   ...family("meningioma-dural", MENINGIOMA_SPINE, {
+    // ---- ROUND 15 (tranche 3): the rest of the dural / extra-axial masses ----
+    "Parasagittal meningioma": {
+      slots: { level: "LEG power and cortical sensation in the leg, continence, and the gait",
+               flavour: "leg-predominant weakness — often BOTH legs, since the lesion sits on the midline and takes both medial motor strips — with incontinence and no sensory level. It is a classic reason a brain lesion is investigated as a cord one, and the spine MRI comes back normal" },
+      confirmatoryExtra: [
+        "WHERE BOTH LEGS ARE WEAK AND THE SPINE IS NORMAL, IMAGE THE BRAIN. A parasagittal mass is the lesion this rule exists for, and the delay is otherwise measured in months",
+        "Assess the SUPERIOR SAGITTAL SINUS specifically: involvement of its posterior third governs what can safely be resected and is the commonest reason a parasagittal meningioma is not simply removed",
+      ],
+      bySite: {
+        cortex_aca: { level: "both legs, continence, initiation, and the grasp reflex" },
+        cortex_motor_leg: { level: "leg power on each side separately — asymmetry is common even when both are involved" },
+        cortex_sensory_leg: { level: "CORTICAL sensation in the leg — two-point discrimination and graphaesthesia — with primary modalities preserved" },
+      },
+    },
+    "Parasagittal metastasis": {
+      slots: { level: "leg power and continence, with the conscious level",
+               flavour: "the same address and a different disease: a dural metastasis grows in weeks rather than years, is often multiple, and carries far more surrounding OEDEMA than a meningioma of the same size. That oedema and the tempo are what distinguish it on the scan" },
+      confirmatoryExtra: [
+        "A dural-based lesion is NOT automatically a meningioma. Rapid growth, marked oedema, bone DESTRUCTION rather than hyperostosis, or a known primary all argue for metastasis or lymphoma, and that means tissue rather than an interval scan",
+        "Stage the patient: CT chest, abdomen and pelvis for the primary, and image the rest of the brain for further deposits before planning anything local",
+      ],
+      urgency: "urgent",
+    },
+    "Meningioma (tuberculum sellae)": {
+      slots: { level: "ACUITY, COLOUR VISION and FORMAL FIELDS in each eye, the pupils and the discs — plus the pituitary axis",
+               flavour: "a suprasellar meningioma compresses the chiasm from below and in FRONT, which classically produces a JUNCTIONAL scotoma — a central defect in one eye with a superior temporal defect in the other — rather than a clean bitemporal hemianopia. That asymmetry is why it is repeatedly diagnosed as unilateral optic neuritis" },
+      confirmatoryExtra: [
+        "PERIMETRY IN BOTH EYES, EVERY TIME. A junctional scotoma is only visible if the apparently good eye is tested, and an eye recorded as normal by confrontation is the reason this diagnosis is missed",
+        "Unlike a pituitary adenoma, the endocrine axis is usually intact here — so normal pituitary bloods do not exclude a suprasellar mass, and the fields still decide",
+      ],
+      urgency: "urgent",
+    },
+    "Optic nerve sheath meningioma": {
+      slots: { level: "acuity, colour vision, fields and the pupils, plus the DISC and any proptosis — and look for OPTOCILIARY SHUNT VESSELS on the disc",
+               flavour: "the triad is slowly progressive visual loss, optic ATROPHY and optociliary shunt vessels, usually with mild proptosis in a middle-aged woman. Imaging shows TRAM-TRACK enhancement of the sheath around a normal nerve, which is close to diagnostic and has to be asked for on a dedicated orbital study" },
+      confirmatoryExtra: ["Surgery to remove it usually SACRIFICES THE VISION in that eye, because the tumour and the nerve share a blood supply — which is why fractionated radiotherapy has become the treatment that preserves sight, and why observation is reasonable while vision is good"],
+      urgency: "urgent",
+    },
+    "Olfactory groove meningioma": {
+      slots: { level: "SMELL FORMALLY in each nostril, the visual fields and the discs in both eyes, and behaviour and executive function from an INFORMANT",
+               flavour: "FOSTER KENNEDY SYNDROME is the classic: optic ATROPHY in the eye on the side of the tumour from direct compression, with PAPILLOEDEMA in the other from raised pressure. These tumours grow very large before diagnosis because anosmia and a personality change are not what anyone brings to a doctor" },
+      confirmatoryExtra: [
+        "TEST SMELL IN EACH NOSTRIL SEPARATELY. It is almost never done, it is the earliest sign, and by the time the frontal or visual features appear the tumour is usually enormous",
+        "Examine BOTH FUNDI before concluding anything about the vision: the Foster Kennedy picture only exists if the second eye is looked at",
+      ],
+    },
+    "Meningioma / pituitary / metastasis / perineural spread": {
+      slots: { level: "each ocular motor nerve separately, the pupil, and V1 and V2 sensation — recording what is SPARED as well as what is lost, since the combination is the localisation",
+               flavour: "the cavernous sinus packs several cranial nerves and the carotid into one small space, so multiple ocular motor palsies with facial sensory loss on one side localise here before any scan. What is in the sinus is then the whole question, and these four behave completely differently" },
+      confirmatoryExtra: [
+        "MRI WITH DEDICATED CAVERNOUS SINUS SEQUENCES AND FAT SATURATION, plus angiography — a routine head scan does not resolve this region and will be reported as normal. The angiography is what excludes an aneurysm and a carotid-cavernous fistula",
+        "ASK ABOUT ANY PREVIOUS HEAD AND NECK OR FACIAL SKIN CANCER, however small and however long ago — perineural spread is a leading cause here and patients never volunteer an excised skin lesion from years back",
+        "DO NOT GIVE STEROIDS AS A DIAGNOSTIC TRIAL before infection and lymphoma have been excluded: tumours and infections improve on steroids too, and a lesion treated before biopsy can become undiagnosable",
+      ],
+      urgency: "urgent",
+    },
     "Parasagittal / falx meningioma": {
       slots: { level: "leg power in both legs, and continence",
                flavour: "a parasagittal lesion produces a LEG-predominant, often bilateral deficit that is regularly investigated as a cord problem — image the head before the spine when both legs are weak and the arms are not" },
@@ -504,6 +1054,50 @@ export default {
 
   // ---- SELLAR / SUPRASELLAR / HYPOTHALAMIC ----
   ...family("sellar-hypothalamic", SELLAR_SPINE, {
+    // ---- ROUND 15 (tranche 3): the rest of the sellar / suprasellar / optic-pathway masses ----
+    "Pituitary macroadenoma": {
+      slots: { level: "FORMAL VISUAL FIELDS and colour vision in each eye, plus the endocrine axis",
+               flavour: "the classic chiasmal lesion. A BITEMPORAL defect begins in the SUPERIOR temporal quadrants and is missed at the bedside routinely, so perimetry is the test — and a PROLACTINOMA is the one large pituitary tumour treated with a drug rather than an operation, which is why prolactin is measured before anyone books theatre" },
+      confirmatoryExtra: ["MEASURE PROLACTIN, and interpret a modestly raised value carefully: stalk compression by any sellar mass raises it a little, while a true prolactinoma raises it a great deal. Getting that backwards means operating on a tumour that would have shrunk on medical treatment"],
+    },
+    "Pituitary macroadenoma with suprasellar extension": {
+      slots: { level: "the fields in each eye separately, watching for INCONGRUITY, plus acuity, colour and the endocrine axis",
+               flavour: "extension beyond the chiasm onto the optic TRACT gives an incongruous homonymous defect rather than a bitemporal one — an unusual pattern that is easily misread as a hemisphere lesion, and it means the tumour is larger than a simple chiasmal compression" },
+      confirmatoryExtra: ["Prolactin first, as for any macroadenoma; and assess how far the suprasellar extension has gone, since that determines whether the tumour can be reached through the nose or needs a transcranial approach"],
+    },
+    "Pituitary macroadenoma with stalk compression": {
+      slots: { level: "SODIUM, fluid balance and thirst alongside the fields and the full pituitary axis",
+               flavour: "stalk compression releases prolactin from normal inhibition — the STALK EFFECT — so the prolactin rise is modest, unlike the very high level of a true prolactinoma. Confusing the two leads to medical treatment of a tumour that will not shrink" },
+      confirmatoryExtra: ["ASK ABOUT THIRST AND NOCTURIA and check the sodium: diabetes insipidus is unusual in a simple adenoma and points instead to a stalk or hypothalamic lesion — germinoma, histiocytosis, hypophysitis or metastasis — which changes the differential entirely"],
+    },
+    "Suprasellar tumour (craniopharyngioma, germinoma, glioma)": {
+      slots: { level: "the fields, the full pituitary axis, SODIUM and thirst — and in a child, GROWTH AND PUBERTY plotted on a chart, which is the most sensitive measure available",
+               flavour: "three tumours share this address and diverge completely on treatment: a craniopharyngioma is surgical and calcifies, a germinoma is exquisitely radio- and chemosensitive and must not be resected blindly, and a glioma is often watched. Tissue and tumour markers decide, not the scan alone" },
+      confirmatoryExtra: [
+        "SEND TUMOUR MARKERS — beta-hCG and alpha-fetoprotein in SERUM AND CSF — before any operation. A germinoma is treated without resection, so a positive marker changes the plan from surgery to oncology, and it is a blood test",
+        "CALCIFICATION on CT supports craniopharyngioma; DIABETES INSIPIDUS at presentation supports germinoma or an infiltrative process, since an adenoma rarely causes it",
+      ],
+      monitoringExtra: ["HYPOTHALAMIC OBESITY AND BEHAVIOURAL CHANGE after craniopharyngioma treatment cause more long-term harm than the tumour usually does, and they are irreversible — which is why the modern decision often favours less aggressive surgery with radiotherapy, and why that trade-off is discussed with the family beforehand"],
+    },
+    "Hypothalamic glioma": {
+      slots: { level: "the pituitary axis, the fields, WEIGHT and appetite, temperature and the sleep-wake pattern — and growth in a child",
+               flavour: "hypothalamic tumours present through the FUNCTIONS the hypothalamus runs rather than through weakness: failure to thrive with a voracious appetite in an infant (the diencephalic syndrome), or obesity, precocious puberty and disturbed sleep. None of it looks neurological until someone plots the growth chart" },
+      confirmatoryExtra: ["SCREEN FOR NEUROFIBROMATOSIS TYPE 1 in a child with an optic pathway or hypothalamic glioma: examine the skin for café-au-lait macules and axillary freckling and the eyes for Lisch nodules. NF1-associated tumours behave better and are frequently observed rather than treated, so the syndrome changes the plan"],
+    },
+    "Tumour (glioma, metastasis, craniopharyngioma)": {
+      slots: { level: "the field defect in each eye, its CONGRUITY, and the pupils for a relative afferent defect — plus the endocrine axis, since this is next door to the sellar region",
+               flavour: "an optic TRACT lesion gives an incongruous homonymous hemianopia with a contralateral relative afferent pupillary defect, and that pupil sign is what places it anterior to the geniculate rather than in the hemisphere" },
+    },
+    "Optic nerve glioma": {
+      slots: { level: "ACUITY, COLOUR VISION and the fields in each eye, the pupils for an afferent defect, and the disc — plus proptosis",
+               flavour: "painless, slowly progressive visual loss with proptosis in a CHILD, and the nerve is expanded and kinked on imaging. Most are low-grade, many are stable for years, and the default is often to WATCH — treatment is reserved for progression, because it costs vision too" },
+      confirmatoryExtra: [
+        "SCREEN FOR NEUROFIBROMATOSIS TYPE 1 — a large proportion of optic pathway gliomas in children are NF1-associated, they behave more indolently, and the diagnosis has implications for the whole family. Skin, eyes and a family history, then genetics",
+        "Image the WHOLE optic pathway including the chiasm and hypothalamus, not just the nerve: chiasmal involvement changes both the prognosis and whether surgery is possible at all",
+      ],
+      monitoringExtra: ["Serial ACUITY and FIELDS with paediatric ophthalmology are the measurements that drive treatment — the scan changes slowly and the vision is what is actually at stake"],
+      urgency: "routine",
+    },
     "Craniopharyngioma or germinoma": {
       slots: { level: "fields, the endocrine axis, and thirst and urine output",
                flavour: "both sit in the suprasellar cistern and both hit the stalk — CALCIFICATION and a cystic component favour craniopharyngioma, while a germinoma may be radiologically unremarkable and betray itself only through markers" },
