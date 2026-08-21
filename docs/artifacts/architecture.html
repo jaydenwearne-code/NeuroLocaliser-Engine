@@ -157,7 +157,7 @@
   .cv{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;background:var(--band);
     border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--ink);}
   .cv .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none;}
-  .cv.next{border-style:dashed;color:var(--muted);} .cv.next .dot{background:var(--faint);}
+  .cv.done{border-color:var(--ipsi);color:var(--ipsi);} .cv.done .dot{background:var(--ipsi);}
   .cv .st{font-variant-numeric:tabular-nums;color:var(--steel);font-weight:700;
     background:var(--sheet);border:1px solid var(--line);border-radius:5px;padding:0 6px;font-size:11.5px;}
   .covsum{margin-top:14px;font-size:13px;color:var(--muted);}
@@ -240,7 +240,7 @@
           </div>
           <div>
             <p class="def">A lesion — <b>one zone on one side</b>. It is <b>derived, never hand-listed</b>: it simply gathers every structure that shares its <b>(level, part, side)</b>. Bigger lesions come from <b>composers</b> that union parts (a hemicord, a bilateral cord, a foramen, a plexus trunk).</p>
-            <div class="ex"><span class="tag">e.g.</span><span class="chip">left_cord_hemi</span> = anterior ∪ posterior on the left → gathers <span class="chip">cst_cord</span> <span class="chip">stt_cord</span> <span class="chip">dc_cord</span> …</div>
+            <div class="ex"><span class="tag">e.g.</span><span class="chip">left_cord_hemi</span> = anterior ∪ posterior on the left → gathers <span class="chip">cst_cord_arm</span> <span class="chip">cst_cord_leg</span> <span class="chip">stt_cord</span> <span class="chip">dc_cord</span> …</div>
           </div>
         </div>
 
@@ -308,19 +308,19 @@
     <section class="sec pad">
       <p class="eyebrow">a worked case — end to end</p>
       <h2>A hemicord, traced</h2>
-      <p class="sectlead">Three signs go in. No diagnosis, no anatomy — just what the examiner saw.</p>
+      <p class="sectlead">Four raw observations go in. No diagnosis, no anatomy — just what the examiner saw. Note that there is no <em>hemiparesis</em> to enter: the vocabulary holds only raw findings, so a weak arm and a weak leg are recorded separately and the pattern is left to emerge.</p>
       <div class="case">
         <div class="crow">
           <div class="cl">in</div>
-          <div class="cv"><span class="chip">hemiparesis@left</span><span class="chip">dorsal_sensory@left</span><span class="chip">spinothalamic@right</span></div>
+          <div class="cv"><span class="chip">weak_arm@left</span><span class="chip">weak_leg@left</span><span class="chip">dorsal_sensory@left</span><span class="chip">spinothalamic@right</span></div>
         </div>
         <div class="crow">
           <div class="cl">simulate</div>
-          <div class="cv">every candidate scored. <span class="chip">left_cord_hemi</span> predicts weakness &amp; vibration loss on the left (tracts already crossed → ipsilateral) and pain/temp loss on the right (crosses in the cord → contralateral) — exactly the three observed.</div>
+          <div class="cv">every candidate scored. <span class="chip">left_cord_hemi</span> predicts arm and leg weakness with vibration loss on the left (both tracts crossed higher up, so ipsilateral here) and pain/temp loss on the right (the spinothalamic crosses within the cord) — exactly the four observed.</div>
         </div>
         <div class="crow res">
           <div class="cl">best</div>
-          <div class="cv"><span class="win-badge">left_cord_hemi</span> &nbsp;explains all three, predicts nothing extra → top score. <b>Level: undetermined</b> (no sensory level supplied).</div>
+          <div class="cv"><span class="win-badge">left_cord_hemi</span> &nbsp;explains all four → top score. <b>Level: undetermined</b> (no sensory level supplied).</div>
         </div>
         <div class="crow">
           <div class="cl">named</div>
@@ -328,8 +328,48 @@
         </div>
         <div class="crow">
           <div class="cl">explained</div>
-          <div class="cv">ipsi weakness — <span class="chip">cst_cord</span> (already crossed at the pyramids) · contra pain/temp — <span class="chip">stt_cord</span> (crosses in the cord) · ipsi vibration — <span class="chip">dc_cord</span>. The reasoning is the output, not a black box.</div>
+          <div class="cv">ipsi weakness — <span class="chip">cst_cord_arm</span> <span class="chip">cst_cord_leg</span> (already crossed at the pyramids) · contra pain/temp — <span class="chip">stt_cord</span> (crosses in the cord) · ipsi vibration — <span class="chip">dc_cord</span>. The reasoning is the output, not a black box.</div>
         </div>
+      </div>
+    </section>
+
+    <!-- ======= THE LAYERS ABOVE LOCALISATION ======= -->
+    <section class="sec pad">
+      <p class="eyebrow">what sits on top — one lesion is only the first answer</p>
+      <h2>Where, why, what, and what next</h2>
+      <p class="sectlead">Localisation is the foundation, not the product. Three layers are built on it, and each keeps <b>content apart from logic</b> — a clinician reviews any one of them by opening a single file that imports nothing from the interface.</p>
+      <div class="layers">
+        <div class="layer">
+          <h3>Why</h3>
+          <p class="role">the reasoning, composed — not stored</p>
+          <ul>
+            <li>Ten pathways modelled, each with its course and the point at which it crosses</li>
+            <li>A narrative assembled from the anatomy, plus <b>why not elsewhere</b> — the sign each rival site would have added</li>
+            <li>A neuraxis diagram derived from the same tables</li>
+          </ul>
+        </div>
+        <div class="layer eng">
+          <h3>What</h3>
+          <p class="role">the differential at that place</p>
+          <ul>
+            <li>The surgical sieve, filtered by the tempo the examiner entered</li>
+            <li>A discriminating feature on nearly every cause, and a bedside sign to confirm it</li>
+            <li>A tempo mismatch <b>demotes</b> a cause — it never deletes it</li>
+          </ul>
+        </div>
+        <div class="layer">
+          <h3>What next</h3>
+          <p class="role">educational prompts, never a directive</p>
+          <ul>
+            <li>Four tiers — immediate, first-line, confirmatory, monitoring</li>
+            <li>Choose a disease and the lower tiers narrow to it: the tiers divide by <b>when you know the cause</b></li>
+            <li>Nothing flagged must-not-miss can render as routine</li>
+          </ul>
+        </div>
+      </div>
+      <div class="axes">
+        <h3>And when one lesion is not enough</h3>
+        <p>If the picture genuinely needs two places, the engine first tries to <em>talk you out of it</em> — naming any single sign that, dropped, would collapse the case back to one lesion. Only then does it ask the real question: <b>what one disease attacks both of these places?</b> That answer comes from the tissue a disease targets rather than from a stored list of site pairs — vasculitis crosses the central-to-peripheral boundary because vessels are on both sides of it, and metastases do not, because parenchyma is not. Anatomy filters; tempo and course only demote.</p>
       </div>
     </section>
 
@@ -344,9 +384,12 @@
           <p class="role">the anatomy — edit these to add coverage</p>
           <ul>
             <li><b>findings.js</b> — the vocabulary + crossing defaults</li>
-            <li><b>structures.js</b> — one tract → one finding, placed &amp; crossed</li>
+            <li><b>structures.js</b> — one structure → one finding, placed &amp; crossed</li>
             <li><b>sites.js</b> — sites derived from structures; the composers</li>
             <li><b>levels.js · nerveLength.js</b> — the two orthogonal axes</li>
+            <li><b>tracts.js</b> — the long pathways and where each one crosses</li>
+            <li><b>compartments.js · course.js</b> — where a lesion sits; how the illness unfolded</li>
+            <li><b>vascular.js · topography.js · substrate.js</b> — vessel, place and the TISSUE a disease attacks</li>
           </ul>
         </div>
         <div class="layer eng">
@@ -356,13 +399,20 @@
             <li><b>forward.js</b> — site → expected signed findings</li>
             <li><b>score.js</b> — reward matches, penalise the rest</li>
             <li><b>inverse.js</b> — rank, minimal-set, attach the level</li>
+            <li><b>tracts.js</b> — the course narrative and why-not-elsewhere</li>
+            <li><b>patterns.js</b> — UMN/LMN synthesis; the functional flag</li>
+            <li><b>multifocal.js · space.js</b> — one disease across two places</li>
           </ul>
         </div>
         <div class="layer">
           <h3>src/data/</h3>
-          <p class="role">description only — remove it, still localises</p>
+          <p class="role">what the lesion MEANS — remove it and the engine still localises</p>
           <ul>
-            <li><b>syndromes.js</b> — a phonebook keyed by the emergent site → eponym, differentials, red flags</li>
+            <li><b>syndromes.js</b> — a phonebook: emergent site → eponym</li>
+            <li><b>causes.js</b> — the tempo-aware differential at each site</li>
+            <li><b>nextSteps.js</b> — the four-tier workup</li>
+            <li><b>pathology/ · pathologyNextSteps.js</b> — the workup narrowed to ONE disease</li>
+            <li><b>multifocal.js · multifocalNextSteps.js</b> — the cross-site roster and its workups</li>
           </ul>
         </div>
       </div>
@@ -373,26 +423,23 @@
       <p class="eyebrow">coverage today</p>
       <h2>What the model can localise</h2>
       <div class="chips">
-        <span class="cv"><i class="dot"></i> Brainstem <span class="st">8</span></span>
-        <span class="cv"><i class="dot"></i> Cord — core four <span class="st">5</span></span>
-        <span class="cv"><i class="dot"></i> Sensory level <span class="st">22</span></span>
-        <span class="cv"><i class="dot"></i> Central cord / syrinx <span class="st">8</span></span>
-        <span class="cv"><i class="dot"></i> Cauda equina / conus <span class="st">8</span></span>
-        <span class="cv"><i class="dot"></i> Cortex — lobar, dominance, Anton/Balint <span class="st">116</span></span>
-        <span class="cv"><i class="dot"></i> Subcortex — capsule/thalamus/STN, lacunes <span class="st">62</span></span>
-        <span class="cv"><i class="dot"></i> Cranial nerves — foramina as sites <span class="st">65</span></span>
-        <span class="cv"><i class="dot"></i> Motor unit — horn / NMJ / muscle <span class="st">50</span></span>
-        <span class="cv"><i class="dot"></i> Nerve roots &amp; polyneuropathy <span class="st">91</span></span>
-        <span class="cv"><i class="dot"></i> Plexus &amp; named nerves <span class="st">103</span></span>
-        <span class="cv"><i class="dot"></i> Reflexes — Babinski/sacral/frontal <span class="st">31</span></span>
-        <span class="cv"><i class="dot"></i> Tone &amp; wasting — UMN vs LMN <span class="st">34</span></span>
-        <span class="cv"><i class="dot"></i> Nerve segments — the ulnar paradox <span class="st">62</span></span>
-        <span class="cv"><i class="dot"></i> Visual pathway + RAPD <span class="st">34</span></span>
-        <span class="cv"><i class="dot"></i> Pupillary efferent — Adie / Argyll Robertson <span class="st">29</span></span>
-        <span class="cv"><i class="dot"></i> Horner 3-order axis + Pancoast <span class="st">33</span></span>
-        <span class="cv next"><i class="dot"></i> Pathology (ALS) · non-organic (FND) · UI <span class="st">next</span></span>
+        <span class="cv"><i class="dot"></i> Brainstem — midbrain · pons · medulla <span class="st">61</span></span>
+        <span class="cv"><i class="dot"></i> Brainstem axes — ARAS · Parinaud · locked-in · pseudobulbar <span class="st">15</span></span>
+        <span class="cv"><i class="dot"></i> Cord — the cross-sectional primitives <span class="st">13</span></span>
+        <span class="cv"><i class="dot"></i> Combined degenerations — SCD · Friedreich <span class="st">11</span></span>
+        <span class="cv"><i class="dot"></i> Conus &amp; cauda equina <span class="st">14</span></span>
+        <span class="cv"><i class="dot"></i> Cerebellum &amp; the vestibular axis <span class="st">16</span></span>
+        <span class="cv"><i class="dot"></i> Cortex — lobar, dominance-gated, disconnection <span class="st">69</span></span>
+        <span class="cv"><i class="dot"></i> Subcortex · thalamus by nucleus · hypothalamus <span class="st">32</span></span>
+        <span class="cv"><i class="dot"></i> Basal ganglia — one nucleus, one movement <span class="st">6</span></span>
+        <span class="cv"><i class="dot"></i> Cranial nerves — the longitudinal course <span class="st">71</span></span>
+        <span class="cv"><i class="dot"></i> Visual pathway · pupil · Horner 3-order axis <span class="st">22</span></span>
+        <span class="cv"><i class="dot"></i> Nerve roots — C3 to S3 <span class="st">82</span></span>
+        <span class="cv"><i class="dot"></i> Named nerves, split into segments <span class="st">97</span></span>
+        <span class="cv"><i class="dot"></i> Motor unit &amp; length-dependent neuropathy <span class="st">19</span></span>
+        <span class="cv done"><i class="dot"></i> Causes · workup · cross-site disease <span class="st">done</span></span>
       </div>
-      <p class="covsum">Every region is added the same way — new findings, new structures, tests first — and the engine underneath is unchanged. <b>17</b> suites · <b>761</b> assertions green.</p>
+      <p class="covsum">Every region is added the same way — new findings, new structures, tests first — and the engine underneath is unchanged. <b>528</b> structures across <b>35</b> levels resolve into <b>377</b> candidate lesion sites, carrying <b>233</b> examinable findings. On top of them: <b>1,294</b> curated causes, a workup at every one of <b>202</b> sites, <b>369</b> disease-specific plans and <b>13</b> cross-site diseases with their own. <b>69</b> suites · <b>5,212</b> assertions green.</p>
     </section>
 
     <footer>

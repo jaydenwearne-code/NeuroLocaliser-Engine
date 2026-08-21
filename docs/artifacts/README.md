@@ -6,8 +6,22 @@ previously kept only in a session scratchpad, which is transient; keep editing t
 
 | File | What it is | Favicon | URL (republish in place) |
 |---|---|---|---|
-| `architecture.html` | Flow diagram — input → `solve()` pipeline → output, worked Brown-Séquard example, coverage strip | 🧠 | https://claude.ai/code/artifact/4ea6afce-05fb-45a9-aba5-9ff8571c0ecc |
-| `anatomy-model.html` | Anatomy model — every structure with its finding, crossing (IPSI/CONTRA/BILAT/MIDLINE/NONE) and territory; doubles as the neuroanatomist review sheet | 🩻 | https://claude.ai/code/artifact/6f9562ec-b5a8-453f-a650-e5db4d43a541 |
+| `architecture.html` | Flow diagram — input → `solve()` pipeline → output, worked Brown-Séquard example, coverage strip | 🧠 | https://claude.ai/code/artifact/51b04e18-39c3-44c2-b884-6f63a58ae049 |
+| `anatomy-model.html` | Anatomy model — every structure with its finding, crossing (IPSI/CONTRA/BILAT/MIDLINE/NONE) and territory; doubles as the neuroanatomist review sheet | 🩻 | https://claude.ai/code/artifact/8194700c-52fb-48ba-a83e-d61e48b904de |
+
+
+> **The original URLs died, and both were replaced on 2026-08-21.** Both artifacts were first published
+> from a session on the original Mac; by that date neither resolved — `WebFetch` returned "artifact not
+> found" and the account's artifact list was empty. Both were republished as NEW artifacts, and the table
+> above now carries the live URLs. **Publishing without passing `url` mints a new artifact rather than
+> updating one**, so always pass the URL from the table — and if a URL ever 404s again, republish and
+> update the table rather than assuming the artifact is merely unshared.
+
+> **Both had drifted, and the drift was not cosmetic.** The anatomy sheet covered 29% of the model and
+> carried 39 rows for structures that no longer existed. The flow diagram's worked case could not have
+> been entered into the engine at all: its input finding (`hemiparesis`) and two of its structure ids
+> (`cst_cord`) were deleted by the raw-observations refactor. **Validate ids against the model after
+> editing either file** — the anatomy sheet by structure id, the flow diagram by every `.chip`.
 
 ## How to update (from any session)
 
@@ -25,5 +39,26 @@ preview locally — verify statically (tag balance; cross-check structure ids ag
 
 Both are living docs. After adding a region: add its structures to `anatomy-model.html` (a region
 section + any new laterality badges), and update the coverage strip + test count in
-`architecture.html`. Current coverage: brainstem, spinal cord (core four / sensory level / central /
-cauda-conus), and the cerebral cortex.
+`architecture.html`.
+
+**Current coverage (2026-08-21): the WHOLE model — all 528 structures across 35 levels**, in 16 region
+sections. `anatomy-model.html` was rebuilt from scratch on that date because it had drifted badly: 194
+rows, of which **39 named structures that no longer existed**, while **373 model structures were
+missing** — 29% real coverage. It is the neuroanatomist review sheet, so that drift meant the one
+document meant to validate the engine described under a third of it.
+
+**If you edit it, verify against the model afterwards.** Every id in `src/model/structures.js` must
+appear exactly once; no id may appear that the model does not define; and every hemisphere-gated
+structure needs a `DOM` / `NON-DOM` marker matching its `hemisphere` field. That last check caught a real
+miss during the rebuild (`thal_pulvinar`) — and it is invisible on the page, because a gateless row looks
+perfectly plausible.
+
+**The `.fn` column is REVIEW COPY, not the model's `note` field.** The notes are engineering prose: they
+reference other structure ids inline, hedge, and explain modelling decisions. Rewrite each as the finding
+in clinical English — finding first, with the discriminator in bold (*towards* the weak side, triceps
+*spared*, inversion *intact*).
+
+**Local preview:** `node app/serve.mjs`, then open `/docs/artifacts/anatomy-model.html`. These files are
+fragments with no `<head>` of their own — the artifact platform supplies it — so correct rendering relies
+on the server sending `charset=utf-8`. It does; if em-dashes ever look like mojibake, that is the server,
+never the file.
