@@ -299,21 +299,34 @@ function renderResults() {
   for (const secId of ["sec-what", "sec-next", "sec-together"]) {
     const sec = document.getElementById(secId);
     if (!sec) continue;
-    sec.onclick = e => {
-      // data-ux (a cross-site entity, from the Together card or the Next card's chip) and data-px (a
-      // per-site pathology) are DIFFERENT CLAIMS and must not share a field: four entity names are also
-      // verbatim per-site cause names, so one string could not say which was meant.
-      const uxRow = e.target.closest("[data-ux]");
+    // data-ux (a cross-site entity, from the Together card or the Next card's chip) and data-px (a
+    // per-site pathology) are DIFFERENT CLAIMS and must not share a field: four entity names are also
+    // verbatim per-site cause names, so one string could not say which was meant.
+    const select = target => {
+      const uxRow = target.closest("[data-ux]");
       if (uxRow) {
         const name = uxRow.dataset.ux;
         S.selectedEntity = S.selectedEntity === name ? undefined : name;
         renderResults();
-        return;
+        return true;
       }
-      const row = e.target.closest("[data-px]"); if (!row) return;
+      const row = target.closest("[data-px]");
+      if (!row) return false;
       const name = row.dataset.px;
       S.selectedPathology = S.selectedPathology === name ? undefined : name;
       renderResults();
+      return true;
+    };
+    sec.onclick = e => { select(e.target); };
+    // A DIV WITH role="button" DOES NOT FIRE CLICK ON ENTER — only real <button>s do. These rows carry
+    // role="button", tabindex="0" and aria-pressed, so they announce themselves to assistive tech as
+    // buttons and take focus, and before this they then did nothing when operated. Space is included and
+    // its default suppressed, or the page scrolls instead of selecting.
+    sec.onkeydown = e => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      if (!e.target.closest("[data-ux],[data-px]")) return;
+      e.preventDefault();
+      select(e.target);
     };
   }
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
