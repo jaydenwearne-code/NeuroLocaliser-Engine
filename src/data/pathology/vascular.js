@@ -276,6 +276,71 @@ const cordInfarct = (where, clue) => [
   "Once compression is excluded, exclude the inflammatory mimic: CSF, aquaporin-4 and MOG antibodies — a transverse myelitis is treatable and looks similar at the bedside",
 ];
 
+// ---- ROUND 13 (tranche 3): the SMALL DEEP INFARCT ----
+// A lacune is not a small stroke, it is a DIFFERENT stroke: the aetiology work-up is the small-vessel risk
+// profile rather than an embolic source hunt, and the trap runs the other way — a striatocapsular infarct
+// or a branch-atheromatous lesion filed as "just a lacune" is a large-vessel problem that will recur.
+// So the spine does the vessel study anyway and says why. Separate from PERFORATOR_SPINE above, which is
+// a claim about a STUTTERING course; most lacunes do not stutter.
+const LACUNAR_SPINE = {
+  confirmatory: [
+    "Non-contrast CT first to exclude blood — but a small deep infarct is frequently INVISIBLE on the early CT, so a normal scan in a convincing lacunar syndrome is expected rather than reassuring",
+    "MRI with DWI confirms it and, just as importantly, SIZES it: {flavour}",
+    "DO NOT FILE IT AS SMALL-VESSEL DISEASE WITHOUT LOOKING AT THE VESSEL. A lesion bigger than a lacune, one reaching the ventricular surface, or any cortical sign means a proximal plaque or an embolus — a different illness with a different treatment — so the vessel imaging and the source hunt are done here too",
+    "The aetiology work-up is the SMALL-VESSEL RISK PROFILE: blood pressure across time rather than as measured in the acute bed, glucose, lipids and smoking. Read the white matter and any older lacunes on the same scan — that accumulated burden is the prognosis",
+    "Examine {level}, and record explicitly whether there are ANY cortical signs. Their absence is what makes this a lacunar syndrome, so it has to be documented rather than assumed",
+  ],
+  monitoring: [
+    "SAFETY NET: this is a group that can PROGRESS after admission — stepwise worsening over the first days is well recognised, is not a failure of care, and calls for reimaging and a rethink about a perforator-origin plaque rather than observation",
+    "Track {level} on a defined schedule; avoid hypotension while the deficit is still moving",
+    "Swallow screen before anything by mouth, as for any stroke",
+    "The long game is secondary prevention, and blood-pressure control is the most effective single intervention against both recurrence and the cognitive decline that follows an accumulating small-vessel burden. That conversation belongs in the discharge summary, not in a follow-up that may never happen",
+  ],
+  urgency: "emergency",
+  referral: "Acute stroke pathway — time-critical, and reperfusion may be on the table",
+};
+
+// The stroke has already happened. These are the DELAYED consequences, and the commonest failure is that
+// nobody owns them after the acute admission — so the spine's work is to confirm the responsible old
+// lesion, re-check secondary prevention, and hand the symptom to someone who will treat it.
+const POST_STROKE_SPINE = {
+  confirmatory: [
+    "THIS IS NOT A REPERFUSION QUESTION — the stroke is old and the clock has long run out. What is needed is confirmation that a lesion in the right place explains the new symptom: {flavour}",
+    "MRI looking for the RESPONSIBLE OLD LESION rather than for a new one — and note the total vascular burden while you are there, because that is what the prognosis rests on",
+    "Re-examine the SECONDARY PREVENTION, which is the genuinely time-sensitive thread here: blood pressure, antithrombotic, lipids, glucose and atrial fibrillation. A delayed complication is a reminder that the underlying disease is still running",
+    "Examine {level}, and establish the INTERVAL between the stroke and the new symptom — the latency is much of the diagnosis, and a symptom present from the day of the stroke is a different problem from one that emerged months later",
+  ],
+  monitoring: [
+    "SAFETY NET: a NEW deficit, or an abrupt change in an old one, is a new stroke until proven otherwise and goes back down the acute pathway. The danger of a 'post-stroke' label is that it explains away the next event",
+    "Track {level}, and track FUNCTION rather than signs — what the patient can no longer do is the outcome that matters and the one that drives rehabilitation",
+    "Refer to the relevant symptomatic service early. These are treatable symptoms with poor spontaneous recovery, and the usual failure is that no one takes ownership of them once the acute team has moved on",
+    "Screen for post-stroke depression and for disturbed sleep whenever a delayed symptom appears — both are common, both are treatable, and both are routinely written off as part of the stroke",
+  ],
+  urgency: "routine",
+  referral: "Stroke follow-up clinic, with the relevant symptomatic service alongside it (pain, movement disorder or rehabilitation)",
+};
+
+
+// Microvascular ischaemia of a cranial nerve. The clinical question is never "what is the diagnosis"
+// — it is "is this the benign one, or is something compressing the nerve". So the spine is built around
+// the two things that answer it: whether the palsy is genuinely ISOLATED, and whether it RECOVERS.
+const MICROVASCULAR_CN_SPINE = {
+  confirmatory: [
+    "THE DIAGNOSIS IS ONE OF EXCLUSION AND IT IS PROVED BY RECOVERY, so it can only be made provisionally on the day. What makes it safe is that the palsy is genuinely ISOLATED and the rest of the examination is normal: {flavour}",
+    "EXCLUDE GIANT CELL ARTERITIS in anyone in the older age group — ESR, CRP and direct questions about jaw claudication, scalp tenderness and visual symptoms. It causes ocular motor palsies as well as visual loss, and it is the one on this list that blinds the other eye if it is missed",
+    "Confirm and treat the vascular risk factors that caused it: glucose and HbA1c, blood pressure, lipids. For many patients the palsy is how their diabetes or hypertension is first diagnosed, so this is a work-up as well as an explanation",
+    "Examine {level}. Any additional cranial nerve sign, any pupil abnormality, PROPTOSIS, pain that is severe rather than aching, or a bilateral palsy takes this out of the microvascular category and into urgent imaging",
+  ],
+  monitoring: [
+    "RECOVERY IS THE TEST, AND THE FOLLOW-UP IS THE SAFETY NET — a microvascular palsy improves over the first few months. A palsy that has not begun to recover in that time, or that WORSENS at any point, is not microvascular and needs imaging, so the review appointment must actually be booked rather than offered",
+    "Track {level} at each review, and record the measurements rather than an impression — 'improving' is not something a later clinician can act on",
+    "Diplopia is a falls and a driving problem long before it is a diagnostic one: occlusion or a prism, an explicit conversation about driving, and a falls assessment in an older patient",
+    "SAFETY NET: a NEW cranial nerve sign appearing alongside the first one means a lesion at the skull base or cavernous sinus and needs imaging, not a longer wait for recovery",
+  ],
+  urgency: "urgent",
+  referral: "Neurology or neuro-ophthalmology, with the diabetes or vascular risk service alongside it",
+};
+
 export default {
   // ---- ROUND 5 SINGLETONS ----
 
@@ -502,6 +567,11 @@ export default {
     "Branch atheromatous disease of the lenticulostriate origin": {
       slots: { level: "power across face, arm and leg equally",
                flavour: "a plaque at the ORIGIN of the perforator rather than disease within it — the infarct extends to the ventricular surface, which is the imaging clue, and it behaves like large-vessel disease" },
+    },
+    "Basilar perforator infarct": {
+      slots: { level: "power, eye movements and swallow, hourly while it is moving",
+               flavour: "a paramedian pontine infarct from a single basilar perforator — CROSSED PONTINE SIGNS localise it, and the reason it sits in this family rather than among the lacunes is that its territory is fed directly off the basilar, so the same disease can occlude the parent vessel" },
+      confirmatoryExtra: ["ANGIOGRAPHY IS THE POINT HERE: a perforator infarct is a warning about the basilar itself, and progression to basilar occlusion is the event this diagnosis exists to prevent"],
     },
     "Basilar perforator disease with progression": {
       slots: { level: "power, eye movements and swallow, hourly",
@@ -1005,6 +1075,127 @@ export default {
   }),
 
   ...family("infarct", INFARCT_SPINE, {
+    // ---- ROUND 13 (tranche 3): the remaining named TERRITORIES ----
+    // Round 1 authored the must-not-miss infarcts. These are the rest of the arterial map: same clock,
+    // same spine, and the whole of the divergence is WHERE and WHAT YOU WATCH — which is what the slots
+    // are for. Several are here because the SYNDROME rather than the vessel is what gets recognised at
+    // the bedside (pure alexia, conduction aphasia, word deafness), and the note on each says so.
+    "ACA infarct": {
+      slots: { level: "leg power, continence and initiation",
+               flavour: "leg-predominant weakness with abulia and a relatively spared face and arm — the pattern is repeatedly worked up as a cord or a peripheral problem because the arm looks well" },
+      confirmatoryExtra: ["Because a leg-predominant deficit imitates a cord lesion, image the BRAIN before committing to a spinal work-up — and where BOTH legs are weak, a single dominant A2 supplying both medial frontal lobes is the explanation to look for"],
+      bySite: {
+        cortex_aca: { level: "leg power, continence, initiation and the grasp reflex" },
+        cortex_motor_leg: { level: "leg power specifically, and whether the arm is genuinely spared on careful testing" },
+        cortex_sensory_leg: { level: "CORTICAL sensation in the leg — two-point discrimination and graphaesthesia, with primary modalities intact",
+                              flavour: "isolated cortical sensory loss in one leg with normal pinprick is easily called functional; the discriminator is that discrimination, not sensation, is what has been lost" },
+        cortex_sma: { level: "speech initiation and spontaneous movement of the contralateral arm",
+                      flavour: "sudden akinesia and mutism from an SMA infarct looks like a depressed or unresponsive patient rather than a stroke; the limb moves to command but not spontaneously, and recovery is usually good" },
+        corpus_callosum_anterior: { level: "what the LEFT hand does when the patient is not attending to it, and whether it can name objects placed in it out of sight",
+                                    flavour: "CALLOSAL DISCONNECTION — the left hand cannot name what it holds or obey written commands, and may act against the patient's stated intention. It looks bizarre and is regularly mistaken for a functional disorder, so the anterior callosal territory is what to look at on the scan" },
+        cortex_medial_pfc: { level: "initiation, continence and the ability to sustain attention on a task",
+                             flavour: "medial prefrontal infarction presents as apathy and abulia rather than as weakness — the family's report of a personality change is the history, and the patient's own account will understate it" },
+      },
+    },
+    "PCA infarct": {
+      slots: { level: "the visual fields to confrontation in each eye, and whether the patient is AWARE of the defect",
+               flavour: "an isolated homonymous hemianopia with macular sparing and little else — often cardioembolic or from vertebrobasilar disease, so the source hunt matters even though the deficit looks modest" },
+      confirmatoryExtra: ["A field defect the patient has not noticed is still a stroke and still a driving and a falls problem — formal fields once the acute phase settles, and an explicit conversation about driving before discharge"],
+      bySite: {
+        cortex_pca: { level: "the fields, and also memory and behaviour — the PCA supplies the medial temporal lobe, so an amnestic or confused presentation belongs to this territory too" },
+        cortex_occipital: { level: "the fields formally, plus reading and colour perception",
+                            flavour: "occipital infarction can present as visual hallucinations or as a patient who denies blindness altogether (Anton's syndrome) — neither is a psychiatric presentation" },
+        cortex_fusiform: { level: "face recognition, colour perception and reading",
+                           flavour: "PROSOPAGNOSIA needs BILATERAL fusiform lesions, so a unilateral scan finding does not explain it and an older second lesion should be looked for; a dominant lesion extending into the splenium instead gives PURE ALEXIA" },
+      },
+    },
+    "PCA territory infarct with splenial involvement": {
+      slots: { level: "reading — ask the patient to WRITE a sentence and then read it back, which is the whole test",
+               flavour: "ALEXIA WITHOUT AGRAPHIA: writing is fluent and reading is lost, because the intact right visual cortex has been disconnected from the left language areas. Usually with a right homonymous hemianopia, and the splenium is what to look for on the scan" },
+      confirmatoryExtra: ["The deficit is a disconnection, not a language loss — so it is missed entirely unless reading is tested, and patients frequently attribute it to their eyes and see an optician first"],
+    },
+    "PCA perforator infarct": {
+      slots: { level: "the pupil, eye movements and contralateral power, together",
+               flavour: "CROSSED SIGNS localise it: an ipsilateral third-nerve palsy with contralateral hemiparesis is a midbrain lesion, not two problems" },
+      confirmatoryExtra: ["Image the VESSEL: a midbrain perforator infarct sits at the top of the basilar, and the same territory can herald a basilar occlusion — so the angiogram is not optional here"],
+    },
+    "PICA / vertebral artery occlusion": {
+      slots: { level: "swallow, the crossed sensory pattern, Horner's and truncal stability",
+               flavour: "vertigo with ipsilateral facial and contralateral body pain-and-temperature loss is a lateral medullary stroke — and the patient can look deceptively well while being completely unable to swallow" },
+      confirmatoryExtra: [
+        "IMAGE THE VERTEBRAL ARTERY, not just the brain: DISSECTION is the commonest cause in a younger patient, and neck pain preceding the vertigo is the history to ask for directly",
+        "The DWI is frequently negative early in the lateral medulla — a convincing crossed sensory pattern outranks a normal early scan",
+      ],
+      monitoringExtra: ["NIL BY MOUTH UNTIL FORMALLY SWALLOW-ASSESSED. Aspiration is the complication that actually kills in Wallenberg, and the dysphagia is often far worse than the rest of the examination suggests"],
+    },
+    "Anterior spinal / vertebral artery infarct": {
+      slots: { level: "tongue deviation, contralateral power and joint position sense",
+               flavour: "the medial medullary triad — contralateral hemiparesis with dorsal-column loss and an IPSILATERAL tongue that deviates towards the lesion. The tongue is the sign that makes it medullary rather than capsular" },
+      confirmatoryExtra: ["Image the vertebral arteries: this territory is supplied by the vertebral and anterior spinal arteries, and dissection or atherosclerosis at that level is what to find. BILATERAL medial medullary infarction can present as a quadriparesis mimicking a cord lesion"],
+    },
+    "Small brainstem infarct": {
+      slots: { level: "vertical alignment in each direction of gaze, and the head tilt",
+               flavour: "a fourth-nerve palsy is subtle — vertical diplopia worse on looking down, with a compensatory head tilt. The NUCLEUS decussates, so a nuclear lesion gives a CONTRALATERAL superior oblique palsy, which is the finding that localises it to the brainstem rather than the nerve" },
+      confirmatoryExtra: ["An isolated fourth-nerve palsy in a vasculopath is usually microvascular and peripheral; what argues for a brainstem infarct is any OTHER brainstem sign, so the examination has to go looking for one rather than stopping at the eye"],
+    },
+    "Pontine infarct": {
+      slots: { level: "facial sensation in all three divisions, the corneal reflex, and the other crossed signs",
+               flavour: "facial sensory loss of abrupt onset with a crossed pattern elsewhere — an isolated numb face without any other sign is far more often a trigeminal than a brainstem problem, so look for the company it keeps" },
+    },
+    "MCA branch infarct": {
+      slots: { level: "PRAXIS specifically — ask the patient to mime brushing their teeth or combing their hair on command",
+               flavour: "LIMB (ideomotor) APRAXIA with normal power, coordination and comprehension. It is a major cause of disability and it is routinely missed, because nothing in a standard examination tests it" },
+      confirmatoryExtra: ["Record the apraxia explicitly for the rehabilitation team — it changes how therapy is delivered and it explains why a patient with apparently good power cannot dress or feed themselves"],
+    },
+    "MCA branch infarct (supramarginal gyrus)": {
+      slots: { level: "REPETITION against fluency and comprehension — the three have to be tested separately",
+               flavour: "CONDUCTION aphasia: fluent speech, good comprehension, and repetition disproportionately impaired, with phonemic errors the patient hears and tries to correct. That self-correction is the sign, and it distinguishes it from a Wernicke's aphasia where the patient is unaware" },
+    },
+    "MCA (angular branch) infarct": {
+      slots: { level: "GERSTMANN'S TETRAD — ask the patient to name their fingers, do simple arithmetic, write a sentence and show left from right",
+               flavour: "anomia with agraphia, acalculia, finger agnosia and left-right disorientation, from a dominant angular gyrus lesion. Every element of it is missed by a standard examination unless it is specifically asked for" },
+      confirmatoryExtra: ["The presentation is regularly mistaken for delirium or for early dementia, so the abrupt onset is the part of the history to pin down"],
+    },
+    "Frontal infarct (ACA or MCA branch)": {
+      slots: { level: "executive function — set-shifting, planning and inhibition, none of which a standard cognitive screen tests properly",
+               flavour: "abrupt dysexecutive difficulty, usually with other focal signs; a STEPWISE accumulation over months instead points to vascular cognitive impairment rather than a single event" },
+      confirmatoryExtra: ["Where the history is stepwise rather than abrupt, the diagnosis is a vascular burden rather than a new stroke — and the intervention is secondary prevention rather than reperfusion"],
+    },
+    "Auditory (verbal) agnosia from a dominant temporal lesion": {
+      slots: { level: "hearing formally by AUDIOMETRY, then comprehension of speech against comprehension of WRITING",
+               flavour: "PURE WORD DEAFNESS — sounds are heard but speech cannot be recognised, while reading and writing are preserved. That preserved reading is what separates it from a Wernicke's aphasia, and the patient is often referred to audiology first" },
+      confirmatoryExtra: ["Give the patient a written channel immediately: they can read and write normally, so communication is possible from the first day if anyone thinks to try it"],
+    },
+    "Middle or posterior cerebral artery infarct": {
+      slots: { level: "the fields in each eye separately, and the pupils for a relative afferent defect",
+               flavour: "an INCONGRUOUS homonymous hemianopia — the more anterior the lesion, the less the two eyes' defects match, and a relative afferent pupillary defect may appear in the contralateral eye. Congruity is the localising information, so the fields are worth doing formally" },
+    },
+    "Anterior or posterior choroidal artery infarct": {
+      slots: { level: "the field defect formally — its shape is the diagnosis",
+               flavour: "the lateral geniculate has a DUAL blood supply, which produces the unusual congruous SECTORAL or wedge-shaped defects that no other site makes. A wedge is worth recognising rather than recording as 'hemianopia'" },
+    },
+    "Anterior choroidal artery infarct": {
+      slots: { level: "power, sensation and the visual field together, plus language and neglect",
+               flavour: "the full triad of hemiparesis, hemisensory loss AND hemianopia from one tiny perforator. It looks like a huge cortical stroke — the ABSENCE of aphasia or neglect is what points deep, so those have to be tested to be excluded" },
+    },
+    "MCA or PCA branch infarct of the optic radiation": {
+      slots: { level: "the QUADRANTS of the field, not just the halves",
+               flavour: "Meyer's loop in the temporal lobe gives a SUPERIOR quadrantanopia ('pie in the sky') and the parietal fibres an inferior one — so the quadrant names which limb of the radiation, and therefore which branch, is involved" },
+    },
+    "Small precentral (hand-knob) infarct": {
+      slots: { level: "whether the weakness respects a nerve or a root distribution — and the reflexes on that side",
+               flavour: "the PSEUDO-PERIPHERAL cortical hand: isolated hand weakness that looks exactly like an ulnar or median palsy. What gives it away is that it respects NO single nerve or root, and a brisk reflex or a subtle pronator drift betrays its cortical origin" },
+      confirmatoryExtra: ["This is the stroke that gets sent to the hand clinic. Where an acute hand weakness does not fit one nerve, image the brain before arranging nerve conduction studies — the clock is running on one of those pathways and not the other"],
+    },
+    "Cardioembolic infarct (AF, endocarditis, post-MI thrombus)": {
+      slots: { level: "the deficit, which is typically maximal at onset, and the pulse",
+               flavour: "infarcts in MORE THAN ONE arterial territory point to a cardiac or aortic source, and that pattern on the scan is worth more than any single-territory appearance" },
+      confirmatoryExtra: [
+        "PROLONGED rhythm monitoring, not a single ECG — paroxysmal atrial fibrillation is missed by a snapshot, and finding it changes the antithrombotic decision completely",
+        "ECHOCARDIOGRAPHY, and think about ENDOCARDITIS specifically where there is fever, a murmur, a new prosthesis or injecting drug use: that combination changes everything, because anticoagulation is hazardous with a mycotic aneurysm and the treatment is antimicrobial and sometimes surgical",
+        "Blood cultures BEFORE antibiotics wherever endocarditis is on the list — the opportunity is lost the moment the first dose is given",
+      ],
+    },
     // ---- anterior circulation, cortical ----
     "MCA superior division infarct": {
       slots: { level: "face and arm power, and speech output",
@@ -1196,6 +1387,229 @@ export default {
     },
   }),
 
+
+  // ---- ROUND 13 (tranche 3): the SMALL DEEP INFARCTS ----
+  ...family("lacunar-infarct", LACUNAR_SPINE, {
+    "Small-vessel lacunar infarct": {
+      slots: { level: "power and coordination together, and the absence of cortical signs",
+               flavour: "a lacune is small and deep; anything larger, or reaching the ventricular surface, is not one" },
+      bySite: {
+        pons_basis_pontis: { level: "power against coordination — ataxia OUT OF PROPORTION to the weakness, and speech",
+                             flavour: "ATAXIC HEMIPARESIS or the dysarthria-clumsy-hand syndrome from a ventral pontine lacune. A basis pontis lesion can also stutter and extend, so this is the deep infarct most worth watching" },
+        subcortex_internal_capsule: { level: "power in face, arm and leg equally, with no cortical signs at all",
+                                      flavour: "PURE MOTOR hemiparesis affecting face, arm and leg to the same degree is the classic capsular lacune — and its mimic, the striatocapsular infarct from a proximal MCA occlusion, is larger and comma-shaped, so the size on the scan is the discriminator" },
+        subcortex_corona_radiata: { level: "power, and specifically whether the face is involved",
+                                    flavour: "a white-matter lacune above the capsule. It sits in the same pure-motor family, and repeated lesions here are what accumulate into a vascular gait and cognitive decline" },
+      },
+    },
+    "Thalamic lacunar infarct": {
+      slots: { level: "sensation in the FACE and the hand together — the cheiro-oral pattern is specific",
+               flavour: "a tiny VPM lesion giving isolated contralateral facial sensory loss, sometimes with the hand, and NO weakness and no cortical signs. The absence of anything else is what makes it thalamic rather than cortical" },
+      monitoringExtra: ["Warn the patient about CENTRAL POST-STROKE PAIN: weeks to months later the numb area can become spontaneously painful. Saying so now prevents it being dismissed as functional when it appears"],
+    },
+    "Thalamic lacunar infarct (VPL)": {
+      slots: { level: "all sensory modalities across face, arm and leg — and power, to confirm it is genuinely spared",
+               flavour: "PURE HEMISENSORY loss of face, arm and leg with no weakness and no cortical signs. A complete hemisensory syndrome from a lesion a few millimetres across is characteristic of the thalamus and of nowhere else" },
+      confirmatoryExtra: ["A dense hemisensory loss with entirely normal power is regularly assumed to be functional. It is not — the lesion is small, so look for it on MRI rather than reasoning from the size of the deficit"],
+    },
+    "Thalamocapsular lacunar infarct": {
+      slots: { level: "power AND sensation across face, arm and leg, and the cortical functions that should be intact",
+               flavour: "combined sensorimotor loss with no cortical signs — one small lesion straddling the capsule and the thalamus, which is why both systems go together" },
+    },
+    "Lacunar infarct of the subthalamic nucleus": {
+      slots: { level: "the involuntary movements — their amplitude, and whether the patient can be safely nursed",
+               flavour: "sudden violent flinging HEMIBALLISMUS of the contralateral limbs. A tiny lesion with a dramatic sign, and it usually settles spontaneously over weeks to months" },
+      confirmatoryExtra: ["Check GLUCOSE. Non-ketotic hyperglycaemia is the other classic cause of acute hemiballismus and hemichorea, it is fully reversible, and it is diagnosed with a blood test rather than a scan"],
+      monitoringExtra: ["Severe hemiballismus is exhausting and can cause injury, dehydration and rhabdomyolysis — so it is nursed and treated actively while it settles rather than simply observed"],
+    },
+    "Striatal infarct or haemorrhage": {
+      slots: { level: "the movement disorder and its distribution, plus power and tone",
+               flavour: "abrupt hemichorea, dystonia or parkinsonism with a deep lesion on imaging. The CT that opens the work-up also answers whether this is infarct or haemorrhage, which is why it comes first" },
+      confirmatoryExtra: ["Check GLUCOSE here too: non-ketotic hyperglycaemia produces striatal signal change with acute chorea and is entirely reversible"],
+    },
+    "Posterior thalamic (pulvinar) infarct": {
+      slots: { level: "NEGLECT and visual attention — test EXTINCTION on double simultaneous stimulation, which is the part routinely skipped",
+               flavour: "contralateral neglect and impaired visual attention with no weakness — a SUBCORTICAL cause of neglect that is easily attributed to the cortex, so the scan matters and so does testing for extinction rather than for a dense deficit" },
+    },
+    "Dominant thalamic infarct": {
+      slots: { level: "fluency, comprehension and REPETITION separately — and the patient's AROUSAL at the same time",
+               flavour: "a FLUCTUATING aphasia with reduced fluency and paraphasias but strikingly PRESERVED REPETITION, varying with arousal and improving when the patient is alerted. That arousal-dependence is what distinguishes it from a cortical aphasia" },
+      confirmatoryExtra: ["Re-examine the language when the patient is fully alert before concluding anything — a thalamic aphasia assessed once, in a drowsy patient, will be recorded as far worse than it is"],
+    },
+  }),
+
+  // ---- ROUND 13 (tranche 3): DELAYED CONSEQUENCES OF AN OLD STROKE ----
+  ...family("post-stroke-sequela", POST_STROKE_SPINE, {
+    "Central post-stroke pain (Déjerine-Roussy)": {
+      slots: { level: "the painful area against the sensory deficit — they should overlap, and light touch should be UNPLEASANT rather than absent",
+               flavour: "weeks to months after a thalamic or brainstem stroke the numb side becomes spontaneously painful and hypersensitive to light touch. It is a lesion sign, not a functional one, and it is misattributed more often than it is recognised" },
+      confirmatoryExtra: ["No further imaging is needed where the old stroke is already documented and the pain fits its territory — the diagnosis is clinical, and repeating scans delays treatment"],
+      monitoringExtra: ["It responds to NEUROPATHIC agents rather than to conventional analgesia, and simple analgesics and opioids largely do not work — so tell the patient that before they conclude nothing will help"],
+    },
+    "Thalamic infarct or haemorrhage": {
+      slots: { level: "the tremor in posture and in action, plus limb ataxia and any dystonic posturing",
+               flavour: "a delayed, coarse THALAMIC TREMOR with ataxia and dystonic posturing appearing weeks to months after a ventrolateral thalamic stroke. The latency is the diagnosis — a tremor from the first day is something else" },
+      confirmatoryExtra: ["It is one of the most drug-resistant tremors there is, so refer to a movement disorder service rather than working through oral agents. The ventral intermediate nucleus here is the classic DBS target, which makes surgery a real conversation for a disabled patient"],
+    },
+    "Cerebellar or brainstem infarct": {
+      slots: { level: "the PALATE at rest with the mouth open — the movement is rhythmic and it continues in sleep, which no functional movement does",
+               flavour: "symptomatic palatal tremor emerging WEEKS TO MONTHS after a stroke within the Guillain-Mollaret triangle, with hypertrophic degeneration of the inferior olive on MRI. The olivary change is the confirmation, and it appears late rather than at the time of the stroke" },
+      confirmatoryExtra: ["Look specifically at the INFERIOR OLIVE on the MRI and ask for it to be reported: hypertrophic olivary degeneration is easily passed over as an incidental signal change, and it is the finding that ties the tremor to the old lesion"],
+    },
+    "Bilateral vascular disease (multi-infarct / lacunar state)": {
+      slots: { level: "the jaw jerk, the tongue and emotional control — a BRISK jaw jerk with a small spastic tongue is upper motor neurone",
+               flavour: "stepwise accumulation of deficits with pseudobulbar palsy and emotional lability. The bedside discriminator is the tongue: SPASTIC with a brisk jaw jerk here, WASTED and FASCICULATING with an absent jaw jerk in a bulbar (lower motor neurone) palsy — and the second is motor neurone disease until proven otherwise" },
+      confirmatoryExtra: ["Where the tongue is wasted and fasciculating rather than spastic, this is the wrong diagnosis and the patient needs a neuromuscular opinion urgently — that distinction is the single most consequential thing on this page"],
+      monitoringExtra: [
+        "SWALLOW is the risk that matters: pseudobulbar palsy causes aspiration quietly, so a formal assessment is warranted even when the patient reports no difficulty",
+        "Emotional lability is a treatable symptom and is distressing out of proportion to how it is usually treated — explain to the family that it is a release phenomenon and not grief or a change of character",
+      ],
+      urgency: "urgent",
+    },
+    "Vascular parkinsonism": {
+      slots: { level: "the GAIT above all — wide-based and shuffling with early falls, against a relatively normal arm swing and no rest tremor",
+               flavour: "LOWER-BODY predominant parkinsonism with a stepwise history, extensive white-matter disease on imaging and a poor levodopa response. The upper limbs looking well is the discriminator from idiopathic Parkinson's disease" },
+      confirmatoryExtra: [
+        "MRI rather than CT: the diagnosis rests on the burden of small-vessel disease, and CT systematically understates it",
+        "EXCLUDE NORMAL PRESSURE HYDROCEPHALUS, which presents with the same magnetic gait plus incontinence and cognitive slowing, and is potentially reversible — the ventricles on the same scan answer it",
+        "A levodopa trial is still reasonable and is diagnostic in its own right, since a clear response argues the diagnosis is wrong",
+      ],
+      monitoringExtra: ["FALLS are the outcome that determines this patient's future — physiotherapy, a home hazard assessment and bone health belong in the plan from the first visit rather than after the first fracture"],
+    },
+  }),
+
+  // ---- ROUND 13 (tranche 3): MICROVASCULAR CRANIAL NERVE PALSY ----
+  // Deliberately NOT aliased onto the diabetic-neuropathy plan in metabolic.js. That plan works up
+  // DIABETES — retinopathy, feet, glycaemic control. This one answers a different question, which is the
+  // only question the bedside actually has: is this benign microvascular ischaemia of the nerve, or is
+  // something compressing it? Recovery is the test, so the plan's real content is what to do when the
+  // expected recovery does not happen.
+  ...family("microvascular-cn-palsy", MICROVASCULAR_CN_SPINE, {
+    "Microvascular (diabetic / hypertensive) palsy": {
+      slots: { level: "the palsy itself, plus every OTHER cranial nerve — an isolated palsy is the diagnosis, and a second sign refutes it",
+               flavour: "abrupt isolated diplopia in an older patient with vascular risk factors, often with a dull ache around the eye at onset" },
+      bySite: {
+        skull_base_vi_cisternal: {
+          level: "abduction in each eye, and specifically the OTHER side — plus hearing, facial sensation and the disc",
+          flavour: "a sixth-nerve palsy is the LEAST localising of the ocular motor palsies: the nerve has the longest intracranial course, so raised intracranial pressure produces it as a FALSE LOCALISING SIGN. Look at the discs before accepting a microvascular explanation, and a BILATERAL sixth palsy is not microvascular at all",
+        },
+        skull_base_trochlear_cisternal: {
+          level: "vertical alignment in each direction of gaze, and the head tilt — including old photographs",
+          flavour: "an isolated fourth-nerve palsy is more often CONGENITAL and long-standing than acquired. Old photographs showing a lifelong head tilt, and a large vertical fusion range, settle it without any imaging — and trauma is the next commonest cause after that",
+        },
+      },
+    },
+    "Microvascular (diabetic / hypertensive) third-nerve palsy": {
+      slots: { level: "THE PUPIL, every day in the first week — and the lid and each eye movement alongside it",
+               flavour: "a PUPIL-SPARING third-nerve palsy in an older vasculopath is the classic microvascular picture: the infarct hits the central fibres and spares the peripheral parasympathetics that run on the outside of the nerve. It is often painful, and pain alone does not argue against it" },
+      confirmatoryExtra: [
+        "PUPIL INVOLVEMENT CHANGES THE DIAGNOSIS ENTIRELY — a posterior communicating artery aneurysm compresses the nerve from outside and takes the pupil first. Any pupil involvement, or a pupil that becomes involved over the following days, means urgent vessel imaging and not observation",
+        "Partial or incomplete palsies are the dangerous ones: where the third nerve is not fully out, the pupil rule is unreliable, and the safe course is to image rather than to wait",
+      ],
+      monitoringExtra: ["Re-examine the pupil DAILY for the first week and document it each time. A pupil recorded once, on the day of presentation, is not a safety net"],
+    },
+    "Microvascular infarct of the superior division": {
+      slots: { level: "the lid and elevation only — and then the rest of the third nerve, to confirm the division really is spared",
+               flavour: "abrupt ptosis with failure of elevation, and NORMAL adduction, depression and pupil. A divisional palsy is genuinely localising: the third nerve splits near the orbital apex and the superior branch takes only levator and superior rectus" },
+      confirmatoryExtra: ["A divisional pattern points to the orbital apex or the anterior cavernous sinus, so a lesion there has to be excluded before a microvascular label is accepted — dedicated orbital imaging rather than a routine head scan"],
+    },
+    "Microvascular infarct of the inferior division": {
+      slots: { level: "adduction, depression and the PUPIL — the superior division being intact is the finding that defines it",
+               flavour: "abrupt failure of adduction and depression with a normal lid and normal elevation. The inferior division carries the parasympathetics, so the pupil can be involved here in a genuinely microvascular event, which removes the reassurance the pupil rule usually gives" },
+      confirmatoryExtra: ["Because the pupil rule does not protect you in an inferior divisional palsy, the threshold for vessel imaging is lower — the divisional pattern itself already argues for a lesion at the apex or the cavernous sinus"],
+    },
+  }),
+
+  // ---- ROUND 13 (tranche 3): NEUROVASCULAR COMPRESSION AND THE TRIGEMINAL AUTONOMIC ATTACK ----
+  // Authored as singletons rather than as a family. V2 and V3 neuralgia share a workup almost exactly,
+  // but they are not synonyms of one another and each sits at ONE site, so a family of two would be a
+  // string match dressed up as a clinical claim.
+  "Trigeminal neuralgia (V2 distribution)": dz("Trigeminal neuralgia (V2 distribution)", {
+    confirmatory: [
+      "MRI IS NOT OPTIONAL, EVEN IN A TYPICAL CASE: it asks two questions at once — is there a vascular loop at the trigeminal ROOT ENTRY ZONE, and is there a secondary cause (a demyelinating plaque, a cerebellopontine angle tumour, a skull base lesion) sitting in the same place",
+      "THE RED FLAGS FOR A SECONDARY CAUSE are all bedside findings: any SENSORY LOSS in the face, a depressed corneal reflex, bilateral pain, a young patient, or any other cranial nerve sign. Classical trigeminal neuralgia has a NORMAL examination between attacks, so an abnormal one changes the diagnosis",
+      "Examine {level} — and note that V2 pain is very commonly attributed to the teeth or the sinuses first, so ask directly about dental work already undertaken, because irreversible treatment on a mistaken diagnosis is the usual harm here",
+      "In a patient under about forty, or with bilateral symptoms, look specifically for MULTIPLE SCLEROSIS: trigeminal neuralgia can be its presenting feature",
+    ],
+    monitoring: [
+      "The first-line treatment is an ANTICONVULSANT rather than an analgesic — carbamazepine and oxcarbazepine are the agents with the best evidence, and conventional analgesics and opioids largely do not work. Tell the patient that at the outset",
+      "Carbamazepine needs SURVEILLANCE: sodium (hyponatraemia is common and often silent), full blood count and liver function. Ask about ancestry before starting, because HLA-B*15:02 carries a serious risk of severe cutaneous reactions in some East and South-East Asian populations and is testable",
+      "SAFETY NET: any rash on carbamazepine is stopped and reviewed the same day, not managed by telephone",
+      "WATCH WEIGHT AND FLUID INTAKE. Patients stop eating, drinking and brushing their teeth to avoid triggering attacks, and dehydration and weight loss are what actually bring them into hospital",
+      "Where pain is refractory or the drug is not tolerated, refer for a surgical opinion rather than escalating drugs indefinitely — MICROVASCULAR DECOMPRESSION addresses the cause where a loop is demonstrated, and ablative procedures are the alternative",
+    ],
+    urgency: "routine",
+    referral: "Neurology; neurosurgery where pain is refractory or a vascular loop is demonstrated",
+    bySite: {
+      skull_base_foramen_rotundum: { level: "sensation over the CHEEK, upper lip and upper teeth, and the trigger zone that sets an attack off" },
+    },
+  }),
+
+  "Trigeminal neuralgia (V3 distribution)": dz("Trigeminal neuralgia (V3 distribution)", {
+    confirmatory: [
+      "MRI to look at the trigeminal ROOT ENTRY ZONE for a vascular loop and, in the same study, to exclude a secondary cause — a demyelinating plaque, a cerebellopontine angle tumour, or a lesion at the foramen ovale",
+      "V3 IS THE DIVISION WITH A MOTOR ROOT, and that is the discriminator here: test the MASSETER and PTERYGOIDS. Wasting or weakness of the muscles of mastication, or a jaw that deviates on opening, is NOT classical trigeminal neuralgia and means a structural lesion at the skull base",
+      "Examine {level}. Classical trigeminal neuralgia has a normal examination between attacks, so sensory loss, a depressed corneal reflex, bilateral pain or a young patient all argue for a secondary cause",
+      "V3 pain is routinely treated as dental for months, so ask what has already been done — and consider the temporomandibular joint and giant cell arteritis, both of which cause jaw pain on chewing and neither of which is neuralgic",
+    ],
+    monitoring: [
+      "The first-line treatment is an ANTICONVULSANT rather than an analgesic — carbamazepine and oxcarbazepine are the agents with the best evidence, and simple analgesics and opioids largely do not work",
+      "Carbamazepine needs SURVEILLANCE: sodium, full blood count and liver function; and ask about ancestry before starting, since HLA-B*15:02 carries a serious risk of severe cutaneous reactions in some East and South-East Asian populations",
+      "SAFETY NET: any rash on carbamazepine is stopped and reviewed the same day",
+      "EATING IS THE PROBLEM AT THIS DIVISION — chewing is the trigger, so weight loss and dehydration come early. Ask about it explicitly and involve dietetics rather than waiting for it to be reported",
+      "Refer for a surgical opinion where pain is refractory or the drug is not tolerated, rather than escalating drugs indefinitely",
+    ],
+    urgency: "routine",
+    referral: "Neurology; neurosurgery where pain is refractory or a vascular loop is demonstrated",
+    bySite: {
+      skull_base_v3_ovale: { level: "sensation over the JAW, lower lip and tongue, the muscles of mastication, and the trigger zone" },
+    },
+  }),
+
+  // A trigeminal autonomic cephalalgia rather than a vascular occlusive event, but it sits at the carotid
+  // space because the Horner's is what the engine sees. That co-location is the whole clinical point of
+  // this plan: the same finding at the same site is also how a carotid dissection presents.
+  "Cluster headache": dz("Cluster headache", {
+    confirmatory: [
+      "FIRST, EXCLUDE CAROTID DISSECTION. A painful Horner's is a dissection until imaged — and cluster headache produces exactly that picture. A FIRST bout, a changed pattern, neck pain, or any Horner's that persists between attacks means urgent carotid imaging, not a diagnosis of cluster",
+      "The attack pattern is the diagnosis: SEVERE strictly unilateral periorbital pain lasting under a few hours, with ipsilateral lacrimation, nasal congestion, conjunctival injection, ptosis or a small pupil — and with RESTLESSNESS and pacing, where a migraine patient lies still. Circadian and seasonal clustering is characteristic",
+      "MRI WITH PITUITARY VIEWS in every first presentation. Pituitary lesions, cavernous sinus lesions and posterior fossa lesions all produce a cluster-like syndrome, and the examination between attacks is normal in both",
+      "Examine {level} — and check whether the Horner's resolves between attacks. A partial Horner's can become PERMANENT after many bouts, which is a benign end-point, but a NEW persisting one has to be imaged before it is attributed to the headache",
+    ],
+    monitoring: [
+      "THE ACUTE TREATMENTS ARE SPECIFIC AND UNDER-USED: HIGH-FLOW OXYGEN by a non-rebreathe mask, and a SUBCUTANEOUS or intranasal triptan. Oral analgesics and oral triptans are too slow to be useful in an attack that peaks in minutes — so a patient without home oxygen has no acute treatment at all",
+      "PREVENTION IS STARTED AT THE SAME VISIT, because a bout runs for weeks: verapamil is first line and needs BASELINE AND SERIAL ECGs, since it causes heart block at the doses used here",
+      "SAFETY NET: cluster headache carries a real suicide risk — the pain is among the most severe described, and patients are frequently told for years that it is migraine or sinusitis. Ask directly about mood and about how they cope during a bout",
+      "Track {level} and the attack frequency in a diary, which is what shows whether prevention is working; and ask about alcohol, which reliably triggers attacks during a bout and not between them",
+    ],
+    urgency: "urgent",
+    referral: "Neurology, with a headache service where bouts are frequent or chronic; urgent vascular imaging first if dissection is possible",
+    bySite: {
+      skull_base_carotid_space: { level: "the pupil and lid on both sides, the neck for tenderness or a bruit, and the sympathetic supply to sweating on the face" },
+    },
+  }),
+
+  // Named for a place, not a disease — and that is exactly how it presents, so the plan's job is to work
+  // out WHICH lesion is in the sinus. The list has an emergency in it, which is why it is not routine.
+  "Cavernous sinus lesion": dz("Cavernous sinus lesion", {
+    confirmatory: [
+      "THE SYNDROME LOCALISES BEFORE THE SCAN DOES: multiple ocular motor nerves failing together with V1 or V2 sensory loss, on one side, is a cavernous sinus lesion — nowhere else packs those nerves together. Chemosis, proptosis and an orbital bruit add a vascular cause",
+      "MRI WITH CONTRAST AND DEDICATED CAVERNOUS SINUS SEQUENCES — a routine head scan is not adequate and will be reported as normal. Add MR or CT ANGIOGRAPHY AND VENOGRAPHY, which is what shows a carotid-cavernous fistula, an aneurysm, or thrombosis",
+      "THINK OF THE EMERGENCY FIRST: in a DIABETIC (particularly ketoacidotic) or immunocompromised patient, this syndrome is MUCORMYCOSIS until proven otherwise — look in the NOSE for a black eschar or an anaesthetic turbinate, and involve ENT the same day for endoscopy and biopsy. It is fatal within days and the treatment is surgical as well as antifungal",
+      "The rest of the differential is worked through in parallel: septic thrombosis from a facial or sinus infection, tumour (meningioma, metastasis, perineural spread, pituitary extension, lymphoma), and Tolosa-Hunt granulomatous inflammation. Examine {level}",
+    ],
+    monitoring: [
+      "DO NOT GIVE STEROIDS AS A DIAGNOSTIC TRIAL BEFORE INFECTION AND LYMPHOMA ARE EXCLUDED. A steroid response is often quoted as confirming Tolosa-Hunt, but tumours and infections improve too — and steroids given into a fungal infection or before a lymphoma biopsy do real harm. Tolosa-Hunt is a diagnosis of EXCLUSION",
+      "SAFETY NET: track VISION — acuity, colour and the disc — as well as the eye movements. The optic nerve is next door at the orbital apex, and visual loss is what converts this into a surgical emergency",
+      "Track {level} and the conscious level; septic thrombosis progresses to the other side, and bilateral signs mean the sinuses have connected across the midline",
+      "Where thrombosis is confirmed, anticoagulation and source control are the questions, and the source is usually a treated-but-not-eradicated facial or paranasal infection",
+    ],
+    urgency: "emergency",
+    referral: "Neurology and neurosurgery, with ENT and ophthalmology; same-day ENT and infectious diseases if fungal infection is possible",
+    bySite: {
+      pupil_cn3_compressive: { level: "each ocular motor nerve separately, the pupil, corneal sensation and V1/V2 sensation — the COMBINATION is the localising information, so record what is spared as well as what is lost" },
+    },
+  }),
 
   // ---- PROMOTED INTO TRANCHE 1 ON CLINICAL GROUNDS (owner ruling, 2026-08-18) ----
   // Only 2 host sites, so reuse count would have left it until tranche 3. It is nonetheless the app's

@@ -112,6 +112,18 @@ export const PATHOLOGY_ALIAS = {
   "Diabetic or entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
   "Diabetes or other entrapment-prone neuropathy": "Diabetes or entrapment-prone neuropathy",
 
+  // Round 13 (vascular): the arterial map is written several ways in causes.js. Each of these is the SAME
+  // DISEASE under a second spelling — an expansion of an abbreviation, or the territory word added — which
+  // is exactly what an alias is for. Where a name adds a genuine clinical claim rather than a synonym (a
+  // splenial extension, a superior-division infarct at a different gyrus) it gets its own plan instead.
+  "ACA territory infarct": "ACA infarct",
+  "Anterior cerebral artery infarct": "ACA infarct",
+  "PCA territory infarct": "PCA infarct",
+  "MCA (superior division) infarct": "MCA superior division infarct",
+  "Anterior spinal artery infarct": "Spinal cord infarct (anterior spinal artery)",
+  "Non-arteritic AION (vasculopathic)": "Non-arteritic AION (the mimic)",
+  "Déjerine-Roussy (central post-stroke pain)": "Central post-stroke pain (Déjerine-Roussy)",
+
   // Round 12: two more pairs that are the same name written back to front.
   "Post-DBS or post-surgical injury": "Post-surgical or post-DBS change",
   "Post-surgical injury (anterior temporal lobectomy)": "Anterior temporal lobectomy (post-surgical)",
