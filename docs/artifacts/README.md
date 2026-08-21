@@ -7,7 +7,15 @@ previously kept only in a session scratchpad, which is transient; keep editing t
 | File | What it is | Favicon | URL (republish in place) |
 |---|---|---|---|
 | `architecture.html` | Flow diagram — input → `solve()` pipeline → output, worked Brown-Séquard example, coverage strip | 🧠 | https://claude.ai/code/artifact/4ea6afce-05fb-45a9-aba5-9ff8571c0ecc |
-| `anatomy-model.html` | Anatomy model — every structure with its finding, crossing (IPSI/CONTRA/BILAT/MIDLINE/NONE) and territory; doubles as the neuroanatomist review sheet | 🩻 | https://claude.ai/code/artifact/6f9562ec-b5a8-453f-a650-e5db4d43a541 |
+| `anatomy-model.html` | Anatomy model — every structure with its finding, crossing (IPSI/CONTRA/BILAT/MIDLINE/NONE) and territory; doubles as the neuroanatomist review sheet | 🩻 | https://claude.ai/code/artifact/8194700c-52fb-48ba-a83e-d61e48b904de |
+
+
+> **The original URLs died.** Both artifacts were first published from a session on the original Mac, and
+> by 2026-08-21 neither resolved — `WebFetch` returned "artifact not found" and the account's artifact
+> list was empty. `anatomy-model.html` was therefore republished as a NEW artifact on that date (URL in
+> the table above). **`architecture.html`'s URL below is still the dead one** and will need the same
+> treatment when it is next published. Publishing without passing `url` mints a new artifact rather than
+> updating, so always pass the URL from the table.
 
 ## How to update (from any session)
 
