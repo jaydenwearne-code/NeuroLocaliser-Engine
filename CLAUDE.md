@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**69 test suites / 5209 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**69 test suites / 5212 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -782,7 +782,7 @@ would mean choosing the picture to satisfy the test rather than the clinic.
 > above; rounds 2 and 3 were read against the archetype cases. The gate is CLOSED — do not re-flag this
 > content as unreviewed.
 
-69 suites / 5209 assertions green. Spec/plan:
+69 suites / 5212 assertions green. Spec/plan:
 `docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,
 `docs/superpowers/plans/2026-08-21-together-card-cross-site-workup.md`.
 

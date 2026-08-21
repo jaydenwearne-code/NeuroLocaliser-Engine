@@ -35,7 +35,7 @@ Both are living docs. After adding a region: add its structures to `anatomy-mode
 section + any new laterality badges), and update the coverage strip + test count in
 `architecture.html`.
 
-**Current coverage (2026-08-21): the WHOLE model — all 528 structures across 36 levels**, in 16 region
+**Current coverage (2026-08-21): the WHOLE model — all 528 structures across 35 levels**, in 16 region
 sections. `anatomy-model.html` was rebuilt from scratch on that date because it had drifted badly: 194
 rows, of which **39 named structures that no longer existed**, while **373 model structures were
 missing** — 29% real coverage. It is the neuroanatomist review sheet, so that drift meant the one
