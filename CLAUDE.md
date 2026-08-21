@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**69 test suites / 5201 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**69 test suites / 5209 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -579,9 +579,15 @@ across a multifocal set.
    respects the chiasm — 22 firing sites → 4 → 2, and the 2 that remain are the parasagittal pair firing
    correctly on sinus thrombosis. See the ophthalmic-imaging section above for the full account and the
    both-directions invariant in `test/next-steps.test.js`. **What remains is benign but real:**
-   `hasFieldDefect()` still keys on `expectedFindings(site)` — PREDICTED rather than OBSERVED — so in
-   principle it can still order imaging for a deficit the Why card lists as "predicted but not reported".
-   The chiasm rule removed every case where that actually bit; revisit only if a new site reintroduces one.
+   ~~`hasFieldDefect()` keys on PREDICTED rather than OBSERVED findings~~ — **CLOSED 2026-08-21, by
+   measurement rather than by code.** All 11 sites firing via the predicted-token route are ANTERIOR visual
+   pathway sites (optic nerve AION/neuritis/canal, orbital apex, retina, chiasm), where the lesion CONTAINS
+   the retinal ganglion cell axons — so the disc and RNFL are the right things to measure because of WHERE
+   THE LESION IS, not because a symptom was recorded. Ordering the test is how you confirm or refute that
+   candidate localisation. Threading observed findings through `nextStepsFor()` was rejected: a widely-called
+   signature change and a broken byte-identical guarantee for no clinical gain. A new invariant in
+   `test/next-steps.test.js` fails the moment a POSTERIOR site starts predicting an anterior visual token,
+   which is the only way the hole could reopen.
 3. ~~**`combinedNextSteps` / the Together card**~~ — **CLOSED 2026-08-21.** See the cross-site workup
    section below.
 
@@ -728,8 +734,11 @@ the shareable case and the gate lives inside that call.
 
 **Case URL `ux=`**, validated against the roster exactly as `px=` is validated against `CAUSES`. **`ux`
 implies scope `all`** — the parameter has no meaning in any other scope — and degrades safely when the
-restored case has under two sites. `S.scope` still does not round-trip on its own; that gap is pre-existing
-and deliberately untouched.
+restored case has under two sites. **`sc=all` (2026-08-21) round-trips the scope on its own**, closing a
+pre-existing gap: sharing an all-sites view with NO entity selected used to land the recipient in "This
+site", so the link showed a different card than the sender was reading. Only the non-default value is
+written. `sc` is read BEFORE `ux` so the two can only agree, and `ux` still implies the scope on its own
+for links written before `sc` existed.
 
 **THE HARD GATE.** `test/multifocal-next-steps.test.js` asserts every `MULTIFOCAL` entity has a plan. The
 ratchet ran 13 → 8 → 3 → 0 across the three authoring rounds and retired into the gate, the same shape as
@@ -773,7 +782,7 @@ would mean choosing the picture to satisfy the test rather than the clinic.
 > above; rounds 2 and 3 were read against the archetype cases. The gate is CLOSED — do not re-flag this
 > content as unreviewed.
 
-69 suites / 5201 assertions green. Spec/plan:
+69 suites / 5209 assertions green. Spec/plan:
 `docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,
 `docs/superpowers/plans/2026-08-21-together-card-cross-site-workup.md`.
 
