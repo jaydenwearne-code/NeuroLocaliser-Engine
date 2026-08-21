@@ -142,8 +142,16 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   ok("the pathology name is carried", sel.pathology === "Spinal epidural abscess");
 
   // Selected + uncurated => site tiers, flagged so the UI can label them.
-  const uncurated = causesAt(host).map(c => c.name).find(n => !PATHOLOGY_NEXT[n] && !PATHOLOGY_ALIAS[n]);
-  ok("an uncurated cause exists at that site to test the fallback", !!uncurated);
+  //
+  // THE FIXTURE IS SYNTHETIC, AND IT HAS TO BE. This used to pick the first real cause at `host` that had
+  // no plan, which is the trap CLAUDE.md records from the 2026-08-10 layer: a test whose fixture is an
+  // incidental GAP in the content breaks the moment the content closes the gap. Tranche 3 is closing every
+  // gap on purpose, so an unplanned cause at any particular site is a shrinking accident rather than a
+  // fact worth asserting — this broke on the day the last cause at `host` was authored (round 14). What
+  // is being tested is the FALLBACK MECHANISM, which must keep working for as long as the honest fallback
+  // exists, so the name is one that will never have a plan.
+  const uncurated = "Zz never authored pathology (test fixture)";
+  ok("the fallback fixture has no plan", !PATHOLOGY_NEXT[uncurated] && !PATHOLOGY_ALIAS[uncurated]);
   const fb = pathologyNextStepsFor(host, uncurated);
   ok("uncurated falls back to the site confirmatory",
      JSON.stringify(fb.confirmatory) === JSON.stringify(today.confirmatory));
@@ -269,6 +277,33 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   ok(`RED GATE: every one of the ${redNames.size} must-not-miss causes has an authored workup`,
      unplanned.length === 0,
      `${unplanned.length} without a plan: ${unplanned.slice(0, 5).join(" ; ")}`);
+}
+
+// ---- TRANCHE 3: THE COVERAGE RATCHET ----
+// THE TRANCHE-3 RATCHET HAS RETIRED INTO A HARD GATE (2026-08-21).
+//
+// It ran as a CEILING — a number that fell with every authoring round and could never rise — from 485
+// down to 0 across four rounds, one sieve category at a time. A ceiling rather than "every cause has a
+// plan" because that assertion would have failed on every round until the last one. This is the last one.
+//
+// REUSE WAS EXHAUSTED BEFORE THIS TRANCHE STARTED, and that is what made it different in kind: 88% of the
+// names appeared at exactly ONE site. Tranche 1 bought 11 rows per plan, tranche 2 bought 2, and tranche 3
+// bought 1.18 — so the ceiling fell roughly one per plan authored, with no families to accelerate it.
+//
+// Its durable value starts here, and it is the same value the red gate has: a cause added to causes.js
+// with no workup behind it now fails the suite immediately, rather than quietly falling back to the site
+// plan where nobody would notice. THE HONEST FALLBACK STAYS IN THE CODE — `pathologyCurated: false` and
+// the "General plan for this site" label are what make a future unplanned cause render truthfully instead
+// of pretending — but nothing in the shipped content reaches it any more, which is why the test that
+// exercises that path now uses a SYNTHETIC name (see section 5) rather than a real gap.
+{
+  const planned = new Set([...Object.keys(PATHOLOGY_NEXT), ...Object.keys(PATHOLOGY_ALIAS)]);
+  const names = new Set();
+  for (const list of Object.values(CAUSES)) for (const c of list) names.add(c.name);
+  const unplanned = [...names].filter(n => !planned.has(n));
+  ok(`HARD GATE: every cause in CAUSES has an authored workup (${names.size} names)`,
+     unplanned.length === 0,
+     `${unplanned.length} with no plan: ${unplanned.slice(0, 5).join(" ; ")}`);
 }
 
 // ---- REPORT (not an assertion): the red / non-red authoring split ----

@@ -23,6 +23,11 @@ previously kept only in a session scratchpad, which is transient; keep editing t
 > (`cst_cord`) were deleted by the raw-observations refactor. **Validate ids against the model after
 > editing either file** — the anatomy sheet by structure id, the flow diagram by every `.chip`.
 
+> **✅ THE SHEET HAS BEEN CLINICALLY REVIEWED AND SIGNED OFF (2026-08-21)** by the owner (a clinician),
+> all 16 regions and all 528 structures in one pass — the review this document exists to support, and the
+> last standing correctness gate on the engine. **Do not re-flag it as unreviewed.** Rows added from here
+> are held to the same bar and flagged to the owner if uncertain.
+
 ## How to update (from any session)
 
 1. Edit the file here.

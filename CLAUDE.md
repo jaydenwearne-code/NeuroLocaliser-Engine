@@ -567,12 +567,10 @@ across a multifocal set.
 > status is recorded in the `pathologyNextSteps.js` header. Content added from here is held to the same bar.
 
 **STILL OPEN, deliberately out of scope:**
-1. ~~**The remaining 831 pathologies**~~ — **PARTLY CLOSED by tranche 2**, which authored all 353 red
-   (must-not-miss) causes and retired the ratchet into a hard gate. What remains is the **494 non-red**
-   names, deliberately parked: 709 of the leftover names appear at exactly ONE site, so finishing the
-   coverage is ~35x the authoring of tranche 1, and the labelled site fallback they keep is honest and
-   already correct. Much of it would be REDISTRIBUTION rather than new writing: curated site
-   `investigations` prose is often already pathology-specific and merely lives in the wrong bucket.
+1. ~~**The remaining 831 pathologies**~~ — **FULLY CLOSED.** Tranche 2 authored all 353 red
+   (must-not-miss) causes; **tranche 3 (2026-08-21) authored the remaining 485 non-red names, so all
+   1294 cause rows now carry an authored workup** and the coverage ratchet has retired into a hard gate.
+   See the tranche-3 section below. Nothing in the shipped content reaches the site fallback any more.
 2. ~~**The fundal-photography defect is only HALF fixed.**~~ — **CLOSED 2026-08-18.** The chiasm half was
    fixed on `fix/ophthalmic-imaging-chiasm` (merged): `VISUAL_FINDING` no longer contains
    `homonymous_hemianopia` or the quadrantanopias, and the three-route trigger in `nextSteps.js` now
@@ -670,6 +668,71 @@ workup instructs the reader to look for one, and none existed.
 
 Spec/plan: `docs/superpowers/specs/2026-08-18-pathology-tranche-2-design.md`,
 `docs/superpowers/plans/2026-08-18-pathology-tranche-2.md`.
+
+## Pathology tranche 3 — COMPLETE (2026-08-21) — ✅ CLINICALLY SIGNED OFF
+
+**Branch `feat/pathology-tranche-3`, NOT merged.** Tranche 2 authored by DANGER and stopped when the red
+set closed, leaving 485 non-red names on the labelled site fallback. Tranche 3 finishes the coverage.
+
+**EVERY CAUSE IN THE APP NOW HAS AN AUTHORED WORKUP — 857 names, 816 plans, 41 aliases, 71 families,
+1294 of 1294 cause rows (100%, up from 56%).** Twelve sieve categories closed one at a time, on the
+owner's ruling that the work proceed **by sieve category, all 485, bucket by bucket**.
+
+**REUSE WAS EXHAUSTED BEFORE THIS TRANCHE STARTED, and that is what made it different in kind:** 88% of
+the remaining names appeared at exactly ONE site. Tranche 1 bought 11 rows per plan, tranche 2 bought 2,
+tranche 3 bought **1.18** — so the ratchet fell roughly one per plan authored, with no families to
+accelerate it. It ran **485 → 226 → 179 → 131 → 74 → 0** and has now **RETIRED INTO A HARD GATE**: a
+cause added to `causes.js` with no workup behind it fails the suite immediately, rather than quietly
+falling back to the site plan where nobody would notice.
+
+**THE HONEST FALLBACK STAYS IN THE CODE.** `pathologyCurated: false` and the "General plan for this site —
+not specific to X" label are what make a future unplanned cause render truthfully instead of pretending.
+Nothing in the shipped content reaches it any more — which is precisely why the test that exercises it now
+uses a **SYNTHETIC** name. That test used to pick the first real cause at its host site with no plan, a
+fixture that IS the gap tranche 3 was closing, and it broke the moment the last cause there was authored.
+**Same trap CLAUDE.md already records from the 2026-08-10 layer: the content was right and the test was
+wrong.** Never use an incidental content gap as a test fixture.
+
+**"A FAMILY IS A CLINICAL CLAIM, NOT A STRING MATCH" did the most work again, and three splits are worth
+knowing because each was a decision NOT to reuse a spine that superficially fitted:**
+- **A lacune is not a small stroke, it is a DIFFERENT stroke** — the aetiology work-up is the small-vessel
+  risk profile, not an embolic source hunt. `lacunar-infarct` is separate from `perforator-disease`, which
+  is a claim about a STUTTERING course; most lacunes do not stutter.
+- **Root compression and canal compression cannot share a spine.** A root is a pain problem with a good
+  natural history; the cord or the cauda is a progressive disability where surgery PREVENTS rather than
+  restores. Hence `degenerative-radiculopathy` (21) and `degenerative-canal-stenosis` (3).
+- **A benign skull-base tumour is not skull-base malignancy.** `SKULL_BASE_SPINE` works up staging, tissue
+  and the primary; a vestibular schwannoma is slow and often best LEFT ALONE, because the treatment can
+  cost more function than the tumour has. `benign-skull-base-tumour` (22) says watching is an active plan.
+
+**Also new:** `post-stroke-sequela` (the stroke already happened — confirm the responsible OLD lesion and
+hand the symptom to someone who will treat it), `microvascular-cn-palsy` (deliberately NOT aliased onto
+the diabetic-neuropathy plan, which works up DIABETES; this one answers "benign ischaemia or compression?"
+and RECOVERY IS THE TEST), `cortical-dementia` (11), `parkinsonian-degeneration` (6), `progressive-ataxia`
+(3 — acquired and treatable first, genetic LAST and with counselling), `bppv-canal` (3 — the nystagmus
+names the canal and the canal names the manoeuvre), `peripheral-nerve-mass` (5 — these imitate the
+ordinary entrapment at the same site, and ultrasound is the under-used first test), plus the round-12
+iatrogenic four.
+
+**URGENCY DESCENDS WHERE IT SHOULD.** The chronic spondylosis members badge ROUTINE while the acute
+prolapses badge URGENT — the tranche-1 ruling working as intended (*an authored plan MAY sit below the
+site's badge; a tool that only escalates cries wolf*). What keeps it safe is unchanged: immediate and
+first-line stay the SITE's, and the red floor is mechanical. None of the 485 names in this tranche was red.
+
+**Aliases went from 4 to 41**, and the recurring class is worth naming: the same disease written a second
+way — an abbreviation expanded (`ACA infarct` / `Anterior cerebral artery infarct`), a word added
+(`PCA territory infarct`), a name written back to front (`Post-DBS or post-surgical injury`), or **the same
+word with and without its accents (`Meniere's` / `Ménière's`), which is how a duplicate survives every
+review because the two look identical in prose**. Where a name adds a real clinical claim rather than a
+spelling — a splenial extension, a Heidenhain variant — it got its own plan instead.
+
+> **✅ CLINICALLY SIGNED OFF (2026-08-21) by the owner (a clinician): ALL tranche-3 content**, across
+> rounds 4-15 — the twelve sieve categories, 485 names, 592 plans. Each category file records its own
+> tranche-3 sign-off. **The review gate on the pathology workup layer is now CLOSED at every tranche —
+> do not re-flag this content as unreviewed.** Content added from here is held to the same bar and
+> flagged if uncertain.
+
+6425 assertions green.
 
 ## Together card — the cross-site workup (DONE 2026-08-21)
 
@@ -916,4 +979,13 @@ Two published Claude Artifacts (a flow diagram and the anatomy review sheet) vis
 their HTML source and the update workflow (edit here, republish to the same URL) are in
 `docs/artifacts/`. Keep them in sync after each region increment.
 
-Not a medical device; not for clinical use. The anatomy tables still need neuroanatomist review.
+Not a medical device; not for clinical use.
+
+**✅ THE ANATOMY MODEL HAS BEEN REVIEWED (2026-08-21).** The owner (a clinician) read the rebuilt review
+sheet — all 528 structures across 16 regions, in one pass — and signed it off. That was the last standing
+correctness gate on the engine, and it had been open since the project began. It already paid for itself
+before the read even finished: authoring the sheet exposed a live crossing bug (`scp_midbrain` emitted
+ataxia ipsilaterally; the superior cerebellar peduncle decussates in the caudal midbrain, so it is
+CONTRALATERAL — fixed in PR #9). **Do not re-flag the anatomy tables as unreviewed.** Structures added
+from here are held to the same bar: add the row to `docs/artifacts/anatomy-model.html`, verify every id
+against `src/model/structures.js`, and flag anything uncertain for the owner.

@@ -10,6 +10,8 @@
 //   Tranche 1 — 8 plans. Tranche 2 (round 4) — CNS abscess, encephalitis/rhombencephalitis,
 //   skull-base/ENT infection, deep soft-tissue collections, and eight singletons. The infective red set
 //   is complete.
+//   Tranche 3 (round 5) — the infective NON-red set, 20 names: the VZV-ganglionitis family plus fourteen
+//   singletons and two aliases. AWAITING CLINICAL REVIEW.
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 4 (tranche 2): the infective red set ----
@@ -92,7 +94,299 @@ const SOFT_TISSUE_SPINE = {
   referral: "Acute medicine or surgery for source control with infectious diseases; neurology for the nerve injury once the sepsis is treated",
 };
 
+
+// ---- ROUND 5 (tranche 3): the infective NON-red set ----
+// Twenty names. Reuse is supposed to be exhausted by this point — 88% of the remaining causes sit at a
+// single site — and yet one real family survives here: VARICELLA ZOSTER REACTIVATING IN A GANGLION. One
+// organism, one antiviral question, and the members differ only by WHICH ganglion and what that ganglion
+// puts at risk: the eye, the ear, or the bladder. That is a clinical claim, not a string match.
+const VZV_GANGLION = {
+  confirmatory: [
+    "The rash is the diagnosis where it is present, but the PAIN COMES FIRST — often by days — so a normal-looking {level} early does not exclude it, and re-examining is the test",
+    "Vesicle-base PCR for varicella zoster where the diagnosis is not clinically obvious; serology is of little use acutely",
+    "{flavour}",
+    "Ask about IMMUNOSUPPRESSION and consider testing for HIV — zoster in a younger patient is a reason to look",
+  ],
+  monitoring: [
+    "ANTIVIRAL BENEFIT IS TIME-DEPENDENT: it is a decision to make on suspicion rather than after confirmation, and the window is measured in days from rash onset",
+    "Warn about POST-HERPETIC NEURALGIA — the commonest and most disabling sequela, more likely with severe acute pain and in older patients; treating pain properly early is the intervention",
+    "Track {level}: motor recovery is slower and less complete than the rash suggests, and the deficit can worsen for several days after the rash appears",
+  ],
+  urgency: "urgent",
+  referral: "Depends on the ganglion — see the site-specific note; involve the relevant specialty the same day where sight, hearing or the bladder is threatened.",
+};
+
 export default {
+  // ---- VZV GANGLIONITIS — one organism, four ganglia ----
+  ...family("vzv-ganglionitis", VZV_GANGLION, {
+    "Herpes zoster (trigeminal ganglionitis)": {
+      slots: { level: "the face, cornea and the whole V1 dermatome",
+               flavour: "LOOK AT THE TIP OF THE NOSE — Hutchinson's sign, vesicles in the nasociliary territory, predicts ocular involvement, and herpes zoster ophthalmicus threatens sight" },
+      confirmatoryExtra: ["SAME-DAY OPHTHALMOLOGY where V1 is involved or the eye is red: keratitis, uveitis and acute retinal necrosis all follow, and the eye can be lost while the rash is being treated"],
+      referral: "Same-day ophthalmology if V1 or the eye is involved; otherwise primary care with antivirals started on suspicion.",
+    },
+    "Ramsay Hunt (herpes zoster oticus)": {
+      slots: { level: "facial power, hearing and balance",
+               flavour: "EXAMINE THE EXTERNAL CANAL AND PALATE — the vesicles hide there, and a facial palsy called idiopathic without looking in the ear is the commonest way this is missed" },
+      confirmatoryExtra: ["Formal audiometry and, where there is vertigo, vestibular testing — the eighth nerve is involved often enough that recovery of hearing is a separate question from recovery of the face"],
+      monitoringExtra: ["Recovery is WORSE than in Bell's palsy, which is exactly why the distinction matters — and eye protection is needed while the lid does not close"],
+      referral: "ENT with neurology; same-day if there is hearing loss or vertigo. Eye protection from the outset.",
+    },
+    "Herpes zoster (sacral)": {
+      slots: { level: "perineal sensation, anal tone and bladder function",
+               flavour: "sacral zoster can obstruct the bladder — ELSBERG SYNDROME — and urinary retention may arrive with, or even before, the rash" },
+      confirmatoryExtra: ["MEASURE A POST-VOID RESIDUAL rather than asking about symptoms: retention here is often painless and the patient may not report it"],
+      monitoringExtra: ["Retention can persist after the rash resolves; arrange urology follow-up rather than assuming the bladder recovers with the skin"],
+      referral: "Urology if there is retention; otherwise primary care with antivirals. Consider MRI to exclude a compressive cause where retention dominates.",
+    },
+    "Varicella zoster or viral ganglionitis": {
+      slots: { level: "the pupil, its reaction to light and to a near target, and accommodation",
+               flavour: "a tonic pupil after zoster ophthalmicus or another viral illness — it is a ciliary ganglion problem, not a third-nerve one, and the giveaway is the SLOW, segmental constriction with tonic re-dilation" },
+      confirmatoryExtra: ["Slit-lamp examination for segmental iris palsy, and dilute pilocarpine testing for denervation supersensitivity where the diagnosis is uncertain"],
+      urgency: "routine",
+      referral: "Ophthalmology; routine unless there is other evidence of zoster ophthalmicus, which is same-day.",
+    },
+  }),
+
+  // ---- SINGLETONS: tranche 3, infective ----
+  // The differentiation invariant caught this one, and it was right to: neuritis is contrasted against a
+  // DIFFERENT rival at each of its three sites. At the canal sites the question is neuritis versus BPPV
+  // (constant versus positional); at the labyrinth it is neuritis versus labyrinthitis (hearing spared
+  // versus not). Same disease, different bedside discrimination.
+  "Vestibular neuritis": dz("Vestibular neuritis", {
+    slots: { flavour: "distinguish it from the other peripheral causes at this site before settling on it" },
+    bySite: {
+      peripheral_vestibular_posterior_canal: {
+        flavour: "the rival here is BPPV, and the discriminator is DURATION AND TRIGGER: BPPV is brief and provoked by position, neuritis is constant for days. A Dix-Hallpike that reproduces brief torsional nystagmus settles it, and it also treats it",
+      },
+      peripheral_vestibular_horizontal_canal: {
+        flavour: "the rival here is horizontal-canal BPPV — a supine roll test provokes it, and again the giveaway is that the vertigo is BRIEF and positional rather than constant",
+      },
+      peripheral_vestibular_labyrinth: {
+        flavour: "the rival here is LABYRINTHITIS, and the discriminator is HEARING: the labyrinth carries both, so neuritis spares hearing and labyrinthitis does not. Test it formally rather than by report",
+      },
+    },
+    confirmatory: [
+      "This is a CLINICAL diagnosis made by HINTS at the bedside, and imaging is NOT the test — an early MRI misses a substantial minority of posterior-circulation strokes, so a reassuring scan does not overrule a worrying examination",
+      "Head impulse ABNORMAL, no direction-changing nystagmus, no skew — all three are needed before calling it peripheral, and any one central feature sends the patient down the stroke pathway",
+      "{flavour}",
+      "Take a vascular risk history — the older the patient and the more risk factors, the lower the threshold for treating it as a stroke",
+    ],
+    monitoring: [
+      "SAFETY NET: a NORMAL head impulse test in someone with acute constant vertigo is the DANGEROUS result — it points central, not peripheral, and it is counter-intuitive enough to be worth stating explicitly",
+      "Vestibular sedatives are for the first days only: used longer they PREVENT central compensation and prolong the illness",
+      "Refer for vestibular rehabilitation where symptoms persist beyond a couple of weeks — compensation is trainable, and waiting does not achieve it",
+    ],
+    urgency: "urgent",
+    referral: "ED or acute medicine for HINTS assessment where the picture is acute; ENT or neuro-otology for persistent symptoms.",
+  }),
+
+  "Labyrinthitis (viral / bacterial)": dz("Labyrinthitis (viral / bacterial)", {
+    confirmatory: [
+      "HEARING LOSS is what separates this from vestibular neuritis — the labyrinth carries both balance and hearing, so document it formally rather than by report",
+      "EXAMINE THE EAR: a bacterial labyrinthitis complicating otitis media or cholesteatoma is a different and more urgent disease from a viral one, and the drum tells you which",
+      "Imaging where a bacterial cause is possible — a suppurative labyrinthitis can progress to meningitis, and CT of the temporal bones shows the erosion",
+      "Consider a vascular cause in an older patient with risk factors: sudden hearing loss WITH vertigo can be an AICA-territory infarct",
+    ],
+    monitoring: [
+      "SAFETY NET: sudden sensorineural hearing loss is itself a time-critical problem — it needs same-day ENT assessment, not a routine referral",
+      "Watch for signs of intracranial spread where the cause is bacterial: headache, fever and reduced conscious level",
+      "Hearing may not recover; arrange audiological follow-up rather than waiting to see",
+    ],
+    urgency: "urgent",
+    referral: "Same-day ENT where there is hearing loss or a suppurative cause; otherwise as for vestibular neuritis.",
+  }),
+
+  "Post-infectious acute cerebellitis": dz("Post-infectious acute cerebellitis", {
+    confirmatory: [
+      "MRI brain with contrast — cerebellar swelling is what turns this from a self-limiting illness into a neurosurgical one, so the scan is looking for MASS EFFECT and fourth-ventricular compression as much as for inflammation",
+      "Lumbar puncture once imaging permits: a lymphocytic CSF supports it, and the same sample excludes the treatable infections",
+      "Varicella, EBV, mycoplasma and enterovirus serology or PCR — the preceding illness is often weeks earlier and may be forgotten unless asked about directly",
+      "In a child with acute ataxia, ask about ACCESS TO MEDICATION and consider a toxicology screen: ingestion is commoner than cerebellitis and looks identical at the bedside",
+    ],
+    monitoring: [
+      "SAFETY NET: posterior-fossa swelling obstructs CSF drainage. CONSCIOUS LEVEL is the observation that matters, and deterioration is an emergency, not a review",
+      "Most children recover fully over weeks — but say so explicitly, because the presentation is frightening and the prognosis is the reassurance",
+      "Re-examine gait and speech at follow-up: a residual deficit changes the diagnosis towards something else",
+    ],
+    urgency: "urgent",
+    referral: "Paediatrics with neurology; neurosurgery on standby where there is swelling.",
+  }),
+
+  "HTLV-1 associated myelopathy (tropical spastic paraparesis)": dz("HTLV-1 associated myelopathy (tropical spastic paraparesis)", {
+    confirmatory: [
+      "HTLV-1 SEROLOGY in serum and CSF, with confirmatory testing — the diagnosis is not made without it, and it is not on a routine myelopathy screen unless asked for",
+      "MRI whole spine and brain to exclude a compressive or demyelinating cause: the cord may look normal or only atrophic, and that normality is compatible with the diagnosis",
+      "Take a full geographic, transfusion and BREASTFEEDING history — vertical transmission is the commonest route, so the exposure may be from infancy in a patient who has never travelled since",
+      "Screen for the treatable myelopathy mimics regardless: B12, copper, HIV and syphilis",
+    ],
+    monitoring: [
+      "The disabling problems are BLADDER and SPASTICITY rather than weakness, and both are treatable — asking about them directly is what improves the patient's day",
+      "Family members may need testing and counselling, including advice on breastfeeding and blood donation",
+      "Watch for the associated haematological disease: adult T-cell leukaemia/lymphoma shares the virus",
+    ],
+    urgency: "routine",
+    referral: "Neurology with infectious diseases; continence services early.",
+  }),
+
+  "Neurosyphilis (tabes dorsalis)": dz("Neurosyphilis (tabes dorsalis)", {
+    confirmatory: [
+      "TREPONEMAL AND NON-TREPONEMAL SEROLOGY together, then LUMBAR PUNCTURE — CSF VDRL is specific but insensitive, so a negative result does not exclude the diagnosis in a compatible picture",
+      "HIV TESTING in every case: the two travel together and each alters the other's course and treatment",
+      "MRI of the cord to exclude a structural cause; the dorsal columns may show high signal or nothing at all",
+      "Examine the PUPILS deliberately — small, irregular, accommodating but not reacting is close to diagnostic and takes seconds",
+    ],
+    monitoring: [
+      "Warn about and observe for the Jarisch-Herxheimer reaction as treatment starts",
+      "Repeat serology and CSF at planned intervals to confirm response — this is one of the few dementing or ataxic illnesses that is genuinely treatable, which is the reason to look for it",
+      "Sensory ataxia and lightning pains may persist after the infection is cured: treat them as their own problem rather than as failure",
+    ],
+    urgency: "urgent",
+    referral: "Infectious diseases or sexual health with neurology; partner notification is part of the treatment.",
+  }),
+
+  "Neurosyphilis (general paresis)": dz("Neurosyphilis (general paresis)", {
+    confirmatory: [
+      "TREPONEMAL AND NON-TREPONEMAL SEROLOGY, then CSF — in a progressive personality change or dementia this is a test worth doing early, because it is the treatable one on the list",
+      "HIV TESTING in every case",
+      "MRI brain — frontal and temporal atrophy with mesiotemporal signal change, which overlaps with autoimmune encephalitis and with frontotemporal dementia",
+      "Look for the ARGYLL ROBERTSON PUPIL and for tabetic signs: general paresis and tabes are the same infection and often coexist",
+    ],
+    monitoring: [
+      "Cognitive and psychiatric features may only partially reverse — treat expectations honestly while still treating the infection promptly",
+      "Capacity and safeguarding need addressing alongside the antibiotic; grandiosity and disinhibition put patients at real risk",
+      "Repeat serology and CSF to confirm response",
+    ],
+    urgency: "urgent",
+    referral: "Infectious diseases or sexual health with neurology and old-age psychiatry.",
+  }),
+
+  "Reversible splenial lesion syndrome (MERS)": dz("Reversible splenial lesion syndrome (MERS)", {
+    confirmatory: [
+      "MRI with DIFFUSION — an oval, non-enhancing splenial lesion that restricts diffusion and, crucially, RESOLVES on repeat imaging; the resolution is what makes the diagnosis",
+      "Look for the trigger rather than treating the lesion: infection, ANTIEPILEPTIC WITHDRAWAL, hyponatraemia and high-altitude illness are the recognised ones",
+      "Check sodium and review the drug chart specifically for a recently stopped or reduced antiepileptic",
+      "Exclude the serious mimics that sit in the same place — lymphoma, demyelination and diffuse axonal injury",
+    ],
+    monitoring: [
+      "REPEAT THE MRI rather than acting on the first: this is a radiological diagnosis of reversal, and treating the first scan as a lesion leads to unnecessary investigation",
+      "The encephalopathy usually settles within days once the trigger is corrected — say so, because the initial images look alarming",
+      "Correct the trigger and document it, so the next scan is not re-investigated from scratch",
+    ],
+    urgency: "urgent",
+    referral: "Neurology; the trigger usually belongs to whoever is already treating the patient.",
+  }),
+
+  "Post-viral anosmia": dz("Post-viral anosmia", {
+    confirmatory: [
+      "FORMAL SMELL TESTING rather than asking — patients routinely conflate smell with taste, and the deficit is often larger than reported",
+      "EXAMINE THE NOSE, or arrange nasendoscopy: obstruction, polyps and chronic rhinosinusitis are commoner and treatable, and they are the diagnosis to exclude first",
+      "MRI with dedicated views of the olfactory grooves where the loss is UNILATERAL, progressive, or accompanied by any other neurological sign — an olfactory groove meningioma presents exactly this way",
+      "Ask about head injury and about parkinsonian features: anosmia precedes Parkinson's disease by years, and this is often where it is first noticed",
+    ],
+    monitoring: [
+      "SAFETY NET, and it is the practical one: fit SMOKE ALARMS, check gas appliances, and advise on food expiry dates — the danger of anosmia is not the symptom",
+      "OLFACTORY TRAINING has the best evidence of anything available; start it early rather than waiting for spontaneous recovery",
+      "Most recover over weeks to months, but a minority do not — and parosmia during recovery is common, distressing, and worth warning about",
+    ],
+    urgency: "routine",
+    referral: "ENT; neurology only if unilateral, progressive, or with other signs.",
+  }),
+
+  "Parotitis or parotid abscess": dz("Parotitis or parotid abscess", {
+    confirmatory: [
+      "ULTRASOUND FIRST — it separates diffuse inflammation from a drainable collection and looks for a stone, which is the question that decides management",
+      "FACIAL WEAKNESS IS NOT A FEATURE OF SIMPLE PAROTITIS. Where it is present, image with contrast and think MALIGNANCY: a parotid tumour infiltrating the nerve presents as a painful swelling with a palsy",
+      "Bacterial culture from the duct where pus can be expressed, and mumps testing where immunisation history or the pattern fits",
+      "Assess hydration and oral intake — dehydration and reduced salivary flow are what precipitate ascending suppurative parotitis in the frail",
+    ],
+    monitoring: [
+      "SAFETY NET: a facial palsy that persists after the infection settles needs imaging and an ENT opinion, not reassurance",
+      "Watch for airway compromise and for spread into the deep neck spaces where the swelling is large",
+      "Sialogogues, hydration and massage are the mainstays for the non-suppurative form; drainage is for the collection",
+    ],
+    urgency: "urgent",
+    referral: "ENT or maxillofacial; same-day where there is a collection, airway concern or a facial palsy.",
+  }),
+
+  "Lyme disease": dz("Lyme disease", {
+    confirmatory: [
+      "SEROLOGY IN TWO STEPS — screening immunoassay then immunoblot — and be aware that early in the illness it can be negative, so a compatible picture with exposure warrants repeat testing rather than dismissal",
+      "Take an EXPOSURE history covering endemic areas and outdoor activity; the tick bite itself is frequently unnoticed and its absence proves nothing",
+      "Ask about and look for ERYTHEMA MIGRANS, past or present — where it is documented, treatment proceeds without serology",
+      "Lumbar puncture where there are neurological features: a lymphocytic CSF with raised protein supports neuroborreliosis, and paired serum/CSF antibody index is the confirmatory test",
+    ],
+    monitoring: [
+      "BILATERAL facial palsy is the presentation that should always prompt Lyme testing — along with sarcoidosis, GBS and HIV, it is one of the few causes",
+      "Eye protection while the lid does not close, for as long as it does not close",
+      "Warn that fatigue and aches can persist after successful treatment, and that this is NOT an indication for prolonged antibiotics — which carry real harm",
+    ],
+    urgency: "urgent",
+    referral: "Infectious diseases; neurology where there are neurological features.",
+  }),
+
+  "Poliomyelitis / West Nile virus": dz("Poliomyelitis / West Nile virus", {
+    confirmatory: [
+      "CSF (lymphocytic pleocytosis) with West Nile IgM in CSF and serum, and stool and throat samples for enterovirus and poliovirus — the samples differ by organism, so send them all rather than sequentially",
+      "MRI cord — high signal in the ANTERIOR HORNS is the imaging correlate, and it is what distinguishes this from Guillain-Barré",
+      "EMG showing pure MOTOR axonal loss with normal sensory studies: the sensory sparing is the discriminator, and it is why a sensory complaint should make you doubt the diagnosis",
+      "Take an immunisation and travel history, and NOTIFY public health early — for polio this is an emergency of public health rather than of the individual",
+    ],
+    monitoring: [
+      "RESPIRATORY FUNCTION is the thing that kills: monitor vital capacity serially, and involve critical care before the patient is breathless",
+      "Swallow assessment before oral intake where there is bulbar involvement",
+      "Recovery is incomplete and rehabilitation is prolonged; involve it early rather than after the acute illness",
+    ],
+    urgency: "emergency",
+    referral: "Infectious diseases with neurology and critical care; notify public health.",
+  }),
+
+  // The three non-specific names below are deliberately given SHORT plans. Each names a category of
+  // trigger rather than a disease, so the honest workup is largely the site plan plus the one or two
+  // steps that are actually specific — padding them would be the blandness this layer exists to remove.
+  "Viral illness or vaccination": dz("Viral illness or vaccination", {
+    confirmatory: [
+      "Establish the TIME RELATIONSHIP precisely: a post-infectious or post-vaccination cause needs a plausible interval, typically days to a few weeks, and a vaguer association is usually coincidence",
+      "Where the deficit is painful and patchy, consider NEURALGIC AMYOTROPHY rather than a nerve-specific injury — it is commoner than it is diagnosed and the management differs",
+      "Exclude the structural and compressive causes for the affected {level} before settling on a post-infectious label",
+    ],
+    monitoring: [
+      "Document the deficit carefully at baseline: recovery over months is the expectation, and without a baseline it cannot be judged",
+      "Report the association where a vaccine is implicated — the reporting system is how the signal is detected",
+    ],
+    urgency: "routine",
+    referral: "Neurology if the deficit is progressive or fails to recover.",
+  }),
+
+  "Viral or idiopathic neuropathy": dz("Viral or idiopathic neuropathy", {
+    confirmatory: [
+      "THIS IS A DIAGNOSIS OF EXCLUSION and only becomes available once the whole nerve course has been imaged — for the recurrent laryngeal that means neck AND chest, down to the aortic arch on the left",
+      "A viral prodrome supports it but does not establish it; a structural lesion may be found months later if the imaging was incomplete",
+      "Laryngoscopy to document cord position and movement at baseline",
+    ],
+    monitoring: [
+      "Re-image if there is no recovery over months — the commonest error is accepting an idiopathic label on incomplete imaging",
+      "Speech and language therapy improves voice regardless of cause and should not wait for the diagnosis",
+    ],
+    urgency: "urgent",
+    referral: "ENT; neurology if other cranial nerves are involved.",
+  }),
+
+  "Infective / para-infectious": dz("Infective / para-infectious", {
+    confirmatory: [
+      "Ask specifically about a preceding illness or immunisation in the weeks before onset — the history is the evidence here, and it is rarely volunteered",
+      "In a CHILD, bilateral or sequential involvement is characteristic of a para-infectious cause and less worrying than the same picture in an adult",
+      "Test for the specific treatable infections rather than labelling broadly: syphilis, Lyme, HIV, and the relevant viral serologies",
+    ],
+    monitoring: [
+      "Recovery is usual but should be documented objectively rather than assumed",
+      "Failure to recover, or progression, moves the diagnosis to an inflammatory or compressive cause and needs re-investigation",
+    ],
+    urgency: "urgent",
+    referral: "Paediatrics or neurology as appropriate to age; ophthalmology where vision is involved.",
+  }),
+
+
   // ---- SINGLETONS: each has its own answer and no family to belong to ----
 
   // The commonest treatable cause of neuropathy worldwide, and the one a Western-trained reader will not
