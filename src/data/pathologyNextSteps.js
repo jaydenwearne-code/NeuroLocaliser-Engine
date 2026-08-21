@@ -81,6 +81,22 @@ export const PATHOLOGY_ALIAS = {
   "Transverse myelitis (demyelinating)": "Transverse myelitis (MS / NMOSD / MOG / para-infectious)",
   "Demyelination / transverse myelitis": "Transverse myelitis (MS / NMOSD / MOG / para-infectious)",
   "Tolosa-Hunt (granulomatous)": "Tolosa-Hunt syndrome (granulomatous inflammation)",
+
+  // ---- Found by a GLOBAL near-duplicate scan, not by working a bucket ----
+  // Only four of the eight exact-core matches survived inspection. The scan strips parentheticals to
+  // compare, and for tumours and vascular territories that is precisely where the discriminating content
+  // lives — "MCA (superior division) infarct" and "MCA infarct (postcentral / parietal branch)" share a
+  // core and are DIFFERENT TERRITORIES, so they are not aliased. Bulk-aliasing on the scan would have been
+  // wrong; it is useful for what it rules out.
+  "Myasthenia gravis": "Myasthenia gravis (autoimmune)",
+  "Craniopharyngioma": "Craniopharyngioma (and its surgical treatment)",
+  "Wilson's disease (young-onset)": "Wilson's disease",
+  // Differs from its sibling ONLY IN CAPITALISATION — a data slip rather than a second disease.
+  "RADIATION plexopathy": "Radiation plexopathy",
+
+  // Round 7: one disease, two spellings, at disjoint sites — the trochlear nucleus and the nerve's
+  // cisternal course. Whichever way it is written, the work-up is old photographs and a fusion range.
+  "Congenital fourth-nerve palsy (decompensating)": "Decompensated congenital fourth nerve palsy",
 };
 
 export const PATHOLOGY_NEXT = {
