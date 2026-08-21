@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**67 test suites / 4943 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**69 test suites / 5201 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -567,16 +567,23 @@ across a multifocal set.
 > status is recorded in the `pathologyNextSteps.js` header. Content added from here is held to the same bar.
 
 **STILL OPEN, deliberately out of scope:**
-1. **The remaining 831 pathologies** (tranche 2+), in the A–H region rhythm, each with its own sign-off.
-   Much of it is REDISTRIBUTION rather than new writing: curated site `investigations` prose is often
-   already pathology-specific and merely lives in the wrong bucket for want of somewhere better.
-2. **The fundal-photography defect is only HALF fixed.** The raised-pressure route becomes a pathology
-   step, but `VISUAL_FINDING` in `nextSteps.js` still does not respect the chiasm: 22 sites fire on a
-   retro-chiasmal token alone — 4 defensibly (`optic_tract`, `lgn`, pre-/at-geniculate, so band atrophy is
-   real), 2 borderline (`anterior_choroidal`), and **16 wrongly** (post-geniculate, where the discs are
-   normal and OCT adds nothing). It also keys on PREDICTED rather than OBSERVED findings, so it can order
-   imaging to characterise a deficit the Why card simultaneously lists as "predicted but not reported".
-3. **`combinedNextSteps` / the Together card** — multi-site plus per-pathology needs its own design.
+1. ~~**The remaining 831 pathologies**~~ — **PARTLY CLOSED by tranche 2**, which authored all 353 red
+   (must-not-miss) causes and retired the ratchet into a hard gate. What remains is the **494 non-red**
+   names, deliberately parked: 709 of the leftover names appear at exactly ONE site, so finishing the
+   coverage is ~35x the authoring of tranche 1, and the labelled site fallback they keep is honest and
+   already correct. Much of it would be REDISTRIBUTION rather than new writing: curated site
+   `investigations` prose is often already pathology-specific and merely lives in the wrong bucket.
+2. ~~**The fundal-photography defect is only HALF fixed.**~~ — **CLOSED 2026-08-18.** The chiasm half was
+   fixed on `fix/ophthalmic-imaging-chiasm` (merged): `VISUAL_FINDING` no longer contains
+   `homonymous_hemianopia` or the quadrantanopias, and the three-route trigger in `nextSteps.js` now
+   respects the chiasm — 22 firing sites → 4 → 2, and the 2 that remain are the parasagittal pair firing
+   correctly on sinus thrombosis. See the ophthalmic-imaging section above for the full account and the
+   both-directions invariant in `test/next-steps.test.js`. **What remains is benign but real:**
+   `hasFieldDefect()` still keys on `expectedFindings(site)` — PREDICTED rather than OBSERVED — so in
+   principle it can still order imaging for a deficit the Why card lists as "predicted but not reported".
+   The chiasm rule removed every case where that actually bit; revisit only if a new site reintroduces one.
+3. ~~**`combinedNextSteps` / the Together card**~~ — **CLOSED 2026-08-21.** See the cross-site workup
+   section below.
 
 Spec/plan: `docs/superpowers/specs/2026-08-18-per-pathology-next-steps-design.md`,
 `docs/superpowers/plans/2026-08-18-per-pathology-next-steps.md`.
@@ -657,6 +664,118 @@ workup instructs the reader to look for one, and none existed.
 
 Spec/plan: `docs/superpowers/specs/2026-08-18-pathology-tranche-2-design.md`,
 `docs/superpowers/plans/2026-08-18-pathology-tranche-2.md`.
+
+## Together card — the cross-site workup (DONE 2026-08-21)
+
+**What it fixes.** The Together card named the disease spanning the sites and the Next card below it still
+showed the union of two site workups — so a multifocal MS picture never surfaced the lumbar puncture that
+settles it. Tranche 1 had switched per-pathology selection off in the combined view because *"whose
+pathology?" has no honest answer across a multifocal set*; the multi-location DDx layer since made that
+answerable, and this closes the gap.
+
+**`src/data/multifocalNextSteps.js` is content-only** — imports nothing from the UI, nothing from
+`nextSteps.js` — keyed by entity name, **13 of 13 entities authored** across three rounds.
+**SITE-INDEPENDENT BY CONSTRUCTION: no `slots`, no `bySite`.** That is why these plans are NOT in
+`src/data/pathology/`, whose plans key on a per-site cause name and interpolate per-site anatomy — and why
+`PATHOLOGY_NEXT` keeps ONE kind of key, which the RED GATE test walks.
+
+**THE TIER SPLIT DIFFERS FROM TRANCHE 1's, deliberately.** Immediate stays the site union. **First-line is
+ADDITIVE, not frozen** — `investigations` is untouched and the entity's own tests ride alongside in
+`entityFirstLine`, rendered as a second labelled group. Freezing it (strict tranche-1 parity) would mean the
+MS plan could never order the LP and the vasculitis plan never ESR/CRP, because those live in first-line;
+replacing it would lose the site union's safety floor. Confirmatory, monitoring and referral become the
+entity's.
+
+**URGENCY FOLLOWS THE SELECTION — the site union is NOT a floor.** The layer was built with a floor and the
+owner reversed it on seeing round 1 running: *MS is not imminently life-threatening, and if the user has
+selected MS the ruling should be based on the selection.* That restores consistency rather than breaking it
+— tranche 1 already ruled the same way per-site (*"an authored plan MAY sit below the site's badge:
+specificity is the point, and a tool that only escalates cries wolf"*), and the floor had the two layers
+contradicting each other. **WHAT KEEPS IT SAFE IS THE TIER SPLIT, NOT THE BADGE:** immediate and site
+first-line remain the union, so a quieter badge never removes a bedside step — asserted directly, not
+assumed. The only mechanical floor left is the entity's own `red` flag: a must-not-miss cannot read routine.
+MS on an emergency-badged pair now reads *urgent*; NMOSD reads *emergency* on its own merit.
+
+**A PLAN MAY EXPLAIN ITS OWN BADGE (`because`, owner ruling 2026-08-21).** Optional, rendered directly
+under the urgency band as "Why this urgency:". It exists because urgency now follows the selection, so a
+card that asserts a badge should be able to justify it — and for three diseases the badge is earned by what
+they CAN CAUSE, not by themselves: metastases (cord compression, raised pressure), leptomeningeal disease
+(hydrocephalus), primary CNS lymphoma (a timing reason — every day before biopsy is a day someone may give
+steroids and dissolve the diagnosis). **It is deliberately NOT part of `referral`:** "who to refer to" is
+not "why this badge", and merging them is the LEVEL-is-not-its-contents error in another costume. Omitted
+where the disease IS the emergency — an embolic shower is time-critical on its own account.
+
+**NO CROSS-SITE FALLBACK STATE EXISTS.** There is no equivalent of `pathologyCurated: false` and no
+"General plan — not specific to X" label, because the hard gate guarantees every entity has a plan. Do not
+add one as a convenience: it is the seam through which "some rows behave differently from others" returns.
+
+**The Together card is the ONLY entry point** (chosen from mockups against two alternatives). The What
+card's shared-cause and remainder rows stay inert in the all-sites view. Putting the click on a shared-cause
+row was rejected because clicking *"Demyelination (MS)"* would light up *"Multiple sclerosis"* one card
+above — the row you click is not the label you get — and because whether a shared row clicked at all would
+depend on something invisible (does its name canonicalise?).
+
+**`S.selectedEntity` IS A SEPARATE FIELD FROM `S.selectedPathology`, and this is forced, not stylistic:
+four entity names are ALSO verbatim per-site cause names** — *Motor neurone disease (ALS)*, *Multiple
+sclerosis*, *Neurosarcoidosis*, *Neurofibromatosis type 2*. One string field cannot say whether
+`"Neurosarcoidosis"` means the disease at this site or the disease across these sites.
+
+**ONE VALIDITY GATE, not four scattered clears.** `pruneSelectedEntity()` drops the selection the moment the
+Together card stops offering the entity — subsuming fewer-than-two-sites, a findings edit that stops it
+firing, and a re-pin onto a pair it does not fit. A findings edit that leaves the entity STILL FIRING keeps
+the selection deliberately. **`syncURL()` had to move BELOW the `togetherCard()` call**, because the hash is
+the shareable case and the gate lives inside that call.
+
+**Case URL `ux=`**, validated against the roster exactly as `px=` is validated against `CAUSES`. **`ux`
+implies scope `all`** — the parameter has no meaning in any other scope — and degrades safely when the
+restored case has under two sites. `S.scope` still does not round-trip on its own; that gap is pre-existing
+and deliberately untouched.
+
+**THE HARD GATE.** `test/multifocal-next-steps.test.js` asserts every `MULTIFOCAL` entity has a plan. The
+ratchet ran 13 → 8 → 3 → 0 across the three authoring rounds and retired into the gate, the same shape as
+tranche 2's red ratchet. A future roster entity added with no workup behind it fails the suite immediately,
+and that is what keeps every row in the card behaving alike.
+
+**No new CSS.** The selected row reuses `.cause.sel` and the chip reuses `.px-chip`, both already on the
+`--terra` allowlist — the selected cross-site diagnosis IS the answer the Next card is about.
+
+**Testing trap worth knowing:** in a browser, navigating to a URL that differs only in the HASH does not
+re-run boot, so the app keeps its old ES modules and its old state. Three apparent bugs during this work
+were all that trap. Reload explicitly when verifying a case URL.
+
+**13 CROSS-SITE ARCHETYPES** in `app/examples.js` (`CROSS_SITE_EXAMPLES`) — one canonical picture per
+entity, behind a disclosure so the four worked examples stay the on-ramp. They exist because the first
+review round was run against pictures found MECHANICALLY (smallest firing two-site case), which produced
+bilateral labyrinths for neurosarcoidosis and bilateral phrenic nerves for mononeuritis multiplex —
+mechanically valid, clinically absurd. **Sites chosen clinically, tokens DERIVED from them** and trimmed to
+a bedside subset, never hand-typed (the 2026-08-16 worked-examples lesson). Loading one arrives with its
+claim made: pinned pair, all-sites scope, entity selected.
+
+**THE COURSE IS THE TEACHING PAYLOAD, and one pair proves it: metastases and embolic shower are the SAME
+picture** — left face/arm weakness with a right homonymous hemianopia — separating only on how the illness
+unfolded. On `progressive`, six diseases are concordant; on `simultaneous`, **one** is, and the other five
+move to the set-aside band. Asserted, so the two cards cannot silently become duplicates.
+
+**All 13 PIN their pair.** Twelve also resolve on the engine's free cover; embolic shower does not — its
+`distribution: "segment"` needs distinct arterial segments and an unpinned cover picks the optic radiation,
+the same territory as the motor cortex.
+
+**`test/multifocal-archetypes.test.js` is a FIRE-RATE CANARY, not just an example guard.** The 2026-08-15
+substrate work found NF2 firing at 0.0% (because `schwann` omitted `skull_base`) only by measuring fire
+rates by hand. An archetype per entity turns that into a standing assertion: if a roster predicate,
+substrate table or compartment allow-list drifts so an entity can no longer fire on its own defining
+picture, the suite fails immediately. It asserts CONCORDANT, never rank-first — forcing an archetype to win
+would mean choosing the picture to satisfy the test rather than the clinic.
+
+> **✅ CLINICALLY SIGNED OFF (2026-08-21) by the owner (a clinician): all 13 cross-site plans**, across
+> three rounds (inflammatory/demyelinating; neoplastic/degenerative/congenital; infective/vascular/
+> paraneoplastic), reviewed round by round rather than batched. Round 1's read produced the urgency ruling
+> above; rounds 2 and 3 were read against the archetype cases. The gate is CLOSED — do not re-flag this
+> content as unreviewed.
+
+69 suites / 5201 assertions green. Spec/plan:
+`docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,
+`docs/superpowers/plans/2026-08-21-together-card-cross-site-workup.md`.
 
 ## Commands
 
