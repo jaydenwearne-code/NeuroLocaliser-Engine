@@ -80,7 +80,7 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
 // --- 7: THE RATCHET. Entities with no plan may only ever DECREASE. ---
 // Same shape as tranche 2's RED_WITHOUT_PLAN_CEILING: a plain "every entity has a plan" would fail on every
 // authoring round, so this is a ceiling that falls with each round and retires into a hard gate at 0.
-const ENTITY_WITHOUT_PLAN_CEILING = 8;
+const ENTITY_WITHOUT_PLAN_CEILING = 3;
 {
   const missing = MULTIFOCAL.filter(e => !MULTIFOCAL_NEXT[e.name]).map(e => e.name);
   ok(`entities without a plan (${missing.length}) is at or below the ceiling (${ENTITY_WITHOUT_PLAN_CEILING})`,

@@ -19,7 +19,14 @@
 // was always site-level. Here it is ADDITIVE — the site union PLUS these, never instead of them, so an
 // urgent MRI whole spine cannot vanish because someone clicked MS.
 //
-// REVIEW STATUS: round 1 (inflammatory / demyelinating — 5 entities) AWAITING CLINICAL REVIEW.
+// URGENCY FOLLOWS THE SELECTION (owner ruling, 2026-08-21). A plan's `urgency` is what the card shows,
+// even where it sits BELOW the badge the sites would carry on their own — MS across two brainstem sites is
+// urgent, not an emergency. The only mechanical floor is the entity's own `red` flag, applied below. What
+// keeps that safe is the tier split, not the badge: immediate and first-line stay the site union in
+// combinedNextSteps(), so nothing bedside is ever removed by a quieter badge.
+//
+// REVIEW STATUS: round 1 (inflammatory / demyelinating) and round 2 (neoplastic / degenerative /
+// congenital) — see the commit trail for each round's sign-off.
 import { MULTIFOCAL } from "./multifocal.js";
 
 const URGENCY_RANK = { emergency: 3, urgent: 2, routine: 1 };
@@ -132,6 +139,111 @@ export const MULTIFOCAL_NEXT = {
     ],
     urgency: "urgent",
     referral: "Neurology with rheumatology; urgent where there is systemic involvement or rapid progression.",
+  }),
+
+  "Metastases": mfPlan("Metastases", {
+    firstLine: [
+      "MRI BRAIN AND WHOLE SPINE WITH CONTRAST — multiple sites means whole-neuraxis imaging, and cord compression is the finding that changes management within hours",
+      "CT chest, abdomen and pelvis for the primary and the burden of disease",
+      "Bloods including calcium, liver function and clotting",
+      "Ask about and EXAMINE FOR the primary — breast, skin, prostate, testis; the examination that finds it is often the one nobody did",
+    ],
+    confirmatory: [
+      "TISSUE from the most accessible site — a peripheral node or a skin lesion long before a craniotomy",
+      "FDG-PET where the primary remains unknown after cross-sectional imaging",
+      "Tumour markers and receptor status once the primary is identified — they change the treatment entirely",
+    ],
+    monitoring: [
+      "Corticosteroids for symptomatic oedema, at the shortest effective course, with gastric protection considered",
+      "Seizure risk with cortical deposits — counsel explicitly about driving",
+      "Involve oncology and palliative care in parallel, not in sequence",
+    ],
+    urgency: "emergency",
+    referral: "Oncology urgently; neurosurgery or spinal surgery same-day if there is cord compression.",
+  }),
+
+  "Leptomeningeal disease": mfPlan("Leptomeningeal disease", {
+    firstLine: [
+      "MRI BRAIN AND WHOLE SPINE WITH CONTRAST BEFORE the lumbar puncture — post-LP dural enhancement mimics the disease you are looking for",
+      "LUMBAR PUNCTURE FOR CYTOLOGY with a large-volume sample; sensitivity rises substantially with repeat taps",
+      "Record the opening pressure, cell count, protein and glucose — a low glucose with high protein and a lymphocytosis is the classic profile",
+      "CT chest, abdomen and pelvis for the primary if it is not already known",
+    ],
+    confirmatory: [
+      "CSF flow cytometry wherever lymphoma or leukaemia is possible",
+      "REPEAT the cytology rather than accepting a single negative result — one negative tap does not exclude this",
+      "Discuss intrathecal access and radiotherapy planning with oncology early",
+    ],
+    monitoring: [
+      "Watch for hydrocephalus and for progressive cranial neuropathies",
+      "Treat pain and delirium actively — this is a high-symptom-burden diagnosis",
+      "Palliative care alongside oncology from the point of diagnosis",
+    ],
+    urgency: "emergency",
+    referral: "Oncology / neuro-oncology urgently; neurosurgery if hydrocephalus develops.",
+  }),
+
+  "Primary CNS lymphoma": mfPlan("Primary CNS lymphoma", {
+    firstLine: [
+      "MRI brain and whole spine with contrast — homogeneously enhancing periventricular lesions crossing the corpus callosum are the pattern",
+      "DO NOT GIVE CORTICOSTEROIDS BEFORE BIOPSY unless the patient is deteriorating from mass effect: steroids dissolve the lesion and the tissue diagnosis with it",
+      "HIV test — it changes both the differential and the treatment",
+      "Ophthalmology slit-lamp examination for vitreoretinal involvement, which can give the diagnosis without a brain biopsy",
+    ],
+    confirmatory: [
+      "STEREOTACTIC BRAIN BIOPSY, arranged urgently and before any steroid",
+      "Lumbar puncture with cytology and flow cytometry",
+      "CT chest/abdomen/pelvis with testicular examination and ultrasound — systemic lymphoma with CNS spread is a different disease with a different treatment",
+    ],
+    monitoring: [
+      "If steroids have already been given the lesion may vanish: flag this to the neurosurgeons explicitly, and time the biopsy to its return",
+      "Monitor for raised intracranial pressure",
+      "Haemato-oncology referral for a methotrexate-based regimen",
+    ],
+    urgency: "emergency",
+    referral: "Neuro-oncology / haematology urgently; neurosurgery for the biopsy.",
+  }),
+
+  "Neurofibromatosis type 2": mfPlan("Neurofibromatosis type 2", {
+    firstLine: [
+      "MRI BRAIN WITH INTERNAL AUDITORY MEATUS VIEWS AND WHOLE SPINE, with contrast — bilateral vestibular schwannomas are the defining lesion, and spinal tumours are frequently silent",
+      "Formal audiometry with speech discrimination, plus brainstem evoked responses",
+      "Ophthalmology review for juvenile cataract and retinal hamartoma",
+      "Examine the skin for schwannomas and take a family history across three generations",
+    ],
+    confirmatory: [
+      "GENETIC TESTING with counselling arranged alongside it — mosaicism is common and changes what relatives are told",
+      "Screening of first-degree relatives once the diagnosis is established",
+      "Referral to a specialist multidisciplinary service: hearing-preservation strategy depends on the whole tumour burden, never on one lesion",
+    ],
+    monitoring: [
+      "Serial imaging and audiometry on a planned interval rather than symptom-driven review",
+      "Plan for hearing loss BEFORE it happens — communication strategy, and auditory brainstem implantation discussed while the cochlear nerve is intact",
+      "Watch for brainstem compression, and for cord compression from spinal tumours",
+    ],
+    urgency: "urgent",
+    referral: "Specialist NF2 multidisciplinary service; clinical genetics.",
+  }),
+
+  "Motor neurone disease (ALS)": mfPlan("Motor neurone disease (ALS)", {
+    firstLine: [
+      "EMG AND NERVE CONDUCTION STUDIES SAMPLING MULTIPLE REGIONS — bulbar, cervical, thoracic and lumbosacral — because the diagnosis is denervation in regions the examination has not yet declared",
+      "MRI brain and the relevant cord levels to exclude the structural mimics: a cervical myelopathy with radiculopathy reproduces the mixed picture exactly",
+      "Bloods: creatine kinase, thyroid function, B12, protein electrophoresis, and anti-GM1 antibodies where multifocal motor conduction block is possible",
+      "RESPIRATORY FUNCTION INCLUDING ERECT AND SUPINE VITAL CAPACITY — a fall on lying flat indicates diaphragm weakness, and this is done at diagnosis rather than when the patient is breathless",
+    ],
+    confirmatory: [
+      "Specialist neuromuscular review against the diagnostic criteria before the diagnosis is given",
+      "Exclude the treatable mimics deliberately and by name — multifocal motor neuropathy, myasthenia, inclusion body myositis, Kennedy's disease",
+      "Genetic testing with counselling where there is a family history or young onset",
+    ],
+    monitoring: [
+      "Serial respiratory function with an early non-invasive ventilation discussion — the intervention with the clearest benefit",
+      "Swallow and nutrition review, with gastrostomy discussed EARLY, while respiratory function still permits it safely",
+      "Multidisciplinary clinic, advance care planning and carer support started at diagnosis rather than deferred",
+    ],
+    urgency: "urgent",
+    referral: "Neurology — specialist MND / neuromuscular service, with early respiratory and palliative care involvement.",
   }),
 };
 
