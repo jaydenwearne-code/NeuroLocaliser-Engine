@@ -1,7 +1,7 @@
 # Together card — the cross-site workup
 
 **Date:** 2026-08-21
-**Status:** IMPLEMENTED on `feat/together-cross-site-workup` (PR #7). Clinical review of rounds 2 and 3 outstanding.
+**Status:** IMPLEMENTED and ✅ CLINICALLY SIGNED OFF (2026-08-21). Merged via PR #7.
 **Closes:** open item 3 of the per-pathology next-steps spec (`2026-08-18-per-pathology-next-steps-design.md`)
 — *"`combinedNextSteps` / the Together card — multi-site plus per-pathology needs its own design."*
 

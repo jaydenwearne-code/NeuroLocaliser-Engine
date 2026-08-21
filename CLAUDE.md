@@ -767,10 +767,11 @@ substrate table or compartment allow-list drifts so an entity can no longer fire
 picture, the suite fails immediately. It asserts CONCORDANT, never rank-first — forcing an archetype to win
 would mean choosing the picture to satisfy the test rather than the clinic.
 
-> **⚠ CLINICAL REVIEW OPEN.** The 13 plans were authored in three rounds (inflammatory/demyelinating;
-> neoplastic/degenerative/congenital; infective/vascular/paraneoplastic) and are recorded as unreviewed in
-> the module header. Round 1 has had the owner's read (it produced the urgency ruling above); **rounds 2
-> and 3 have not.** The archetypes above are the intended review surface.
+> **✅ CLINICALLY SIGNED OFF (2026-08-21) by the owner (a clinician): all 13 cross-site plans**, across
+> three rounds (inflammatory/demyelinating; neoplastic/degenerative/congenital; infective/vascular/
+> paraneoplastic), reviewed round by round rather than batched. Round 1's read produced the urgency ruling
+> above; rounds 2 and 3 were read against the archetype cases. The gate is CLOSED — do not re-flag this
+> content as unreviewed.
 
 69 suites / 5201 assertions green. Spec/plan:
 `docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,

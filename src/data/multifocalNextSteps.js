@@ -25,9 +25,11 @@
 // keeps that safe is the tier split, not the badge: immediate and first-line stay the site union in
 // combinedNextSteps(), so nothing bedside is ever removed by a quieter badge.
 //
-// REVIEW STATUS: all 13 entities authored across three rounds (inflammatory / demyelinating; neoplastic /
-// degenerative / congenital; infective / vascular / paraneoplastic) — see the commit trail for each
-// round's sign-off. Content added from here is held to the same bar.
+// ✅ CLINICALLY SIGNED OFF (2026-08-21) by the owner (a clinician): ALL 13 cross-site plans, across three
+// rounds (inflammatory / demyelinating; neoplastic / degenerative / congenital; infective / vascular /
+// paraneoplastic), reviewed round by round rather than in one batch at the end. Round 1's read produced the
+// urgency ruling above. THE GATE IS CLOSED — do not re-flag this content as unreviewed. Content added from
+// here is held to the same bar and flagged for review if uncertain.
 import { MULTIFOCAL } from "./multifocal.js";
 
 const URGENCY_RANK = { emergency: 3, urgent: 2, routine: 1 };
