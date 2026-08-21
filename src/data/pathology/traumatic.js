@@ -70,7 +70,220 @@ const SKULL_BASE_TRAUMA_SPINE = {
   referral: "Maxillofacial, ENT or neurosurgery as the fracture dictates; ophthalmology for any orbital or optic involvement",
 };
 
+
+// ---- ROUND 8 (tranche 3): traumatic, the peripheral half ----
+// Owner ruling 2026-08-21: mechanism-shaped names DO get plans in tranche 3. Tranche 2 had dropped "Head
+// trauma" as a mechanism whose work-up was already the site plan's CT — that exchange made sense when
+// authoring by danger and trading slots, and it does not under full coverage.
+//
+// What makes these authorable rather than repetitive is that the mechanism names WHAT TO REMOVE. A plan
+// that says "CT head" adds nothing; a plan that says "ask about leg crossing and pad the fibular neck"
+// is the treatment.
+
+// ENTRAPMENT / COMPRESSION AT A NAMED SITE — the commonest shape in the bucket. The spine is the same
+// everywhere: grade it, remove the cause, operate only for wasting or progression.
+const ENTRAPMENT = {
+  confirmatory: [
+    "NERVE CONDUCTION STUDIES localise the conduction block and GRADE it — and the grade, not the presence of symptoms, is what decides between conservative management and surgery",
+    "{flavour}",
+    "Ultrasound or MRI where there is a palpable swelling, a mass is suspected, or the picture is atypical for simple entrapment — a removable lesion changes the plan entirely",
+    "Reproduce the symptoms by pressure or provocation at the suspected site, and examine {level}",
+  ],
+  monitoring: [
+    "REMOVING THE CAUSE IS THE TREATMENT, and it usually works — {relief}",
+    "WASTING OR PROGRESSIVE WEAKNESS is the indication to decompress; sensory symptoms alone usually settle without surgery",
+    "Recovery depends on axonal regrowth and is measured in MONTHS — review at three months rather than six weeks, or a normal recovery is mistaken for failure",
+  ],
+  urgency: "routine",
+  referral: "Neurophysiology first; hand, orthopaedic or neurosurgery if decompression is being considered.",
+};
+
+// A FRACTURE OR DISLOCATION THAT INJURED A NERVE. The clinical question is different: not what to remove,
+// but whether the nerve is in continuity — and whether the deficit was there before someone intervened.
+const TRAUMATIC_NERVE = {
+  confirmatory: [
+    "DOCUMENT THE DEFICIT BEFORE ANY REDUCTION, CAST OR FIXATION. A palsy discovered afterwards cannot be attributed without that examination, and the record matters as much medicolegally as clinically",
+    "{flavour}",
+    "Plain radiographs and CT for the bony injury; ultrasound or MRI of the nerve where the deficit does not fit the fracture pattern",
+    "EMG AT ABOUT THREE WEEKS — earlier is uninformative, and this establishes the baseline that later comparison depends on",
+  ],
+  monitoring: [
+    "SEPARATE NEURAPRAXIA FROM TRANSECTION: most CLOSED injuries are neurapraxia and recover over months. An OPEN or penetrating injury, or a deficit that appears AFTER manipulation, argues for early exploration instead of watching",
+    "{level}",
+    "Splinting and therapy to prevent contracture while it recovers — a stiff joint outlasts the nerve injury and is the avoidable harm",
+  ],
+  urgency: "urgent",
+  referral: "Orthopaedics or trauma with neurophysiology; peripheral nerve surgery if exploration is considered.",
+};
+
 export default {
+  // ---- ENTRAPMENT AND COMPRESSION ----
+  ...family("nerve-entrapment", ENTRAPMENT, {
+    "Idiopathic carpal tunnel syndrome": {
+      slots: { flavour: "check for the SECONDARY causes before calling it idiopathic — hypothyroidism, diabetes, pregnancy, acromegaly and rheumatoid disease", level: "thenar bulk and thumb abduction", relief: "night splints in neutral, and treating the secondary cause where there is one" },
+    },
+    "Cubital tunnel syndrome": {
+      slots: { flavour: "test for FROMENT'S SIGN and check whether the dorsal ulnar sensory territory is involved — its involvement places the lesion at the elbow rather than the wrist", level: "the first dorsal interosseous and the dorsal ulnar patch", relief: "avoiding sustained elbow flexion, and a night extension splint" },
+    },
+    "Prolonged elbow flexion or external pressure": {
+      slots: { flavour: "ask about SLEEPING POSTURE and about leaning on the elbow at a desk or in a car — the trigger is usually habitual and unnoticed", level: "intrinsic hand power", relief: "an elbow pad and a night splint holding the elbow extended" },
+    },
+    "Guyon's canal compression (cyclist's palsy)": {
+      slots: { flavour: "ask about CYCLING and handlebar grip; the dorsal ulnar sensory territory is SPARED here, which is what localises it to the canal", level: "interossei with dorsal sensation preserved", relief: "padded gloves, changing grip position and handlebar height" },
+    },
+    "Occupational vibration or repetitive pressure": {
+      slots: { flavour: "take an OCCUPATIONAL history and consider hand-arm vibration syndrome, which is reportable in many jurisdictions", level: "intrinsic power and two-point discrimination", relief: "modifying the tool, the grip or the exposure — an occupational health referral does more than any prescription" },
+    },
+    "Crutch palsy / prolonged axillary compression": {
+      slots: { flavour: "TRICEPS INVOLVEMENT is the discriminator — it places the lesion in the axilla rather than at the spiral groove", level: "elbow extension and the triceps jerk", relief: "refitting the crutches so weight goes through the hands, not the axillae" },
+    },
+    "Saturday-night palsy (compression against the humerus)": {
+      slots: { flavour: "the TRICEPS IS SPARED, which places it at the spiral groove — and ask about alcohol and about falling asleep with the arm over a chair", level: "wrist and finger extension with triceps preserved", relief: "the compression has already stopped; a cock-up splint maintains function while it recovers" },
+    },
+    "Prolonged tourniquet or tight cast": {
+      slots: { flavour: "review the operative and plaster records for tourniquet time and cast pressure — the cause is documented in the notes", level: "wrist and finger extension", relief: "splitting or replacing the cast, and reviewing tourniquet practice" },
+    },
+    "Entrapment at the arcade of Frohse (supinator)": {
+      slots: { flavour: "WRIST EXTENSION IS PRESERVED and there is NO sensory loss — the posterior interosseous is purely motor, so both features together localise it", level: "finger extension with the wrist intact", relief: "avoiding repetitive forearm rotation; decompression where it fails" },
+    },
+    "Repetitive forearm rotation": {
+      slots: { flavour: "take an occupational and sporting history for repetitive pronation and supination", level: "finger drop without wrist drop", relief: "modifying the activity, which is usually curative" },
+    },
+    "Pronator teres syndrome": {
+      slots: { flavour: "the PALMAR CUTANEOUS branch is involved here and spared in carpal tunnel — numbness over the THENAR SKIN is what separates them", level: "pronation, long flexors and the palm", relief: "activity modification and avoiding repetitive resisted pronation" },
+    },
+    "Fibrous band or mass compression": {
+      slots: { flavour: "IMAGE IT — a band or mass is removable, so ultrasound or MRI is not optional here as it is in idiopathic entrapment", level: "the deep flexors and the OK sign", relief: "excision where a lesion is found" },
+    },
+    "Meralgia paraesthetica (inguinal ligament entrapment)": {
+      slots: { flavour: "purely SENSORY — any weakness at all means this is not the diagnosis and the lesion is a root or the femoral nerve", level: "the lateral thigh patch, with normal power and reflexes", relief: "loosening belts and waistbands and losing weight, which resolves most cases" },
+    },
+    "Obesity, pregnancy, tight belts or body armour": {
+      slots: { flavour: "ask specifically about BODY ARMOUR, tool belts and uniform belts — an occupational cause that is easily removed once named", level: "the lateral thigh, confirming power is normal", relief: "removing the compression; in pregnancy it resolves after delivery, which is worth saying" },
+    },
+    "Compression at the fibular neck": {
+      slots: { flavour: "INVERSION IS PRESERVED and hip abduction is normal — those two together separate a peroneal palsy from an L5 radiculopathy", level: "dorsiflexion, eversion and inversion together", relief: "padding the fibular neck and avoiding leg crossing and squatting" },
+    },
+    "Rapid weight loss ('slimmer's palsy'), plaster casts, leg crossing": {
+      slots: { flavour: "ask about recent WEIGHT LOSS and habitual leg crossing; a cast or brace pressing on the fibular neck is documented in the notes", level: "dorsiflexion and eversion", relief: "padding, position change, and an ankle-foot orthosis while it recovers" },
+    },
+    "Anterior tarsal tunnel syndrome / tight footwear": {
+      slots: { flavour: "examine the FOOTWEAR and the lace pattern — pressure over the dorsum of the foot is the cause and is visible", level: "the first web space and toe extension", relief: "changing footwear and lacing, which is usually sufficient" },
+    },
+    "Tarsal tunnel syndrome": {
+      slots: { flavour: "TINEL'S SIGN behind the medial malleolus, and image for a space-occupying lesion — a ganglion or varicosity is found more often here than at other entrapment sites", level: "sole sensation and toe flexion", relief: "orthotics correcting hindfoot alignment; decompression where a lesion is present" },
+    },
+    "Entrapment where the nerve pierces the deep fascia": {
+      slots: { flavour: "symptoms brought on by EXERCISE and relieved by rest point here, and a fascial defect may be palpable", level: "the dorsum of the foot with dorsiflexion preserved", relief: "activity modification; fascial release where it persists" },
+    },
+    "Chronic exertional compartment syndrome": {
+      slots: { flavour: "COMPARTMENT PRESSURE MEASUREMENT before and after exercise is the diagnostic test, and the history is exertional pain that stops with rest", level: "the compartment after exercise rather than at rest", relief: "activity modification; fasciotomy where it is disabling and confirmed" },
+    },
+    "Compression by tight boots or casts": {
+      slots: { flavour: "inspect the boot or cast edge against the deficit's territory — the two usually correspond", level: "the affected cutaneous territory", relief: "removing or padding the offending edge" },
+    },
+    "External compression (tight boots, casts)": {
+      slots: { flavour: "purely sensory over the lateral foot and heel; look for the pressure point", level: "lateral foot sensation", relief: "changing footwear or padding the cast" },
+    },
+    "Prolonged compression (coma, sitting, wallet)": {
+      slots: { flavour: "ask about PROLONGED IMMOBILITY — a long lie, surgery, intoxication or a wallet in the back pocket; and check creatine kinase where there has been a long lie, because rhabdomyolysis travels with it", level: "the whole sciatic distribution below the knee", relief: "removing the pressure and preventing recurrence during future immobility" },
+    },
+    "Repetitive overhead activity (volleyball, tennis)": {
+      slots: { flavour: "isolated INFRASPINATUS wasting with weak external rotation points to the spinoglenoid notch; supraspinatus involvement too means the suprascapular notch above it", level: "external rotation and the muscle bulk below the scapular spine", relief: "modifying the overhead activity and scapular stabilisation work" },
+    },
+    "Traction or repetitive overhead trauma": {
+      slots: { flavour: "test for SCAPULAR WINGING against a wall — long thoracic palsy wings medially, which distinguishes it from trapezius weakness", level: "serratus anterior on wall press", relief: "avoiding the provoking activity; most recover over many months" },
+    },
+    "Strenuous exercise / weightlifting entrapment": {
+      slots: { flavour: "take a training history including recent load increases and supplement use", level: "elbow flexion, supination and the lateral forearm patch", relief: "reducing the provoking load" },
+    },
+    "Quadrilateral space syndrome": {
+      slots: { flavour: "MRI shows selective TERES MINOR atrophy, and it is worth asking for specifically because it is easily overlooked on a routine shoulder report", level: "deltoid bulk and external rotation", relief: "activity modification; decompression is rarely needed" },
+    },
+    "Rucksack palsy / prolonged shoulder compression": {
+      slots: { flavour: "ask about PACK WEIGHT and strap position — a classic military and hiking injury, and prevention is straightforward once named", level: "the middle-trunk distribution", relief: "redistributing pack weight to a hip belt and padding the straps" },
+    },
+    "Pudendal nerve entrapment (Alcock's canal)": {
+      slots: { flavour: "the history is characteristic: pain SITTING, relieved by standing or sitting on a toilet seat — and a pudendal nerve block is both diagnostic and therapeutic", level: "perineal sensation and anal tone", relief: "cushions that offload the perineum, and cycling cessation where relevant" },
+    },
+    "Entrapment at the adductor (Hunter's) canal": {
+      slots: { flavour: "purely SENSORY over the medial leg — any weakness means the femoral nerve or the L4 root instead", level: "the medial leg and malleolus, with normal quadriceps", relief: "avoiding the provoking compression; local block where diagnosis is uncertain" },
+    },
+    "Direct trauma or compression": {
+      slots: { flavour: "identify the compression point by examination and history; a purely sensory deficit here needs no imaging unless a mass is suspected", level: "the medial leg sensory territory", relief: "removing the local pressure" },
+    },
+  }),
+
+  // ---- FRACTURE AND DISLOCATION ----
+  ...family("nerve-injury-fracture", TRAUMATIC_NERVE, {
+    "Humeral shaft fracture": {
+      slots: { flavour: "radial palsy with a humeral shaft fracture is common and usually NEURAPRAXIA — the debate is between early exploration and watchful waiting, and most recover without surgery", level: "wrist and finger extension weekly, and the advancing Tinel's sign, which tracks regeneration" },
+    },
+    "Shoulder dislocation or surgical neck fracture of the humerus": {
+      slots: { flavour: "EXAMINE THE AXILLARY NERVE BEFORE AND AFTER REDUCTION — the badge patch takes seconds and is the most commonly omitted examination in the emergency department", level: "deltoid power and the regimental badge patch" },
+    },
+    "Shoulder dislocation or humeral fracture": {
+      slots: { flavour: "a posterior cord lesion affects axillary AND radial territories together — map both rather than assuming an isolated nerve", level: "deltoid and wrist extension together" },
+    },
+    "Shoulder dislocation or proximal humeral fracture": {
+      slots: { flavour: "triceps involvement places it in the axilla; sparing places it at the spiral groove", level: "elbow extension, then wrist and finger extension" },
+    },
+    "Supracondylar humeral fracture or elbow trauma": {
+      slots: { flavour: "in CHILDREN this is the classic association, and the anterior interosseous branch is most often affected — test the OK sign specifically, since a child will not report it", level: "the OK sign and pronation" },
+    },
+    "Forearm trauma or fracture": {
+      slots: { flavour: "a PURE MOTOR deficit with no sensory loss localises to the anterior interosseous branch rather than the median trunk", level: "flexion of the thumb and index finger" },
+    },
+    "Wrist fracture, dislocation or tenosynovitis": {
+      slots: { flavour: "acute median symptoms after a distal radius fracture may mean ACUTE CARPAL TUNNEL SYNDROME — that is a surgical emergency, not an entrapment to be splinted", level: "thenar power and median sensation, urgently and repeatedly" },
+      urgency: "emergency",
+    },
+    "Hook of hamate fracture or ulnar artery aneurysm": {
+      slots: { flavour: "a CT or dedicated carpal tunnel view shows the hook fracture, which plain films miss; consider an ulnar artery aneurysm in someone who uses the hand as a hammer", level: "intrinsic power and the ulnar pulse" },
+    },
+    "Tardy ulnar palsy (old elbow fracture, cubitus valgus)": {
+      slots: { flavour: "the injury may be DECADES old — look for cubitus valgus and ask about a childhood fracture, which the patient may not connect to the symptoms", level: "intrinsic wasting and Froment's sign" },
+      urgency: "routine",
+    },
+    "Knee trauma, fibular fracture or surgery": {
+      slots: { flavour: "examine the peroneal nerve before and after any knee reduction or fixation; a fibular neck fracture puts it directly at risk", level: "dorsiflexion and eversion" },
+    },
+    "Trauma or fracture of the tibia/ankle": {
+      slots: { flavour: "consider ACUTE COMPARTMENT SYNDROME where pain is out of proportion — that is a surgical emergency and the nerve deficit is a late sign", level: "the first web space and dorsiflexion, with compartment pressure if pain is disproportionate" },
+    },
+    "Ankle inversion injury or fracture": {
+      slots: { flavour: "a superficial peroneal deficit after an inversion injury is easily attributed to the sprain itself; the sensory territory is what separates them", level: "the dorsum of the foot with dorsiflexion preserved" },
+    },
+    "Ankle trauma or fracture": {
+      slots: { flavour: "purely sensory over the lateral foot and heel; the sural nerve runs superficially and is injured by both trauma and surgical approaches", level: "lateral foot sensation" },
+    },
+    "Trauma, fracture or dislocation at the ankle or knee": {
+      slots: { flavour: "tibial injury affects the sole and toe flexion — and a numb sole is a pressure-ulcer risk that needs saying explicitly", level: "sole sensation, toe flexion and the skin of the foot" },
+    },
+    "Hip dislocation, acetabular fracture or arthroplasty": {
+      slots: { flavour: "the PERONEAL DIVISION of the sciatic nerve is preferentially injured — so a foot drop after hip surgery is sciatic until proven otherwise, not a peroneal entrapment", level: "dorsiflexion, plantarflexion and the whole sciatic sensory territory" },
+    },
+    "Pelvic trauma or fracture": {
+      slots: { flavour: "a Trendelenburg gait after pelvic trauma points at the superior gluteal nerve, and it is easily missed while attention is on the fracture", level: "hip abduction and gait" },
+    },
+    "Pelvic fracture or haematoma": {
+      slots: { flavour: "image for a HAEMATOMA compressing the nerve — it is evacuable, and that makes it worth looking for rather than assuming a stretch injury", level: "hip adduction and the medial thigh" },
+    },
+    "Trauma (scapular fracture, traction injury)": {
+      slots: { flavour: "a scapular fracture implies considerable force — look for the associated chest and vascular injuries rather than focusing on the nerve", level: "external rotation and supraspinatus initiation" },
+    },
+    "Direct trauma or shoulder surgery": {
+      slots: { flavour: "the name hedges between injury and operation, and the operative record resolves it — check positioning, retractor placement and tourniquet time", level: "elbow flexion and the lateral forearm" },
+    },
+    "Brachial plexus lateral cord lesion": {
+      slots: { flavour: "map the deficit across MORE THAN ONE nerve — musculocutaneous with the lateral median contribution — because that pattern is what makes this a cord rather than a nerve lesion", level: "elbow flexion, forearm pronation and median sensation together" },
+    },
+    "Penetrating trauma to the posterior triangle": {
+      slots: { flavour: "an OPEN injury argues for EARLY EXPLORATION rather than watchful waiting — this is the situation where the general rule reverses", level: "trapezius power and shoulder shrug" },
+    },
+  }),
+
+
   // ---- HEAD INJURY ----
   ...family("head-injury", HEAD_INJURY_SPINE, {
     "Diffuse axonal injury": {
