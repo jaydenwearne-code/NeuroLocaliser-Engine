@@ -116,7 +116,331 @@ const TRAUMATIC_NERVE = {
   referral: "Orthopaedics or trauma with neurophysiology; peripheral nerve surgery if exploration is considered.",
 };
 
+
+// ---- ROUND 9 (tranche 3): traumatic, the cranial half ----
+// Two more families. They split by WHAT THE FORCE DID: shook the brain, or broke the skull around a nerve.
+
+// BLUNT HEAD INJURY affecting brain tissue. The nerve deficits here follow the mechanism rather than a
+// territory, and the plan's job is the surveillance the site plan does not carry.
+const HEAD_INJURY_TBI = {
+  confirmatory: [
+    "CT HEAD to the local head-injury rule; add CT ANGIOGRAPHY where the mechanism, a skull-base fracture or a seat-belt sign raises BLUNT CEREBROVASCULAR INJURY, which is missed by plain CT and causes delayed stroke",
+    "REVIEW ANTICOAGULANTS AND ANTIPLATELETS explicitly, and repeat imaging where they are in use — a small bleed on the first scan behaves differently on warfarin or a DOAC",
+    "{flavour}",
+    "MRI, including susceptibility-weighted sequences, where the deficit exceeds what the CT shows — diffuse axonal injury is invisible on CT and explains exactly that mismatch",
+  ],
+  monitoring: [
+    "{level}",
+    "GIVE WRITTEN HEAD-INJURY ADVICE AND A NAMED RETURN THRESHOLD, and address RETURN TO DRIVING, WORK, SPORT AND ALCOHOL — this counselling is the part no site plan carries and the part most often omitted",
+    "Post-concussion symptoms — headache, poor concentration, irritability, sleep disturbance — are common, real and usually self-limiting; naming them in advance prevents months of alarm",
+  ],
+  urgency: "urgent",
+  referral: "ED or neurosurgery per the imaging; neurorehabilitation for persisting deficits.",
+};
+
+// A FRACTURE THROUGH THE SKULL BASE OR FACE that catches a nerve in a canal or foramen. Different
+// question: which nerve, in which hole, and is there a CSF leak.
+const CRANIAL_FRACTURE = {
+  confirmatory: [
+    "CT WITH FINE-CUT BONE WINDOWS through the relevant skull base or facial skeleton — this is a bone question, and a standard-slice head CT is not adequate to answer it",
+    "{flavour}",
+    "Document the cranial nerve deficit FORMALLY and early: it is the baseline against which delayed or progressive palsy is judged, and delayed onset changes management",
+    "Look for a CSF LEAK — rhinorrhoea or otorrhoea — and test the fluid for beta-2 transferrin rather than relying on the halo sign, which is unreliable",
+  ],
+  monitoring: [
+    "{level}",
+    "IMMEDIATE VERSUS DELAYED ONSET IS THE DECIDING DISTINCTION: a nerve palsy present from impact suggests transection and is an argument for exploration, while one appearing later suggests oedema and usually recovers",
+    "Meningitis risk persists while a CSF leak does; counsel the patient about the symptoms and ensure vaccination status is addressed",
+  ],
+  urgency: "urgent",
+  referral: "Maxillofacial, ENT or neurosurgery by site; ophthalmology where the orbit or optic nerve is involved.",
+};
+
 export default {
+  // ---- BLUNT HEAD INJURY ----
+  ...family("head-injury-tbi", HEAD_INJURY_TBI, {
+    "Head trauma": {
+      slots: { flavour: "a FOURTH-NERVE palsy is the classic traumatic ocular motor injury, and a SIXTH-NERVE palsy after head injury may be a false localising sign of raised pressure rather than direct trauma",
+               level: "re-examine eye movements and balance after the acute phase; both frequently declare themselves once the patient is mobilising" },
+      bySite: {
+        // At the three canal sites the answer is almost always post-traumatic BPPV — which is the single
+        // most treatable thing in this whole family, and is routinely mislabelled as post-concussion.
+        peripheral_vestibular_posterior_canal: {
+          flavour: "POST-TRAUMATIC BPPV is much the commonest cause of vertigo after head injury, and the posterior canal is much the commonest canal — a DIX-HALLPIKE both diagnoses and, with an Epley, treats it in minutes",
+          level: "do the Dix-Hallpike before attributing dizziness to concussion; brief positional vertigo is BPPV, and constant vertigo is not" },
+        peripheral_vestibular_horizontal_canal: {
+          flavour: "horizontal-canal BPPV after trauma — a SUPINE ROLL TEST provokes it, and it is missed when only the Dix-Hallpike is performed",
+          level: "repeat positional testing at follow-up; canal conversion after repositioning is common and treatable again" },
+        peripheral_vestibular_anterior_canal: {
+          flavour: "anterior-canal BPPV is rare and produces DOWN-beating torsional nystagmus on positioning — and downbeat nystagmus should always prompt a thought about the craniocervical junction before it is accepted as benign",
+          level: "if the nystagmus is downbeat and persistent rather than brief, image the craniocervical junction" },
+        skull_base_vi_cisternal: {
+          flavour: "the sixth nerve has the longest intracranial course, so it fails from RAISED PRESSURE as readily as from direct injury — a FALSE LOCALISING sign, and the fundi should be examined before attributing it to trauma",
+          level: "check the discs for papilloedema, and re-image if conscious level or headache changes" },
+        skull_base_trochlear_cisternal: {
+          flavour: "the fourth nerve is the cranial nerve most often injured by head trauma, and BILATERAL fourth-nerve palsies after trauma are characteristic — look for a V-pattern and alternating hypertropia",
+          level: "orthoptic measurement once the acute phase settles; many improve over months before surgery is considered" },
+      },
+    },
+    "Traumatic brain injury": {
+      slots: { flavour: "SCREEN THE PITUITARY. Post-traumatic hypopituitarism is common, under-recognised and treatable, and it presents as fatigue and low mood that get attributed to the injury itself",
+               level: "check the endocrine axes at three to six months, and track sleep, temperature regulation and appetite — hypothalamic dysfunction after TBI is missed because it is not looked for" },
+      bySite: {
+        hypothalamus_thermoregulatory: {
+          flavour: "post-traumatic temperature dysregulation is real and is repeatedly investigated as infection — exclude sepsis, but recognise that a persistent fever with negative cultures after TBI may be central",
+          level: "chart temperature against infection markers; a central pattern lacks the usual inflammatory response" },
+        hypothalamus_ventromedial: {
+          flavour: "hyperphagia and weight gain after TBI point at the ventromedial satiety centre, and are commonly attributed to reduced activity instead",
+          level: "weigh at every review and ask about appetite directly — the family notices before the patient does" },
+        hypothalamus_lateral: {
+          flavour: "post-traumatic HYPERSOMNOLENCE with low orexin can look exactly like narcolepsy, and it is one of the commonest persisting complaints after TBI",
+          level: "consider formal sleep studies rather than attributing all fatigue to the injury; it is treatable" },
+        hypothalamus_suprachiasmatic: {
+          flavour: "circadian disruption after TBI — a broken sleep-wake schedule rather than insomnia, and it responds to timed light and melatonin rather than to hypnotics",
+          level: "a sleep diary over weeks shows the pattern that a single consultation cannot" },
+        cortex_dlpfc: {
+          flavour: "executive dysfunction after TBI is the deficit that most limits return to work, and it is invisible on bedside cognitive screening",
+          level: "formal neuropsychological assessment before any return-to-work decision; brief screens are normal in exactly these patients" },
+      },
+      referral: "Neurorehabilitation with endocrinology; neurosurgery per imaging.",
+    },
+    "Traumatic brain injury (orbitofrontal contusion)": {
+      slots: { flavour: "the orbitofrontal surface is injured by CONTRECOUP against the bony orbital roof, so the contusion is often opposite the impact — and the deficit is behavioural rather than motor",
+               level: "ask the FAMILY about disinhibition, impulsivity and personality change; the patient frequently has no insight, so a collateral history is the examination here" },
+    },
+    "Tectal contusion after head injury": {
+      slots: { flavour: "test UPGAZE and the pupils deliberately — a dorsal midbrain syndrome after trauma is easily attributed to reduced conscious level instead",
+               level: "watch for HYDROCEPHALUS: the tectal region sits beside the aqueduct, and obstruction can appear days to weeks later" },
+    },
+    "Bilateral traumatic or hypoxic injury": {
+      slots: { flavour: "establish whether the insult was TRAUMATIC or HYPOXIC — the prognosis and the counselling differ substantially, and the history usually settles it",
+               level: "assess SWALLOW before any oral intake, and watch for emotional lability, which distresses families and is treatable" },
+    },
+    "Pontine trauma or tumour": {
+      slots: { flavour: "the name hedges between two very different processes and MRI resolves it — this matters enormously, because one is static and one progresses",
+               level: "ESTABLISH A COMMUNICATION CHANNEL EARLY using vertical eye movements or blink, and check awareness formally: a locked-in patient is conscious and may be assumed not to be" },
+      urgency: "emergency",
+    },
+    "Trauma / surgery": {
+      slots: { flavour: "MRI looking for a lesion in the dentato-rubro-olivary loop, with hypertrophic olivary degeneration developing MONTHS after the causative injury — so the scan at the time of injury may be normal",
+               level: "warn that palatal tremor typically appears months later and then PERSISTS; it responds poorly to treatment, and expectations are better set early" },
+      urgency: "routine",
+    },
+  }),
+
+  // ---- SKULL-BASE AND FACIAL FRACTURE ----
+  ...family("cranial-fracture", CRANIAL_FRACTURE, {
+    "Orbital trauma or fracture": {
+      slots: { flavour: "FORCED DUCTION TESTING separates ENTRAPMENT from nerve palsy — a trapped inferior rectus restricts mechanically and is a surgical problem, while a third-nerve palsy is not",
+               level: "in a CHILD, a white-eyed TRAPDOOR fracture with vomiting and a quiet-looking eye is a surgical emergency within hours, and the eye looks deceptively normal" },
+      bySite: {
+        skull_base_iii_orbit_sup: {
+          flavour: "the SUPERIOR division supplies levator and superior rectus, so ptosis with failed elevation and INTACT adduction places it there — and forced ductions still separate palsy from a trapped muscle",
+          level: "lid position and elevation, checking that adduction and the pupil are spared" },
+        skull_base_iii_orbit_inf: {
+          flavour: "the INFERIOR division carries the PARASYMPATHETIC fibres, so a fixed dilated pupil with weak adduction and depression localises here — and the pupil is what distinguishes it from the superior division",
+          level: "pupil size and reaction alongside adduction and depression" },
+      },
+      urgency: "emergency",
+      referral: "Same-day ophthalmology and maxillofacial surgery.",
+    },
+    "Trauma / orbital fracture": {
+      slots: { flavour: "a superior orbital fissure syndrome gives III, IV, VI and V1 together; adding OPTIC NEUROPATHY makes it an orbital apex syndrome, and that distinction changes the urgency",
+               level: "check acuity, colour vision and the pupil at every review — a developing optic neuropathy is the sight-threatening part" },
+    },
+    "Orbital trauma or surgery": {
+      slots: { flavour: "a tonic pupil after orbital injury is a CILIARY GANGLION lesion — slow, segmental constriction with tonic re-dilation, and dilute pilocarpine confirms denervation supersensitivity",
+               level: "document the near response as well as the light response; the dissociation is the finding" },
+      urgency: "routine",
+    },
+    "Head trauma with petrous fracture": {
+      slots: { flavour: "a sixth-nerve palsy with a petrous temporal fracture — and check hearing and facial nerve function at the same time, since they share the bone",
+               level: "audiometry and facial nerve function alongside the eye movements" },
+    },
+    "Skull base trauma (petrous fracture)": {
+      slots: { flavour: "V1 involvement at the petrous apex, and look for the Gradenigo combination with a sixth-nerve palsy",
+               level: "corneal sensation — a numb cornea is an exposure risk that outlasts the fracture" },
+    },
+    "Trauma (supraorbital nerve injury)": {
+      slots: { flavour: "usually a direct blow or laceration over the brow rather than a skull-base fracture; examine the wound and the supraorbital notch",
+               level: "the forehead sensory patch, and warn about post-traumatic neuralgia, which is common and treatable" },
+      urgency: "routine",
+    },
+    "Mandibular trauma or dental surgery": {
+      slots: { flavour: "inferior alveolar or lingual nerve injury after extraction or a mandibular fracture — and an orthopantomogram shows the canal's relation to the tooth root",
+               level: "map the numb area on the lip and chin at each review; most recover, and documented improvement is what avoids unnecessary surgery" },
+      urgency: "routine",
+    },
+    "Trauma or dental / sinus surgery": {
+      slots: { flavour: "V2 runs through the foramen rotundum and the maxillary sinus roof, so sinus surgery and Le Fort fractures both reach it; CT sinuses with bone windows",
+               level: "cheek and upper-lip sensation, and ask about the teeth, which are supplied by the same division" },
+      urgency: "routine",
+    },
+    "Skull base trauma or fracture": {
+      slots: { flavour: "an accessory nerve palsy at the jugular foramen rarely occurs alone — look for the IX and X deficits that share the exit, because the combination localises it",
+               level: "shoulder shrug, palate elevation and voice together" },
+    },
+    "Skull base trauma or occipital condyle fracture": {
+      slots: { flavour: "CT of the craniocervical junction; an occipital condyle fracture may also be UNSTABLE, so the neck is a question before the nerve is",
+               level: "tongue protrusion and deviation, alongside cervical spine stability" },
+    },
+    "Occipital condyle fracture or craniocervical trauma": {
+      slots: { flavour: "a Collet-Sicard syndrome means IX, X, XI and XII together — that combination is the localiser and implies substantial force",
+               level: "swallow, voice, shoulder and tongue as a set; and assess craniocervical stability before mobilising" },
+      urgency: "emergency",
+    },
+    "Penetrating neck trauma": {
+      slots: { flavour: "an OPEN injury: image the vessels as well as the nerve, and early EXPLORATION is favoured over watchful waiting here",
+               level: "tongue function, and the airway and vascular structures that share the wound" },
+      urgency: "emergency",
+      referral: "Trauma surgery and ENT immediately; vascular imaging before anything else.",
+    },
+  }),
+
+  // ---- SINGLETONS ----
+  "Post-traumatic syrinx": dz("Post-traumatic syrinx", {
+    confirmatory: [
+      "MRI OF THE WHOLE CORD WITH CONTRAST — the syrinx may sit well away from the original injury, so imaging only the injured level misses it",
+      "IT PRESENTS MONTHS TO YEARS AFTER THE INJURY, and that latency is why it is missed: new pain, ascending sensory loss or increasing weakness in an established cord injury is a syrinx until proven otherwise",
+      "Look for the SUSPENDED, CAPE-LIKE dissociated sensory loss — pain and temperature lost with touch preserved — which is what a central cavity produces",
+      "Assess for tethering or arachnoiditis at the injury level, which is often the cause and is what surgery addresses",
+    ],
+    monitoring: [
+      "SAFETY NET: an ascending level, new autonomic dysreflexia, or worsening scoliosis all mean progression and need re-imaging rather than reassurance",
+      "Warn about PAINLESS INJURY to the anaesthetic area — burns and unnoticed trauma cause most of the avoidable harm",
+      "Surgery is for progression rather than for the cavity's existence; a stable syrinx is watched",
+    ],
+    urgency: "urgent",
+    referral: "Spinal neurosurgery with spinal injuries rehabilitation.",
+  }),
+
+  "Trauma / whiplash with facet injury": dz("Trauma / whiplash with facet injury", {
+    confirmatory: [
+      "MRI cervical spine, and CT where a bony injury is suspected — the facet joint and its capsule are the pain generator, and the C3 root refers to the occiput",
+      "APPLY A VALIDATED CERVICAL SPINE RULE before imaging at all: most whiplash needs no scan, and imaging everyone finds incidental degenerative change that misleads",
+      "Examine for a genuine radicular deficit rather than referred pain — the two are treated quite differently",
+    ],
+    monitoring: [
+      "EARLY MOBILISATION AND REASSURANCE outperform collars, which prolong symptoms — this is the single most useful thing to say",
+      "Persistent pain beyond three months warrants reassessment; medial branch blocks are diagnostic where facet pain is suspected",
+      "Address expectations and any compensation-related anxiety directly, since both influence outcome",
+    ],
+    urgency: "routine",
+    referral: "Primary care with physiotherapy; spinal clinic if radicular signs or persistent pain.",
+  }),
+
+  "Trauma with facet or vertebral injury": dz("Trauma with facet or vertebral injury", {
+    confirmatory: [
+      "CT cervical spine for the bony injury and STABILITY, then MRI for the cord, discs and ligaments — stability is the question that must be answered first",
+      "C4 involvement raises the DIAPHRAGM: check respiratory function, because C3, 4 and 5 keep it alive and a high cervical injury can compromise it",
+      "Examine for cord signs as well as root signs; a fracture with any long-tract sign is a different problem",
+    ],
+    monitoring: [
+      "SAFETY NET: immobilise until stability is established, and monitor RESPIRATORY function in any injury at or above C5",
+      "Watch for delayed instability — ligamentous injury may not be apparent on the initial films",
+      "Physiotherapy once stable; a collar is not a treatment for a stable injury",
+    ],
+    urgency: "emergency",
+    referral: "Spinal surgery immediately; critical care if respiratory function is threatened.",
+  }),
+
+  "Lumbar disc prolapse (L4/5)": dz("Lumbar disc prolapse (L4/5)", {
+    confirmatory: [
+      "MRI LUMBAR SPINE — but only where the deficit is progressive, there are red flags, or symptoms persist beyond six weeks; imaging early finds degenerative change in almost everyone and drives unnecessary surgery",
+      "ASK ABOUT BLADDER, BOWEL AND SADDLE SENSATION AT EVERY CONTACT — a central prolapse causing cauda equina syndrome is the emergency hiding behind an ordinary sciatica",
+      "Confirm the L5 pattern: weak great-toe extension and dorsiflexion, with weak INVERSION and hip abduction separating the root from a peroneal palsy",
+      "Straight-leg raise reproducing radicular pain supports it; the neurological examination matters more than the imaging",
+    ],
+    monitoring: [
+      "SAFETY NET, and it is the one that matters: give explicit written cauda equina advice — new bladder or bowel change, or saddle numbness, means same-day assessment",
+      "Most radicular pain settles within six to twelve weeks without surgery; say so, because the pain is severe and the expectation is the treatment",
+      "PROGRESSIVE MOTOR DEFICIT is the indication for early surgery, not pain severity",
+    ],
+    urgency: "urgent",
+    referral: "Primary care with physiotherapy; urgent spinal surgery for progressive deficit or any cauda equina feature.",
+  }),
+
+  "Lumbar disc prolapse (L5/S1)": dz("Lumbar disc prolapse (L5/S1)", {
+    confirmatory: [
+      "MRI lumbar spine on the same indications — red flags, progressive deficit, or failure to settle by six weeks",
+      "ASK ABOUT BLADDER, BOWEL AND SADDLE SENSATION AT EVERY CONTACT; a large central prolapse at this level is a classic cauda equina cause",
+      "Confirm the S1 pattern: weak plantarflexion and eversion with a LOST ANKLE JERK — the absent reflex is what names the root",
+      "Test plantarflexion by asking for repeated single-leg heel raises rather than on the couch; couch testing misses all but severe weakness",
+    ],
+    monitoring: [
+      "SAFETY NET: written cauda equina advice with a same-day threshold",
+      "The natural history is favourable — most settle without surgery, and the ankle jerk often never returns even after full functional recovery, which is worth saying so it is not read as failure",
+      "Progressive weakness rather than pain is what prompts surgery",
+    ],
+    urgency: "urgent",
+    referral: "Primary care with physiotherapy; urgent spinal surgery for progressive deficit or cauda equina features.",
+  }),
+
+  "Head trauma (cribriform plate shearing)": dz("Head trauma (cribriform plate shearing)", {
+    confirmatory: [
+      "CT WITH FINE CUTS THROUGH THE ANTERIOR SKULL BASE — the olfactory fibres shear where they pass through the cribriform plate, and the fracture may be subtle",
+      "FORMAL SMELL TESTING, both to document the deficit and because patients conflate smell with taste and under-report it",
+      "LOOK FOR A CSF LEAK: the cribriform plate is the commonest site, so test any clear rhinorrhoea for beta-2 transferrin",
+      "MRI where the CT is normal but anosmia is complete — shearing can occur without a visible fracture",
+    ],
+    monitoring: [
+      "SAFETY NET, and it is practical: fit SMOKE ALARMS, check gas appliances and advise on food safety — anosmia's danger is not the symptom itself",
+      "Recovery is possible over months but often incomplete; olfactory training is worth starting early",
+      "Meningitis risk persists while a leak does — counsel on the symptoms and address vaccination",
+    ],
+    urgency: "urgent",
+    referral: "ENT with neurosurgery if there is a CSF leak.",
+  }),
+
+  "Labyrinthine concussion or perilymph fistula": dz("Labyrinthine concussion or perilymph fistula", {
+    confirmatory: [
+      "AUDIOMETRY urgently — sudden sensorineural hearing loss after trauma is itself time-critical and needs same-day assessment, not a routine referral",
+      "TEST FOR A FISTULA: vertigo or nystagmus provoked by pressure change — tragal pressure, Valsalva, or loud sound — points to a perilymph fistula rather than simple concussion",
+      "CT temporal bones for a fracture, and look specifically at the otic capsule, which determines whether hearing is likely to recover",
+      "Distinguish this from post-traumatic BPPV, which is far commoner after head injury and is treated in minutes with a repositioning manoeuvre",
+    ],
+    monitoring: [
+      "SAFETY NET: advise against straining, heavy lifting, diving and air travel while a fistula is suspected — pressure change can worsen it",
+      "Concussion usually improves over weeks; a fistula that does not settle may need surgical repair",
+      "Vestibular rehabilitation once the acute phase passes, and screen for BPPV again at follow-up, since it commonly develops later",
+    ],
+    urgency: "urgent",
+    referral: "Same-day ENT for hearing loss; neuro-otology for persistent vertigo.",
+  }),
+
+  "Apical bulla, cyst or traumatic apical injury": dz("Apical bulla, cyst or traumatic apical injury", {
+    confirmatory: [
+      "CT CHEST WITH DEDICATED APICAL VIEWS — and the first job is to EXCLUDE A PANCOAST TUMOUR, because a Horner's sign with lower-trunk signs is apical malignancy until imaging says otherwise",
+      "Only once malignancy is excluded is a benign apical cause — a bulla, a cyst or an old injury — acceptable as the explanation",
+      "Look for the full lower-trunk picture: T1 sensory loss, hand intrinsic wasting and arm pain alongside the Horner's",
+      "Take a smoking and occupational history; and review any old imaging, which often shows the lesion was present and stable for years",
+    ],
+    monitoring: [
+      "SAFETY NET: a NEW Horner's with hand wasting is an urgent cancer pathway, and a benign label should only follow imaging rather than precede it",
+      "Where the cause is genuinely benign and stable, surveillance imaging rather than intervention",
+      "Document the Horner's and the hand findings carefully — progression is what would change the plan",
+    ],
+    urgency: "urgent",
+    referral: "Urgent chest imaging and respiratory or thoracic surgery; neurology for the plexus deficit.",
+  }),
+
+  "Total blindness (non-24-hour sleep-wake disorder)": dz("Total blindness (non-24-hour sleep-wake disorder)", {
+    confirmatory: [
+      "THIS IS NOT A LESION — it is the consequence of losing light input to the suprachiasmatic clock, so in someone with NO light perception the circadian rhythm free-runs and drifts a little later each day",
+      "A SLEEP DIARY OR ACTIGRAPHY OVER SEVERAL WEEKS is the diagnostic test: the drifting pattern is only visible over time and is invisible in a single consultation",
+      "Confirm the absence of light perception formally — patients with even minimal residual light perception often retain entrainment, and that changes the treatment",
+      "Measure melatonin timing where available, which establishes where in the cycle the patient currently is",
+    ],
+    monitoring: [
+      "TREATMENT IS TIMED MELATONIN OR A MELATONIN AGONIST, and the TIMING matters more than the dose — given at the wrong circadian phase it makes things worse",
+      "The cyclical pattern means good and bad weeks alternate; recognising the cycle stops it being mistaken for depression or poor sleep hygiene",
+      "Sleep hygiene and fixed social timing help but rarely entrain on their own in the totally blind",
+    ],
+    urgency: "routine",
+    referral: "Sleep medicine; ophthalmology to confirm the absence of light perception.",
+  }),
+
+
   // ---- ENTRAPMENT AND COMPRESSION ----
   ...family("nerve-entrapment", ENTRAPMENT, {
     "Idiopathic carpal tunnel syndrome": {
