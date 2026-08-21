@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**68 test suites / 5056 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**69 test suites / 5192 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -734,16 +734,36 @@ and that is what keeps every row in the card behaving alike.
 re-run boot, so the app keeps its old ES modules and its old state. Three apparent bugs during this work
 were all that trap. Reload explicitly when verifying a case URL.
 
+**13 CROSS-SITE ARCHETYPES** in `app/examples.js` (`CROSS_SITE_EXAMPLES`) — one canonical picture per
+entity, behind a disclosure so the four worked examples stay the on-ramp. They exist because the first
+review round was run against pictures found MECHANICALLY (smallest firing two-site case), which produced
+bilateral labyrinths for neurosarcoidosis and bilateral phrenic nerves for mononeuritis multiplex —
+mechanically valid, clinically absurd. **Sites chosen clinically, tokens DERIVED from them** and trimmed to
+a bedside subset, never hand-typed (the 2026-08-16 worked-examples lesson). Loading one arrives with its
+claim made: pinned pair, all-sites scope, entity selected.
+
+**THE COURSE IS THE TEACHING PAYLOAD, and one pair proves it: metastases and embolic shower are the SAME
+picture** — left face/arm weakness with a right homonymous hemianopia — separating only on how the illness
+unfolded. On `progressive`, six diseases are concordant; on `simultaneous`, **one** is, and the other five
+move to the set-aside band. Asserted, so the two cards cannot silently become duplicates.
+
+**All 13 PIN their pair.** Twelve also resolve on the engine's free cover; embolic shower does not — its
+`distribution: "segment"` needs distinct arterial segments and an unpinned cover picks the optic radiation,
+the same territory as the motor cortex.
+
+**`test/multifocal-archetypes.test.js` is a FIRE-RATE CANARY, not just an example guard.** The 2026-08-15
+substrate work found NF2 firing at 0.0% (because `schwann` omitted `skull_base`) only by measuring fire
+rates by hand. An archetype per entity turns that into a standing assertion: if a roster predicate,
+substrate table or compartment allow-list drifts so an entity can no longer fire on its own defining
+picture, the suite fails immediately. It asserts CONCORDANT, never rank-first — forcing an archetype to win
+would mean choosing the picture to satisfy the test rather than the clinic.
+
 > **⚠ CLINICAL REVIEW OPEN.** The 13 plans were authored in three rounds (inflammatory/demyelinating;
 > neoplastic/degenerative/congenital; infective/vascular/paraneoplastic) and are recorded as unreviewed in
-> the module header. The urgency ruling above came out of the owner's round-1 read. **Open follow-up:** the
-> review links generated for each entity were found MECHANICALLY (the smallest two-site picture that makes
-> it fire), so several are not clinically natural — bilateral labyrinths for neurosarcoidosis, bilateral
-> phrenic nerves for mononeuritis multiplex. Author real archetype cases per entity, the way
-> `app/examples.js` does for the four worked examples. NMOSD's optic-nerve + dorsal-column pair is already
-> the genuine archetype.
+> the module header. Round 1 has had the owner's read (it produced the urgency ruling above); **rounds 2
+> and 3 have not.** The archetypes above are the intended review surface.
 
-68 suites / 5056 assertions green. Spec/plan:
+69 suites / 5192 assertions green. Spec/plan:
 `docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,
 `docs/superpowers/plans/2026-08-21-together-card-cross-site-workup.md`.
 
