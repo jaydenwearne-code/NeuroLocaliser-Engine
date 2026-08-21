@@ -24,8 +24,14 @@ export const STRUCTURES = [
   { id: "cn3_fasc_depr",   level: "midbrain", part: "medial", produces: "weak_depression",  note: "CN III fascicle — weak depression (IR)" },
   { id: "red_nucleus",    level: "midbrain", part: "medial",  produces: "tremor_rubral",
     note: "red nucleus — contralateral tremor/involuntary movement" },
-  { id: "scp_midbrain",   level: "midbrain", part: "medial",  produces: "limb_ataxia",
-    note: "superior cerebellar peduncle (decussated) — contralateral/ipsilateral ataxia" },
+  // CROSSES — an override, because the default for limb_ataxia is ipsilateral (cerebellar signs normally
+  // sit on the side of the lesion). THE SCP DECUSSATES IN THE CAUDAL MIDBRAIN, so by the time the peduncle
+  // is at this level its fibres have already crossed: a lesion here gives CONTRALATERAL limb ataxia. This
+  // is the one place in the cerebellar outflow where the ipsilateral rule breaks, and it is exactly the
+  // layered-crossing case the model exists to express (owner ruling, 2026-08-21 — the old note hedged
+  // "contralateral/ipsilateral" while the code silently emitted ipsilateral).
+  { id: "scp_midbrain",   level: "midbrain", part: "medial",  produces: "limb_ataxia", crosses: true,
+    note: "superior cerebellar peduncle, above its decussation — CONTRALATERAL limb ataxia" },
   // corticospinal tract in the cerebral peduncle — compact, so a lesion weakens BOTH arm and leg together
   // (a "hemiparesis" emerges from weak_arm + weak_leg co-occurring; the site is pinned by CN company)
   { id: "cst_midbrain_arm", level: "midbrain", part: "medial", produces: "weak_arm", note: "corticospinal (midbrain) — contra arm weakness" },
