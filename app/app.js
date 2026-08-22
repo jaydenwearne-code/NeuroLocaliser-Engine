@@ -12,6 +12,7 @@ import { prevalenceOf } from "../src/model/prevalence.js";
 import { neuraxisSVG } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
+import { readTheme, writeTheme, nextTheme, applyTheme, themeGlyph, themeLabel } from "./theme.js";
 import { encodeCase, decodeCase } from "./case-url.js";
 import { feedbackHref } from "./feedback.js";
 import { recordOpen } from "./usage.js";
@@ -935,6 +936,31 @@ function boot() {
   if (domSel) { domSel.value = S.dominant;
     domSel.onchange = e => { S.dominant = e.target.value;
       if (S.mode === "localise") { renderResults(); markSides(); } syncURL(); }; }
+
+  // The theme is a per-USER preference like the dominant hemisphere, so it binds once here rather than on
+  // every render. It is deliberately NOT in S and never reaches syncURL(): a case URL is shared between
+  // people and carries the case, while the theme belongs to the reader's eyes.
+  const themeBtn = document.getElementById("theme-toggle");
+  if (themeBtn) {
+    let choice = readTheme();
+    const paintToggle = () => {
+      themeBtn.textContent = themeGlyph(choice);
+      themeBtn.title = themeLabel(choice);
+      themeBtn.setAttribute("aria-label", themeLabel(choice));
+    };
+    paintToggle();
+    themeBtn.onclick = () => {
+      choice = writeTheme(nextTheme(choice));
+      applyTheme(choice);
+      paintFavicon();   // the accent is baked into the data URI, so it does not follow the CSS on its own
+      paintToggle();
+    };
+    // While on the follow-the-OS default the CSS tracks the OS by itself, but the favicon would not — it
+    // would be exactly as stale as the toggle case above. Optional chaining because older Safari has no
+    // addEventListener on a MediaQueryList.
+    globalThis.matchMedia?.("(prefers-color-scheme:dark)")
+      ?.addEventListener?.("change", () => { if (choice === "system") paintFavicon(); });
+  }
   try { S.mode==="atlas" ? renderAtlas() : S.mode==="stroke" ? renderStroke() : renderLocalise(); }
   catch (err) { app.innerHTML = errorPanel(err); }
 }
@@ -957,6 +983,13 @@ function paintBrand() {
   // 32px balances the two-line lockup (byline + 26px wordmark ≈ 53px tall); 26px read small beside it.
   document.querySelectorAll("[data-brand-mark]").forEach(el => { el.innerHTML = markSVG({ size: 32 }); });
   document.querySelectorAll("[data-brand-version]").forEach(el => { el.textContent = `v${VERSION} \u00b7 Beta`; });
+  paintFavicon();
+}
+
+// Split out because it is the ONLY part of the brand that has to be repainted when the theme changes: a
+// data URI cannot inherit currentColor, so the accent is baked in at paint time and would otherwise go
+// stale on toggle. The marks in the DOM use currentColor and need no help.
+function paintFavicon() {
   let link = document.querySelector('link[rel="icon"]');
   if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
   link.type = "image/svg+xml";
@@ -964,6 +997,10 @@ function paintBrand() {
 }
 
 async function startGate() {
+  // The inline script in index.html already set the attribute before first paint; this is what makes
+  // theme.js the single source of truth for the button's state and for the favicon's colour read. It must
+  // run BEFORE paintBrand(), which bakes the computed accent into the favicon data URI.
+  applyTheme(readTheme());
   paintBrand();
   const gateEl = document.getElementById("gate");
   if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal({ first: false }); boot(); return; }

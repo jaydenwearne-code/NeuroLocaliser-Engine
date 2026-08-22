@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wearne's NeuroLocaliser</title>
+<!-- Applied BEFORE first paint, on purpose. app.js is a deferred ES module that imports the whole engine
+     graph, so anything it does happens after the body has already painted — on a cold GitHub Pages load
+     that is a visible flash of the wrong theme for anyone who has overridden the OS. Users on the
+     follow-the-OS default never flash: they have no attribute to set and the media query is already right.
+     The key is duplicated from app/theme.js (an inline script cannot import); test/theme.test.js section 8
+     asserts the two agree. Only light/dark are ever written — following the OS is the ABSENCE of it. -->
+<script>try{var t=localStorage.getItem('nl_theme_v1');
+if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 <style>
   :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--on-danger:#ffffff;--ink:#16283f;--muted:#4a5768;--faint:#6b6a64;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
     --ipsi:#34755b;--ipsi-bg:#e6f2ec;--contra:#ac4d34;--contra-bg:#f8e7e0;--bilat:#6959cc;--bilat-bg:#ece9fb;--none:#5e6b80;--none-bg:#eef2f7;--gold:#84662d;--gold-bg:#f3ebd8;
@@ -229,6 +237,15 @@
   .card-ctrl{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:var(--fs-meta);color:var(--muted);margin-bottom:9px;}
   .card-ctrl label{display:inline-flex;gap:6px;align-items:center;}
   .card-ctrl select,.hemi-set select{font:inherit;font-size:var(--fs-meta);padding:3px 7px;border:1px solid var(--line);border-radius:7px;background:var(--paper);color:var(--ink);}
+  /* The theme toggle. Neutral by construction: a viewing preference is neither the product's identity nor
+     the answer, so it takes the same band/line/muted treatment as every other header control. The brand
+     accent is deliberately absent, and is not named here even in prose-as-code — the allowlist guard in
+     test/brand.test.js scans this stylesheet as TEXT, comments included. */
+  .theme-btn{flex:none;font:inherit;font-size:var(--fs-body);line-height:1;cursor:pointer;
+    border:1px solid var(--line);background:var(--paper);color:var(--muted);
+    border-radius:999px;padding:5px 10px;
+    transition:border-color .12s,background .12s,color .12s;}
+  .theme-btn:hover{border-color:var(--navy-2);background:var(--band);color:var(--ink);}
   .ctrls-inline{margin:0 0 8px;}
   .ctrls-inline[hidden]{display:none;}
   /* the raw side/level/part triple, kept reachable for a bug report but off the first read */
@@ -365,6 +382,7 @@
           <button data-mode="stroke">Code stroke</button>
         </div>
         <label class="hemi-set">Dominant <select id="dom"><option value="left">left</option><option value="right">right</option></select></label>
+        <button type="button" id="theme-toggle" class="theme-btn"></button>
       </div>
     </header>
     <div id="app"></div>
