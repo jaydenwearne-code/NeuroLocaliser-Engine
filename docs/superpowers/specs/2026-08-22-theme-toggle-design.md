@@ -54,7 +54,9 @@ first paint, so applying the theme at the top of `startGate()` would mean the bo
 then repaints navy — on a cold GitHub Pages load, over the network, a visible flash for anyone who has
 overridden the OS.
 
-So the read happens in four lines of blocking script in `<head>`, before the stylesheet is even parsed:
+So the read happens in four lines of blocking script placed in `<head>` **above `<style>`** — before the
+stylesheet is even parsed, and, incidentally, outside the slice `test/brand.test.js` scans for `--terra`
+offenders (it slices from `<style>` to `</style>`):
 
 ```html
 <script>try{var t=localStorage.getItem('nl_theme_v1');
@@ -163,7 +165,8 @@ registered in the `test` script in `package.json`.
 1. **Storage round trip** — each of the three values survives write→read; a missing key reads `system`;
    garbage (`"blue"`, `""`, `null`) reads `system`; a store whose getter *and* setter throw neither throws
    nor yields anything but `system`.
-2. **The cycle closes** — three `nextTheme` steps from any state return to it; every output is in `THEMES`.
+2. **The cycle closes** — three `nextTheme` steps from each of the three states return to that state;
+   every output is in `THEMES`, including from an unrecognised input.
 3. **The resolve matrix** — `system` follows `prefersDark` in both directions; `light` resolves light and
    `dark` resolves dark **regardless of `prefersDark`**, which is the whole point of an explicit override.
 4. **`applyTheme` removes the attribute for `system`** and sets it for the other two, asserted against a
