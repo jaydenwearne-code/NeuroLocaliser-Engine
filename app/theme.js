@@ -83,7 +83,13 @@ export function applyTheme(choice, root = globalThis.document?.documentElement) 
   return v;
 }
 
-const GLYPH = { system: "\u{1F5A5}", light: "☀", dark: "\u{1F319}" };
+// TEXT-PRESENTATION glyphs, not emoji, and that is the whole point. The obvious set (🖥 ☀ 🌙) renders in
+// FULL COLOUR on macOS — a yellow sun and a yellow moon — which ignores the button's muted colour and puts
+// accent colour back into a control the design deliberately made neutral, inches from the red danger chip.
+// A variation selector does not fix it (measured: VS15 still rendered colour). These three are plain text
+// glyphs, so they inherit currentColor and sit in the header as quietly as the select beside them.
+// ◐ reads as "auto/half-and-half", which is what following the OS is; the label carries the words anyway.
+const GLYPH = { system: "◐", light: "☀", dark: "☾" };
 const NOUN  = { system: "follow system", light: "light", dark: "dark" };
 
 /** The glyph shows the state you are IN, never the one the next click gives you. */
