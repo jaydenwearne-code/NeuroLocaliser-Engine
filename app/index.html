@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wearne's NeuroLocaliser</title>
 <style>
-  :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--on-danger:#ffffff;--ink:#16283f;--muted:#5d6c7e;--faint:#8d8b84;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
-    --ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;
+  :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--on-danger:#ffffff;--ink:#16283f;--muted:#4a5768;--faint:#6b6a64;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
+    --ipsi:#34755b;--ipsi-bg:#e6f2ec;--contra:#ac4d34;--contra-bg:#f8e7e0;--bilat:#6959cc;--bilat-bg:#ece9fb;--none:#5e6b80;--none-bg:#eef2f7;--gold:#84662d;--gold-bg:#f3ebd8;
     --red:#b32b1c;--red-bg:#fbe9e7;--shadow:0 1px 2px rgba(29,49,77,.05),0 6px 20px rgba(29,49,77,.06);--radius:12px;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     /* FOUR sizes, not sixteen. The page had 16 ad-hoc font-sizes (10 of them between 8px and 13px), which
@@ -14,11 +14,11 @@
        uppercase micro-captions and mono tokens. Exceptions, deliberate: the wordmark and the code-stroke
        clock, which are doing a different job. */
     --fs-answer:17px;--fs-body:13px;--fs-meta:11px;--fs-cap:10px;}
-  @media (prefers-color-scheme:dark){:root{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--on-danger:#ffffff;--ink:#e9edf3;--muted:#96a3b5;--faint:#6f819c;--line:#26364d;--band:#1b2942;--mimic:#7fbcd6;--iatro:#d296b8;
+  @media (prefers-color-scheme:dark){:root{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--on-danger:#ffffff;--ink:#e9edf3;--muted:#a8b3c4;--faint:#8d9bb1;--line:#26364d;--band:#1b2942;--mimic:#7fbcd6;--iatro:#d296b8;
     --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
-  :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#5d6c7e;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--on-danger:#ffffff;--ipsi:#3f8f6f;--ipsi-bg:#e6f2ec;--contra:#c85a3d;--contra-bg:#f8e7e0;--bilat:#6b5bd0;--bilat-bg:#ece9fb;--none:#6a7890;--none-bg:#eef2f7;--gold:#8a6a2f;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#8d8b84;--mimic:#3f7f96;--iatro:#9c5a86;}
-  :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#96a3b5;--line:#26364d;--band:#1b2942;--terra:#e79075;--on-danger:#ffffff;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#6f819c;--mimic:#7fbcd6;--iatro:#d296b8;}
+  :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#4a5768;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--on-danger:#ffffff;--ipsi:#34755b;--ipsi-bg:#e6f2ec;--contra:#ac4d34;--contra-bg:#f8e7e0;--bilat:#6959cc;--bilat-bg:#ece9fb;--none:#5e6b80;--none-bg:#eef2f7;--gold:#84662d;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#6b6a64;--mimic:#3f7f96;--iatro:#9c5a86;}
+  :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#a8b3c4;--line:#26364d;--band:#1b2942;--terra:#e79075;--on-danger:#ffffff;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#8d9bb1;--mimic:#7fbcd6;--iatro:#d296b8;}
   /* selected-pathology row + chip (spec 2026-08-18). Defined for all four theme states so the toggle
      wins in both directions and the system default is never left borrowing the host page background. */
   :root{--sel-bg:#f8ece7;}
@@ -48,7 +48,7 @@
   .frow .nm{flex:1;min-width:0;} .frow .nm .fid{font-family:var(--mono);font-size:var(--fs-cap);color:var(--navy-2);} .frow .nm .fd{color:var(--muted);font-size:var(--fs-meta);}
   .frow .nm .fd-primary{font-size:var(--fs-body);font-weight:600;} .frow .nm .fid-mini{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);}
   .nextlist{margin:6px 0 0;padding-left:18px;} .nextlist li{font-size:var(--fs-meta);color:var(--muted);margin:2px 0;}
-  .sides{display:inline-flex;gap:3px;} .sides button{font:inherit;font-size:var(--fs-cap);font-weight:700;border:1px solid var(--line);background:var(--paper);color:var(--muted);border-radius:6px;padding:2px 7px;cursor:pointer;min-width:26px;} .sides button.on{background:var(--navy);color:#fff;border-color:transparent;}
+  .sides{display:inline-flex;gap:3px;} .sides button{font:inherit;font-size:var(--fs-cap);font-weight:700;border:1px solid var(--line);background:var(--paper);color:var(--muted);border-radius:6px;padding:2px 7px;cursor:pointer;min-width:26px;} .sides button.on{background:var(--sel-bg);color:var(--ink);border-color:var(--navy-2);}
   .badge{display:inline-flex;font-family:var(--mono);font-size:var(--fs-cap);font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:999px;}
   .bi{color:var(--ipsi);background:var(--ipsi-bg);} .bc{color:var(--contra);background:var(--contra-bg);} .bb{color:var(--bilat);background:var(--bilat-bg);} .bm{color:var(--muted);background:var(--band);} .bnone{color:var(--none);background:var(--none-bg);}
   /* results */
@@ -63,7 +63,7 @@
   .pin.pinned { opacity:1; }
   .scope { display:flex; gap:4px; margin-bottom:6px; }
   .sc { font-size:var(--fs-meta); padding:2px 8px; border:1px solid var(--line); background:none; border-radius:10px; cursor:pointer; color:var(--muted); }
-  .sc.on { background:var(--navy-2); color:#fff; border-color:var(--navy-2); }
+  .sc.on { background:var(--sel-bg); color:var(--ink); border-color:var(--navy-2); }
   .why-list{display:flex;flex-direction:column;gap:4px;} .why-item{display:flex;gap:8px;align-items:baseline;font-size:var(--fs-body);} .why-item .k{width:16px;text-align:center;} .ok{color:var(--ipsi);} .no{color:var(--contra);} .warn{color:var(--gold);}
   .why-item .t{font-family:var(--mono);font-size:var(--fs-meta);} .why-item .d{color:var(--muted);font-size:var(--fs-meta);}
   .annot{font-size:var(--fs-body);color:var(--muted);background:var(--band);border-radius:8px;padding:7px 9px;margin-top:8px;} .annot b{color:var(--ink);}
@@ -94,7 +94,7 @@
   .derived{font-size:var(--fs-meta);color:var(--faint);font-style:italic;margin-bottom:6px;}
   .empty{color:var(--faint);font-size:var(--fs-body);padding:20px 4px;text-align:center;}
   /* atlas */
-  .atlas-levels{max-height:70vh;overflow:auto;font-size:var(--fs-body);} .lvl-grp{margin-bottom:6px;} .lvl-grp>.gh{font-size:var(--fs-cap);text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin:8px 0 3px;} .site-btn{display:block;width:100%;text-align:left;font:inherit;font-size:var(--fs-body);border:0;background:transparent;color:var(--ink);padding:4px 8px;border-radius:7px;cursor:pointer;} .site-btn:hover{background:var(--band);} .site-btn.on{background:var(--navy);color:#fff;} .site-btn .sp{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);} .site-btn.on .sp{color:#ffffffcc;}
+  .atlas-levels{max-height:70vh;overflow:auto;font-size:var(--fs-body);} .lvl-grp{margin-bottom:6px;} .lvl-grp>.gh{font-size:var(--fs-cap);text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin:8px 0 3px;} .site-btn{display:block;width:100%;text-align:left;font:inherit;font-size:var(--fs-body);border:0;background:transparent;color:var(--ink);padding:4px 8px;border-radius:7px;cursor:pointer;} .site-btn:hover{background:var(--band);} .site-btn.on{background:var(--sel-bg);color:var(--ink);} .site-btn .sp{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);} .site-btn.on .sp{color:var(--muted);}
   footer{margin-top:20px;font-size:var(--fs-meta);color:var(--faint);}
   /* why-synthesis + neuraxis diagram (Sub-project B) */
   .synth{font-size:var(--fs-body);line-height:1.5;margin:6px 0;color:var(--ink);}
@@ -153,7 +153,7 @@
   .gate-go{width:100%;font:inherit;font-weight:800;font-size:var(--fs-answer);border:0;border-radius:10px;padding:11px;
     background:var(--navy);color:var(--paper);cursor:pointer;box-shadow:var(--shadow);transition:filter .15s ease;}
   .gate-go:hover{filter:brightness(1.05);}
-  .gate-err{min-height:16px;font-size:var(--fs-body);color:var(--red);margin:10px 0 0;}
+  .gate-err{min-height:16px;font-size:var(--fs-body);color:var(--contra);margin:10px 0 0;}
   #app-shell.show{display:block;}
   .safebar{position:sticky;bottom:0;font-size:var(--fs-meta);color:var(--muted);text-align:center;
     padding:7px 12px;background:color-mix(in srgb,var(--band) 92%,transparent);border-top:1px solid var(--line);
@@ -162,7 +162,12 @@
   /* feedback button */
   .oh-lead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
   .oh-lead-txt{min-width:0;}
+  /* background is EXPLICIT because this class is used on both an <a> (results header) and a <button>
+     (code-stroke handover). A <button> with no declared background keeps the UA `buttonface`, which
+     Chrome paints light even in dark mode — the Copy button measured 1.84:1. A token-level contrast
+     test cannot see a UA default, so this one is held by the comment and the browser sweep. */
   .report-btn{flex:none;font-size:var(--fs-meta);font-weight:700;color:var(--muted);text-decoration:none;
+    background:transparent;
     border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;transition:border-color .15s,color .15s;}
   .report-btn:hover{border-color:var(--navy);color:var(--navy);}
   /* error boundary */
@@ -300,7 +305,7 @@
   .cs-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px;}
   .cs-clock{font-family:var(--mono);font-size:18px;font-weight:800;color:var(--ink);} .cs-clock small{font-size:var(--fs-meta);color:var(--muted);font-weight:600;}
   .cs-stat{font-size:var(--fs-body);color:var(--muted);} .cs-stat b{color:var(--ink);font-size:var(--fs-answer);}
-  .cs-lvo{font-size:var(--fs-meta);font-weight:800;padding:3px 9px;border-radius:999px;} .cs-lvo.pos{color:#fff;background:var(--contra);} .cs-lvo.neg{color:var(--muted);background:var(--band);}
+  .cs-lvo{font-size:var(--fs-meta);font-weight:800;padding:3px 9px;border-radius:999px;} .cs-lvo.pos{color:var(--on-danger);background:var(--red);} /* was white on --contra: that token INVERTS (#c85a3d light -> #e8a184 dark), so the filled LVO badge was 2.13:1 in dark. --red/--on-danger is the palette's one pairing that stays readable filled in both themes, and it keeps the FORM rule: filled = time-critical. */ .cs-lvo.neg{color:var(--muted);background:var(--band);}
   .cs-sec{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 15px;margin-bottom:12px;}
   .cs-sec>h3{margin:0 0 10px;font-size:var(--fs-meta);letter-spacing:.08em;text-transform:uppercase;color:var(--navy);}
   .cs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
