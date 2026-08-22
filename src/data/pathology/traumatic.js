@@ -51,6 +51,79 @@ const SPINAL_TRAUMA_SPINE = {
   referral: "Spinal surgery and major trauma urgently; a spinal injuries unit for ongoing care",
 };
 
+// BELOW THE CONUS, the safety net is a DIFFERENT ONE and the cord spine's is actively wrong (2026-08-23).
+// Neurogenic shock and autonomic dysreflexia both require an intact sympathetic outflow (T1-L2) ABOVE the
+// lesion. A cauda equina or sacral root lesion is LMN and sits below it, so neither occurs — and the cord
+// spine was teaching clinicians to watch for them, alongside an "ascending level after a cervical injury"
+// in a sentence whose own {level} slot had already interpolated saddle sensation and sphincter function.
+//
+// What replaces them is the AREFLEXIC bladder and the clock. The lesson worth teaching here is the
+// CONTRAST, so the last line names the two absent phenomena explicitly rather than quietly omitting them.
+const BELOW_CONUS_MONITORING = [
+  "SAFETY NET: the bladder here is an LMN, AREFLEXIC bladder — PAINLESS RETENTION WITH OVERFLOW, not urgency. The patient often cannot feel it, so it is MEASURED with a post-void residual rather than asked about",
+  "Track {level} on a defined schedule, with serial post-void residuals — a rising residual is deterioration even when the legs are unchanged, and it is the earliest objective sign you will get",
+  "TIME TO DECOMPRESSION IS THE PROGNOSIS: document the onset of sphincter symptoms by the clock, and escalate on any progression rather than re-examining in the morning",
+  "Ask DIRECTLY about sexual function and about sensation when passing urine or wiping — these are the deficits patients do not volunteer, and the ones that persist long after the pain settles",
+  "NEUROGENIC SHOCK AND AUTONOMIC DYSREFLEXIA DO NOT OCCUR HERE, and expecting them misdirects attention: both need sympathetic outflow above the lesion, which a below-conus lesion leaves intact. Hypotension in this patient is bleeding or another injury until proven otherwise",
+];
+
+// THE CONUS is cord, so it keeps the UMN half — and it still has no autonomics above the lesion to lose,
+// because the sympathetic outflow ends at L2 and the conus sits at or below it. What separates it from
+// the cauda is that it is MIXED: an areflexic bladder and lost ankle jerks alongside an extensor plantar.
+// The epiconus caveat is the reason this is not simply the cauda plan: a burst fracture at T12/L1 can
+// injure cord ABOVE the conus too, and that patient does regain the cord autonomics.
+const CONUS_MONITORING = [
+  "SAFETY NET: the bladder is AREFLEXIC and the retention PAINLESS, as below the conus — but the picture here is MIXED, so expect lost ankle jerks alongside an extensor plantar, and do not let the UMN signs talk you out of an LMN bladder",
+  "Track {level} on a defined schedule, with serial post-void residuals — at the conus the sphincter failure is EARLY, SYMMETRICAL and out of proportion to the leg weakness, which is what distinguishes it from the cauda equina",
+  "NEUROGENIC SHOCK AND AUTONOMIC DYSREFLEXIA DO NOT OCCUR FROM THE CONUS ITSELF: the sympathetic outflow ends at L2, at or above this lesion. Hypotension in a fresh burst fracture is bleeding until proven otherwise",
+  "THE EXCEPTION WORTH HOLDING: a thoracolumbar burst fracture can injure the EPICONUS and the cord above it as well, and that patient DOES carry the cord autonomics — so re-examine upward rather than assuming the level from the vertebral fracture alone",
+  "Ask directly about sexual function and about sensation when passing urine — the conus deficits are symmetrical and easily under-recorded, and they outlast the pain",
+];
+
+// THE CERVICOMEDULLARY JUNCTION. Craniocervical trauma injures medulla AND upper cord together, so the
+// cord autonomics ARE in play here and are deliberately kept — this lesion is above the whole sympathetic
+// outflow. What does NOT survive the move to a brainstem site is "an ascending LEVEL": a brainstem has no
+// sensory level to climb. The respiratory threat is real but arrives by a different route — the medullary
+// respiratory centres and the descending drive to the phrenic nucleus — and naming that route is the
+// difference between a plan that localises and one that pattern-matches on the word "trauma".
+const CERVICOMEDULLARY_MONITORING = [
+  "SAFETY NET: NEUROGENIC SHOCK — hypotension with BRADYCARDIA rather than tachycardia — is expected at this level and is distinct from haemorrhagic shock. Assuming blood loss and giving fluid alone will not correct it, and the two coexist in trauma",
+  "RESPIRATORY FAILURE IS THE THREAT AND IT IS SILENT: this lesion sits above the phrenic nucleus and involves the medullary respiratory centres, so ventilation can fail with a clear chest and a normal saturation. MEASURE it — vital capacity and blood gases — rather than observing the patient breathe",
+  "Track {level} on a defined schedule, and treat any DETERIORATION WITH MOVEMENT as instability until the spine is formally cleared — survivors of the initial injury are made worse by transfers",
+  "Screen the SWALLOW before anything by mouth: lower cranial nerve involvement here makes silent aspiration the commonest early complication, and it is not excluded by an intact gag",
+  "AUTONOMIC DYSREFLEXIA follows later where the cord is injured — a severe headache with hypertension from a blocked catheter or distended bowel, treated by removing the stimulus",
+];
+
+// VERTEBRAL ARTERY INJURY is an ISCHAEMIC STROKE, not a cord injury, and it was inheriting a cord-injury
+// safety net entire. The patient has a lateral medullary infarct: the thing that kills them is aspiration,
+// and the thing that is missed is that the dissection can throw a second embolus.
+const VERTEBRAL_DISSECTION_MONITORING = [
+  "SAFETY NET: NIL BY MOUTH UNTIL THE SWALLOW IS FORMALLY SCREENED. Dysphagia is the rule in lateral medullary infarction, aspiration is the commonest cause of death, and an intact gag reflex does not exclude it",
+  "Track {level} on a defined schedule; EXTENSION of the infarct or involvement of the basilar territory presents as new cranial nerve or long-tract signs, and it is a different emergency from the one admitted",
+  "Watch for RESPIRATORY AND AUTONOMIC INSTABILITY — impaired cough, central hypoventilation and blood-pressure lability all follow from the medullary lesion itself, and they are managed by monitoring rather than predicted",
+  "THE DISSECTION IS THE RECURRENCE RISK: further embolism is most likely in the first days, so the antithrombotic decision belongs to stroke neurology early rather than after a second event",
+  "Intractable HICCUPS and neuropathic facial pain are common, under-recognised and worth warning about — they are the sequelae patients return with rather than the ones on the admission list",
+];
+
+// The spine's fourth confirmatory step asks for "a FORMAL level, with sacral sparing and the anal reflex".
+// At the craniocervical junction the bony workup above it is exactly right and is reused unchanged — it is
+// only the LEVEL that has no meaning at a brainstem site, so only that step is replaced.
+const CERVICOMEDULLARY_CONFIRMATORY = [
+  ...SPINAL_TRAUMA_SPINE.confirmatory.slice(0, 3),
+  "Examine {level}, and document the LOWER CRANIAL NERVES and respiratory function rather than searching for a spinal level, which a cervicomedullary lesion does not have — the completeness of the deficit is read from the bulbar and respiratory picture instead",
+];
+
+// Vertebral artery injury takes a STROKE work-up, not a spinal-column one. The spine's immobilise-image-
+// stabilise sequence answers "is the spine unstable"; the question here is "where is the clot coming from
+// and what else has it reached", and the two share only the mechanism that started them.
+const VERTEBRAL_DISSECTION_CONFIRMATORY = [
+  "CT OR MR ANGIOGRAPHY FROM THE ARCH TO THE CIRCLE OF WILLIS — the dissection is in the neck while the infarct is in the brainstem, so imaging the head alone shows the damage and misses the cause",
+  "MRI WITH DIFFUSION for the infarct itself, and FAT-SATURATED T1 THROUGH THE NECK for the mural haematoma, which is the finding that makes the dissection rather than the stenosis",
+  "ASK SPECIFICALLY ABOUT NECK MANIPULATION, and about trivial trauma, coughing or a sudden head turn — patients do not connect these to a stroke and will not volunteer them; the interval can be hours to days",
+  "Examine {level}, and SCREEN THE SWALLOW formally before anything by mouth — dysphagia is the deficit that determines the next twenty-four hours here",
+  "Clear the cervical SPINE as a separate question where the mechanism warrants it — the artery and the column are injured by the same force but are not the same injury, and one does not exclude the other",
+];
+
 // SKULL-BASE AND ORBITAL TRAUMA. The fracture is visible; the question is which nerve, which vessel, and
 // whether the cranial cavity is now open to the outside.
 const SKULL_BASE_TRAUMA_SPINE = {
@@ -656,25 +729,33 @@ export default {
     "Traumatic fracture with canal compromise": {
       slots: { level: "saddle sensation, sphincter tone and the legs",
                flavour: "retropulsed bone in the canal — the degree of canal compromise and the neurological deficit together drive the decision to decompress, and neither alone" },
+      // Offered only below the conus, where the cord spine's autonomic safety net does not apply.
+      monitoring: BELOW_CONUS_MONITORING,
     },
     "Thoracolumbar burst fracture": {
+      monitoring: CONUS_MONITORING,
       slots: { level: "sphincter function and the conus reflexes, then the legs",
                flavour: "at the thoracolumbar junction the CONUS is at risk, so sphincter failure can be disproportionate to the leg weakness — and the deficit at this level is the one most often under-recorded" },
     },
     "Craniocervical junction trauma": {
+      monitoring: CERVICOMEDULLARY_MONITORING,
+      confirmatory: CERVICOMEDULLARY_CONFIRMATORY,
       slots: { level: "all four limbs, the lower cranial nerves and RESPIRATORY function",
                flavour: "injury here threatens ventilation, and survivors of the initial event can deteriorate with movement — so immobilisation is not a formality" },
       confirmatoryExtra: ["Include the VESSELS: vertebral artery injury accompanies craniocervical fractures often enough that CT angiography belongs in the initial study"],
     },
     "Craniocervical junction trauma (odontoid fracture)": {
+      monitoring: CERVICOMEDULLARY_MONITORING,
+      confirmatory: CERVICOMEDULLARY_CONFIRMATORY,
       slots: { level: "all four limbs and respiratory pattern",
                flavour: "an odontoid fracture may produce NO neurological deficit at all and still be lethally unstable — the absence of signs is not reassurance, and it is missed in the elderly after a low fall" },
       confirmatoryExtra: ["In an ELDERLY patient after a minor fall with neck pain, image the odontoid specifically — this is the classic missed fracture, and plain films are inadequate"],
     },
     "Vertebral artery injury from neck trauma or manipulation": {
+      monitoring: VERTEBRAL_DISSECTION_MONITORING,
+      confirmatory: VERTEBRAL_DISSECTION_CONFIRMATORY,
       slots: { level: "the crossed brainstem signs, with the neck",
                flavour: "a lateral medullary syndrome after neck trauma or MANIPULATION — the interval between the manipulation and the stroke can be hours to days, so the history has to be asked for" },
-      confirmatoryExtra: ["CT or MR angiography of the neck, and ask specifically about chiropractic or other neck manipulation — patients do not connect it and will not volunteer it"],
     },
     "Central lumbosacral disc prolapse": {
       slots: { level: "saddle sensation, sphincter tone and the anal reflex",
@@ -683,12 +764,14 @@ export default {
         root_s2: { level: "sphincter tone, the anal wink and the bulbocavernosus reflex" },
         root_s3: { level: "perineal sensation and bladder function specifically" },
       },
+      monitoring: BELOW_CONUS_MONITORING,
       referral: "EMERGENCY spinal surgery — cauda equina compression is decompressed, and the delay is the prognosis",
     },
     "Central lumbar disc prolapse": {
       slots: { level: "saddle sensation, sphincter function and both legs",
                flavour: "CAUDA EQUINA SYNDROME — bilateral leg symptoms, saddle anaesthesia and bladder dysfunction. Ask about urinary RETENTION and altered sensation when passing urine, which precede overflow incontinence" },
       confirmatoryExtra: ["Emergency MRI of the whole lumbosacral spine — and a post-void bladder scan takes two minutes and materially changes the urgency"],
+      monitoring: BELOW_CONUS_MONITORING,
       referral: "EMERGENCY spinal surgery — the time to decompression is the strongest determinant of bladder recovery",
     },
   }),
