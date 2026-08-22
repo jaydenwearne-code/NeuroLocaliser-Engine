@@ -4,7 +4,7 @@
 // This layer keys the confirmatory / monitoring / urgency / referral tiers by the pathology the user
 // selected, while immediate + first-line stay site-level (they are what GET you the cause).
 import { PATHOLOGY_NEXT, PATHOLOGY_ALIAS, pathologyPlanFor, family, FAMILIES } from "../src/data/pathologyNextSteps.js";
-import { CAUSES } from "../src/data/causes.js";
+import { CAUSES, causesFor } from "../src/data/causes.js";
 import { resolveUrgency, nextStepsFor, pathologyNextStepsFor } from "../src/data/nextSteps.js";
 import { candidateSites } from "../src/engine/inverse.js";
 
@@ -304,6 +304,93 @@ const site = id => ({ id, level: id.split("_")[0], part: id.split("_").slice(1).
   ok(`HARD GATE: every cause in CAUSES has an authored workup (${names.size} names)`,
      unplanned.length === 0,
      `${unplanned.length} with no plan: ${unplanned.slice(0, 5).join(" ; ")}`);
+}
+
+// --- BELOW-CONUS ANATOMY GATE (2026-08-23) ---
+// A pathology plan must be specific to the SITE as well as to the pathology. The spinal-trauma family
+// spine was authored for the CORD and shared unconditionally with its cauda-equina members, so a cauda
+// equina card carried NEUROGENIC SHOCK and AUTONOMIC DYSREFLEXIA — both of which require an intact
+// sympathetic outflow (T1-L2) ABOVE the lesion, and neither of which occurs below the conus. The same
+// spine also carried "an ascending level after a cervical injury threatens the diaphragm" into a
+// sentence whose own {level} slot had correctly interpolated saddle sensation and sphincter function.
+//
+// Below the conus the lesion is LMN roots only: an areflexic bladder with painless retention and
+// overflow, no spinal shock, no dysreflexia. This gate is anatomical, not stylistic — do not satisfy it
+// by rewording. If a plan needs cord content at a cord site and root content at a root site, that is
+// what the per-site tier override is for.
+{
+  const BELOW_CONUS = s => s.level === "cauda" || (s.level === "root" && /^[sl]\d/.test(s.part || ""));
+  const CORD_ONLY = /dysreflexia|neurogenic shock|spinal shock|cervical injury|threatens the diaphragm/i;
+  const offenders = [];
+  for (const st of candidateSites()) {
+    if (!BELOW_CONUS(st)) continue;
+    // Only the causes the site actually OFFERS — pairing every plan with every site would flag
+    // combinations no user can reach (a pontine contusion at an L1 root) and drown the real defect.
+    let cs; try { cs = causesFor(st, {}); } catch { continue; }
+    for (const c of (cs.all || [])) {
+      const p = pathologyPlanFor(c.name, st);
+      if (!p) continue;
+      for (const line of [...p.confirmatory, ...p.monitoring]) {
+        // A line that NAMES the phenomenon in order to NEGATE it is the teaching point, not the defect:
+        // transferring cord autonomics to a cauda equina patient is the commonest version of this error,
+        // so the plan says so out loud. The exception is deliberately narrow — an explicit negation in
+        // the same sentence — so an unqualified "watch for dysreflexia" still fails.
+        if (/\bdo(es)? not occur\b/i.test(line)) continue;
+        if (CORD_ONLY.test(line)) offenders.push(`${st.id} <- ${c.name}`);
+      }
+    }
+  }
+  ok(`no below-conus site emits a cord-only safety net (dysreflexia / neurogenic shock / diaphragm)`,
+     offenders.length === 0,
+     `${offenders.length} lines, e.g. ${[...new Set(offenders)].slice(0, 4).join(" ; ")}`);
+}
+
+// --- CONUS AUTONOMIC GATE (2026-08-23) ---
+// The conus is CORD, which is why it escaped the below-conus gate — but the sympathetic outflow ends at
+// L2, and the conus sits at or below it. Neurogenic shock and autonomic dysreflexia therefore no more
+// occur at the conus than at the cauda equina; the conus differs from the cauda in being MIXED UMN/LMN,
+// not in having autonomics the cauda lacks. Same narrow negation exception as the gate above.
+{
+  const CORD_ONLY = /dysreflexia|neurogenic shock|spinal shock/i;
+  const offenders = [];
+  for (const st of candidateSites()) {
+    if (st.level !== "conus") continue;
+    let cs; try { cs = causesFor(st, {}); } catch { continue; }
+    for (const c of (cs.all || [])) {
+      const p = pathologyPlanFor(c.name, st);
+      if (!p) continue;
+      for (const line of [...p.confirmatory, ...p.monitoring]) {
+        if (/\bdo(es)? not occur\b/i.test(line)) continue;
+        if (CORD_ONLY.test(line)) offenders.push(`${st.id} <- ${c.name}`);
+      }
+    }
+  }
+  ok("no conus site claims autonomics that need outflow above the lesion",
+     offenders.length === 0, `${[...new Set(offenders)].join(" ; ")}`);
+}
+
+// --- BRAINSTEM-vs-CORD GATE (2026-08-23) ---
+// "An ASCENDING LEVEL" is a cord concept: a sensory level that climbs. A brainstem site has no level to
+// ascend, so the phrase cannot be true there whatever the mechanism — and it was reaching the medulla
+// through the same spinal-trauma spine. The respiratory threat at the cervicomedullary junction is real
+// but arrives differently (the respiratory centres and the descending drive to the phrenic nucleus), and
+// saying so is the difference between a plan that localises and one that pattern-matches on "trauma".
+{
+  const BRAINSTEM = new Set(["medulla", "pons", "midbrain"]);
+  const CORD_LEVEL_TALK = /ascending level|sensory level|sacral sparing|a formal level/i;
+  const offenders = [];
+  for (const st of candidateSites()) {
+    if (!BRAINSTEM.has(st.level)) continue;
+    let cs; try { cs = causesFor(st, {}); } catch { continue; }
+    for (const c of (cs.all || [])) {
+      const p = pathologyPlanFor(c.name, st);
+      if (!p) continue;
+      for (const line of [...p.confirmatory, ...p.monitoring])
+        if (CORD_LEVEL_TALK.test(line)) offenders.push(`${st.id} <- ${c.name}`);
+    }
+  }
+  ok("no brainstem site is given a cord LEVEL to track",
+     offenders.length === 0, `${offenders.length}: ${[...new Set(offenders)].slice(0,5).join(" ; ")}`);
 }
 
 // ---- REPORT (not an assertion): the red / non-red authoring split ----
