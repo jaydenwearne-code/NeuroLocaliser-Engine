@@ -14,6 +14,7 @@ import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { encodeCase, decodeCase } from "./case-url.js";
 import { feedbackHref } from "./feedback.js";
+import { recordOpen } from "./usage.js";
 import { renderCodeStroke, stopStrokeClock } from "./code-stroke.js";
 import { combinedSites } from "./combined-sites.js";
 import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
@@ -933,7 +934,14 @@ function boot() {
   catch (err) { app.innerHTML = errorPanel(err); }
 }
 
-function reveal() {
+// `first` = this browser had never unlocked before. The gate stores an "ok" flag and skips the passphrase
+// on every later visit, so instrumenting the passphrase submit would count FIRST UNLOCKS rather than opens
+// — a different and much less useful number. Counting here, with the flag, gives both.
+//
+// recordOpen never throws and never awaits the network (see app/usage.js), so it cannot delay or block the
+// reveal. It also ships with mode "off", so until an endpoint is configured this line does nothing at all.
+function reveal({ first = false } = {}) {
+  recordOpen({ first });
   document.getElementById("gate").classList.remove("show");
   document.getElementById("app-shell").classList.add("show");
 }
@@ -953,7 +961,7 @@ function paintBrand() {
 async function startGate() {
   paintBrand();
   const gateEl = document.getElementById("gate");
-  if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal(); boot(); return; }
+  if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal({ first: false }); boot(); return; }
   gateEl.classList.add("show");
   document.getElementById("gate-form").onsubmit = async ev => {
     ev.preventDefault();
@@ -962,7 +970,7 @@ async function startGate() {
     const okPass = await checkPassphrase(document.getElementById("gate-pass").value);
     if (!okPass) { errEl.textContent = "Incorrect passphrase."; return; }
     try { localStorage.setItem(GATE_STORAGE_KEY, "ok"); } catch {}
-    reveal(); boot();
+    reveal({ first: true }); boot();
   };
 }
 startGate();

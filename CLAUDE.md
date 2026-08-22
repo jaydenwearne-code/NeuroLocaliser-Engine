@@ -849,6 +849,37 @@ would mean choosing the picture to satisfy the test rather than the clinic.
 `docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,
 `docs/superpowers/plans/2026-08-21-together-card-cross-site-workup.md`.
 
+## Usage counter (DONE 2026-08-22) — SHIPPED INERT, needs one manual step to switch on
+
+**The app had been live for testers since 2026-07-27 with no way to tell whether anyone had opened it** —
+Pages is a static host with no accessible logs, and the repository traffic API covers the repo page rather
+than the Pages site (it reads `0`). As of 2026-08-21 there were also **zero feedback emails** in four
+weeks, a number that is uninterpretable without a denominator.
+
+**THE CONSTRAINT IS `case-url.js`:** the case lives in the URL **hash** so it "never reaches a server log",
+and the hash holds the findings entered. **A conventional analytics script would undo that in one line**,
+because the usual ones record `location.href` — shipping clinical findings to a third party. So the beacon
+posts to a Google Apps Script the owner controls, `app/usage.js` never touches `location` or the DOM, and
+`PAYLOAD_KEYS` is an explicit allowlist. **`test/usage.test.js` §3 builds a realistic case with
+`encodeCase()` and asserts none of it can reach the wire — that test IS the point of the module**, and it
+is what fails when someone adds `url: location.href` later.
+
+**COUNTED AT `reveal()`, NOT AT THE PASSPHRASE.** The gate writes `nl_gate_v1=ok` and skips the passphrase
+on every later visit, so instrumenting the submit would count FIRST UNLOCKS rather than opens. `reveal({
+first })` fires on both paths, so one row per open with new-vs-returning separated. Two opaque local random
+ids — `install` (localStorage) separates twelve opens by one tester from twelve testers; `session`
+(sessionStorage) separates visits. Neither is a fingerprint.
+
+**IT CAN NEVER BREAK THE GATE.** `recordOpen()` never throws, never awaits the network, swallows a rejected
+fetch, and survives storage that throws, a missing `fetch` and an unset endpoint — asserted in §5. A
+counter that could stop a clinician getting into the tool would be a bad trade for a number.
+
+**SHIPS WITH `mode: "off"`,** so deploying it changed nothing observable (verified in-browser: no ids
+written, no outbound request, app opens normally). **To switch on:** create the Apps Script sink and set
+`USAGE.endpoint` + `mode: "endpoint"` — both steps, with the script to paste, are in
+`docs/superpowers/specs/2026-08-22-usage-counter-design.md`, along with the limits (no retrospective data;
+a shared passphrase cannot say WHO; client-side counting undercounts).
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
