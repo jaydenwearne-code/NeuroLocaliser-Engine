@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: not yet implemented.** Branch `feat/theme-toggle`, off `main`.
+**Status: IMPLEMENTED 2026-08-22** — all four tasks complete, 6527 assertions green (6467 baseline + 60).
+Branch `feat/theme-toggle`, off `main`, **not merged**.
 Spec: `docs/superpowers/specs/2026-08-22-theme-toggle-design.md`.
 
 **Goal:** Give the reader a header control that switches the app between light, dark and follow-the-OS, and

@@ -888,6 +888,58 @@ success path. The diagnostic probe is a plain **GET**: `Script function not foun
 proves the deployment is reachable, public and executing. I called the endpoint broken on that 405 before
 checking — it was my probe, not the deployment.
 
+## Theme toggle (DONE 2026-08-22)
+
+**Branch `feat/theme-toggle`, not merged.** The CSS had been three-state theme-aware since the 2026-08-16
+brand pass — `:root`, `@media (prefers-color-scheme:dark)`, and the two `:root[data-theme]` override blocks
+— and **nothing had ever been able to set it**. `app/theme.js` is that missing half: key, cycle, resolve
+rule, attribute write, button strings, all pure and testable in node.
+
+**THREE STATES, NOT TWO.** Following the OS is the default, so a two-state toggle would make it
+UNREACHABLE. `system` is first-class, is the initial state, and the cycle returns to it. **`system` DELETES
+`data-theme`** rather than writing a third value — there is no palette block for it and there must not be
+one (`test/brand.test.js` counts exactly four).
+
+**APPLIED BY A BLOCKING `<script>` IN `<head>`, above `<style>`.** `app.js` is a deferred module importing
+the whole engine graph, so applying the theme there repaints after first paint — a visible flash on a cold
+Pages load for anyone who has overridden the OS. The cost is the storage key living in two files;
+`test/theme.test.js` §8 asserts they agree, the same shape as `brand.test.js` scanning the stylesheet as
+text.
+
+**THE STORE IS RESOLVED INSIDE A GUARD, NOT AS A DEFAULT PARAMETER.** `store = globalThis.localStorage`
+evaluates BEFORE the function body, so it sits outside the `try/catch` — and Safari throws a SecurityError
+on the *property access* when cookies are blocked, which is the exact case the module promises to survive.
+Caught in review, before it shipped; node would never have caught it, because `globalThis.localStorage` is
+simply `undefined` there.
+
+**`paintFavicon()` split out of `paintBrand()`** — the favicon is the only brand surface that must be
+repainted on toggle, because a data URI cannot inherit `currentColor` so the accent is baked in. A
+`matchMedia` listener does the same while following the OS. Known and accepted: the tab strip is browser
+chrome and follows the OS, so a light-page-on-dark-OS user gets the darker terracotta on a dark tab bar.
+
+**THE GLYPHS ARE TEXT, NOT EMOJI, AND THAT IS LOAD-BEARING.** The obvious set (🖥 ☀ 🌙) renders in FULL
+COLOUR on macOS, ignoring the button's muted colour and putting accent colour back into the one control the
+design deliberately made neutral, inches from the red danger chip. **A variation selector does not fix it**
+— VS15 was measured and still rendered colour. The set is `◐ ☀ ☾`, three plain text glyphs that inherit
+`currentColor`. Found by driving the app, not by a test.
+
+**THE THEME IS NOT PART OF THE CASE.** It never enters `S`, `encodeCase` or `syncURL()`. A case URL is
+shared between people and carries claims about the patient; the theme belongs to the reader's eyes. Do not
+"fix" that asymmetry — `sc=all` exists precisely because a link that showed the recipient something
+different from the sender was a real bug.
+
+**The toggle is NOT terracotta**, and that is the guard working as designed: a viewing preference is
+neither the product's identity nor the answer, so it takes the neutral header treatment — the same
+judgement that saw a terracotta focus ring deleted rather than allowlisted.
+
+**MEASURED AND LEFT ALONE:** a contrast audit of all 944 rendered text nodes fails 84 in dark and **98 in
+light**. Pre-existing — explicit-dark is byte-identical to the OS-dark path that has existed since the brand
+pass — and untouched here, since this work edits no colours. Recorded for a separate pass; includes known
+false positives (the 📌 pin is a colour emoji).
+
+70 suites / 6527 assertions green. Spec/plan: `docs/superpowers/specs/2026-08-22-theme-toggle-design.md`,
+`docs/superpowers/plans/2026-08-22-theme-toggle.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`

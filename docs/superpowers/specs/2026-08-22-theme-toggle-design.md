@@ -1,6 +1,7 @@
 # Theme toggle — light / dark / follow-system
 
-**Status: specified 2026-08-22, not yet implemented.** Branch `feat/theme-toggle`. New files
+**Status: IMPLEMENTED 2026-08-22.** Branch `feat/theme-toggle`, **not merged** — merging auto-deploys to
+the live Pages app, so the owner confirms first. New files
 `app/theme.js` + `test/theme.test.js`; edits to `app/index.html` and `app/app.js` only. **No engine
 changes, no palette changes.**
 
@@ -183,3 +184,23 @@ changing on toggle, the choice surviving a reload, and no flash on a cold load w
 - **Any change to the palettes.** This spec adds a way to choose between palettes that already exist.
 - **A theme choice inside the case URL** — see decision 5.
 - **Per-mode themes** (a dark Code-stroke worksheet for a night shift, say). One app, one preference.
+
+
+## Deviation found during implementation
+
+**The glyphs changed from 🖥 / ☀ / 🌙 to ◐ / ☀ / ☾.** Found by driving the app, not by a test: the emoji
+set renders in **full colour** on macOS — a yellow sun and a yellow moon — so it ignores the button's
+`color: var(--muted)` and puts accent colour back into the one control this spec deliberately made neutral,
+sitting inches from the red EMERGENCY chip. Appending a text-presentation variation selector (VS15) was
+measured and **does not fix it**; the glyphs still rendered in colour. The replacements are plain text
+glyphs that inherit `currentColor` like every other header control. `◐` reads as "half and half", which is
+what following the OS is, and the label carries the words regardless.
+
+## Measured during verification, and deliberately NOT fixed
+
+A contrast audit of all 944 rendered text nodes reports **84 failing in dark and 98 in light**. These are
+**pre-existing and untouched by this work** — the explicit-dark result is byte-identical to the OS-dark path
+that has existed since the 2026-08-16 brand pass, and light is the worse of the two. This spec edits no
+colours and `test/brand.test.js` guards the palette, so the audit is recorded here as a finding for a
+separate pass rather than acted on. It also contains known false positives (the 📌 pin is a colour emoji,
+whose computed `color` is meaningless).
