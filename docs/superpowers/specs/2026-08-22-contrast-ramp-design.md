@@ -1,6 +1,8 @@
 # Contrast: re-space the neutral ramp, fix two inverted tokens
 
-**Status: specified 2026-08-22.** Branch `fix/contrast-audit`, off `main`. Touches `app/index.html`
+**Status: IMPLEMENTED 2026-08-22.** Branch `fix/contrast-audit`, off `main`, **not merged**.
+Measured result: **76 dark / 82 light failing text nodes -> 0 / 0**, across all three modes with
+every disclosure expanded. 6519 assertions green. Touches `app/index.html`
 (palette values + two rules), one line of `app/app.js`, and adds `test/contrast.test.js`.
 
 ## How this was found
@@ -121,3 +123,58 @@ inline style.** One regex, and it fails today.
 - The `*-bg` pair tokens (`--ipsi-bg` etc.) — they are backgrounds behind their own foregrounds and were
   not implicated.
 - Non-text contrast (borders, the 4px `.dbar`). WCAG 1.4.11 is a separate pass.
+
+
+## What implementation changed from this spec
+
+The spec planned two root causes. Building it found **five**, four of them by the new invariant rather
+than by looking:
+
+1. **The inverted-fill bug was in THREE places, not one.** `.sides button.on`, `.site-btn.on` (Atlas) and
+   `.sc.on` all painted a foreground token as a background under a literal `color:#fff`. Only the first was
+   known. All three now use `--sel-bg` + `--ink`.
+2. **`.cs-lvo.pos` — the LVO-positive badge in Code-stroke — was white on `--contra`, 2.13:1 in dark.**
+   `--contra` inverts (`#c85a3d` -> `#e8a184`), so it cannot carry a filled chip. It now uses
+   `--red`/`--on-danger`, the palette's one pairing that stays readable filled in both themes, which also
+   keeps the FORM rule CLAUDE.md sets out (filled = time-critical). **This changes the appearance of a
+   code-stroke element and is flagged for the owner** — it is presentation, not clinical content.
+3. **`.gate-err` used `--red` as TEXT** (3.28:1 in dark). `--red` must stay saturated for the filled danger
+   chip that `test/brand.test.js` guards against white, so the two demands are irreconcilable on one token.
+   The rule moved to `--contra`; `--red` is now declared NOT-TEXT.
+4. **`.report-btn` declared no `background`.** Used on an `<a>` in the results header (fine) and on a
+   `<button>` in code-stroke, where it inherited Chrome's UA `buttonface` — light even in dark mode, giving
+   **1.84:1** on the Copy button. **A token-level test structurally cannot see a UA default**, which is the
+   honest limit of this invariant and is written at the rule.
+
+### The blunt rule that was wrong
+
+Section 5 first asserted *"no foreground token may be used as a background"*. It flagged `.gate-go`, which
+pairs `background:var(--navy)` with `color:var(--paper)` — **both invert together**, so the button simply
+reverses and stays at ~11:1. The invariant is the **pair**, not the token: for every rule setting both a
+background and a colour, that pair must clear 4.5:1 in all four blocks. Stated as a token rule it would
+have forced a pointless change to a button nobody could not read.
+
+### Scope narrowed on evidence
+
+Asserting every colour against every surface demanded contrast for pairs the app never paints, and the way
+to satisfy such a test is to repaint a palette nobody was struggling with. The semantic colours are held to
+the surfaces their own rules put them on (`paper`/`cream`/`band`), and **`--mimic` and `--iatro` were found
+to be DEAD** — defined in all four blocks, referenced nowhere in CSS or JS. CLAUDE.md's claim that the
+mimic category has "its own `--mimic` CSS token" is stale. Wiring them up or deleting them is separate work.
+
+### Final values
+
+| theme | token | from | to |
+|---|---|---|---|
+| light | `--muted` | `#5d6c7e` | `#4a5768` |
+| light | `--faint` | `#8d8b84` | `#6b6a64` |
+| light | `--ipsi` | `#3f8f6f` | `#34755b` |
+| light | `--contra` | `#c85a3d` | `#ac4d34` |
+| light | `--bilat` | `#6b5bd0` | `#6959cc` |
+| light | `--none` | `#6a7890` | `#5e6b80` |
+| light | `--gold` | `#8a6a2f` | `#84662d` |
+| dark | `--muted` | `#96a3b5` | `#a8b3c4` |
+| dark | `--faint` | `#6f819c` | `#8d9bb1` |
+
+`--ink`, `--navy`, `--navy-2`, `--terra`, `--red` and every `*-bg` are **unchanged**. The ramp keeps three
+separate tiers: light 14.68 / 7.25 / 5.35, dark 13.50 / 7.48 / 5.63.

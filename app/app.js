@@ -653,7 +653,12 @@ function whyBlock(c, total, collapsed = false) {
   const warn = missed.map(t=>`<div class="why-item"><span class="k warn">⚠</span>${tokenLabel(t)}<span class="d">predicted here but not reported</span></div>`).join("");
   const body = `<div class="why-list">${ok}${no}</div>
     ${warn?`<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Predicted here but not reported <span class="c">${missed.length}</span></summary><div class="why-list" style="margin-top:4px">${warn}</div></details>`:""}`;
-  const head = `<span style="color:var(--terra)">${esc(siteName(c.site))}</span> explains ${c.n}/${total}`;
+  // The site name used to be given the brand accent through an INLINE style. Two problems, both real:
+  // an inline style walks past the accent allowlist in test/brand.test.js (which scans only the
+  // stylesheet), and terracotta on
+  // paper at 13px bold is 3.40:1 — under AA. That token is PINNED by that suite, so it cannot
+  // move; the name takes --ink and the row already reads as the answer from its position.
+  const head = `<b>${esc(siteName(c.site))}</b> explains ${c.n}/${total}`;
   return collapsed
     ? `<details class="why-site" style="margin-top:10px"><summary style="font-weight:700">Why this specific site — ${head}</summary><div style="margin-top:6px">${body}</div></details>`
     : `<h3 style="margin-top:14px">Why — ${head}</h3>${body}`;
