@@ -114,14 +114,22 @@ for (const v of THEMES) {
   ok(`"${v}" survives a write/read round trip`, readTheme(store) === v, readTheme(store));
 }
 ok("a store with no key at all reads system", readTheme(memStore()) === "system");
-ok("writeTheme stores the literal choice, system included",
-   memStore() && (() => { const s = memStore(); writeTheme("system", s); return s.data[THEME_STORAGE_KEY]; })() === "system");
+{
+  const s = memStore();
+  writeTheme("system", s);
+  ok("writeTheme stores the literal choice, system included", s.data[THEME_STORAGE_KEY] === "system",
+     String(s.data[THEME_STORAGE_KEY]));
+}
 for (const junk of ["blue", "", "SYSTEM", "0", "null"]) {
   ok(`garbage (${JSON.stringify(junk)}) reads as system`,
      readTheme(memStore({ [THEME_STORAGE_KEY]: junk })) === "system");
 }
-ok("writeTheme refuses to store a value outside THEMES",
-   (() => { const s = memStore(); writeTheme("chartreuse", s); return s.data[THEME_STORAGE_KEY]; })() === "system");
+{
+  const s = memStore();
+  writeTheme("chartreuse", s);
+  ok("writeTheme refuses to store a value outside THEMES", s.data[THEME_STORAGE_KEY] === "system",
+     String(s.data[THEME_STORAGE_KEY]));
+}
 ok("writeTheme reports what it actually stored", writeTheme("chartreuse", memStore()) === "system");
 
 // --- 3: a hostile store must never throw ----------------------------------------------------------
@@ -136,8 +144,9 @@ ok("writeTheme reports what it actually stored", writeTheme("chartreuse", memSto
   try { writeTheme("dark", deadStore()); } catch (e) { threw = e; }
   ok("writeTheme survives a throwing store", !threw, threw && threw.message);
   threw = null;
-  try { readTheme(undefined); writeTheme("dark", undefined); } catch (e) { threw = e; }
-  ok("neither throws when there is no store at all (node has no localStorage)", !threw, threw && threw.message);
+  try { readTheme(); writeTheme("dark"); } catch (e) { threw = e; }
+  ok("neither throws when called with no store at all", !threw, threw && threw.message);
+  ok("...and the no-store read still yields a usable state", readTheme() === "system");
 }
 
 // --- 4: the cycle closes on itself ----------------------------------------------------------------
@@ -204,14 +213,17 @@ ok("prefersDark defaults to false rather than undefined-ing", resolveTheme("syst
 // flash on a cold Pages load. The cost is that the key literal lives in two files. This is the guard.
 {
   const HTML = readFileSync(new URL("../app/index.html", import.meta.url), "utf8");
+  // Scoped to the SCRIPT's own source, not the whole head — the explanatory comment beside it discusses
+  // the "system" state in prose, which would defeat the "never writes system" assertion below.
   const head = HTML.slice(0, HTML.indexOf("<style>"));
-  ok("the inline boot script sits in <head> ABOVE <style>", /<script>/.test(head), head.slice(-200));
-  ok("the inline boot script names the storage key", head.includes(THEME_STORAGE_KEY), THEME_STORAGE_KEY);
-  ok("the inline boot script writes data-theme",
-     /dataset\.theme|setAttribute\(\s*["']data-theme/.test(head));
-  ok("it only ever applies an explicit override, never the literal \"system\"",
-     /['"]light['"]/.test(head) && /['"]dark['"]/.test(head) && !/['"]system['"]/.test(head));
-  ok("it is wrapped in try/catch — a throwing localStorage must not break the page", /try\s*{/.test(head));
+  const script = (head.match(/<script>([\s\S]*?)<\/script>/) || [])[1] || "";
+  ok("an inline boot script sits in <head> ABOVE <style>", script.length > 0, head.slice(-160));
+  ok("it names the storage key", script.includes(THEME_STORAGE_KEY), THEME_STORAGE_KEY);
+  ok("it writes data-theme", /dataset\.theme|setAttribute\(\s*["']data-theme/.test(script), script);
+  ok("it only ever applies an explicit override, never the literal system",
+     /['"]light['"]/.test(script) && /['"]dark['"]/.test(script) && !/['"]system['"]/.test(script), script);
+  ok("it is wrapped in try/catch — a throwing localStorage must not break the page",
+     /try\s*{/.test(script), script);
   ok("the header carries the toggle button", /id="theme-toggle"/.test(HTML));
 }
 
@@ -266,18 +278,30 @@ export const THEMES = ["system", "light", "dark"];
 
 const isTheme = v => THEMES.includes(v);
 
+// NOT a default parameter. `store = globalThis.localStorage` would be evaluated BEFORE the function body,
+// so it would sit outside the try/catch — and Safari throws a SecurityError on the *property access* when
+// cookies are blocked, not merely on setItem. That is precisely the case these functions promise to
+// survive, so the lookup has to happen inside a guard.
+function defaultStore() {
+  try { return globalThis.localStorage || null; } catch { return null; }
+}
+
 /** The stored choice, or "system" for missing, unrecognised or unusable storage. */
-export function readTheme(store = globalThis.localStorage) {
+export function readTheme(store) {
   try {
-    const v = store && store.getItem(THEME_STORAGE_KEY);
+    const s = store === undefined ? defaultStore() : store;
+    const v = s && s.getItem(THEME_STORAGE_KEY);
     return isTheme(v) ? v : "system";
   } catch { return "system"; }
 }
 
 /** Persist the literal choice, "system" included. Returns what it stored. */
-export function writeTheme(value, store = globalThis.localStorage) {
+export function writeTheme(value, store) {
   const v = isTheme(value) ? value : "system";
-  try { if (store) store.setItem(THEME_STORAGE_KEY, v); } catch {}
+  try {
+    const s = store === undefined ? defaultStore() : store;
+    if (s) s.setItem(THEME_STORAGE_KEY, v);
+  } catch {}
   return v;
 }
 
@@ -338,16 +362,19 @@ run here — those failures are the plan working.
 In `package.json`, add ` && node test/theme.test.js` to the `test` script, immediately after
 `node test/gate.test.js` (it belongs with the other app-layer suites — gate, usage, case-url):
 
+A TEXT replace, deliberately — `JSON.parse` + `JSON.stringify` would reformat the whole file and bury the
+one-line change in a whole-file diff.
+
 ```bash
 PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" node -e '
-const fs=require("fs");const p="package.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));
-if(j.scripts.test.includes("test/theme.test.js")) { console.log("already registered"); process.exit(0); }
-j.scripts.test=j.scripts.test.replace("node test/gate.test.js","node test/gate.test.js && node test/theme.test.js");
-fs.writeFileSync(p,JSON.stringify(j,null,2)+"\n");
-console.log(/theme/.test(j.scripts.test)?"registered":"FAILED to register");'
+const fs=require("fs"), p="package.json", src=fs.readFileSync(p,"utf8");
+if (src.includes("test/theme.test.js")) { console.log("already registered"); process.exit(0); }
+const out = src.replace("node test/gate.test.js", "node test/gate.test.js && node test/theme.test.js");
+if (out === src) { console.log("FAILED — anchor not found"); process.exit(1); }
+fs.writeFileSync(p, out); console.log("registered");'
 ```
 
-Expected output: `registered`. Then confirm the diff touched only the `test` line:
+Expected output: `registered`. Then confirm the diff is exactly one line:
 
 ```bash
 git diff --stat package.json
@@ -513,7 +540,7 @@ Replace the body of `paintBrand()` (currently around line 951-959) with:
 function paintBrand() {
   // 32px balances the two-line lockup (byline + 26px wordmark ≈ 53px tall); 26px read small beside it.
   document.querySelectorAll("[data-brand-mark]").forEach(el => { el.innerHTML = markSVG({ size: 32 }); });
-  document.querySelectorAll("[data-brand-version]").forEach(el => { el.textContent = `v${VERSION} · Beta`; });
+  document.querySelectorAll("[data-brand-version]").forEach(el => { el.textContent = `v${VERSION} \u00b7 Beta`; });
   paintFavicon();
 }
 
@@ -576,8 +603,9 @@ In `boot()`, immediately after the `domSel` block (currently ending line 932), a
 PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test 2>&1 | tail -20
 ```
 
-Expected: every suite passes and the run exits 0. The baseline before this branch was **6467 assertions**;
-this branch adds `test/theme.test.js`, so the total rises and nothing else changes.
+Expected: every suite passes and the run exits 0. The baseline before this branch was **6467 assertions**
+across 69 suites; this branch adds `test/theme.test.js`, so both totals rise and nothing else moves. Record
+the new totals — they go into the CLAUDE.md note in Task 4 and into the report to the owner.
 
 - [ ] **Step 6: Verify in the browser, both themes and system**
 
