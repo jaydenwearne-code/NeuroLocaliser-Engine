@@ -888,6 +888,65 @@ success path. The diagnostic probe is a plain **GET**: `Script function not foun
 proves the deployment is reachable, public and executing. I called the endpoint broken on that 405 before
 checking — it was my probe, not the deployment.
 
+## Contrast: the palette is AA in both themes (DONE 2026-08-22)
+
+**Branch `fix/contrast-audit`, off `main`, not merged.** Found while measuring dark mode during the theme
+-toggle work. **Pre-existing since the 2026-08-16 brand pass** — 76 failing text nodes in dark, 82 in
+light. Now **0 and 0**, across all three modes with every disclosure expanded.
+
+**THE SEVERE BUG WAS IN THREE PLACES AND IS A NAMED CLASS: a FOREGROUND token used as a BACKGROUND.**
+`.sides button.on`, `.site-btn.on` and `.sc.on` all set `background:var(--navy)` (or `--navy-2`) with a
+literal `color:#fff`. `--navy` INVERTS between themes (`#16283f` light -> `#dbe4f1` dark), so in dark those
+chips were white on pale blue — **1.28:1**, invisible — including the control that sets **laterality**.
+It is the exact inverse of the bug the brand pass fixed by inventing `--on-danger` (*"the filled danger chip
+took its text from `--paper`"*), and it survived because nothing checked the PAIR. Now `--sel-bg` + `--ink`.
+
+**THE INVARIANT IS THE PAIR, NOT THE TOKEN.** A first attempt asserted *"never use a foreground token as a
+background"* and wrongly flagged `.gate-go`, which pairs `background:var(--navy)` with `color:var(--paper)`
+— **both invert together**, so it reverses and stays at ~11:1. `test/contrast.test.js` instead extracts
+every rule that sets BOTH a background and a colour and checks that pair in all four palette blocks.
+
+**THE RAMP IS RE-SPACED, NOT JUST RAISED.** Lifting `--faint` alone to 4.5:1 lands it within **0.03** of
+`--muted` in light — it satisfies contrast by DELETING a tier of the ink/muted/faint hierarchy the
+2026-08-16 clarity pass built. So both neutrals move, and the suite asserts **separation** as well as
+contrast, so no future fix can take that shortcut. Three tiers survive: light 14.68/7.25/5.35, dark
+13.50/7.48/5.63.
+
+**`--terra`, `--red`, `--ink`, `--navy` and the four-block structure are UNCHANGED** — `test/brand.test.js`
+pins them. Two consequences worth knowing: `--red` **cannot** clear 4.5:1 as text, because it must stay
+saturated for the filled chip that suite guards against white, so `.gate-err` moved to `--contra` and
+`--red` is DECLARED not-text; and **terracotta is a 3:1 large-text colour** — correct on the 18-22px
+wordmark and as a border, wrong at 13px.
+
+**AN INLINE STYLE IN JS BYPASSED THE `--terra` ALLOWLIST.** `app.js` emitted
+`<span style="color:…accent…">` for the site name; `brand.test.js` scans only the stylesheet, slicing
+`<style>`->`</style>`, so it never saw it. It was also 3.40:1. The span now uses `--ink`, and a guard
+fails on any `app/*.js` painting text with the accent inline.
+
+**TWO DEAD TOKENS: `--mimic` and `--iatro`** are defined in all four palette blocks and referenced
+**nowhere** in CSS or JS. This file's claim that the mimic category has *"its own `--mimic` CSS token"* is
+stale — the token exists, nothing uses it. Declared not-text; wiring them up or deleting them is separate
+work.
+
+**THE HONEST LIMIT OF A TOKEN-LEVEL TEST: it cannot see a UA default.** `.report-btn` declared no
+`background`; as an `<a>` in the results header that is fine, but as a `<button>` in code-stroke it kept
+Chrome's `buttonface`, light even in dark mode — **1.84:1** on the Copy button. Found by the browser sweep,
+not the suite. The background is now explicit and the reason is at the rule.
+
+**WHY THE SUITE READS TOKENS AND NOT THE DOM.** A live-DOM audit was run first and was wrong three ways:
+a `color(srgb 0.94 0.92 0.88 / .92)` backdrop parsed as 0-255 invented a near-black background;
+`getComputedStyle` right after flipping `data-theme` returns MID-TRANSITION values, and in a throttled tab
+the transition FREEZES so stale colours read as stable truth for over a second; and colour emoji report a
+`color` that says nothing about what is painted. **A browser measures the renderer's transient state; the
+design is in the tokens.** Both are still worth running — they catch different things, as the UA-default
+bug above proves.
+
+**`.cs-lvo.pos` (the code-stroke LVO badge) changed appearance** — it was white on `--contra`, 2.13:1 in
+dark, and `--contra` inverts so it cannot carry a filled chip. Now `--red`/`--on-danger`, which keeps the
+FORM rule (filled = time-critical). Presentation, not clinical content, but **flagged for the owner**.
+
+70 suites / 6519 assertions green. Spec: `docs/superpowers/specs/2026-08-22-contrast-ramp-design.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
