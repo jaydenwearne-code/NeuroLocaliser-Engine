@@ -1,7 +1,9 @@
 # Usage counter — how many people actually open the app
 
-**Status: implemented 2026-08-22, shipped INERT.** `app/usage.js`, `test/usage.test.js`, wired into
-`reveal()` in `app/app.js`. Nothing is sent until step 2 below is done.
+**Status: implemented AND SWITCHED ON 2026-08-22.** `app/usage.js`, `test/usage.test.js`, wired into
+`reveal()` in `app/app.js`. It shipped inert in the morning and went live the same day once the sink was
+deployed; the setup section below is kept as the record of how, and as the recipe if the endpoint ever
+needs replacing.
 
 ## The problem
 
@@ -82,7 +84,14 @@ function doPost(e) {
 Deploy → New deployment → **Web app**, execute as **Me**, access **Anyone**. Copy the `/exec` URL.
 
 **2. Switch it on.** In `app/usage.js`, set `USAGE.endpoint` to that URL and `USAGE.mode` to `"endpoint"`.
-Commit and push; Pages redeploys.
+Commit and push; Pages redeploys. **Done 2026-08-22.**
+
+> **Verifying the endpoint from a terminal is misleading — do not repeat this mistake.** A `curl -L` POST
+> reports **HTTP 405** even when everything is correct, because curl re-POSTs to the redirect target and
+> Apps Script rejects that; a browser follows the same redirect as a GET. The 302 with a `location:` to
+> `script.googleusercontent.com/macros/echo` **is** the success path. The genuinely diagnostic probe is a
+> plain **GET**: `Script function not found: doGet` with HTTP 200 proves the deployment is reachable,
+> public (no login wall) and executing. Anything mentioning authorization means access is not "Anyone".
 
 Then in the Sheet: total rows = opens, distinct `install` = browsers, `first = TRUE` = new testers.
 

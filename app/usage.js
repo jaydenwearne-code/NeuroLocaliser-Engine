@@ -20,21 +20,31 @@
 // clearing site data resets them. They exist only to separate "twelve opens by one tester" from "twelve
 // testers", which is the whole question being asked.
 //
-// ── SHIPS INERT ─────────────────────────────────────────────────────────────────────────────────────
-// mode is "off" until an endpoint is configured, so deploying this changes nothing observable. Setup is in
-// docs/superpowers/specs — create a Google Apps Script web app that appends to a Sheet, paste its /exec
-// URL below, and set mode to "endpoint". Apps Script is used rather than an analytics vendor because the
-// data lands in the owner's own Sheet, adds no third party to a clinical tool, and the payload is one you
-// construct by hand rather than one a library collects for you.
+// ── LIVE SINCE 2026-08-22 ───────────────────────────────────────────────────────────────────────────
+// It shipped inert on 2026-08-22 and was switched on the same day once the owner had deployed the sink.
+// Apps Script is used rather than an analytics vendor because the data lands in the owner's own Sheet,
+// adds no third party to a clinical tool, and the payload is one you construct by hand rather than one a
+// library collects for you. Setup, limits and the sink's source are in
+// docs/superpowers/specs/2026-08-22-usage-counter-design.md.
+//
+// To turn it OFF again, set mode to "off" — the endpoint may stay, since mode is checked first.
 
 import { VERSION } from "./brand.js";
 
 export const USAGE_INSTALL_KEY = "nl_usage_install_v1"; // localStorage   — this browser, across visits
 export const USAGE_SESSION_KEY = "nl_usage_session_v1"; // sessionStorage — this tab, this visit
 
+// SWITCHED ON 2026-08-22. The endpoint is a Google Apps Script web app owned by the project owner, which
+// appends one row per open to a private Sheet.
+//
+// THE URL IS PUBLIC AND THAT IS ACCEPTED, NOT OVERLOOKED: this repository is public, so anyone can read
+// this line and POST to the endpoint. What that buys an attacker is junk ROWS — the script only ever
+// appends, it returns no data, and the Sheet itself stays private. There is nothing to read back and
+// nothing to leak. If the rows are ever polluted, the fix is to create a new deployment (which mints a new
+// /exec URL) and replace this one; the old URL then 404s.
 export const USAGE = {
-  mode: "off",     // "off" (ships this way) | "endpoint"
-  endpoint: "",    // the Apps Script /exec URL; nothing is sent while this is empty
+  mode: "endpoint",  // "off" | "endpoint"
+  endpoint: "https://script.google.com/macros/s/AKfycbw122YiQuUdnVlfM_iJJR7QympcD2DKyysE7sZtU4TdA97GFfW_nTL3yBGmcQ4DPZCz/exec",
 };
 
 // The ONLY fields that ever leave the browser. Adding one is a deliberate act with a test to update — do

@@ -32,18 +32,30 @@ const capture = () => {
 };
 const endpointCfg = { mode: "endpoint", endpoint: "https://script.google.com/macros/s/EXAMPLE/exec" };
 
-// --- 1: ships inert -------------------------------------------------------------------------------
+// --- 1: the off switch, and the half-configured trap ----------------------------------------------
+// Until 2026-08-22 this section asserted that the SHIPPED default was inert. That default has since been
+// switched on deliberately, so asserting it again would be asserting a fact about configuration rather
+// than about behaviour. What is worth pinning is the behaviour — "off" really sends nothing — plus a new
+// invariant the switch-on made relevant: mode and endpoint must AGREE, because `mode: "endpoint"` with an
+// empty endpoint is a silent no-op that looks switched on from the config and records nothing at all.
 {
-  ok("USAGE ships with mode 'off'", USAGE.mode === "off", `got ${USAGE.mode}`);
-  ok("USAGE ships with no endpoint", !USAGE.endpoint);
-
   const { calls, f } = capture();
-  const sent = recordOpen({ cfg: USAGE, fetchImpl: f, localStore: memStore(), sessionStore: memStore() });
-  ok("mode 'off' sends nothing", sent === null && calls.length === 0, `${calls.length} call(s)`);
+  const sent = recordOpen({ cfg: { mode: "off", endpoint: "https://example.invalid/exec" },
+                            fetchImpl: f, localStore: memStore(), sessionStore: memStore() });
+  ok("mode 'off' sends nothing, even with an endpoint set", sent === null && calls.length === 0,
+     `${calls.length} call(s)`);
 
   const half = recordOpen({ cfg: { mode: "endpoint", endpoint: "" }, fetchImpl: f,
                             localStore: memStore(), sessionStore: memStore() });
   ok("a configured mode with no endpoint still sends nothing", half === null && calls.length === 0);
+
+  ok("USAGE.mode is one of the two known values", ["off", "endpoint"].includes(USAGE.mode), USAGE.mode);
+  ok("the shipped config is COHERENT — mode 'endpoint' implies a non-empty endpoint",
+     USAGE.mode !== "endpoint" || !!USAGE.endpoint,
+     "mode says endpoint but none is set, so nothing would ever be recorded");
+  ok("the shipped endpoint, when set, is an https Apps Script /exec URL",
+     !USAGE.endpoint || (/^https:\/\//.test(USAGE.endpoint) && USAGE.endpoint.endsWith("/exec")),
+     USAGE.endpoint);
 }
 
 // --- 2: the payload is exactly the allowlist ------------------------------------------------------

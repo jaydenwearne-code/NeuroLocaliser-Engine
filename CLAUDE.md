@@ -849,7 +849,7 @@ would mean choosing the picture to satisfy the test rather than the clinic.
 `docs/superpowers/specs/2026-08-21-together-card-cross-site-workup-design.md`,
 `docs/superpowers/plans/2026-08-21-together-card-cross-site-workup.md`.
 
-## Usage counter (DONE 2026-08-22) — SHIPPED INERT, needs one manual step to switch on
+## Usage counter (DONE 2026-08-22) — LIVE
 
 **The app had been live for testers since 2026-07-27 with no way to tell whether anyone had opened it** —
 Pages is a static host with no accessible logs, and the repository traffic API covers the repo page rather
@@ -874,11 +874,19 @@ ids — `install` (localStorage) separates twelve opens by one tester from twelv
 fetch, and survives storage that throws, a missing `fetch` and an unset endpoint — asserted in §5. A
 counter that could stop a clinician getting into the tool would be a bad trade for a number.
 
-**SHIPS WITH `mode: "off"`,** so deploying it changed nothing observable (verified in-browser: no ids
-written, no outbound request, app opens normally). **To switch on:** create the Apps Script sink and set
-`USAGE.endpoint` + `mode: "endpoint"` — both steps, with the script to paste, are in
-`docs/superpowers/specs/2026-08-22-usage-counter-design.md`, along with the limits (no retrospective data;
-a shared passphrase cannot say WHO; client-side counting undercounts).
+**SHIPPED INERT AND SWITCHED ON THE SAME DAY**, once the owner deployed the Apps Script sink. One row per
+open lands in the owner's private Sheet. **The /exec URL is in a PUBLIC repo and that is accepted, not
+overlooked:** the script only ever appends, returns no data, and the Sheet stays private — the worst a
+stranger gets is junk rows, and the fix is a new deployment (which mints a new URL). Limits are in the spec
+(no retrospective data; a shared passphrase cannot say WHO; client-side counting undercounts; `install` is
+per BROWSER, so one tester on a phone and a desktop counts twice).
+
+**VERIFYING AN APPS SCRIPT ENDPOINT FROM A TERMINAL IS MISLEADING — a `curl -L` POST reports HTTP 405 even
+when everything is correct**, because curl re-POSTs to the redirect target and Apps Script rejects that; a
+browser follows the same redirect as a GET. The 302 to `script.googleusercontent.com/macros/echo` IS the
+success path. The diagnostic probe is a plain **GET**: `Script function not found: doGet` with HTTP 200
+proves the deployment is reachable, public and executing. I called the endpoint broken on that 405 before
+checking — it was my probe, not the deployment.
 
 ## Commands
 
