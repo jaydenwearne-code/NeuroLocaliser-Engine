@@ -153,9 +153,15 @@ export const baseFigure = () =>
 
 // Captioned explicitly because the convention is ANATOMICAL (patient's left on the left), which is the
 // opposite of a scan — a reader with imaging on the next screen must not have to guess.
-export const SIDE_CAPTIONS =
-  `<text class="nx-side" x="${MX - 250}" y="22" text-anchor="middle">patient's left</text>`
-  + `<text class="nx-side" x="${MX + 250}" y="22" text-anchor="middle">patient's right</text>`;
+// Only drawn when the crop actually has room for BOTH — half a side caption is worse than none, and a
+// crop tight to the cord has no left and right worth naming.
+export const sideCaptions = (crop) => {
+  const [cx, cy, cw] = crop || [0, 0, FIG_W];
+  const l = MX - 250, r = MX + 250;
+  if (l - 42 < cx + 2 || r + 42 > cx + cw - 2) return "";
+  return `<text class="nx-side" x="${l}" y="${cy + 18}" text-anchor="middle">patient's left</text>`
+    + `<text class="nx-side" x="${r}" y="${cy + 18}" text-anchor="middle">patient's right</text>`;
+};
 
 const REGIONS = [
   [0, 84, "cerebrum"], [0, 244, "midbrain"], [0, 300, "pons"], [0, 366, "medulla"],
@@ -163,6 +169,21 @@ const REGIONS = [
   [124, 408, "sympathetic chain"], [0, 178, "chiasm"], [150, 570, "peripheral nerve"],
 ];
 
-export const regionCaptions = () => REGIONS.map(([dx, y, t]) =>
-  `<text class="nx-region" x="${MX + (dx ? dx + 30 : 0)}" y="${y}" text-anchor="${dx ? "start" : "middle"}">${t}</text>`
-).join("");
+// TWO THINGS LEARNED BY LOOKING AT THE RENDERED FIGURE, not from a test:
+//
+// 1. A caption outside the current crop must not render — a cropped figure was showing "cerebell",
+//    "medulla" and "sy" sliced off at the edge.
+// 2. A MIDLINE caption collides with MIDLINE PINS. The brainstem levels sit on the midline and so do
+//    bilateral/midline candidates, so "medulla" rendered underneath its own pin. Midline captions
+//    therefore go in the crop's LEFT MARGIN — which is what the old band labels did, and it worked.
+//    Captions for lateral structures (cerebellum, skull base, sympathetic chain) keep their own offset,
+//    because there they ARE the label for something out at that position.
+export const regionCaptions = (crop) => {
+  const [cx, cy, cw, ch] = crop || [0, 0, FIG_W, FIG_H];
+  return REGIONS.filter(([dx, y]) => y > cy + 10 && y < cy + ch - 4)
+    .map(([dx, y, t]) => {
+      const x = dx ? MX + dx + 30 : cx + 6;
+      if (x < cx + 2 || x > cx + cw - 40) return "";        // would clip at the edge
+      return `<text class="nx-region" x="${x}" y="${y}" text-anchor="start">${t}</text>`;
+    }).join("");
+};

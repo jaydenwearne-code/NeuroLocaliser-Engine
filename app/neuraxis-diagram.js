@@ -4,7 +4,7 @@
 // DRIVEN BY CANDIDATE SITES, NOT BY TRACTS. The previous version harvested its sites from tractsFor(), so a
 // picture with no implicated long tract had no sites and rendered "" — eight of the seventeen shipped
 // examples, including Foot drop and Cauda equina. Tracts are now an OVERLAY.
-import { MX, FIG_W, FIG_H, anchorFor, baseFigure, regionCaptions, SIDE_CAPTIONS, cropFor } from "./neuraxis-figure.js";
+import { MX, FIG_W, FIG_H, anchorFor, baseFigure, regionCaptions, sideCaptions, cropFor } from "./neuraxis-figure.js";
 import { compartmentOf } from "../src/model/compartments.js";
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -36,7 +36,7 @@ const TRACT_DASH = ["none", "6 3", "2 3", "10 3 2 3", "1 4"];   // FORM, not hue
 // the basis pontis — is increment 2, together with the three MISSING decussation entries. With today's
 // data `cerebellar`, `mlf` and `trigeminothalamic` draw no crossing. That is the state today too, so it
 // is not a regression; it is fixed with citations in increment 2.
-function tractOverlay(tracts) {
+function tractOverlay(tracts, crop) {
   if (!tracts || !tracts.length) return "";
 
   const one = (t, i) => {
@@ -71,10 +71,18 @@ function tractOverlay(tracts) {
       + `/><text class="nx-legend-t" x="24" y="${i * 14 + 3.5}">${esc(t.tract.id.replace(/_/g, " "))}</text></g>`;
   }).join("");
 
+  // THE LEGEND IS PLACED RELATIVE TO THE CROP, NOT THE FIGURE. Positioned in figure coordinates it fell
+  // outside every cropped viewBox — Wallenberg drew four tracts and showed no legend at all, while the
+  // test that asserted the legend "names each implicated tract" passed, because it was in the MARKUP.
+  // Present in the string is not the same as visible on the screen.
+  const [cx, cy, cw, ch] = crop || [0, 0, FIG_W, FIG_H];
+  const lx = cx + 10, ly = cy + ch - 12 - tracts.length * 14;
   return `<defs><marker id="nx-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5"`
     + ` orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" class="nx-arrowhead"/></marker></defs>`
     + drawn.map(d => d.mark).join("") + drawn.map(d => d.path).join("")
-    + `<g class="nx-legend" transform="translate(14,${FIG_H - 20 - tracts.length * 14})">${legend}</g>`;
+    + `<g class="nx-legend" transform="translate(${lx},${ly})">`
+    + `<rect class="nx-legend-bg" x="-6" y="${-12}" width="150" height="${tracts.length * 14 + 16}" rx="3"/>`
+    + legend + `</g>`;
 }
 
 export function neuraxisSVG(candidates, tracts, opts = {}) {
@@ -122,23 +130,33 @@ export function neuraxisSVG(candidates, tracts, opts = {}) {
   }
 
   const [vx, vy, vw, vh] = cropFor([...new Set(items.map(it => it.comp))]);
-  const zoomed = vw < FIG_W * 0.95 || vh < FIG_H * 0.95;
+  const zoomed = vw < FIG_W * 0.95 || vh < FIG_H * 0.95;   // only worth a locator when really cropped
 
   return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" class="neuraxis" xmlns="http://www.w3.org/2000/svg"`
     + ` role="img" aria-label="neuraxis figure with candidate lesion sites">`
-    + SIDE_CAPTIONS + baseFigure() + regionCaptions() + tractOverlay(tracts) + pins
+    + sideCaptions([vx, vy, vw, vh]) + baseFigure() + regionCaptions([vx, vy, vw, vh]) + tractOverlay(tracts, [vx, vy, vw, vh]) + pins
     + (zoomed ? locator(vx, vy, vw, vh) : "")
     + `</svg>`;
 }
 
-// The crop buys detail at the cost of a stable frame. The locator buys the frame back: a whole-neuraxis
-// thumbnail with the crop marked, so a peripheral case still says where it sits in the whole thing.
+// The crop buys detail at the cost of a stable frame. The locator buys the frame back: a real
+// whole-neuraxis THUMBNAIL with the crop marked, so a peripheral case still says where it sits in the
+// whole thing.
+//
+// TWO THINGS THIS GOT WRONG FIRST TIME, both found by looking at the rendered figure rather than by a
+// test: (1) it drew its frame and the crop rectangle but NO mini-figure, so it was a meaningless empty
+// box; (2) it was sized in FIGURE units while sitting in a CROPPED viewBox, so on a tight crop — cauda
+// equina, 232 units wide — a 99-unit box swallowed 40% of the picture. It is now sized as a fraction of
+// the CROP and redraws the same authored half, so there is still only one drawing.
 function locator(vx, vy, vw, vh) {
-  const S = 0.13, w = FIG_W * S, h = FIG_H * S;
-  const x = vx + vw - w - 8, y = vy + 8;
+  const w = vw * 0.2, k = w / FIG_W, h = FIG_H * k;
+  const pad = vw * 0.02;
+  // BELOW the side-caption band: at vy + pad the inset covered "patient's right".
+  const x = vx + vw - w - pad, y = vy + pad + 22;
   return `<g class="nx-locator" aria-hidden="true">`
-    + `<rect class="nx-loc-bg" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/>`
-    + `<rect class="nx-loc-box" x="${x + vx * S}" y="${y + vy * S}" width="${vw * S}" height="${vh * S}"/>`
+    + `<rect class="nx-loc-bg" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`
+    + `<g class="nx-loc-fig" transform="translate(${x},${y}) scale(${k})">${baseFigure()}</g>`
+    + `<rect class="nx-loc-box" x="${x + vx * k}" y="${y + vy * k}" width="${vw * k}" height="${vh * k}"/>`
     + `</g>`;
 }
 

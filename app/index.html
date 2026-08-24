@@ -130,6 +130,7 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .nx-tract-3{stroke:var(--tract-4);}.nx-tract-4{stroke:var(--tract-5);}
   .nx-arrowhead{fill:var(--muted);}
   .nx-decus line{stroke:var(--gold);stroke-width:1.2;stroke-dasharray:3 2;}
+  .nx-legend-bg{fill:var(--cream);stroke:var(--line);stroke-width:1;opacity:.9;}
   .nx-legend-t{font-size:var(--fs-cap);fill:var(--faint);}
   .nx-pin{cursor:pointer;}
   .nx-pin .nx-dot{fill:var(--paper);stroke:var(--muted);stroke-width:1.2;}
@@ -141,8 +142,17 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .nx-cluster .nx-fan{display:none;}
   .nx-cluster.open .nx-fan{display:inline;}
   .nx-cluster.open .nx-clusterdot{opacity:.35;}
-  .nx-locator .nx-loc-bg{fill:var(--band);stroke:var(--line);stroke-width:1;opacity:.9;}
-  .nx-locator .nx-loc-box{fill:none;stroke:var(--muted);stroke-width:1.5;}
+  .nx-locator .nx-loc-bg{fill:var(--cream);stroke:var(--line);stroke-width:1;opacity:.96;}
+  /* The thumbnail redraws the SAME authored half at small scale, so it is deliberately faint and
+     non-scaling strokes are switched off — at 0.2x a non-scaling stroke would read as thick as the
+     full-size figure and the inset would shout louder than the drawing it indexes. */
+  .nx-locator .nx-loc-fig{opacity:.45;}
+  .nx-locator .nx-loc-fig path,.nx-locator .nx-loc-fig ellipse,
+  .nx-locator .nx-loc-fig circle,.nx-locator .nx-loc-fig line{vector-effect:none;}
+  /* NOT terracotta. test/brand.test.js rejected that on the first run and it was right: a locator's crop
+     rectangle is neither the product's identity nor THE answer, so it takes the neutral ink — the same
+     judgement that saw a terracotta focus ring deleted rather than allowlisted. */
+  .nx-locator .nx-loc-box{fill:none;stroke:var(--ink);stroke-width:2;}
   .nx-idx{columns:3;column-gap:20px;font-size:var(--fs-meta);margin:10px 0 0;padding:0;list-style:none;}
   .nx-idx .nx-row{break-inside:avoid;margin:0 0 3px;padding-left:20px;text-indent:-20px;line-height:1.35;cursor:pointer;color:var(--ink);}
   .nx-idx .nx-row b{display:inline-block;width:15px;text-align:right;margin-right:5px;color:var(--muted);font-weight:600;}

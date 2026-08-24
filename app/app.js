@@ -683,9 +683,14 @@ function whyCard(tf, sel, total, list) {
   const umnlmn = pat.verdict
     ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
     : "";
+  // THE DIAGRAM IS BUILT ONCE AND SHOWN IN BOTH BRANCHES. It used to sit only after this early return, so
+  // a picture implicating no long tract — foot drop, cauda equina — got no figure even though the builder
+  // renders one perfectly well. THAT WAS A SECOND GATE behind the one in neuraxisSVG, and moving only the
+  // first left the app unchanged while the unit tests went green. Keep them together.
+  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>Neuraxis diagram</summary>${neuraxisBlock(list, tf, sel.site.id)}</details>`;
   if (!tf.length) {
-    // non-tract findings: no tract narrative/diagram — lead with the per-site explanation, expanded.
-    return card("Why", `${umnlmn}${whyBlock(sel, total, false)}`, "why");
+    // No tract narrative to compose, but the figure still localises: lead with the per-site explanation.
+    return card("Why", `${umnlmn}${diagram}${whyBlock(sel, total, false)}`, "why");
   }
   const course = tf.map(t => `<p class="synth"><b>Course.</b> ${esc(tractNarrative(t.tract))}</p>`).join("");
   const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
@@ -702,7 +707,6 @@ function whyCard(tf, sel, total, list) {
   const whyNot = lines
     ? `<div class="whynot"><b>Why not elsewhere.</b><ul class="whynot-list">${lines}</ul><p class="derived">None reported — examine specifically to exclude.</p></div>`
     : "";
-  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>Neuraxis diagram</summary>${neuraxisBlock(list, tf, sel.site.id)}</details>`;
   return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`, "why");
 }
 

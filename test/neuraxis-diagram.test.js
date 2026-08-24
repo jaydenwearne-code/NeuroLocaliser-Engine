@@ -114,6 +114,29 @@ ok("each implicated tract draws a path", (sW.match(/class="nx-tract/g) || []).le
 ok("the legend names each implicated tract",
    wall.tf.every(t => sW.includes(esc0(t.tract.id)) || sW.toLowerCase().includes(t.tract.id.replace(/_/g, " "))));
 
+// PRESENT IN THE MARKUP IS NOT THE SAME AS VISIBLE ON THE SCREEN. The legend was positioned in FIGURE
+// coordinates while the viewBox is CROPPED, so Wallenberg drew four tracts and showed no legend at all —
+// and the assertion above passed the whole time. Assert it lands inside the viewBox.
+const inView = (s, tx, ty) => {
+  const vb = /viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(s).slice(1).map(Number);
+  return tx >= vb[0] && tx <= vb[0] + vb[2] && ty >= vb[1] && ty <= vb[1] + vb[3];
+};
+const legendXY = /<g class="nx-legend" transform="translate\(([-\d.]+),([-\d.]+)\)"/.exec(sW);
+ok("the legend is INSIDE the cropped viewBox", legendXY && inView(sW, +legendXY[1], +legendXY[2]),
+   legendXY ? `${legendXY[1]},${legendXY[2]} vs ${/viewBox="[^"]+"/.exec(sW)[0]}` : "no legend");
+
+// same trap for the locator: it must sit inside the crop, and it must contain an actual thumbnail rather
+// than an empty frame (it shipped as an empty box first time and only looking at it revealed that).
+const locBg = /<rect class="nx-loc-bg" x="([-\d.]+)" y="([-\d.]+)"/.exec(sW);
+ok("the locator is INSIDE the cropped viewBox", locBg && inView(sW, +locBg[1], +locBg[2]));
+ok("the locator contains a real thumbnail, not an empty frame", /nx-loc-fig[^>]*>\s*<g class="anatomy"/.test(sW));
+
+// every pin must land inside the viewBox too — a crop that hides a candidate is worse than no crop
+const vb = /viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(sW).slice(1).map(Number);
+const pinXs = [...sW.matchAll(/data-x="([-\d.]+)"/g)].map(m => +m[1]);
+ok(`every pin is inside the cropped viewBox (${pinXs.length} pins)`,
+   pinXs.every(x => x >= vb[0] && x <= vb[0] + vb[2]));
+
 // DISTINGUISHED BY FORM AS WELL AS HUE, so the lines stay separable in greyscale and for a colourblind
 // reader — the rule the danger chip already follows.
 ok("tracts carry a dash pattern as well as a colour", /stroke-dasharray/.test(sW));
@@ -129,6 +152,25 @@ ok("a tract WITH a decussation draws a crossing marker", st && sW.includes("nx-d
 const fd = build(["weak_ankle_dorsiflexion@left", "weak_great_toe_extension@left", "weak_foot_eversion@left"]);
 const sF = neuraxisSVG(fd.cands, fd.tf, { labelFor: x => x.id });
 ok("a tractless case renders no overlay and no legend", !sF.includes("nx-tract") && !sF.includes("nx-legend"));
+
+// ---- THE SECOND GATE ----
+// The builder handling a tractless case is only half the fix: whyCard() in app.js had its OWN early
+// return for !tf.length that skipped the diagram entirely, so foot drop rendered nothing even after
+// neuraxisSVG was correct. Both unit tests above passed while the app was still broken — this was found
+// by driving the browser, and this assertion exists so it cannot come back.
+//
+// app.js is DOM-bound and cannot be imported in node, so the source is scanned as TEXT — the same idiom
+// test/brand.test.js uses to scan the stylesheet.
+import { readFileSync } from "node:fs";
+const APP = readFileSync(new URL("../app/app.js", import.meta.url), "utf8");
+const why = APP.slice(APP.indexOf("function whyCard("));
+const body = why.slice(0, why.indexOf("\nfunction "));
+const early = body.slice(body.indexOf("if (!tf.length)"), body.indexOf("const course ="));
+ok("whyCard builds the diagram BEFORE its tractless early return",
+   body.indexOf("const diagram =") < body.indexOf("if (!tf.length)"));
+ok("whyCard's tractless branch renders the diagram", /\$\{diagram\}/.test(early), early.slice(0, 200));
+ok("whyCard builds the diagram exactly once (no second copy to drift)",
+   (body.match(/const diagram =/g) || []).length === 1);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

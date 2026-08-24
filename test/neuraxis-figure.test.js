@@ -1,7 +1,7 @@
 // neuraxis-figure.test.js — the authored figure is CONTENT; these assert the RULES that keep it complete,
 // not the coordinate values. A new site must never be able to land undetermined.
 import { MX, FIG_W, FIG_H, ANCHOR, CROP, zoneOf, anchorFor, cropFor,
-         baseFigure, regionCaptions, SIDE_CAPTIONS } from "../app/neuraxis-figure.js";
+         baseFigure, regionCaptions, sideCaptions } from "../app/neuraxis-figure.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { compartmentOf } from "../src/model/compartments.js";
 
@@ -100,11 +100,17 @@ ok("anatomy strokes never use --line (invisible in dark; must be --muted)",
    !/stroke:\s*var\(--line\)/.test(fig));
 ok("the figure paints no accent inline", !/--terra/.test(fig));
 ok("the figure carries no inline style at all (classes only)", !/style="/.test(fig));
-ok("side captions name the patient's sides explicitly",
-   /left/i.test(SIDE_CAPTIONS) && /right/i.test(SIDE_CAPTIONS));
+const wide = sideCaptions([0, 0, FIG_W, FIG_H]);
+ok("side captions name the patient's sides explicitly", /left/i.test(wide) && /right/i.test(wide));
 ok("side captions are placed either side of the midline",
-   /x="\d+"/.test(SIDE_CAPTIONS) && SIDE_CAPTIONS.includes(String(MX - 250)) && SIDE_CAPTIONS.includes(String(MX + 250)));
-ok("region captions are present", regionCaptions().includes("<text"));
+   wide.includes(String(MX - 250)) && wide.includes(String(MX + 250)));
+ok("side captions are DROPPED when the crop has no room for both",
+   sideCaptions([264, 504, 232, 152]) === "");
+ok("region captions are present", regionCaptions([0, 0, FIG_W, FIG_H]).includes("<text"));
+ok("a region caption outside the crop is not drawn",
+   !regionCaptions([268, 380, 224, 200]).includes("cerebrum"));
+ok("midline region captions sit in the crop's left margin, clear of midline pins",
+   /x="274"/.test(regionCaptions([268, 380, 224, 200])) || regionCaptions([268, 380, 224, 200]) === "");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
