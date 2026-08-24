@@ -1,7 +1,8 @@
 // neuraxis-figure.test.js — the authored figure is CONTENT; these assert the RULES that keep it complete,
 // not the coordinate values. A new site must never be able to land undetermined.
-import { MX, ANCHOR, zoneOf, anchorFor } from "../app/neuraxis-figure.js";
+import { MX, FIG_W, FIG_H, ANCHOR, CROP, zoneOf, anchorFor, cropFor } from "../app/neuraxis-figure.js";
 import { candidateSites } from "../src/engine/inverse.js";
+import { compartmentOf } from "../src/model/compartments.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, extra = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (c ? "" : "  " + extra)); };
@@ -55,6 +56,39 @@ ok("patient's RIGHT is right of the midline", cordR.x > MX);
 ok("left and right mirror about the midline", Math.abs((MX - cordL.x) - (cordR.x - MX)) < 0.001);
 ok("midline sits ON the midline", anchorFor("cord", "hemi", "midline").x === MX);
 ok("bilateral sits ON the midline", anchorFor("cord", "hemi", "bilateral").x === MX);
+
+// ---- 4. crop boxes: one per compartment, and a union that always lands inside the figure ----
+const comps = [...new Set(sites.map(s => compartmentOf(s)))];
+const missingC = comps.filter(c => !CROP[c]);
+ok(`every compartment has a crop box (${comps.length} compartments)`, missingC.length === 0, missingC.join(", "));
+ok("no crop box is orphaned", Object.keys(CROP).every(k => comps.includes(k)),
+   Object.keys(CROP).filter(k => !comps.includes(k)).join(", "));
+
+const whole = cropFor(comps);
+const inside = (b, o) => b[0] >= o[0] && b[1] >= o[1] && b[0] + b[2] <= o[0] + o[2] && b[1] + b[3] <= o[1] + o[3];
+ok("the union crop contains every compartment's box", comps.every(c => inside(CROP[c], whole)));
+ok("the union crop is larger than any single box", comps.every(c => CROP[c][2] * CROP[c][3] <= whole[2] * whole[3]));
+ok("the union crop stays inside the figure",
+   whole[0] >= 0 && whole[1] >= 0 && whole[0] + whole[2] <= FIG_W && whole[1] + whole[3] <= FIG_H);
+
+const periph = cropFor(["root", "plexus", "nerve"]);
+ok("a peripheral crop excludes the cerebrum", periph[1] > ANCHOR.cortex[1]);
+ok("a peripheral crop is smaller than the whole figure", periph[3] < whole[3]);
+ok("no compartments yields the whole figure", cropFor([]).join() === [0, 0, FIG_W, FIG_H].join());
+
+for (const c of comps) {
+  const [x, y, w, h] = CROP[c];
+  ok(`crop "${c}" is inside the figure and non-empty`,
+     w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= FIG_W && y + h <= FIG_H, `${x},${y},${w},${h}`);
+  // every level living in this compartment must actually fall inside its box, or a crop can hide a pin
+  for (const s of sites.filter(s => compartmentOf(s) === c)) {
+    const a = anchorFor(s.level, s.part, s.side);
+    if (!(a.y >= y && a.y <= y + h)) { ok(`crop "${c}" contains ${s.level} (y=${a.y})`, false, `box y ${y}..${y + h}`); break; }
+  }
+}
+ok("every candidate's anchor falls inside its own compartment's crop",
+   sites.every(s => { const b = CROP[compartmentOf(s)], a = anchorFor(s.level, s.part, s.side);
+                      return b && a.y >= b[1] && a.y <= b[1] + b[3] && a.x >= b[0] && a.x <= b[0] + b[2]; }));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

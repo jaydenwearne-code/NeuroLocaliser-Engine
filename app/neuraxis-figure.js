@@ -82,3 +82,37 @@ export function anchorFor(level, part, side) {
   const sign = side === "right" ? 1 : -1;            // anatomical: patient's left on the LEFT of the page
   return { x: MX + sign * (a[0] + n[0]), y: a[1] + n[1], zone };
 }
+
+// ---- CROP: compartment -> [x, y, w, h] in figure coordinates. 13 keys. ----
+// KEYED BY COMPARTMENT, NOT BY LEVEL, so a crop always contains whole anatomical structures rather than
+// slicing a shape in half. compartmentOf() is part-aware, which is why the optic pathway can share the
+// `skull_base` LEVEL yet crop separately.
+export const CROP = {
+  brain:       [ 96,  20, 568, 220],
+  brainstem:   [232, 196, 296, 220],
+  cerebellum:  [232, 250, 296, 130],
+  cord:        [268, 380, 224, 200],
+  cauda:       [280, 520, 200, 120],
+  root:        [268, 420, 224, 160],
+  plexus:      [212, 450, 336, 140],
+  nerve:       [180, 500, 400, 150],
+  motor_unit:  [160, 560, 440, 100],
+  skull_base:  [140, 170, 480, 140],
+  sympathetic: [212, 340, 336, 160],
+  optic:       [140,  20, 480, 240],
+  pupil:       [140, 160, 480, 130],
+};
+
+const PAD = 16;
+
+// The union of the crop boxes of whatever compartments are in play, padded and clamped to the figure.
+// ZOOM IS A DERIVED viewBox CROP over ONE authored drawing — there is no second figure and no detail
+// level, so a crop can never disagree with the figure it crops.
+export function cropFor(compartments) {
+  const boxes = (compartments || []).map(c => CROP[c]).filter(Boolean);
+  if (!boxes.length) return [0, 0, FIG_W, FIG_H];
+  const x0 = Math.min(...boxes.map(b => b[0])), y0 = Math.min(...boxes.map(b => b[1]));
+  const x1 = Math.max(...boxes.map(b => b[0] + b[2])), y1 = Math.max(...boxes.map(b => b[1] + b[3]));
+  const x = Math.max(0, x0 - PAD), y = Math.max(0, y0 - PAD);
+  return [x, y, Math.min(FIG_W - x, x1 - x0 + PAD * 2), Math.min(FIG_H - y, y1 - y0 + PAD * 2)];
+}
