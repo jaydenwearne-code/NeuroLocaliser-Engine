@@ -116,8 +116,15 @@ chiasm.
 Stays a **pure string-in / string-out function, DOM-free and node-testable** — that property is why the
 current module is unit-testable at all and it is not given up.
 
-Signature becomes `neuraxisSVG(candidates, tracts, opts)`. Candidates come first because they are now the
-subject; `tracts` may be empty.
+**Two exports, not one return shape.** `neuraxisSVG(candidates, tracts, opts)` returns the `<svg>` figure
+and nothing else — it keeps returning a string that starts with `<svg`, which the existing suite asserts
+and which is worth preserving. `neuraxisIndex(candidates, opts)` is a second pure function returning the
+numbered index as HTML. `app.js` composes the two.
+
+The alternative — one function returning SVG followed by the index markup — was rejected: it makes a
+function named `…SVG` return something that is not an SVG, and it welds two independently testable pieces
+into one string. Candidates come first in both signatures because they are now the subject; `tracts` may be
+empty.
 
 ### `app/app.js`
 
@@ -157,7 +164,9 @@ them; `app.js` toggles `.open` on click. No interaction logic crosses into the b
 **The index beneath always lists every candidate**, whatever the figure collapses. Nothing is ever
 only-hidden — a cluster is a drawing decision, never a filter on the differential.
 
-Numbering follows engine rank order, so pin 1 is the leading candidate.
+Numbering follows the order of `solve()`'s differential, so pin 1 is the leading candidate and the figure
+and the Where card agree on which candidate is which. **The index and the pins share one numbering** —
+there is no second ordering to drift.
 
 Where two candidates in one diagram resolve to the same display name, **the side is appended** to
 disambiguate (§What is actually wrong, 5).
@@ -221,6 +230,7 @@ markup. New assertions:
 
 - a case with **zero implicated tracts still renders a figure** (Foot drop, Cauda equina) — the defect that
   motivated the input-contract change;
+- `neuraxisSVG()` still returns a string beginning `<svg`, and the index is `neuraxisIndex()`'s business;
 - **every candidate appears in the index**, including those the figure collapses into a cluster;
 - **no two index rows carry identical text**;
 - a left-sided case pins left of the midline and a right-sided case pins right of it — the laterality the
