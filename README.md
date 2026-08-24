@@ -90,7 +90,7 @@ node app/serve.mjs
 ```
 
 then <http://localhost:8137/app/>. Each test file is a standalone Node script that asserts with a local
-`ok()` helper and exits non-zero on failure; `npm test` runs all 69 in sequence. A new suite goes in
+`ok()` helper and exits non-zero on failure; `npm test` runs all 73 in sequence. A new suite goes in
 `test/` and into the `test` script in `package.json`.
 
 > On the original development Mac there is no system Node — see the runtime note at the top of
