@@ -1,87 +1,92 @@
-// neuraxis-diagram.js — build a schematic, DERIVED neuraxis SVG for the implicated tract(s). Pure string
-// in → string out (no DOM), so it is unit-testable in node. Rostral (cortex) at top → caudal (cord) at
-// bottom; each tract is a line down its course that visibly crosses sides at its decussation; each candidate
-// lesion is a node (data-k=<site.id>) placed in its level's band; the selected node is emphasised
-// (data-sel="1"). Row heights grow with the number of candidate nodes at a level so labels never overlap.
-// The app wires node clicks to selection. Theme-aware via CSS vars.
-import { NEURAXIS } from "../src/model/tracts.js";
+// neuraxis-diagram.js — LOGIC ONLY. Turns engine output into a coronal anatomical figure. Pure string in →
+// string out (no DOM), so it is unit-testable in node; interaction lives in app.js.
+//
+// DRIVEN BY CANDIDATE SITES, NOT BY TRACTS. The previous version harvested its sites from tractsFor(), so a
+// picture with no implicated long tract had no sites and rendered "" — eight of the seventeen shipped
+// examples, including Foot drop and Cauda equina. Tracts are now an OVERLAY.
+import { MX, FIG_W, FIG_H, anchorFor, baseFigure, regionCaptions, SIDE_CAPTIONS, cropFor } from "./neuraxis-figure.js";
+import { compartmentOf } from "../src/model/compartments.js";
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-const MIN_ROW_H = 40, TOP = 24, LEFT_LANE = 46, RIGHT_LANE = 104, NODE_X = 150, NODE_LH = 16, PAD = 16, W = 520;
+const FAN_MAX = 3;      // above this, a slot collapses to one counted pin
+const FAN_STEP = 15;
 
-export function neuraxisSVG(tracts, opts = {}) {
-  if (!tracts || !tracts.length) return "";
-  const { selectedId = null, labelFor = s => s.id } = opts;
+// One candidate is always exactly ONE pin, so the numbering it shares with the index stays unambiguous.
+// A bilateral candidate is told from a midline one by FORM (an elongated capsule), never by hue — the
+// rule the danger chip already follows.
+function pin(c, x, y, n, sel) {
+  const wide = c.site.side === "bilateral";
+  const shape = wide
+    ? `<rect class="nx-dot" x="${x - 11}" y="${y - 6.5}" width="22" height="13" rx="6.5"/>`
+    : `<circle class="nx-dot" cx="${x}" cy="${y}" r="7.5"/>`;
+  // data-x records the pin's centre. The two shapes carry different geometry attributes (`cx` vs a left
+  // edge `x`), so anything reading position off the shape would mis-handle bilateral pins.
+  return `<g class="nx-pin${sel ? " sel" : ""}"${sel ? ' data-sel="1"' : ""} data-k="${esc(c.site.id)}" data-x="${x}">`
+    + shape + `<text class="nx-n" x="${x}" y="${y + 3}">${n}</text></g>`;
+}
 
-  // rows = union of course levels + candidate-site levels. Order follows the implicated pathways' OWN course
-  // (so non-rostro-caudal pathways — oculosympathetic, visual — order correctly); levels off every course
-  // fall back to the global NEURAXIS. For the classic rostro-caudal tracts the course IS neuraxis order, so
-  // this reproduces the previous behaviour exactly.
-  const levelsUsed = new Set();
-  for (const t of tracts) for (const wp of t.tract.course) levelsUsed.add(wp.level);
-  for (const t of tracts) for (const s of t.sites) levelsUsed.add(s.level);
-  const courseOrder = [];
-  for (const t of tracts) for (const wp of t.tract.course) if (!courseOrder.includes(wp.level)) courseOrder.push(wp.level);
-  const orderKey = l => { const i = courseOrder.indexOf(l); return i >= 0 ? i : courseOrder.length + (NEURAXIS.indexOf(l) + 1 || 99); };
-  const rows = [...levelsUsed].sort((a, b) => orderKey(a) - orderKey(b));
-  const idxOf = l => rows.indexOf(l);
+export function neuraxisSVG(candidates, tracts, opts = {}) {
+  if (!candidates || !candidates.length) return "";
+  const { selectedId = null } = opts;
 
-  // dedup candidate sites by id, grouped by level (tract order → stable stacking)
-  const byLevel = {}, seen = new Set();
-  for (const t of tracts) for (const s of t.sites) {
-    if (seen.has(s.site.id)) continue; seen.add(s.site.id);
-    (byLevel[s.level] ??= []).push(s);
+  // number in solve()'s own order, so pin 1 is the leading candidate and the figure and the Where card
+  // agree on which candidate is which. The index shares this numbering — there is no second ordering.
+  const items = candidates.map((c, i) => ({ c, n: i + 1, comp: compartmentOf(c.site) }));
+
+  // slot = level | side | zone. Up to FAN_MAX fan in place; above that the slot collapses.
+  const slots = new Map();
+  for (const it of items) {
+    const a = anchorFor(it.c.site.level, it.c.site.part, it.c.site.side);
+    it.a = a;
+    const key = `${it.c.site.level}|${it.c.site.side}|${a.zone || "-"}`;
+    if (!slots.has(key)) slots.set(key, []);
+    slots.get(key).push(it);
   }
 
-  // dynamic row heights: tall enough for each level's nodes
-  const rowH = rows.map(l => Math.max(MIN_ROW_H, (byLevel[l]?.length || 0) * NODE_LH + PAD));
-  const rowTop = []; let acc = TOP;
-  for (let i = 0; i < rows.length; i++) { rowTop[i] = acc; acc += rowH[i]; }
-  const H = acc + TOP;
-  const rowCenter = l => { const i = idxOf(l); return rowTop[i] + rowH[i] / 2; };
-
-  const bands = rows.map(l =>
-    `<text x="6" y="${rowCenter(l) + 4}" class="nx-band">${esc(l.replace(/_/g, " "))}</text>`).join("");
-
-  // decussation markers (between two bands, or within one)
-  const decu = tracts.map(t => {
-    const d = t.decussation; let y;
-    if (d.between) {
-      const a = idxOf(d.between[0]), b = idxOf(d.between[1]); if (a < 0 || b < 0) return "";
-      y = rowTop[Math.max(a, b)]; // top edge of the caudal band
-    } else if (d.inLevel) {
-      const i = idxOf(d.inLevel); if (i < 0) return ""; y = rowCenter(d.inLevel);
-    } else return "";
-    return `<g class="decussation"><line x1="${LEFT_LANE}" y1="${y}" x2="${RIGHT_LANE}" y2="${y}" class="nx-decus"/>`
-      + `<text x="${(LEFT_LANE + RIGHT_LANE) / 2}" y="${y - 3}" class="nx-decus-t">${esc(d.label || "decussation")}</text></g>`;
-  }).join("");
-
-  // one poly-line per tract, crossing lanes at the decussation
-  const lines = tracts.map((t, ti) => {
-    const crossLevel = t.decussation.between ? t.decussation.between[1] : t.decussation.inLevel;
-    const crossIdx = idxOf(crossLevel);
-    const pts = t.tract.course.filter(wp => rows.includes(wp.level)).map(wp => {
-      const i = idxOf(wp.level);
-      const lane = (crossIdx >= 0 && i >= crossIdx) ? RIGHT_LANE : LEFT_LANE; // below/at decussation → other lane
-      return `${lane},${rowCenter(wp.level)}`;
-    });
-    return pts.length > 1 ? `<polyline points="${pts.join(" ")}" class="nx-tract nx-tract-${ti}"/>` : "";
-  }).join("");
-
-  // candidate site nodes, stacked within their (now tall-enough) level band
-  const nodes = [];
-  for (const l of rows) {
-    (byLevel[l] || []).forEach((s, j) => {
-      const y = rowTop[idxOf(l)] + PAD / 2 + j * NODE_LH + 6;
-      const sel = s.site.id === selectedId ? ` data-sel="1"` : "";
-      nodes.push(
-        `<g class="nx-node${sel ? " sel" : ""}"${sel} data-k="${esc(s.site.id)}">`
-        + `<circle cx="${NODE_X}" cy="${y}" r="4" class="nx-dot"/>`
-        + `<text x="${NODE_X + 9}" y="${y + 4}" class="nx-label">${esc(labelFor(s.site))}</text></g>`);
-    });
+  let pins = "";
+  for (const list of slots.values()) {
+    const a = list[0].a;
+    const sel = list.find(it => it.c.site.id === selectedId);
+    if (list.length <= FAN_MAX) {
+      list.forEach((it, j) => {
+        const x = a.x + (j - (list.length - 1) / 2) * FAN_STEP * (it.c.site.side === "right" ? 1 : -1);
+        pins += pin(it.c, x, a.y, it.n, it.c.site.id === selectedId);
+      });
+    } else {
+      // THE FANNED PINS ARE STILL EMITTED, hidden by a class — app.js toggles `.open` on click, so no
+      // interaction logic crosses into this pure builder. The index lists every candidate regardless:
+      // a cluster is a drawing decision, never a filter on the differential.
+      pins += `<g class="nx-cluster${sel ? " has-sel" : ""}" data-cluster="1">`
+        + `<circle class="nx-dot nx-clusterdot" cx="${a.x}" cy="${a.y}" r="10"/>`
+        + `<text class="nx-n" x="${a.x}" y="${a.y + 3.5}">${list.length}</text>`
+        + `<g class="nx-fan">`
+        + list.map((it, j) => {
+            const col = j % 3, row = Math.floor(j / 3);
+            const x = a.x + (col - 1) * FAN_STEP * (it.c.site.side === "right" ? 1 : -1);
+            return pin(it.c, x, a.y + 18 + row * FAN_STEP, it.n, it.c.site.id === selectedId);
+          }).join("")
+        + `</g></g>`;
+    }
   }
 
-  return `<svg viewBox="0 0 ${W} ${H}" class="neuraxis" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="neuraxis tract diagram">`
-    + bands + decu + lines + nodes.join("") + `</svg>`;
+  const [vx, vy, vw, vh] = cropFor([...new Set(items.map(it => it.comp))]);
+  const zoomed = vw < FIG_W * 0.95 || vh < FIG_H * 0.95;
+
+  return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" class="neuraxis" xmlns="http://www.w3.org/2000/svg"`
+    + ` role="img" aria-label="neuraxis figure with candidate lesion sites">`
+    + SIDE_CAPTIONS + baseFigure() + regionCaptions() + pins
+    + (zoomed ? locator(vx, vy, vw, vh) : "")
+    + `</svg>`;
+}
+
+// The crop buys detail at the cost of a stable frame. The locator buys the frame back: a whole-neuraxis
+// thumbnail with the crop marked, so a peripheral case still says where it sits in the whole thing.
+function locator(vx, vy, vw, vh) {
+  const S = 0.13, w = FIG_W * S, h = FIG_H * S;
+  const x = vx + vw - w - 8, y = vy + 8;
+  return `<g class="nx-locator" aria-hidden="true">`
+    + `<rect class="nx-loc-bg" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/>`
+    + `<rect class="nx-loc-box" x="${x + vx * S}" y="${y + vy * S}" width="${vw * S}" height="${vh * S}"/>`
+    + `</g>`;
 }
