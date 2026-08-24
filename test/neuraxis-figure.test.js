@@ -1,6 +1,7 @@
 // neuraxis-figure.test.js — the authored figure is CONTENT; these assert the RULES that keep it complete,
 // not the coordinate values. A new site must never be able to land undetermined.
-import { MX, FIG_W, FIG_H, ANCHOR, CROP, zoneOf, anchorFor, cropFor } from "../app/neuraxis-figure.js";
+import { MX, FIG_W, FIG_H, ANCHOR, CROP, zoneOf, anchorFor, cropFor,
+         baseFigure, regionCaptions, SIDE_CAPTIONS } from "../app/neuraxis-figure.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { compartmentOf } from "../src/model/compartments.js";
 
@@ -89,6 +90,21 @@ for (const c of comps) {
 ok("every candidate's anchor falls inside its own compartment's crop",
    sites.every(s => { const b = CROP[compartmentOf(s)], a = anchorFor(s.level, s.part, s.side);
                       return b && a.y >= b[1] && a.y <= b[1] + b[3] && a.x >= b[0] && a.x <= b[0] + b[2]; }));
+
+// ---- 5. the base figure ----
+const fig = baseFigure();
+ok("baseFigure returns an SVG fragment", typeof fig === "string" && fig.includes("<path"));
+ok("the figure is authored as one half and MIRRORED (no second copy to drift)",
+   (fig.match(/scale\(-1,1\)/g) || []).length === 1);
+ok("anatomy strokes never use --line (invisible in dark; must be --muted)",
+   !/stroke:\s*var\(--line\)/.test(fig));
+ok("the figure paints no accent inline", !/--terra/.test(fig));
+ok("the figure carries no inline style at all (classes only)", !/style="/.test(fig));
+ok("side captions name the patient's sides explicitly",
+   /left/i.test(SIDE_CAPTIONS) && /right/i.test(SIDE_CAPTIONS));
+ok("side captions are placed either side of the midline",
+   /x="\d+"/.test(SIDE_CAPTIONS) && SIDE_CAPTIONS.includes(String(MX - 250)) && SIDE_CAPTIONS.includes(String(MX + 250)));
+ok("region captions are present", regionCaptions().includes("<text"));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
