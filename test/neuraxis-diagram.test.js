@@ -105,5 +105,30 @@ ok(`no two index rows are identical on the MS case (${msTexts.length} rows)`,
    new Set(msTexts).size === msTexts.length,
    msTexts.filter((x, i) => msTexts.indexOf(x) !== i).join(" | "));
 
+// ---- the tract overlay ----
+const wall = build(["cn8_vertigo@left", "face_pain_loss@left", "spinothalamic@right",
+                    "ptosis@left", "miosis@left", "limb_ataxia@left"]);
+const sW = neuraxisSVG(wall.cands, wall.tf, { labelFor: x => x.id });
+ok(`Wallenberg implicates several tracts (${wall.tf.length})`, wall.tf.length >= 3);
+ok("each implicated tract draws a path", (sW.match(/class="nx-tract/g) || []).length >= wall.tf.length);
+ok("the legend names each implicated tract",
+   wall.tf.every(t => sW.includes(esc0(t.tract.id)) || sW.toLowerCase().includes(t.tract.id.replace(/_/g, " "))));
+
+// DISTINGUISHED BY FORM AS WELL AS HUE, so the lines stay separable in greyscale and for a colourblind
+// reader — the rule the danger chip already follows.
+ok("tracts carry a dash pattern as well as a colour", /stroke-dasharray/.test(sW));
+
+// A tract with no modelled decussation draws no crossing. oculosympathetic is UNCROSSED throughout —
+// which is why Horner's is ipsilateral — so its empty decussation is an ASSERTION, not a gap to fill.
+const os = wall.tf.find(t => t.tract.id === "oculosympathetic");
+ok("oculosympathetic is modelled as uncrossed", os && !os.decussation.between && !os.decussation.inLevel);
+const st = wall.tf.find(t => t.tract.id === "spinothalamic");
+ok("a tract WITH a decussation draws a crossing marker", st && sW.includes("nx-decus"));
+
+// a case with no tracts still renders, and simply has no overlay
+const fd = build(["weak_ankle_dorsiflexion@left", "weak_great_toe_extension@left", "weak_foot_eversion@left"]);
+const sF = neuraxisSVG(fd.cands, fd.tf, { labelFor: x => x.id });
+ok("a tractless case renders no overlay and no legend", !sF.includes("nx-tract") && !sF.includes("nx-legend"));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
