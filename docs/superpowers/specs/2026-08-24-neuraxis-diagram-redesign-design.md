@@ -235,26 +235,58 @@ is not an SVG, and welds independently testable pieces into one string. `app.js`
 One call site changes to pass the differential alongside the tracts, plus a handler for expanding a
 cluster. Click delegation on `[data-k]` is unchanged in shape.
 
-## Anchors — level, nudged by zone
+## Anchors — level, optionally nudged by zone
 
-`ANCHOR` is authored and keyed by **level**: 18 keys, `{dx, dy}` from the midline, `dx` flipped by side.
+**Measured before authoring, and two assumptions in the first draft were wrong.**
+
+`ANCHOR` is authored and keyed by **level**, giving `{dx, dy}` from the midline with `dx` flipped by side.
+
+**It must cover 36 levels, not 18.** `SITES` uses 18, but the diagram receives `candidateSites()`, which
+concatenates the composers and yields **36 levels across 377 sites** — the extra 18 are `cauda`, `conus`,
+`plexus`, `motor_unit`, `thalamus`, `hypothalamus`, `corpus_callosum`, `locked_in`, `pseudobulbar` and the
+rest. Keying the invariant to `SITES` would have left half the table unwritten. **The invariant is over
+`candidateSites()`.**
 
 Level ids are globally unique, so there is no `level|part` collision here — unlike `PART_LABEL`,
-`vascular.js` and `topography.js`, which key by `${level}|${part}` because `lateral`, `hemi`, `medial` and
-`anterior` are each reused across levels. **Do not key this table by part name.**
+`vascular.js` and `topography.js`, which key by `${level}|${part}`. **Do not key this table by part name.**
 
-Part granularity comes from a derived **zone** — `medial` / `lateral` / `dorsal` / `ventral` / `central` —
-read off the part name, with an authored override map for parts whose name does not say it. Each zone is a
-fixed nudge within its level's shape, so the lateral medulla pins dorsolaterally and the basis pontis pins
-ventrally without authoring 202 coordinates. **The zone is reused by the cross-sections**, where it selects
-which region of the slice to highlight — one derivation serving both drawings.
+**Zone is OPTIONAL, and that is a measurement, not a preference.** Of the **192 part names** in
+`candidateSites()`, only **15** declare a zone: `anterior`, `anterior_canal`, `anterior_choroidal`,
+`anterior_horn`, `anterior_temporal`, `basis_pontis`, `central`, `lateral`, `medial`, `paracentral`,
+`posterior`, `posterior_canal`, `posterior_cord`, `watershed_anterior`, `watershed_posterior`. The first
+draft proposed "an authored override map for parts whose name does not say it" — that map would hold
+**177 entries**, which is not a cheap middle ground but a full authored anatomical table, and one that
+asserts facts needing clinical review.
 
-**Invariant (`test/neuraxis-figure.test.js`): every level in `SITES` has an anchor, and every part resolves
-to a zone.** Assert the RULE, not the values, so a new site cannot land undetermined — the rule
-`topography.js` already follows for `surface`.
+So: **where the part name declares a zone, the pin is nudged; otherwise `zone` is `null` and the pin sits
+at its level's anchor.** This is not a compromise — the 15 that declare one are precisely the
+cross-sectional brainstem and cord names where the distinction is clinically load-bearing (lateral versus
+medial medulla is the difference between Wallenberg and a medial medullary syndrome). The other 177 name
+gyri, nerves, roots and canals, for which "medial or lateral" is not the organising idea.
+
+`zone` is derived by pattern from the part name — **no authored table in increment 1** — so nothing here
+asserts an anatomical fact and nothing here needs review.
+
+### Sides: `bilateral` and `midline` are 45 of 377 candidates
+
+The first draft addressed only left and right. Measured: **left 166, right 166, bilateral 27, midline 18.**
+
+- `midline` pins at `dx = 0`.
+- `bilateral` also pins at `dx = 0`, drawn as a horizontally elongated capsule spanning the midline.
+
+**One candidate is always exactly one pin**, so the shared numbering with the index holds. A bilateral
+candidate is distinguished from a midline one **by the pin's FORM, not by position or hue** — the rule the
+danger chip already follows. Drawing a bilateral candidate as two mirrored pins was rejected: it breaks
+1 candidate = 1 pin and would make the index numbering ambiguous.
+
+**Invariants (`test/neuraxis-figure.test.js`):** every level in `candidateSites()` has an anchor; every
+one of the four `side` values places a pin; and a part whose name declares a zone resolves to that zone
+while any other part resolves to `null`. Assert the RULE, not the values, so a new site cannot land
+undetermined — the rule `topography.js` already follows for `surface`.
 
 Full per-part anchoring (the 202-key `vascular.js` / `topography.js` shape) is **deliberately not in this
-increment**. If the zone nudge proves too coarse, measure it and author the table then.
+increment**, and on the measurement above it would be increment-2 work in any case, since it asserts
+anatomy.
 
 ## Cross-sections  *[increment 2]*
 
@@ -396,6 +428,8 @@ peroneal nerve, and here is where that sits in the whole thing."
 - a case with **zero implicated tracts still renders a figure** (Foot drop, Cauda equina);
 - `neuraxisSVG()` still returns a string beginning `<svg`;
 - **every candidate appears in the index**, including those collapsed into a cluster;
+- a `bilateral` and a `midline` candidate each render exactly one pin, on the midline, distinguishable
+  from each other;
 - **no two index rows carry identical text**;
 - a left-sided case pins left of the midline and a right-sided case pins right of it;
 - the crop for a peripheral case excludes the cerebrum, and the locator still renders the whole figure;
