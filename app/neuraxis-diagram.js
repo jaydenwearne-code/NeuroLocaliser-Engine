@@ -90,3 +90,27 @@ function locator(vx, vy, vw, vh) {
     + `<rect class="nx-loc-box" x="${x + vx * S}" y="${y + vy * S}" width="${vw * S}" height="${vh * S}"/>`
     + `</g>`;
 }
+
+// The index carries EVERY candidate, whatever the figure collapses into a cluster — nothing is ever
+// only-hidden. It is a separate export rather than appended to the SVG string: a function named …SVG must
+// return an SVG, and the two are independently testable.
+export function neuraxisIndex(candidates, opts = {}) {
+  if (!candidates || !candidates.length) return "";
+  const { selectedId = null, labelFor = s => s.id } = opts;
+
+  const raw = candidates.map(c => labelFor(c.site));
+  const seen = new Map();
+  for (const r of raw) seen.set(r, (seen.get(r) || 0) + 1);
+
+  const rows = candidates.map((c, i) => {
+    // Two rows the reader cannot tell apart are a defect. plainSiteName() drops the side for some sites,
+    // so a left/right pair collapses to one string — append the side where that happens, and ONLY there:
+    // disambiguating every row would be noise.
+    const label = seen.get(raw[i]) > 1 && (c.site.side === "left" || c.site.side === "right")
+      ? `${raw[i]} — ${c.site.side}` : raw[i];
+    const sel = c.site.id === selectedId;
+    return `<li class="nx-row${sel ? " sel" : ""}" data-k="${esc(c.site.id)}"><b>${i + 1}</b>${esc(label)}</li>`;
+  }).join("");
+
+  return `<ol class="nx-idx">${rows}</ol>`;
+}

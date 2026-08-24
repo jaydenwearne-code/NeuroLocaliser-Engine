@@ -1,8 +1,9 @@
 // neuraxis-diagram.test.js — the builder is a pure string function (DOM-free, testable in node).
-import { neuraxisSVG } from "../app/neuraxis-diagram.js";
+import { neuraxisSVG, neuraxisIndex } from "../app/neuraxis-diagram.js";
 import { tractsFor } from "../src/engine/tracts.js";
 import { solve } from "../src/engine/inverse.js";
 import { MX } from "../app/neuraxis-figure.js";
+import { plainSiteName } from "../app/labels.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, extra = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (c ? "" : "  " + extra)); };
@@ -68,6 +69,41 @@ if (midCand) {
      (sM.match(new RegExp(`data-k="${midCand.site.id}"`, "g")) || []).length === 1);
   ok("a midline/bilateral candidate sits on the midline", xOf(sM, midCand.site.id) === MX);
 }
+
+// ---- the index ----
+const idx = neuraxisIndex(nmo.cands, { selectedId: nmo.cands[0].site.id, labelFor: s => s.id });
+ok("the index is an ordered list", idx.startsWith("<ol") && idx.includes("</ol>"));
+ok("EVERY candidate appears in the index, including clustered ones",
+   nmo.cands.every(c => idx.includes(`data-k="${c.site.id}"`)));
+ok("the index numbering matches the figure's (both follow solve() order)",
+   nmo.cands.every((c, i) => new RegExp(`data-k="${c.site.id}"[^>]*>\\s*<b>${i + 1}</b>`).test(idx)));
+ok("empty input yields empty string", neuraxisIndex([], {}) === "");
+
+// A row the reader cannot tell apart from the row above it is a defect, not density. MS renders
+// "Anterior choroidal artery syndrome" twice because dedup is by site.id (left/right differ) while the
+// display name drops the side.
+const dup = neuraxisIndex(
+  [{ site: { id: "left_x", level: "cord", part: "hemi", side: "left" } },
+   { site: { id: "right_x", level: "cord", part: "hemi", side: "right" } }],
+  { labelFor: () => "Same Name Syndrome" });
+const texts = [...dup.matchAll(/<\/b>([^<]+)</g)].map(m => m[1].trim());
+ok("identical display names are disambiguated by side", new Set(texts).size === 2, texts.join(" | "));
+ok("disambiguation names the side", texts.some(t => /left/i.test(t)) && texts.some(t => /right/i.test(t)));
+
+// ...but a name that is ALREADY unique must be left alone — disambiguating everything would be noise.
+const uniq = neuraxisIndex(
+  [{ site: { id: "a", level: "cord", part: "hemi", side: "left" } },
+   { site: { id: "b", level: "cord", part: "hemi", side: "right" } }],
+  { labelFor: s => (s.id === "a" ? "Alpha" : "Beta") });
+ok("unique names are not disambiguated", /<\/b>Alpha</.test(uniq) && /<\/b>Beta</.test(uniq));
+
+// the real defect, on the real case: MS renders two identical rows today
+const ms = build(["rapd@left", "va_reduced_no_pinhole@left", "dorsal_sensory@left", "dorsal_sensory@right", "sensory_ataxia@none"]);
+const msIdx = neuraxisIndex(ms.cands, { labelFor: s => plainSiteName(s, {}).name });
+const msTexts = [...msIdx.matchAll(/<\/b>([^<]+)</g)].map(m => m[1].trim());
+ok(`no two index rows are identical on the MS case (${msTexts.length} rows)`,
+   new Set(msTexts).size === msTexts.length,
+   msTexts.filter((x, i) => msTexts.indexOf(x) !== i).join(" | "));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
