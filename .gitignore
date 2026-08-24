@@ -12,3 +12,5 @@ npm-debug.log*
 
 # Superpowers session scratch (brainstorm mockups, sdd state)
 .superpowers/
+app/_harness.html
+app/_mockups.html
