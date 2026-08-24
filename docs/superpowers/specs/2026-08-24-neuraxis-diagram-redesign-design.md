@@ -1,10 +1,47 @@
 # Neuraxis diagram: an anatomical figure, not a list with a line
 
-**Status: SPEC, not implemented.** Branch to be cut off `main`. Touches `app/neuraxis-diagram.js`
-(rewritten), two new content files (`app/neuraxis-figure.js`, `app/neuraxis-sections.js`), the diagram's
-CSS in `app/index.html`, one call site in `app/app.js`, `test/neuraxis-diagram.test.js` (rewritten), and
-two new suites. **One model change, narrowly scoped:** three missing `decussation` entries in
-`src/model/tracts.js` (§Model data) — presentation metadata that never reaches the solver.
+**Status: SPEC, not implemented. SPLIT INTO TWO INCREMENTS** — see §The split. Increment 1 ships on its
+own and needs no clinical review; increment 2 carries all the authored anatomy and the model change.
+
+## The split
+
+The first draft of this spec was one increment carrying the input contract, the anatomy, pins, clustering,
+the crop, redrawn tract courses, four cross-sections and a model change. That is larger than any single
+increment in this project's history, and it welds work that needs no review to work that cannot ship
+without one. Split on that seam, at the owner's direction.
+
+### Increment 1 — the figure and the candidates (this plan)
+
+Fixes the eight blank examples and every layout defect in §1–5. **Reviewable as code, not as anatomy** in
+one respect that matters: nothing in it asserts a new clinical fact. The figure is a schematic the reader
+recognises, not a claim about where a tract runs.
+
+- input contract: candidates from `solve()`, tracts optional (§1)
+- `app/neuraxis-figure.js`: authored half-figure, anchors, zones, crop boxes
+- `neuraxisSVG()` + `neuraxisIndex()`
+- pins, clustering, shared numbering, the duplicate-label fix (§5)
+- the derived crop and the locator
+- side convention and captions
+- a **minimal tract overlay**: implicated pathways drawn on the figure with colour, dash, direction arrow
+  and a named legend, **using the decussation data that exists today**
+- `test/neuraxis-diagram.test.js` rewritten, `test/neuraxis-figure.test.js` new
+
+**Accepted limitation, and it is NOT a regression.** With today's data, `cerebellar`, `mlf` and
+`trigeminothalamic` draw no crossing — exactly as they do now (§6). Increment 1 leaves that where it is
+rather than guessing; increment 2 fixes it with citations. Stating it here so it is a known state, not a
+defect someone rediscovers.
+
+### Increment 2 — the tracts, to Last's
+
+Everything that asserts an anatomical fact, so the whole of it goes to the owner in one review round
+instead of two.
+
+- the three missing `decussation` entries, with citations (§Model data)
+- the Last's-accurate course refinements (§Tracts: the medial lemniscus drift, the pontine bundles, the
+  oculosympathetic/spinal-lemniscus adjacency)
+- `app/neuraxis-sections.js`: the four cross-sections and the cord's somatotopic lamination
+  (§Cross-sections)
+- `neuraxisSection()`, and `test/neuraxis-sections.test.js`
 
 ## Source
 
@@ -219,7 +256,7 @@ to a zone.** Assert the RULE, not the values, so a new site cannot land undeterm
 Full per-part anchoring (the 202-key `vascular.js` / `topography.js` shape) is **deliberately not in this
 increment**. If the zone nudge proves too coarse, measure it and author the table then.
 
-## Cross-sections
+## Cross-sections  *[increment 2]*
 
 Four canonical sections, authored from Last's and keyed by **level**:
 
@@ -270,8 +307,9 @@ Every implicated pathway is drawn along its true course, on the correct side, cr
 with a direction arrow and a **named legend**. Wallenberg draws four: spinothalamic, oculosympathetic,
 cerebellar, trigeminothalamic.
 
-The course is drawn to Last's, not schematically. Three specifics are load-bearing because each is a fact a
-reader can carry away:
+**Increment 1** draws each pathway along its modelled course with colour, dash, arrow and legend.
+**Increment 2** refines the course to Last's. Three specifics are load-bearing there, because each is a
+fact a reader can carry away:
 
 - the **medial lemniscus hugs the midline in the medulla and drifts laterally** climbing to the thalamus;
 - the **corticospinal tract breaks into bundles through the basis pontis** and recollects as the pyramid;
@@ -289,7 +327,7 @@ New tokens `--tract-1` … `--tract-5`, defined in **all four** palette blocks. 
 `test/brand.test.js` counts them. They are strokes, never text, and are declared in `NOT_TEXT` in
 `test/contrast.test.js`.
 
-## Model data
+## Model data  *[increment 2]*
 
 `decussation` is consumed **only** by `app/neuraxis-diagram.js` and by `tractNarrative()` in
 `src/engine/tracts.js`. It **never reaches the solver** — laterality comes from `findings.CROSSES` and
@@ -361,14 +399,20 @@ peroneal nerve, and here is where that sits in the whole thing."
 - **no two index rows carry identical text**;
 - a left-sided case pins left of the midline and a right-sided case pins right of it;
 - the crop for a peripheral case excludes the cerebrum, and the locator still renders the whole figure;
-- **every implicated tract with a decussation draws a crossing**, and `oculosympathetic` draws none;
-- a level with no authored section renders no section — never a generic one.
+- **every implicated tract whose model carries a decussation draws a crossing**, and `oculosympathetic`
+  draws none — the latter asserted in increment 1 so the correct empty entry cannot be "fixed" away.
 
-`test/neuraxis-figure.test.js` (new) asserts the anchor and zone rules. `test/neuraxis-sections.test.js`
-(new) asserts each section names the tracts Last's places in it, and that the cord section carries both
-laminations. Both are added to the `test` script in `package.json` and the README chain.
+`test/neuraxis-figure.test.js` (new, increment 1) asserts the anchor and zone rules.
+
+*Increment 2 adds:* a level with no authored section renders no section, never a generic one; and
+`test/neuraxis-sections.test.js` asserting each section names the tracts Last's places in it and that the
+cord section carries both laminations.
+
+Each new suite is added to the `test` script in `package.json` and the README chain as it lands.
 
 ## Out of scope
+
+*(of the redesign as a whole — for what is merely deferred to increment 2, see §The split)*
 
 - Per-part 202-key anchoring (§Anchors).
 - A second medullary cross-section for the closed medulla and its two decussations (§Cross-sections).
