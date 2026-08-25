@@ -33,7 +33,7 @@ for (const [name, toks] of [
   const c = build(toks);
   ok(`${name} implicates no tract (the precondition of the bug)`, c.tf.length === 0);
   const s = neuraxisSVG(c.cands, c.tf, { labelFor: x => x.id });
-  ok(`${name} STILL renders a figure`, s.startsWith("<svg") && s.includes("<path"));
+  ok(`${name} STILL renders a figure`, s.startsWith("<svg") && s.includes("nx-band-box"));
   ok(`${name} pins its candidates`, c.cands.some(x => s.includes(`data-k="${x.site.id}"`)));
 }
 

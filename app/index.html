@@ -112,18 +112,16 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .neuraxis-wrap{margin:10px 0;border:1px solid var(--line);border-radius:8px;padding:8px;overflow-x:auto;}
   .nx-cap{font-size:var(--fs-meta);color:var(--faint);margin-bottom:4px;}
   .neuraxis{max-width:100%;height:auto;color:var(--ink);display:block;}
-  /* Anatomy strokes are --muted, NOT --line: --line is #26364d in dark and is invisible. */
-  .anatomy path,.anatomy ellipse,.anatomy circle,.anatomy line{vector-effect:non-scaling-stroke;}
-  .an-brain,.an-stem,.an-cbm,.an-cord{fill:var(--band);stroke:var(--muted);stroke-width:1.3;opacity:.8;}
-  .an-line,.an-deep,.an-optic,.an-chiasm,.an-plexus,.an-nerve{fill:none;stroke:var(--muted);stroke-width:1;opacity:.65;}
-  .an-roots path{fill:none;stroke:var(--muted);stroke-width:1;opacity:.65;}
-  .an-folia{fill:none;stroke:var(--muted);stroke-width:.7;opacity:.45;}
-  .an-plate{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3;opacity:.45;}
-  .an-symp{fill:none;stroke:var(--muted);stroke-width:1.1;stroke-dasharray:3 2.5;opacity:.7;}
-  .an-gang,.an-eye{fill:var(--band);stroke:var(--muted);stroke-width:1;opacity:.8;}
-  .an-pupil{fill:var(--muted);stroke:none;opacity:.7;}
-  .an-mid{stroke:var(--muted);stroke-width:.6;stroke-dasharray:1 4;opacity:.5;}
-
+  /* THE ORTHOGONAL SCHEMA. No oblique lines: a vertical is a tract, a horizontal is a decussation or a
+     pathway leaving the CNS. The anatomical drawing this replaced had 17 rules, all now deleted — the
+     dead-rule invariant in test/neuraxis-figure.test.js flagged every one of them the moment they were
+     orphaned, which is exactly what it is for. */
+  .nx-band-box{fill:var(--band);stroke:var(--muted);stroke-width:1;opacity:.55;}
+  .nx-band-name{font-size:var(--fs-cap);fill:var(--faint);text-anchor:end;letter-spacing:.06em;text-transform:uppercase;}
+  .nx-band-rule{stroke:var(--muted);stroke-width:1;opacity:.45;}
+  .nx-exit{stroke:var(--muted);stroke-width:1;opacity:.4;stroke-dasharray:3 3;}
+  .nx-exit-tick{stroke:var(--muted);stroke-width:1.4;opacity:.55;}
+  .an-mid{stroke:var(--muted);stroke-width:.7;stroke-dasharray:1 4;opacity:.5;}
   .nx-side{font-size:var(--fs-cap);fill:var(--faint);letter-spacing:.09em;text-transform:uppercase;}
   .nx-region{font-size:var(--fs-cap);fill:var(--faint);}
   .nx-tract{fill:none;stroke-width:2.2;opacity:.9;stroke-linecap:round;stroke-linejoin:round;}

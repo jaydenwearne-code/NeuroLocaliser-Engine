@@ -4,7 +4,8 @@
 // DRIVEN BY CANDIDATE SITES, NOT BY TRACTS. The previous version harvested its sites from tractsFor(), so a
 // picture with no implicated long tract had no sites and rendered "" — eight of the seventeen shipped
 // examples, including Foot drop and Cauda equina. Tracts are now an OVERLAY.
-import { MX, FIG_W, FIG_H, ANCHOR, anchorFor, tractPoint, viaAfter, breaksAfter, routeIsAuthored, baseFigure, regionCaptions, sideCaptions, cropFor } from "./neuraxis-figure.js";
+import { MX, FIG_W, FIG_H, PAD, MIN_W, MIN_H, ANCHOR, anchorFor, tractPoint, viaAfter, breaksAfter,
+         routeIsAuthored, isPlanar, baseFigure, regionCaptions, sideCaptions } from "./neuraxis-figure.js";
 import { compartmentOf } from "../src/model/compartments.js";
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -26,43 +27,24 @@ function pin(c, x, y, n, sel) {
     + shape + `<text class="nx-n" x="${x}" y="${y + 3}">${n}</text></g>`;
 }
 
-// CENTRIPETAL Catmull-Rom (alpha = 0.5), sampled.
-//
-// Uniform parameterisation LOOPS where a course doubles back on itself, and two of these pathways
-// genuinely do: the oculosympathetic descends to T1 and then ascends the carotid, and the cerebellar
-// outflow climbs to the midbrain after entering at the medulla. A uniform spline puts a cusp at that
-// reversal, and the overshoot crossed every neighbouring tract. Centripetal parameterisation is the
-// standard cure — it cannot produce cusps or self-intersections.
-function spline(k, per) {
-  if (k.length === 2) return k;
-  const P = [k[0], ...k, k[k.length - 1]], out = [];
-  const dist = (a, b) => Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]) || 1e-6, 0.5);
-  for (let i = 1; i < P.length - 2; i++) {
-    const [p0, p1, p2, p3] = [P[i - 1], P[i], P[i + 1], P[i + 2]];
-    const t0 = 0, t1 = t0 + dist(p0, p1), t2 = t1 + dist(p1, p2), t3 = t2 + dist(p2, p3);
-    for (let sN = 0; sN < per; sN++) {
-      const t = t1 + (t2 - t1) * (sN / per);
-      const A1 = lerp(p0, p1, (t1 - t) / (t1 - t0 || 1), (t - t0) / (t1 - t0 || 1));
-      const A2 = lerp(p1, p2, (t2 - t) / (t2 - t1 || 1), (t - t1) / (t2 - t1 || 1));
-      const A3 = lerp(p2, p3, (t3 - t) / (t3 - t2 || 1), (t - t2) / (t3 - t2 || 1));
-      const B1 = lerp(A1, A2, (t2 - t) / (t2 - t0 || 1), (t - t0) / (t2 - t0 || 1));
-      const B2 = lerp(A2, A3, (t3 - t) / (t3 - t1 || 1), (t - t1) / (t3 - t1 || 1));
-      const q = lerp(B1, B2, (t2 - t) / (t2 - t1 || 1), (t - t1) / (t2 - t1 || 1));
-      // CLAMP THE CURVE TO ITS OWN KNOTS. Even centripetal parameterisation leaves the segment it is
-      // interpolating, and lines that were correctly ordered at every knot still wove into each other
-      // across a six-unit gap. Clamping makes the drawn geometry match what the lane-order check predicts
-      // from linear interpolation, so that check becomes genuinely predictive instead of merely
-      // suggestive.
-      out.push([
-        Math.min(Math.max(q[0], Math.min(p1[0], p2[0])), Math.max(p1[0], p2[0])),
-        Math.min(Math.max(q[1], Math.min(p1[1], p2[1])), Math.max(p1[1], p2[1])),
-      ]);
+// ORTHOGONAL ROUTING. A tract is a VERTICAL run in its own lane; the only horizontal segments are the
+// decussation and the step out of the CNS. There is no interpolation and no curve, so a path cannot stray
+// from its lane between levels — which is what a spline did, and what made two correctly-ordered lanes
+// weave into each other. The rule removes that whole class of defect rather than tuning around it.
+function orthogonal(knots) {
+  if (knots.length < 2) return knots;
+  const out = [knots[0]];
+  for (let i = 1; i < knots.length; i++) {
+    const [px, py] = out[out.length - 1], [x, y] = knots[i];
+    if (x !== px && y !== py) {
+      // Move VERTICALLY first, then across: the vertical run is the tract in its lane, and the horizontal
+      // one is the event (a crossing, or leaving the CNS) that happens AT that level.
+      out.push([px, y]);
     }
+    out.push([x, y]);
   }
-  out.push(k[k.length - 1]);
   return out;
 }
-const lerp = (a, b, wa, wb) => [a[0] * wa + b[0] * wb, a[1] * wa + b[1] * wb];
 
 const TRACT_DASH = ["none", "6 3", "2 3", "10 3 2 3", "1 4"];   // FORM, not hue alone
 
@@ -128,7 +110,7 @@ function tractOverlay(tracts) {
     // the non-crossing invariant can read the actual geometry it draws.
     const dash = TRACT_DASH[i % TRACT_DASH.length];
     const path = usable.map((st, si) => {
-      const pts = spline(st, 14);
+      const pts = orthogonal(st);
       return `<polyline class="nx-tract nx-tract-${i % 5}" points="${pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")}"`
         + (dash === "none" ? "" : ` stroke-dasharray="${dash}"`)
         + (si === usable.length - 1 ? ` marker-end="url(#nx-arrow)"` : "") + `/>`;
@@ -188,7 +170,9 @@ export function neuraxisSVG(candidates, tracts, opts = {}) {
     }
   }
 
-  const [vx, vy, vw, vh] = cropFor([...new Set(items.map(it => it.comp))]);
+  // THE CROP IS DERIVED from the pins actually on screen, not looked up in a table. A table of boxes went
+  // stale twice when the figure's coordinates changed.
+  const [vx, vy, vw, vh] = cropForPoints(items.map(it => it.a));
   const zoomed = vw < FIG_W * 0.95 || vh < FIG_H * 0.95;   // only worth a locator when really cropped
 
   return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" class="neuraxis" xmlns="http://www.w3.org/2000/svg"`
@@ -257,4 +241,14 @@ export function neuraxisLegend(tracts) {
       + esc(t.tract.label || t.tract.id.replace(/_/g, " ")) + `</li>`;
   }).join("");
   return `<ul class="nx-legend-list">${items}</ul>`;
+}
+
+// The viewBox that holds these points, floored so the whole neuraxis stays in view and centred on them.
+function cropForPoints(pts) {
+  if (!pts.length) return [0, 0, FIG_W, FIG_H];
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const w = Math.min(FIG_W, Math.max(MIN_W, Math.max(...xs) - Math.min(...xs) + PAD * 2));
+  const h = Math.min(FIG_H, Math.max(MIN_H, Math.max(...ys) - Math.min(...ys) + PAD * 2));
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  return [Math.max(0, Math.min(FIG_W - w, cx - w / 2)), Math.max(0, Math.min(FIG_H - h, cy - h / 2)), w, h];
 }

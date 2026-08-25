@@ -14,36 +14,68 @@
 // COORDINATES, NOT CLAIMS. These are drawing positions in a schematic. Where a tract RUNS, and what sits
 // beside it in cross-section, is increment 2 and carries a clinical review gate.
 
-export const MX = 380;                 // midline x — the figure is symmetric about this
-export const FIG_W = 760, FIG_H = 660;
+export const MX = 450;                 // midline x — the figure is symmetric about this
+export const FIG_W = 900, FIG_H = 660;
 
-// ---- ANCHOR: level -> [dx from the midline, y]. 36 keys. ----
-// KEYED BY LEVEL, NEVER BY PART. Level ids are globally unique, so there is no level|part collision here
-// — unlike PART_LABEL / vascular.js / topography.js, where `lateral` and `medial` are reused across levels.
+// ---- THE ORTHOGONAL SCHEMA (owner's ruling, 2026-08-25) ----
+// NO OBLIQUE LINES. A vertical line is a tract descending or ascending the neuraxis; a horizontal line is
+// either a DECUSSATION or a pathway LEAVING THE CNS. Nothing else is drawn, and nothing is drawn at an
+// angle. That single rule replaces the anatomical drawing, and it removes by construction the defect that
+// caused most of the trouble before it: a diagonal run sweeps across every lane it passes, whereas a
+// vertical run in its own lane cannot touch its neighbours at all.
 //
-// It must cover candidateSites(), NOT SITES: SITES has 18 levels, but the composers (composeHemiLevelSites,
-// composeBilateralCordSites, composeCaudaConusSites) add 18 more, and the diagram receives all of them.
-export const ANCHOR = {
-  // brain
-  cerebrum: [130, 76], cortex: [112, 92], basal_ganglia: [80, 152], corpus_callosum: [30, 140],
-  subcortex: [74, 168], thalamus: [46, 186], aphasia_subcortical: [52, 196], thalamus_arousal: [40, 202],
-  hypothalamus: [26, 208], olfactory: [34, 222],
-  // brainstem
-  dorsal_midbrain: [14, 226], midbrain: [20, 240], guillain_mollaret: [46, 252],
-  brainstem_aras: [12, 268], pontomesencephalic: [18, 258], pseudobulbar: [34, 276],
-  pons: [28, 296], locked_in: [10, 302], central_vestibular: [30, 344], medulla: [20, 362],
-  craniocervical_junction: [16, 388],
-  // cerebellum
-  cerebellum: [66, 306],
-  // cord and below
-  cord: [15, 470], combined_degeneration: [15, 500], conus: [13, 552], cauda: [22, 582],
-  // visual, pupil, sympathetic, skull base
-  visual_pathway: [44, 186], pupil: [162, 222], sympathetic: [100, 404],
-  skull_base: [152, 228], peripheral_vestibular: [128, 262],
-  // peripheral
-  root: [46, 486], plexus: [92, 512], nerve: [126, 566], polyneuropathy: [150, 606],
-  motor_unit: [160, 626],
+// THE SPINE, rostral to caudal, is the column the owner named.
+export const BANDS = ["cerebrum", "subcortex", "thalamus", "midbrain", "pons", "medulla", "cord"];
+const BAND_TOP = 60, BAND_H = 84;
+export const bandY = b => BAND_TOP + BANDS.indexOf(b) * BAND_H + BAND_H / 2;
+
+// Every level in the model maps onto a spine band, or hangs off one laterally. The model has 36 levels and
+// the spine names 7, so this table is what stops the other 29 falling off the diagram.
+//
+// `cortex` is the one worth flagging: it carries 71 sites — more than any other level — and is NOT in the
+// spine, because the model splits `cerebrum` (the composite, 1 site) from `cortex` (the lobar detail).
+// Both are the cerebrum band.
+const SPINE_LEVEL = {
+  cerebrum: "cerebrum", cortex: "cerebrum", corpus_callosum: "cerebrum", olfactory: "cerebrum",
+  subcortex: "subcortex", basal_ganglia: "subcortex", aphasia_subcortical: "subcortex",
+  thalamus: "thalamus", thalamus_arousal: "thalamus", hypothalamus: "thalamus",
+  midbrain: "midbrain", dorsal_midbrain: "midbrain", pontomesencephalic: "midbrain", brainstem_aras: "midbrain",
+  pons: "pons", locked_in: "pons", pseudobulbar: "pons", guillain_mollaret: "pons", central_vestibular: "pons",
+  medulla: "medulla", craniocervical_junction: "medulla",
+  cord: "cord", combined_degeneration: "cord", conus: "cord",
 };
+
+// LEAVING THE CNS. Each of these hangs off a band on a horizontal run; `rank` is how far out, so a
+// pathway that exits and continues (root -> plexus -> nerve -> motor unit) steps outward in order.
+const LATERAL_LEVEL = {
+  visual_pathway:        { band: "thalamus", rank: 1 },
+  pupil:                 { band: "midbrain", rank: 2 },
+  cerebellum:            { band: "pons",     rank: 1 },
+  peripheral_vestibular: { band: "pons",     rank: 2 },
+  skull_base:            { band: "medulla",  rank: 2 },
+  sympathetic:           { band: "cord",     rank: 1 },
+  root:                  { band: "cord",     rank: 2 },
+  plexus:                { band: "cord",     rank: 3 },
+  nerve:                 { band: "cord",     rank: 4 },
+  polyneuropathy:        { band: "cord",     rank: 5 },
+  motor_unit:            { band: "cord",     rank: 5 },
+  cauda:                 { band: "cord",     rank: 1 },
+};
+
+export const bandOf = level => SPINE_LEVEL[level] || (LATERAL_LEVEL[level] && LATERAL_LEVEL[level].band) || null;
+export const lateralOf = level => LATERAL_LEVEL[level] || null;
+
+// The rails: a spine level sits on the midline column, a lateral level on its rank's rail.
+const RAIL = [0, 96, 168, 240, 300, 348];
+export const RAIL_X = RAIL;
+
+// ---- ANCHOR is now DERIVED from the schema, not hand-placed ----
+// It keeps its old shape — level -> [dx from the midline, y] — so everything downstream is unchanged, but
+// no coordinate is invented any more: y comes from the band, dx from the rail.
+export const ANCHOR = Object.fromEntries([
+  ...Object.entries(SPINE_LEVEL).map(([lvl, band]) => [lvl, [26, bandY(band)]]),
+  ...Object.entries(LATERAL_LEVEL).map(([lvl, v]) => [lvl, [RAIL[v.rank], bandY(v.band)]]),
+]);
 
 // ---- ZONE: derived from LEVEL + part name, never authored. ----
 // A ZONE IS A CROSS-SECTIONAL POSITION, so it only means anything at a level that HAS a cross-section.
@@ -94,200 +126,101 @@ export function anchorFor(level, part, side) {
 // KEYED BY COMPARTMENT, NOT BY LEVEL, so a crop always contains whole anatomical structures rather than
 // slicing a shape in half. compartmentOf() is part-aware, which is why the optic pathway can share the
 // `skull_base` LEVEL yet crop separately.
-export const CROP = {
-  brain:       [ 96,  20, 568, 220],
-  brainstem:   [232, 196, 296, 220],
-  cerebellum:  [232, 250, 296, 130],
-  cord:        [268, 380, 224, 200],
-  cauda:       [280, 520, 200, 120],
-  root:        [268, 420, 224, 160],
-  plexus:      [212, 450, 336, 140],
-  nerve:       [180, 500, 400, 150],
-  motor_unit:  [160, 560, 440, 100],
-  skull_base:  [140, 170, 480, 140],
-  sympathetic: [212, 340, 336, 160],
-  optic:       [140,  20, 480, 240],
-  pupil:       [140, 160, 480, 130],
-};
-
-const PAD = 16;
-// A crop must not zoom so far that the reader loses the anatomy around the pins. Several compartments are
-// a thin band, and cropping one tightly filled the panel with a single structure. Floor it and centre on
-// the region instead. (Learned while composing the traced plate; kept when that was reverted.)
-const MIN_W = 300, MIN_H = 260;
-
-// The union of the crop boxes of whatever compartments are in play, padded and clamped to the figure.
-// ZOOM IS A DERIVED viewBox CROP over ONE authored drawing — there is no second figure and no detail
-// level, so a crop can never disagree with the figure it crops.
-export function cropFor(compartments) {
-  const boxes = (compartments || []).map(c => CROP[c]).filter(Boolean);
-  if (!boxes.length) return [0, 0, FIG_W, FIG_H];
-  const x0 = Math.min(...boxes.map(b => b[0])), y0 = Math.min(...boxes.map(b => b[1]));
-  const x1 = Math.max(...boxes.map(b => b[0] + b[2])), y1 = Math.max(...boxes.map(b => b[1] + b[3]));
-  const w = Math.min(FIG_W, Math.max(MIN_W, x1 - x0 + PAD * 2));
-  const h = Math.min(FIG_H, Math.max(MIN_H, y1 - y0 + PAD * 2));
-  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-  const x = Math.max(0, Math.min(FIG_W - w, cx - w / 2));
-  const y = Math.max(0, Math.min(FIG_H - h, cy - h / 2));
-  return [x, y, w, h];
-}
+// NO CROP TABLE. It was hand-authored, went stale twice when the figure's coordinates moved, and both
+// times only an invariant caught it. The crop is now computed in neuraxis-diagram.js from the anchors of
+// the sites actually being shown, so there is nothing to keep in step.
+export const PAD = 26;
+export const MIN_W = 420, MIN_H = 640;
 
 
-// ---- TRACT LANES: where each pathway sits IN CROSS-SECTION at each level ----
-// [dx from the midline, dy from the level's anchor]. Positive dx is lateral; negative dy is dorsal.
+
+// ---- TRACT LANES: ONE LANE PER TRACT, for its whole vertical run ----
+// Under the orthogonal schema a tract is a SINGLE VERTICAL LINE. It does not drift laterally from level to
+// level, because every such drift would be a horizontal jog, and a horizontal jog crosses every lane it
+// passes — which is exactly the defect the schema exists to remove. The only horizontals a tract draws are
+// its DECUSSATION and its exit from the CNS.
 //
-// WHY THIS TABLE EXISTS. Every tract used to be drawn through its LEVEL'S anchor — one point shared by
-// all of them — so paths were guaranteed to converge and cross. Wallenberg rendered 16 pairwise crossings
-// away from any decussation, which does not happen in neuroanatomy. Giving each pathway its own lane is
-// the fix, and test/neuraxis-diagram.test.js asserts no two paths may cross except at a declared
-// decussation.
+// So the per-level cross-sectional positions from Last's are no longer drawn as lateral drift. They are
+// still true, and still where the pathway sits in a cross-section; they belong to the CROSS-SECTION views
+// (increment 4), which is the only place a cross-sectional fact can honestly be shown.
 //
-// The positions are read off Last's Anatomy 9th ed, ch.7 (pp. 612-613, 623-625) — the same source already
-// recorded in the spec but never used for drawing. Page references are per entry.
-// THE LATERAL ORDER OF THE LANES MUST NOT SWAP BETWEEN LEVELS. Two pathways that trade places between one
-// level and the next are forced to cross, whatever the anatomy says — corticospinal (46) and spinothalamic
-// (38) did exactly that at the subcortex before inverting at the midbrain (13 vs 18). In three dimensions
-// they do not cross: the lemnisci are DORSAL to the crus, not lateral to it. A flat coronal drawing cannot
-// show dorsoventral separation, so lateral order carries it, and the order chosen is the one the brainstem
-// has: corticobulbar, corticospinal, dorsal column, spinothalamic, medial to lateral.
-export const TRACT_LANE = {
-  // NOTE: the order test in test/neuraxis-figure.test.js compares lanes at SHARED LEVELS, which cannot see
-  // a pair that swaps BETWEEN levels — trigeminothalamic and oculosympathetic share only the medulla, yet
-  // crossed higher up because one was lateral at the thalamus and medial by the pons. The geometric
-  // non-crossing test in test/neuraxis-diagram.test.js is what catches those, and it is the authority.
-  //
-  // `_planar: false` marks a pathway that LEAVES THE CORONAL PLANE, and lane ordering does not apply to it.
-  // Two do. The oculosympathetic ascends on the internal carotid and the visual pathway runs from the
-  // orbit — both ANTERIOR to the brainstem, separated from everything else by depth rather than by side.
-  // A coronal drawing has no depth axis, so their lines must traverse other lanes on the page while
-  // crossing nothing in the body. Marking them is honest; forcing them into the lane order is not, and
-  // five attempts to place the oculosympathetic "correctly" only moved the crossing around.
-  //
-  // ONE CONSISTENT MEDIAL -> LATERAL ORDER, top to bottom of this table:
-  //   mlf · corticobulbar · dorsal column · corticospinal · trigeminothalamic · spinothalamic ·
-  //   cerebellar · oculosympathetic
-  // The ML's DRIFT is still drawn — dx grows from 4 in the medulla to 30 at the thalamus (Last's p.613,
-  // "adjacent to the midline ... deviates laterally") — but its RANK against the other tracts never
-  // changes, because a rank change is a forced crossing.
-  // A LADDER WITH SIX-UNIT GAPS between neighbours at each level.
-  //
-  // Four units was not enough and the reason is worth recording: the ORDER CHECK interpolates lanes
-  // LINEARLY, but the figure draws a SPLINE, which leaves its knots between levels. Lines that are
-  // correctly ordered at every knot still wove into each other across a four-unit gap. The geometric
-  // non-crossing test in test/neuraxis-diagram.test.js reads the drawn geometry and is the authority; the
-  // order check here is the cheaper early warning.
-  //
-  // The lateral lanes sit outside the drawn brainstem, deliberately — the stem is ~20 units half-width and
-  // seven pathways run through it. A teaching figure shows the lanes legibly rather than to scale.
-  mlf:               { midbrain: [3, -6], pons: [3, -6] },
-  corticobulbar:     { cortex: [50, 0], subcortex: [20, 0], midbrain: [9, 4], pons: [9, 6] },
-  central_tegmental: { midbrain: [9, 0], guillain_mollaret: [40, 0] },
-  dorsal_column:     { cord: [4, -4], medulla: [3, 0], pons: [15, 0], midbrain: [15, 0], subcortex: [30, 0] },
-  corticospinal:     { cortex: [66, 0], subcortex: [40, 0], midbrain: [21, 4], pons: [21, 6], medulla: [9, 6], cord: [10, 0] },
-  // VPM is medial to VPL (50). A LANE ONLY EXISTS AT A LEVEL THE TRACT'S COURSE ACTUALLY VISITS, and this
-  // one had no midbrain — so a midbrain lane was dead data and the line ran straight from the thalamus to
-  // the pons, cutting across corticospinal and spinothalamic on the way — and NO LANE VALUE COULD FIX IT.
-  // That was proved rather than assumed: between y=186 and y=296 the corticospinal lane falls from 35 to
-  // 21 while the spinothalamic sits at 33, so a straight line would have to be above 37 at the top, below
-  // 31 in the middle and above 23 at the bottom, which is not a line.
-  //
-  // THE DRAWING HAD EXPOSED A GAP IN THE MODEL. The course jumped pons → thalamus with no midbrain
-  // segment, though the trigeminal lemniscus ascends there beside the medial lemniscus (Last's p.613).
-  // The segment and its structure (tl_midbrain) were added on the owner's ruling, and the lane now sits
-  // on a real knot.
-  trigeminothalamic: { thalamus: [40, 0], midbrain: [27, -4], pons: [27, -6], medulla: [15, -7] },
-  spinothalamic:     { cord: [16, 3], medulla: [21, 0], pons: [33, -2], midbrain: [33, -2], subcortex: [50, 0] },
-  cerebellar:        { cerebellum: [60, 0], midbrain: [39, -4], pons: [39, 0], medulla: [27, -4], combined_degeneration: [22, 0] },
-  // Runs WITH the spinal lemniscus through the lateral brainstem (Last's p.613) — the adjacency that makes
-  // one lateral medullary lesion give both a Horner's and contralateral body pain and temperature loss.
-  // In the cord it lies in the lateral funiculus by the lateral horn (p.625).
-  oculosympathetic:  { _planar: false,
-                       hypothalamus: [16, 0], medulla: [20, 5], cord: [16, 2], sympathetic: [100, 0], skull_base: [140, 0],
-                       _break: "cord" },
-  visual:            { _planar: false,
-                       skull_base: [130, 0], visual_pathway: [30, 0], subcortex: [60, 0], cortex: [90, 0] },
-};
+// The ORDER is the medial -> lateral order of the brainstem, which is what the lane index encodes.
+const LANE_ORDER = [
+  "mlf", "corticobulbar", "dorsal_column", "corticospinal", "central_tegmental",
+  "trigeminothalamic", "spinothalamic", "cerebellar", "oculosympathetic", "visual",
+];
+const LANE_0 = 11, LANE_STEP = 5;
 
+// `_planar: false` marks a pathway that LEAVES THE CORONAL PLANE — the oculosympathetic ascending on the
+// carotid, the visual pathway from the orbit, both ANTERIOR to the brainstem. Their separation from the
+// rest is in depth, which no flat drawing has an axis for.
+const NON_PLANAR = new Set(["oculosympathetic", "visual"]);
 
-// A pathway with no authored lane at a level falls back INSIDE its level, not onto the shared anchor.
-export function laneFor(tractId, level) {
-  const t = TRACT_LANE[tractId];
-  if (t && t[level]) return t[level];
-  const a = ANCHOR[level];
-  return [a ? Math.abs(a[0]) * 0.6 : 30, 0];
-}
+export const TRACT_LANE = Object.fromEntries(LANE_ORDER.map((id, i) => [id, LANE_0 + i * LANE_STEP]));
+export const laneFor = tractId => TRACT_LANE[tractId] ?? LANE_0 + LANE_ORDER.length * LANE_STEP;
+export const isPlanar = tractId => !NON_PLANAR.has(tractId);
 
-// Extra knots to insert after a level, for a pathway whose real course doubles back (see oculosympathetic).
-// Does the drawn line stop after this level and resume as a separate stroke?
-export function breaksAfter(tractId, level) {
-  const t = TRACT_LANE[tractId];
-  return !!(t && t._break === level);
-}
-
-// A pathway whose course is not monotonic along the neuraxis doubles back on itself, and its excursion
-// crosses whatever lies between. The cerebellar entry bundles INFLOW and OUTFLOW, which travel opposite
-// ways, so its course order is a description of connections rather than one fibre's route. Ordering those
-// knots along the neuraxis instead removes a self-crossing that means nothing anatomically. A pathway that
-// authors an explicit route (`_via` or `_break`) is left exactly as written.
-// Does this pathway stay in the coronal plane? A non-planar one is exempt from lane ordering and from the
-// non-crossing rule, because its separation from the others is in DEPTH, which the drawing cannot show.
-export function isPlanar(tractId) {
-  const t = TRACT_LANE[tractId];
-  return !(t && t._planar === false);
-}
-
-export function routeIsAuthored(tractId) {
-  const t = TRACT_LANE[tractId];
-  return !!(t && (t._via || t._break));
-}
-
-export function viaAfter(tractId, level) {
-  const t = TRACT_LANE[tractId];
-  return (t && t._via && t._via[level]) || [];
-}
+// A pathway whose course is not monotonic along the neuraxis doubles back on itself. The cerebellar entry
+// bundles INFLOW and OUTFLOW, which travel opposite ways, so its course order describes connections rather
+// than one fibre's route; ordering those knots along the neuraxis removes a self-crossing that means
+// nothing. A pathway that authors its own route is left as written.
+const AUTHORED_ROUTE = new Set(["oculosympathetic"]);
+export const routeIsAuthored = tractId => AUTHORED_ROUTE.has(tractId);
+// The oculosympathetic is a THREE-NEURON CHAIN; drawn as one stroke its limbs closed a loop that enclosed
+// the posterior fossa. It breaks at the ciliospinal centre — first-order descending, second and third
+// ascending — which is both the fix and the more honest picture.
+export const breaksAfter = (tractId, level) => tractId === "oculosympathetic" && level === "cord";
+export const viaAfter = () => [];
 
 // The point a tract passes through at a level, on a given side.
 export function tractPoint(tractId, level, side) {
   const a = ANCHOR[level];
   if (!a) return null;
-  const [dx, dy] = laneFor(tractId, level);
+  const dx = laneFor(tractId);
   const sign = side === "right" ? 1 : -1;
-  return [MX + (side === "midline" || side === "bilateral" ? 0 : sign * dx), a[1] + dy];
+  return [MX + (side === "midline" || side === "bilateral" ? 0 : sign * dx), a[1]];
 }
 
-// ---- the drawing itself ----
-// AUTHORED AS ONE HALF AND MIRRORED. Symmetry holds by construction and there is no second copy of the
-// anatomy to drift out of step — the same reasoning as markSVG() in brand.js drawing one geometry twice.
-// Classes only; no inline colour (test/contrast.test.js fails inline accent in app/*.js).
-const HALF = `
-  <path class="an-brain" d="M380 46 C458 46 528 86 536 152 C542 200 514 228 470 228 L380 228 Z"/>
-  <path class="an-line" d="M470 120 C494 132 502 156 496 178"/>
-  <path class="an-line" d="M446 150 L430 176 L448 200"/>
-  <ellipse class="an-deep" cx="416" cy="186" rx="20" ry="13"/>
-  <ellipse class="an-deep" cx="452" cy="152" rx="16" ry="11"/>
-  <path class="an-stem" d="M380 228 L410 228 L410 264 L424 276 L424 318 L406 332 L406 396 L380 396 Z"/>
-  <ellipse class="an-cbm" cx="466" cy="306" rx="54" ry="42"/>
-  <path class="an-folia" d="M424 288 C444 296 462 300 500 298 M424 306 C446 314 466 318 508 316 M428 324 C450 332 470 336 502 334"/>
-  <path class="an-cord" d="M380 396 L398 396 L398 556 L380 566 Z"/>
-  <path class="an-plate" d="M380 224 L566 224"/>
-  <g class="an-roots">
-    <path d="M398 430 L432 442"/><path d="M398 458 L432 470"/><path d="M398 486 L436 498"/>
-    <path d="M398 514 L432 526"/><path d="M398 540 L428 552"/>
-  </g>
-  <path class="an-plexus" d="M436 470 L470 486 L508 494 M436 498 L474 494 L508 494 M436 442 L472 470 L508 494"/>
-  <path class="an-nerve" d="M508 494 L534 548 L546 606 L552 640"/>
-  <path class="an-symp" d="M406 366 C438 380 456 396 458 424 C460 452 438 466 424 470"/>
-  <circle class="an-gang" cx="458" cy="424" r="5"/>
-  <path class="an-symp" d="M458 424 C486 400 508 340 512 262 C514 240 520 230 532 226"/>
-  <circle class="an-eye" cx="542" cy="222" r="13"/>
-  <circle class="an-pupil" cx="542" cy="222" r="4.5"/>
-  <path class="an-optic" d="M530 216 C494 200 452 176 424 186"/>
-`;
+// ---- the drawing: an orthogonal schematic, no oblique lines anywhere ----
+// The column is the neuraxis, one band per level of the spine. A pathway leaving the CNS steps out along a
+// horizontal rail. Everything is axis-aligned, including the anatomy, because a diagram whose rule is "no
+// diagonals" cannot have a diagonal drawing underneath it.
+const COL_HALF = 54;                         // half-width of the CNS column
+export const FIG_TOP = 60;
+export const FIG_BOTTOM = () => bandY("cord") + 42;
+
+const bandRow = (b, i) => {
+  const y = bandY(b), top = y - 42, bot = y + 42;
+  return `<rect class="nx-band-box" x="${MX - COL_HALF}" y="${top}" width="${COL_HALF * 2}" height="84"/>`
+    + `<text class="nx-band-name" x="${MX - COL_HALF - 10}" y="${top + 16}">${b === "cord" ? "spinal cord" : b}</text>`
+    + (i < BANDS.length - 1 ? `<line class="nx-band-rule" x1="${MX - COL_HALF}" y1="${bot}" x2="${MX + COL_HALF}" y2="${bot}"/>` : "");
+};
+
+// The horizontal exits: one rail per rank, drawn on BOTH sides, with a tick where each level sits.
+const exits = () => {
+  const seen = new Map();
+  for (const [lvl, v] of Object.entries(LATERAL_LEVEL)) {
+    const key = `${v.band}|${v.rank}`;
+    if (!seen.has(key)) seen.set(key, { band: v.band, rank: v.rank, levels: [] });
+    seen.get(key).levels.push(lvl);
+  }
+  let out = "";
+  for (const { band, rank } of seen.values()) {
+    const y = bandY(band), x = RAIL[rank];
+    for (const sgn of [-1, 1]) {
+      out += `<line class="nx-exit" x1="${MX + sgn * COL_HALF}" y1="${y}" x2="${MX + sgn * x}" y2="${y}"/>`
+        + `<line class="nx-exit-tick" x1="${MX + sgn * x}" y1="${y - 9}" x2="${MX + sgn * x}" y2="${y + 9}"/>`;
+    }
+  }
+  return out;
+};
 
 export const baseFigure = () =>
-  `<g class="anatomy">${HALF}<g transform="translate(${MX * 2},0) scale(-1,1)">${HALF}</g>`
-  + `<path class="an-optic" d="M424 186 L336 186"/><circle class="an-chiasm" cx="${MX}" cy="186" r="6"/>`
-  + `<line class="an-mid" x1="${MX}" y1="34" x2="${MX}" y2="640"/></g>`;
+  `<g class="anatomy">`
+  + BANDS.map(bandRow).join("")
+  + exits()
+  + `<line class="an-mid" x1="${MX}" y1="${FIG_TOP - 18}" x2="${MX}" y2="${FIG_BOTTOM()}"/>`
+  + `</g>`;
 
 // Captioned explicitly because the convention is ANATOMICAL (patient's left on the left), which is the
 // opposite of a scan — a reader with imaging on the next screen must not have to guess.
@@ -301,27 +234,20 @@ export const sideCaptions = (crop) => {
     + `<text class="nx-side" x="${r}" y="${cy + 18}" text-anchor="middle">patient's right</text>`;
 };
 
-const REGIONS = [
-  [0, 84, "cerebrum"], [0, 244, "midbrain"], [0, 300, "pons"], [0, 366, "medulla"],
-  [96, 306, "cerebellum"], [0, 474, "cord"], [176, 224, "skull base"],
-  [124, 408, "sympathetic chain"], [0, 178, "chiasm"], [150, 570, "peripheral nerve"],
-];
-
-// TWO THINGS LEARNED BY LOOKING AT THE RENDERED FIGURE, not from a test:
-//
-// 1. A caption outside the current crop must not render — a cropped figure was showing "cerebell",
-//    "medulla" and "sy" sliced off at the edge.
-// 2. A MIDLINE caption collides with MIDLINE PINS. The brainstem levels sit on the midline and so do
-//    bilateral/midline candidates, so "medulla" rendered underneath its own pin. Midline captions
-//    therefore go in the crop's LEFT MARGIN — which is what the old band labels did, and it worked.
-//    Captions for lateral structures (cerebellum, skull base, sympathetic chain) keep their own offset,
-//    because there they ARE the label for something out at that position.
+// The bands label themselves (see bandRow), so region captions only name what hangs off the RAILS.
+const RAIL_LABEL = {
+  "thalamus|1": "visual pathway", "midbrain|2": "pupil", "pons|1": "cerebellum",
+  "pons|2": "inner ear", "medulla|2": "skull base / cranial nerves", "cord|1": "sympathetic · cauda",
+  "cord|2": "root", "cord|3": "plexus", "cord|4": "nerve", "cord|5": "motor unit",
+};
 export const regionCaptions = (crop) => {
   const [cx, cy, cw, ch] = crop || [0, 0, FIG_W, FIG_H];
-  return REGIONS.filter(([dx, y]) => y > cy + 10 && y < cy + ch - 4)
-    .map(([dx, y, t]) => {
-      const x = dx ? MX + dx + 30 : cx + 6;
-      if (x < cx + 2 || x > cx + cw - 40) return "";        // would clip at the edge
-      return `<text class="nx-region" x="${x}" y="${y}" text-anchor="start">${t}</text>`;
-    }).join("");
+  let out = "";
+  for (const [key, label] of Object.entries(RAIL_LABEL)) {
+    const [band, rank] = key.split("|");
+    const y = bandY(band), x = MX + RAIL[+rank] + 10;
+    if (y < cy + 10 || y > cy + ch - 6 || x < cx + 2 || x > cx + cw - 30) continue;
+    out += `<text class="nx-region" x="${x}" y="${y - 13}" text-anchor="start">${label}</text>`;
+  }
+  return out;
 };

@@ -1,7 +1,8 @@
 // neuraxis-figure.test.js — the authored figure is CONTENT; these assert the RULES that keep it complete,
 // not the coordinate values. A new site must never be able to land undetermined.
-import { MX, FIG_W, FIG_H, ANCHOR, CROP, zoneOf, anchorFor, cropFor,
+import { MX, FIG_W, FIG_H, ANCHOR, zoneOf, anchorFor,
          baseFigure, regionCaptions, sideCaptions } from "../app/neuraxis-figure.js";
+import { bandY } from "../app/neuraxis-figure.js";
 import { candidateSites } from "../src/engine/inverse.js";
 import { compartmentOf } from "../src/model/compartments.js";
 
@@ -58,44 +59,18 @@ ok("left and right mirror about the midline", Math.abs((MX - cordL.x) - (cordR.x
 ok("midline sits ON the midline", anchorFor("cord", "hemi", "midline").x === MX);
 ok("bilateral sits ON the midline", anchorFor("cord", "hemi", "bilateral").x === MX);
 
-// ---- 4. crop boxes: one per compartment, and a union that always lands inside the figure ----
-const comps = [...new Set(sites.map(s => compartmentOf(s)))];
-const missingC = comps.filter(c => !CROP[c]);
-ok(`every compartment has a crop box (${comps.length} compartments)`, missingC.length === 0, missingC.join(", "));
-ok("no crop box is orphaned", Object.keys(CROP).every(k => comps.includes(k)),
-   Object.keys(CROP).filter(k => !comps.includes(k)).join(", "));
-
-const whole = cropFor(comps);
-const inside = (b, o) => b[0] >= o[0] && b[1] >= o[1] && b[0] + b[2] <= o[0] + o[2] && b[1] + b[3] <= o[1] + o[3];
-ok("the union crop contains every compartment's box", comps.every(c => inside(CROP[c], whole)));
-ok("the union crop is larger than any single box", comps.every(c => CROP[c][2] * CROP[c][3] <= whole[2] * whole[3]));
-ok("the union crop stays inside the figure",
-   whole[0] >= 0 && whole[1] >= 0 && whole[0] + whole[2] <= FIG_W && whole[1] + whole[3] <= FIG_H);
-
-const periph = cropFor(["root", "plexus", "nerve"]);
-ok("a peripheral crop excludes the cerebrum", periph[1] > ANCHOR.cortex[1]);
-ok("a peripheral crop is smaller than the whole figure", periph[3] < whole[3]);
-ok("no compartments yields the whole figure", cropFor([]).join() === [0, 0, FIG_W, FIG_H].join());
-
-for (const c of comps) {
-  const [x, y, w, h] = CROP[c];
-  ok(`crop "${c}" is inside the figure and non-empty`,
-     w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= FIG_W && y + h <= FIG_H, `${x},${y},${w},${h}`);
-  // every level living in this compartment must actually fall inside its box, or a crop can hide a pin
-  for (const s of sites.filter(s => compartmentOf(s) === c)) {
-    const a = anchorFor(s.level, s.part, s.side);
-    if (!(a.y >= y && a.y <= y + h)) { ok(`crop "${c}" contains ${s.level} (y=${a.y})`, false, `box y ${y}..${y + h}`); break; }
-  }
-}
-ok("every candidate's anchor falls inside its own compartment's crop",
-   sites.every(s => { const b = CROP[compartmentOf(s)], a = anchorFor(s.level, s.part, s.side);
-                      return b && a.y >= b[1] && a.y <= b[1] + b[3] && a.x >= b[0] && a.x <= b[0] + b[2]; }));
+// ---- 4. THE CROP IS DERIVED, so there is no table to assert ----
+// It used to be a hand-authored box per compartment; it went stale twice when the figure moved and only
+// an invariant caught it. neuraxis-diagram.js now computes it from the pins on screen.
 
 // ---- 5. the base figure ----
 const fig = baseFigure();
-ok("baseFigure returns an SVG fragment", typeof fig === "string" && fig.includes("<path"));
-ok("the figure is authored as one half and MIRRORED (no second copy to drift)",
-   (fig.match(/scale\(-1,1\)/g) || []).length === 1);
+ok("baseFigure returns an SVG fragment", typeof fig === "string" && fig.includes("nx-band-box"));
+// The orthogonal schema is symmetric by construction — every exit rail is drawn on both sides from the
+// same rank — so there is no mirrored copy to keep in step any more.
+ok("the figure has no oblique lines at all",
+   !/<line[^>]*x1="([\d.]+)"[^>]*y1="([\d.]+)"[^>]*x2="(?!\1)[\d.]+"[^>]*y2="(?!\2)[\d.]+"/.test(fig),
+   "an oblique line is in the base figure");
 ok("anatomy strokes never use --line (invisible in dark; must be --muted)",
    !/stroke:\s*var\(--line\)/.test(fig));
 ok("the figure paints no accent inline", !/--terra/.test(fig));
@@ -132,76 +107,19 @@ ok(`every anatomy class in the figure has a CSS rule (${usedClasses.length} clas
 const dead = ruledClasses.filter(c => !usedClasses.includes(c));
 ok("no anatomy CSS rule is dead", dead.length === 0, "unused: " + dead.join(", "));
 
-// ---- 7. LANE ORDER MUST NOT SWAP — AT ANY HEIGHT, NOT JUST AT SHARED LEVELS ----
-// Two pathways that trade lateral places are forced to cross, because a flat coronal drawing has no
-// dorsoventral axis to separate them with.
-//
-// COMPARING ONLY AT SHARED LEVELS IS NOT ENOUGH, and that gap cost several rounds. Spinothalamic and
-// oculosympathetic agree at the two levels they both declare (medulla, cord) and still cross, because
-// spinothalamic's lane narrows from dx 50 at the subcortex to 17 at the medulla and sweeps across the
-// other lane in between. A lane is a CONTINUOUS line between its knots, so the order has to hold at every
-// height where both tracts exist.
-import { TRACT_LANE } from "../app/neuraxis-figure.js";
-const laneCurve = id => Object.entries(TRACT_LANE[id])
-  .filter(([lvl]) => !lvl.startsWith("_") && ANCHOR[lvl])
-  .map(([lvl, v]) => [ANCHOR[lvl][1], v[0]])
-  .sort((a, b) => a[0] - b[0]);
-const dxAt = (curve, y) => {
-  if (y < curve[0][0] || y > curve[curve.length - 1][0]) return null;
-  for (let i = 0; i < curve.length - 1; i++) {
-    const [y0, d0] = curve[i], [y1, d1] = curve[i + 1];
-    if (y >= y0 && y <= y1) return y1 === y0 ? d0 : d0 + (d1 - d0) * (y - y0) / (y1 - y0);
-  }
-  return null;
-};
-// A non-planar pathway is exempt: its separation from the others is in depth, not on the page.
-const tractIds = Object.keys(TRACT_LANE).filter(id => TRACT_LANE[id]._planar !== false);
-ok("the non-planar pathways are declared", Object.keys(TRACT_LANE).length - tractIds.length === 2);
-let swaps = 0;
-for (let i = 0; i < tractIds.length; i++) {
-  for (let j = i + 1; j < tractIds.length; j++) {
-    const A = laneCurve(tractIds[i]), B = laneCurve(tractIds[j]);
-    if (A.length < 2 || B.length < 2) continue;
-    const lo = Math.max(A[0][0], B[0][0]), hi = Math.min(A[A.length - 1][0], B[B.length - 1][0]);
-    if (hi - lo < 20) continue;                       // barely overlap; nothing to order
-    // TWO LANES THAT MEET ARE AS BAD AS TWO THAT SWAP: equal lanes put the lines on top of each other and
-    // the smoothing then weaves them. Treat a near-zero gap as a violation rather than skipping it, which
-    // is how trigeminothalamic and spinothalamic both ended up at midbrain dx 20.
-    const signs = new Set();
-    let touched = false;
-    for (let y = lo; y <= hi; y += 4) {
-      const a = dxAt(A, y), b = dxAt(B, y);
-      if (a === null || b === null) continue;
-      if (Math.abs(a - b) < 2) { touched = true; continue; }
-      signs.add(Math.sign(a - b));
-    }
-    if (signs.size > 1 || touched) {
-      swaps++;
-      const at = [];
-      for (let y = lo; y <= hi; y += 4) {
-        const a = dxAt(A, y), b = dxAt(B, y);
-        if (a !== null && b !== null) at.push(`${Math.round(y)}:${a.toFixed(0)}v${b.toFixed(0)}`);
-      }
-      ok(`${tractIds[i]} and ${tractIds[j]} keep clear, ordered lanes at every height`, false,
-         at.filter((_, k) => k % 6 === 0).join(" "));
-    }
-  }
-}
-ok("no two tract lanes swap order or touch at any height", swaps === 0, `${swaps} bad pairs`);
-
-// ---- 8. NO DEAD LANES ----
-// A lane only takes effect at a level the tract's COURSE actually visits. A midbrain lane was once added
-// to trigeminothalamic to steer it between the thalamus and the pons; that tract has no midbrain in its
-// course, so the entry did nothing and the line kept cutting through its neighbour. Dead data that looks
-// like a fix is worse than no data.
-const { TRACTS } = await import("../src/engine/../model/tracts.js");
-for (const tr of TRACTS) {
-  const lanes = TRACT_LANE[tr.id];
-  if (!lanes) continue;
-  const courseLevels = new Set(tr.course.map(w => w.level));
-  const dead = Object.keys(lanes).filter(k => !k.startsWith("_") && !courseLevels.has(k));
-  ok(`every lane on "${tr.id}" is a level its course visits`, dead.length === 0, "dead: " + dead.join(", "));
-}
+// ---- 7. ONE LANE PER TRACT, ALL DISTINCT ----
+// Under the orthogonal schema a tract is a single vertical line at a fixed x, so the elaborate ordering
+// checks this file used to carry are gone: there is no lateral drift to keep ordered, and two verticals in
+// different lanes cannot touch. All that remains to assert is that the lanes ARE distinct and ordered.
+import { TRACT_LANE, isPlanar } from "../app/neuraxis-figure.js";
+const laneIds = Object.keys(TRACT_LANE);
+const laneVals = laneIds.map(id => TRACT_LANE[id]);
+ok(`every tract has a lane (${laneIds.length})`, laneVals.every(v => Number.isFinite(v) && v > 0));
+ok("no two tracts share a lane", new Set(laneVals).size === laneVals.length,
+   laneIds.map(id => `${id}:${TRACT_LANE[id]}`).join(" "));
+ok("lanes run medial to lateral in order", laneVals.every((v, i) => i === 0 || v > laneVals[i - 1]));
+ok("the non-planar pathways are declared", laneIds.filter(id => !isPlanar(id)).length === 2,
+   laneIds.filter(id => !isPlanar(id)).join(", "));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
