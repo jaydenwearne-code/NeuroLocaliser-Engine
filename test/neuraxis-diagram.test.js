@@ -1,5 +1,5 @@
 // neuraxis-diagram.test.js — the builder is a pure string function (DOM-free, testable in node).
-import { neuraxisSVG, neuraxisIndex } from "../app/neuraxis-diagram.js";
+import { neuraxisSVG, neuraxisIndex, neuraxisLegend } from "../app/neuraxis-diagram.js";
 import { tractsFor } from "../src/engine/tracts.js";
 import { solve } from "../src/engine/inverse.js";
 import { MX, ANCHOR, isPlanar } from "../app/neuraxis-figure.js";
@@ -111,8 +111,12 @@ const wall = build(["cn8_vertigo@left", "face_pain_loss@left", "spinothalamic@ri
 const sW = neuraxisSVG(wall.cands, wall.tf, { labelFor: x => x.id });
 ok(`Wallenberg implicates several tracts (${wall.tf.length})`, wall.tf.length >= 3);
 ok("each implicated tract draws a path", (sW.match(/class="nx-tract/g) || []).length >= wall.tf.length);
+// The legend is HTML beside the figure, not inside it — see neuraxisLegend.
+const legW = neuraxisLegend(wall.tf);
 ok("the legend names each implicated tract",
-   wall.tf.every(t => sW.includes(esc0(t.tract.id)) || sW.toLowerCase().includes(t.tract.id.replace(/_/g, " "))));
+   wall.tf.every(t => legW.includes(esc0(t.tract.label || t.tract.id.replace(/_/g, " ")))), legW.slice(0, 200));
+ok("the legend is NOT inside the figure, where it covered the pins", !sW.includes("nx-legend"));
+ok("a tractless case has no legend", neuraxisLegend([]) === "");
 
 // PRESENT IN THE MARKUP IS NOT THE SAME AS VISIBLE ON THE SCREEN. The legend was positioned in FIGURE
 // coordinates while the viewBox is CROPPED, so Wallenberg drew four tracts and showed no legend at all —
@@ -121,10 +125,6 @@ const inView = (s, tx, ty) => {
   const vb = /viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(s).slice(1).map(Number);
   return tx >= vb[0] && tx <= vb[0] + vb[2] && ty >= vb[1] && ty <= vb[1] + vb[3];
 };
-const legendXY = /<g class="nx-legend" transform="translate\(([-\d.]+),([-\d.]+)\)"/.exec(sW);
-ok("the legend is INSIDE the cropped viewBox", legendXY && inView(sW, +legendXY[1], +legendXY[2]),
-   legendXY ? `${legendXY[1]},${legendXY[2]} vs ${/viewBox="[^"]+"/.exec(sW)[0]}` : "no legend");
-
 // same trap for the locator: it must sit inside the crop, and it must contain an actual thumbnail rather
 // than an empty frame (it shipped as an empty box first time and only looking at it revealed that).
 const locBg = /<rect class="nx-loc-bg" x="([-\d.]+)" y="([-\d.]+)"/.exec(sW);
@@ -151,7 +151,7 @@ ok("a tract WITH a decussation draws a crossing marker", st && sW.includes("nx-d
 // a case with no tracts still renders, and simply has no overlay
 const fd = build(["weak_ankle_dorsiflexion@left", "weak_great_toe_extension@left", "weak_foot_eversion@left"]);
 const sF = neuraxisSVG(fd.cands, fd.tf, { labelFor: x => x.id });
-ok("a tractless case renders no overlay and no legend", !sF.includes("nx-tract") && !sF.includes("nx-legend"));
+ok("a tractless case renders no overlay", !sF.includes("nx-tract"));
 
 // ---- THE SECOND GATE ----
 // The builder handling a tractless case is only half the fix: whyCard() in app.js had its OWN early

@@ -9,7 +9,7 @@ import { nextStepsFor, combinedNextSteps, pathologyNextStepsFor } from "../src/d
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
 import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
-import { neuraxisSVG, neuraxisIndex } from "./neuraxis-diagram.js";
+import { neuraxisSVG, neuraxisIndex, neuraxisLegend } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { readTheme, writeTheme, nextTheme, applyTheme, themeGlyph, themeLabel } from "./theme.js";
@@ -646,7 +646,7 @@ function neuraxisBlock(list, tf, selectedId) {
   if (!list || !list.length) return "";
   const opts = { selectedId, labelFor: s => siteName(s) };
   return `<div class="neuraxis-wrap"><div class="nx-cap">Neuraxis — click a site to select it</div>`
-    + neuraxisSVG(list, tf, opts) + neuraxisIndex(list, opts) + `</div>`;
+    + neuraxisSVG(list, tf, opts) + neuraxisLegend(tf) + neuraxisIndex(list, opts) + `</div>`;
 }
 
 // A `finding@side` token as a clinician reads it: "Right · Arm weakness". The raw token stays in the title

@@ -74,7 +74,7 @@ const TRACT_DASH = ["none", "6 3", "2 3", "10 3 2 3", "1 4"];   // FORM, not hue
 // the basis pontis — is increment 2, together with the three MISSING decussation entries. With today's
 // data `cerebellar`, `mlf` and `trigeminothalamic` draw no crossing. That is the state today too, so it
 // is not a regression; it is fixed with citations in increment 2.
-function tractOverlay(tracts, crop) {
+function tractOverlay(tracts) {
   if (!tracts || !tracts.length) return "";
 
   const one = (t, i) => {
@@ -139,25 +139,9 @@ function tractOverlay(tracts, crop) {
   };
 
   const drawn = tracts.map(one);
-  const legend = tracts.map((t, i) => {
-    const dash = TRACT_DASH[i % TRACT_DASH.length];
-    return `<g class="nx-legend-item"><line class="nx-tract nx-tract-${i % 5}" x1="0" y1="${i * 14}" x2="18" y2="${i * 14}"`
-      + (dash === "none" ? "" : ` stroke-dasharray="${dash}"`)
-      + `/><text class="nx-legend-t" x="24" y="${i * 14 + 3.5}">${esc(t.tract.id.replace(/_/g, " "))}</text></g>`;
-  }).join("");
-
-  // THE LEGEND IS PLACED RELATIVE TO THE CROP, NOT THE FIGURE. Positioned in figure coordinates it fell
-  // outside every cropped viewBox — Wallenberg drew four tracts and showed no legend at all, while the
-  // test that asserted the legend "names each implicated tract" passed, because it was in the MARKUP.
-  // Present in the string is not the same as visible on the screen.
-  const [cx, cy, cw, ch] = crop || [0, 0, FIG_W, FIG_H];
-  const lx = cx + 10, ly = cy + ch - 12 - tracts.length * 14;
   return `<defs><marker id="nx-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5"`
     + ` orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" class="nx-arrowhead"/></marker></defs>`
-    + drawn.map(d => d.mark).join("") + drawn.map(d => d.path).join("")
-    + `<g class="nx-legend" transform="translate(${lx},${ly})">`
-    + `<rect class="nx-legend-bg" x="-6" y="${-12}" width="150" height="${tracts.length * 14 + 16}" rx="3"/>`
-    + legend + `</g>`;
+    + drawn.map(d => d.mark).join("") + drawn.map(d => d.path).join("");
 }
 
 export function neuraxisSVG(candidates, tracts, opts = {}) {
@@ -209,7 +193,7 @@ export function neuraxisSVG(candidates, tracts, opts = {}) {
 
   return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" class="neuraxis" xmlns="http://www.w3.org/2000/svg"`
     + ` role="img" aria-label="neuraxis figure with candidate lesion sites">`
-    + sideCaptions([vx, vy, vw, vh]) + baseFigure() + regionCaptions([vx, vy, vw, vh]) + tractOverlay(tracts, [vx, vy, vw, vh]) + pins
+    + sideCaptions([vx, vy, vw, vh]) + baseFigure() + regionCaptions([vx, vy, vw, vh]) + tractOverlay(tracts) + pins
     + (zoomed ? locator(vx, vy, vw, vh) : "")
     + `</svg>`;
 }
@@ -257,4 +241,20 @@ export function neuraxisIndex(candidates, opts = {}) {
   }).join("");
 
   return `<ol class="nx-idx">${rows}</ol>`;
+}
+
+// THE LEGEND IS TEXT, SO IT LIVES OUTSIDE THE DRAWING. Inside the SVG it had to be positioned against the
+// crop, went out of view when that was computed from figure coordinates, and then sat on top of the pins
+// once it did not. As HTML beside the figure it cannot cover anything, wraps on a narrow screen, and is
+// selectable. Same reasoning as neuraxisIndex.
+export function neuraxisLegend(tracts) {
+  if (!tracts || !tracts.length) return "";
+  const items = tracts.map((t, i) => {
+    const dash = TRACT_DASH[i % TRACT_DASH.length];
+    return `<li class="nx-leg"><svg class="nx-leg-swatch" viewBox="0 0 22 8" aria-hidden="true">`
+      + `<line class="nx-tract nx-tract-${i % 5}" x1="1" y1="4" x2="21" y2="4"`
+      + (dash === "none" ? "" : ` stroke-dasharray="${dash}"`) + `/></svg>`
+      + esc(t.tract.label || t.tract.id.replace(/_/g, " ")) + `</li>`;
+  }).join("");
+  return `<ul class="nx-legend-list">${items}</ul>`;
 }
