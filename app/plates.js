@@ -31,6 +31,17 @@ export const PLATES = {
     serves: "visual pathway — retina, chiasm, tract, radiation, calcarine (~20 sites)",
     verified: true,
   },
+  coronal_brain: {
+    file: "coronal_brain_gray717.svg",
+    licence: "Public domain",
+    source: "https://commons.wikimedia.org/wiki/File:Gray717_without_text.png",
+    serves: "coronal section — cortex, ventricles, corpus callosum, deep grey (~31 subcortical sites)",
+    verified: true,
+    // TRACED, not adopted: no public-domain VECTOR coronal section exists, and the coronal view is the
+    // only one that shows left and right — which this engine's whole differential turns on. Traced from
+    // the label-free public-domain raster with tools/trace. 125 contours.
+    traced: true,
+  },
   brachial_plexus: {
     file: "Brachial_plexus_2.svg",
     licence: "Public domain",
