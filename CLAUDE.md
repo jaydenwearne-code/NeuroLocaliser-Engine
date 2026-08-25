@@ -47,10 +47,10 @@ docs (in `docs/superpowers/`) that record every decision:
   Plan: `plans/2026-07-24-ranking-realism.md`. **Also:** cord `anterior/posterior/central` are now
   `buildingBlock` sites (composite-only; excluded from `candidateSites()`), fixing the spurious unilateral
   anterior-cord candidate.
-- **Why-synthesis + neuraxis diagram (done)** — a long-tract taxonomy (`src/model/tracts.js`: corticospinal,
+- **Why-synthesis (done; the neuraxis DIAGRAM was later removed — see the 2026-08-25 entry)** — a long-tract taxonomy (`src/model/tracts.js`: corticospinal,
   spinothalamic, dorsal-column, corticobulbar; findings + course + decussation + per-waypoint detail/supply +
   direction), `src/engine/tracts.js` derivations (`tractsFor`, `tractNarrative`, `whyNotOthers`), and a
-  derived clickable SVG (`app/neuraxis-diagram.js`). Plans: `plans/2026-07-24-why-synthesis-neuraxis-diagram.md`,
+  derived clickable SVG (removed 2026-08-25). Plans: `plans/2026-07-24-why-synthesis-neuraxis-diagram.md`,
   `plans/2026-07-26-richer-why.md`. The Why panel now teaches: a composed **Course** narrative (anatomy +
   blood supply), a **Why-this-site** parsimony line, and a derived **Why-not-elsewhere** (per neuraxis-level
   bucket, the discriminating signs each alternative would add — "examine to exclude").
@@ -1084,7 +1084,9 @@ app/             zero-build teaching web app (pure consumer of the engine; no mo
   app.js         renders the nested exam tree + the where/why/what output cards; pure consumer of solve()/
                  tractsFor()/causesFor()/nextStepsFor()/unifyingDiagnoses()/forcingFindings()
   exam-map.js    EXAM_TREE (nested category→subcategory→finding) + flattenFindings() (no presets)
-  neuraxis-diagram.js  neuraxisSVG(): derived, clickable neuraxis SVG from the tract taxonomy + candidates
+  discriminators.js  discriminators(candidates, observed) -> what would SPLIT the candidate list, most
+                 informative first; explainedBy(). Pure/DOM-free. The reader ticks which locations they are
+                 choosing between and the Why card says what to examine and what each result proves
   combined-sites.js  combinedSites(r,list,pinned) -> {sites,source}: the user's pinned pair if still valid,
                  else the engine's minimal cover. Pure/DOM-free; every app.js call site must pass `pinned`
   serve.mjs      static server, port 8137
@@ -1139,3 +1141,53 @@ ataxia ipsilaterally; the superior cerebellar peduncle decussates in the caudal 
 CONTRALATERAL — fixed in PR #9). **Do not re-flag the anatomy tables as unreviewed.** Structures added
 from here are held to the same bar: add the row to `docs/artifacts/anatomy-model.html`, verify every id
 against `src/model/structures.js`, and flag anything uncertain for the owner.
+
+
+## The neuraxis diagram REMOVED, replaced by the compare panel (2026-08-25)
+
+**The diagram was rebuilt three times in one working period** — a hand-drawn anatomical figure, a traced
+public-domain plate, then an orthogonal schematic — and each rewrite improved the drawing without asking
+whether a single combined picture was the right vehicle. The owner stopped it: *"this is really just
+getting out of hand."*
+
+**THE REFRAME: a picture of the neuraxis is in every textbook; the REASONING is not.** The engine's
+distinctive asset is that it derives which findings force which site and what would separate the
+survivors, and no version of the drawing ever showed that.
+
+**The measurement that settled it: EVERY SURVIVING CANDIDATE EXPLAINS EVERY ENTERED FINDING** — that is
+what makes it a candidate. Wallenberg's two both explain 6 of 6; foot drop's three all explain 3 of 3. So
+a grid of "what does each candidate explain" is solid ticks and says nothing. The information is entirely
+in what a candidate PREDICTS THAT HAS NOT BEEN LOOKED FOR, which is exactly the next examination.
+
+**`app/discriminators.js`** (pure, DOM-free) computes it; the Why card renders it. The reader **ticks which
+locations they are choosing between** — the owner's refinement, and the thing that makes it work at any
+size. The right examination depends on which two you pick:
+
+| comparing | examine |
+|---|---|
+| peroneal nerve + L5 root | first dorsal web-space sensory loss |
+| L5 root + sacral plexus | **absent ankle jerk** |
+
+Comparing the whole list buries the second. A subset's discriminators are always a SUBSET of the whole
+list's — anything that fails to split the whole list fails to split any part of it — so the value is in
+the REORDERING, not in new findings appearing.
+
+**TWO CONTROLS, TWO CLAIMS, deliberately not merged.** The 📌 pin says "both of these are real lesions"
+(the Together card); the compare checkbox says "only one is real, help me choose". Opposite claims, so
+they cannot share a control — the same reason `selectedEntity` and `selectedPathology` are separate
+fields. `cmp=` round-trips separately from `p=`, and an EMPTY `cmp` is meaningful (the reader cleared the
+comparison) so it encodes as empty rather than reverting to the default pair.
+
+**DELETED:** `app/neuraxis-diagram.js`, `app/neuraxis-figure.js`, their two suites, `app/plates.js`, the
+four validated public-domain plates and `tools/trace` — about 1500 lines, in git history if the regional
+views are ever revisited.
+
+**A STANDING GAP CLOSED: `app.js` IS DOM-BOUND, SO NO SUITE IMPORTS IT AND A SYNTAX ERROR SHIPPED
+SILENTLY.** It happened twice in one change (a duplicate `const sideTag`, an orphaned brace left by a
+deletion) with the full suite green through both. `test/app-smoke.test.js` now parse-checks every
+`app/*.js`, verified by deliberately breaking a file. Two further bugs the browser caught and no test
+could: a `<label>` wrapping an `<input>` makes a delegated CLICK handler fire twice, so each toggle
+cancelled itself out (handled on `change`); and the event wiring is a different scope from `list`, so the
+handler threw `ReferenceError` silently on every toggle (`compareSet` now takes ids, not candidates).
+
+72 suites / 6631 assertions green.
