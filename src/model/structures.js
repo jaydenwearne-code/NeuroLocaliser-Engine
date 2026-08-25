@@ -42,6 +42,16 @@ export const STRUCTURES = [
     note: "corticobulbar UMN — upper face bilaterally innervated → forehead spared" },
   { id: "ml_midbrain",    level: "midbrain", part: "lateral", produces: "dorsal_sensory",
     note: "medial lemniscus (has crossed) — contralateral vibration/proprioception" },
+  // ADDED 2026-08-25 on the owner's ruling, FLAGGED FOR CLINICAL REVIEW. The model held the trigeminal
+  // nuclei (pons, medulla) and their thalamic target (VPM) but nothing between them, so the pathway jumped
+  // pons → thalamus. Last's 9th ed p.613: the medial lemniscus, climbing through pons and midbrain, "is
+  // joined by the trigeminal lemniscus, fibres from the main sensory and spinal nuclei of the trigeminal".
+  // It sits on the LATERAL part beside ml_midbrain and stt_midbrain because the three lemnisci travel
+  // together — which is precisely why one lateral midbrain lesion takes out face and body sensation at
+  // once. Above the nuclei the pathway is crossed, so face_sensory_loss (CROSSES=true) gives the
+  // CONTRALATERAL face, unlike the spinal nucleus in the medulla, which gives Wallenberg's ipsilateral one.
+  { id: "tl_midbrain",    level: "midbrain", part: "lateral", produces: "face_sensory_loss",
+    note: "trigeminal lemniscus (has crossed, running with the medial lemniscus) — contralateral facial sensory loss" },
   { id: "stt_midbrain",   level: "midbrain", part: "lateral", produces: "spinothalamic",
     note: "spinothalamic tract — contralateral pain/temperature" },
   // trochlear nucleus (dorsal midbrain) — CN IV DECUSSATES, so a nuclear lesion gives a CONTRALATERAL SO palsy

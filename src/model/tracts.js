@@ -155,6 +155,11 @@ export const TRACTS = [
     // listed rostral→caudal; direction "ascending" reverses it so the narrative reads nuclei → thalamus.
     course: [
       { level: "thalamus", label: "VPM thalamus",              detail: "ventral posteromedial (VPM) nucleus of the thalamus",                supply: "thalamoperforators" },
+      // ADDED 2026-08-25 with tl_midbrain, FLAGGED FOR CLINICAL REVIEW. The course jumped pons → thalamus,
+      // omitting the segment where the trigeminal lemniscus ascends beside the medial lemniscus (Last's
+      // p.613). It was found because the DIAGRAM had nowhere to place the pathway between those levels and
+      // cut across its neighbours as a result — the drawing exposed a gap in the model.
+      { level: "midbrain", label: "trigeminal lemniscus",      detail: "trigeminal lemniscus ascending with the medial lemniscus in the lateral midbrain", supply: "PCA / basilar perforators" },
       { level: "pons",     label: "principal sensory nucleus", detail: "principal sensory (chief) trigeminal nucleus — fine touch",           supply: "basilar perforators" },
       { level: "medulla",  label: "spinal trigeminal nucleus", detail: "spinal trigeminal nucleus — pain & temperature (extends into the upper cord)", supply: "PICA / vertebral" },
     ],

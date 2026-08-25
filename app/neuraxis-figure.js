@@ -186,17 +186,16 @@ export const TRACT_LANE = {
   corticospinal:     { cortex: [66, 0], subcortex: [40, 0], midbrain: [21, 4], pons: [21, 6], medulla: [9, 6], cord: [10, 0] },
   // VPM is medial to VPL (50). A LANE ONLY EXISTS AT A LEVEL THE TRACT'S COURSE ACTUALLY VISITS, and this
   // one had no midbrain — so a midbrain lane was dead data and the line ran straight from the thalamus to
-  // the pons, cutting across corticospinal and spinothalamic on the way.
+  // the pons, cutting across corticospinal and spinothalamic on the way — and NO LANE VALUE COULD FIX IT.
+  // That was proved rather than assumed: between y=186 and y=296 the corticospinal lane falls from 35 to
+  // 21 while the spinothalamic sits at 33, so a straight line would have to be above 37 at the top, below
+  // 31 in the middle and above 23 at the bottom, which is not a line.
   //
-  // NO LANE VALUE CAN FIX IT, and that was proved rather than assumed. Between y=186 and y=296 the
-  // corticospinal lane falls from 35 to 21 while the spinothalamic sits at 33; a STRAIGHT line (which is
-  // all this tract can draw, having no knot in between) would need to be above 37 at the top and below 31
-  // in the middle and above 23 at the bottom, which is not a line. The real fix is a MODEL change — the
-  // course jumps pons -> thalamus with no midbrain segment, though the trigeminal lemniscus ascends
-  // through the midbrain beside the medial lemniscus (Last's p.613). Adding it needs a producing structure
-  // at that level, which creates a NEW CANDIDATE SITE and is a localisation change, so it is the owner's
-  // call. Until then the pair is exempted in test/neuraxis-diagram.test.js, by name and with this reason.
-  trigeminothalamic: { thalamus: [40, 0], pons: [27, -6], medulla: [15, -7] },
+  // THE DRAWING HAD EXPOSED A GAP IN THE MODEL. The course jumped pons → thalamus with no midbrain
+  // segment, though the trigeminal lemniscus ascends there beside the medial lemniscus (Last's p.613).
+  // The segment and its structure (tl_midbrain) were added on the owner's ruling, and the lane now sits
+  // on a real knot.
+  trigeminothalamic: { thalamus: [40, 0], midbrain: [27, -4], pons: [27, -6], medulla: [15, -7] },
   spinothalamic:     { cord: [16, 3], medulla: [21, 0], pons: [33, -2], midbrain: [33, -2], subcortex: [50, 0] },
   cerebellar:        { cerebellum: [60, 0], midbrain: [39, -4], pons: [39, 0], medulla: [27, -4], combined_degeneration: [22, 0] },
   // Runs WITH the spinal lemniscus through the lateral brainstem (Last's p.613) — the adjacency that makes

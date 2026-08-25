@@ -744,3 +744,56 @@ that crosses TWICE — which is why cerebellar signs are ipsilateral — and one
 `oculosympathetic` stays empty and asserted, being uncrossed throughout.
 
 74 suites / 6769 assertions green.
+
+
+---
+
+# Amendment (2026-08-25e): the midbrain gains the trigeminal lemniscus — ⚠ AWAITING CLINICAL REVIEW
+
+**Owner's ruling: "midbrain needs a site."** The gap recorded in amendment 2026-08-25d is closed.
+
+## What was missing
+
+The model held the trigeminal NUCLEI (principal sensory in the pons, spinal in the medulla) and their
+thalamic target (VPM), **but nothing in between** — so the trigeminothalamic course jumped pons → thalamus.
+Last's 9th ed p.613: the medial lemniscus, climbing through pons and midbrain, *"is joined by the
+trigeminal lemniscus, fibres from the main sensory and spinal nuclei of the trigeminal."*
+
+## What was added
+
+`tl_midbrain` — on the **existing** `midbrain|lateral` part, beside `ml_midbrain` and `stt_midbrain`, NOT a
+new part. The three lemnisci travel together, which is precisely why one lateral midbrain lesion takes out
+face and body sensation at once. It produces `face_sensory_loss`, whose `CROSSES` default is contralateral —
+matching `thal_vpm` one level up, and matching both lemnisci already on that part.
+
+Plus the matching `midbrain` segment in the trigeminothalamic course.
+
+## What it changes in localisation
+
+`left_midbrain_lateral` now predicts **`dorsal_sensory@right`, `spinothalamic@right`, `face_sensory_loss@right`**
+— all three lemnisci, all contralateral. The discriminator this creates is the clinically important one and
+it ranks correctly:
+
+| picture | top candidate |
+|---|---|
+| **ipsilateral** face + contralateral body | Lateral medullary syndrome (Wallenberg) — *medulla* |
+| **contralateral** face + contralateral body | Lateral midbrain / tegmental syndrome — *midbrain* |
+
+Wallenberg is unchanged. No new site was created; an existing one is now complete.
+
+## How it was found, which is the part worth keeping
+
+**The drawing exposed a gap in the model.** The diagram had nowhere to place the pathway between the pons
+and the thalamus and cut across its neighbours as a result. Chasing that geometric defect — and PROVING no
+lane value could fix it, since no straight line clears both the corticospinal lane falling 35 to 21 and the
+spinothalamic lane at 33 — is what surfaced the missing anatomy. A figure that must be drawable is a
+constraint on the model, not just a view of it.
+
+**The exemption is gone.** One tract pair had been exempted from the non-crossing invariant by name and
+with its reason; fixing the model removed the need for it entirely, which is the outcome an exemption
+should always be pushing towards. There are now no exemptions.
+
+> **⚠ CLINICAL REVIEW REQUIRED**, alongside the two decussations (`mlf`, `trigeminothalamic`) from
+> amendment 2026-08-25d. All three are flagged in the source.
+
+74 suites / 6774 assertions green.

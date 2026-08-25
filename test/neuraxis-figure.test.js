@@ -160,12 +160,6 @@ ok("the non-planar pathways are declared", Object.keys(TRACT_LANE).length - trac
 let swaps = 0;
 for (let i = 0; i < tractIds.length; i++) {
   for (let j = i + 1; j < tractIds.length; j++) {
-    // Exempt, by name and for a stated reason: trigeminothalamic's course has no midbrain segment, so
-    // between the pons and the thalamus it can only draw a straight line, and no straight line clears both
-    // the corticospinal and spinothalamic lanes over that span. The fix is a model change that creates a
-    // new candidate site, so it needs clinical review. Full reasoning in test/neuraxis-diagram.test.js.
-    const pair = [tractIds[i], tractIds[j]].sort().join("|");
-    if (pair === "spinothalamic|trigeminothalamic" || pair === "corticospinal|trigeminothalamic") continue;
     const A = laneCurve(tractIds[i]), B = laneCurve(tractIds[j]);
     if (A.length < 2 || B.length < 2) continue;
     const lo = Math.max(A[0][0], B[0][0]), hi = Math.min(A[A.length - 1][0], B[B.length - 1][0]);

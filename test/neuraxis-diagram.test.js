@@ -207,21 +207,11 @@ function decussationBands(tf) {
 }
 const inBand = (y, bands) => bands.some(([lo, hi]) => y >= lo && y <= hi);
 
-// ONE EXEMPT PAIR, NAMED, WITH ITS REASON AND ITS FIX — the idiom NOT_LOCALISING_BY_DESIGN already uses.
-// An exemption states a decision; silence would hide a defect.
-const CROSSING_EXEMPT = {
-  "spinothalamic|trigeminothalamic":
-    "trigeminothalamic's course jumps pons -> thalamus with NO midbrain segment, so between those two "
-    + "levels it can only draw a straight line — and no straight line stays clear of the corticospinal "
-    + "lane (falling 35 to 21 over that span) and the spinothalamic lane (33) at the same time. The fix is "
-    + "a MODEL change: the trigeminal lemniscus does ascend through the midbrain beside the medial "
-    + "lemniscus (Last's p.613), but recording it needs a producing structure there, which creates a new "
-    + "candidate site — a localisation change requiring clinical review.",
-  "corticospinal|trigeminothalamic": "same cause as spinothalamic|trigeminothalamic — see that entry.",
-};
-const exemptPair = (a, b) => !!CROSSING_EXEMPT[[a, b].sort().join("|")];
-for (const [pair, why] of Object.entries(CROSSING_EXEMPT))
-  ok(`crossing exemption "${pair}" states a reason`, why.length > 60);
+// NO EXEMPTIONS. There was one — trigeminothalamic against its neighbours — and it is gone, because the
+// cause was a missing midbrain segment in the model rather than anything about the drawing. Fixing the
+// model removed the need for the exemption entirely, which is the outcome an exemption should always be
+// pushing towards.
+const exemptPair = () => false;
 
 let totalCrossings = 0, checked = 0;
 for (const [name, toks] of [
