@@ -636,3 +636,52 @@ and the main figure stays schematic.
 **Increment 2 is therefore complete at:** the plate-adoption pipeline (`app/plates.js` + registry), the
 tracer (`tools/trace`), the four validated plates, the traced coronal section, and the three fixes above.
 The main figure is unchanged from increment 1 apart from the crop floor.
+
+---
+
+# Amendment (2026-08-25c): tract geometry landed; TWO defects found and NOT yet fixed
+
+**Increment 3's geometry is done and merged into the branch.** The 22 spurious crossings are gone (spec
+amendment 2026-08-25a). Attempting the second half — the three missing decussations — surfaced two further
+defects that are **recorded here rather than half-fixed**.
+
+## 1. THE SIDE ASSIGNMENT IS DIRECTION-BLIND (a real laterality bug)
+
+`tractOverlay` decides which side of the midline each level is drawn on by walking the course array and
+switching at the decussation index. **That assumes course order equals direction of travel, and for an
+ASCENDING tract it does not.** `tract.course` is written rostral-to-caudal for every pathway, so an
+ascending tract has its ORIGIN at the END of the array.
+
+The consequence is visible on Wallenberg: the trigeminal nuclei render contralateral and the thalamus
+ipsilateral — backwards. It is the exact relationship the app teaches (ipsilateral face, contralateral
+body), drawn the wrong way round.
+
+**The fix is known and small** — split the course at the decussation and put the half containing the
+origin on the finding's side, choosing the origin by `tract.direction`. It is not landed because it
+**moves the geometry**, and with the current lanes it reintroduces one crossing (below).
+
+## 2. A LANE CANNOT SIT INSIDE A DECUSSATING TRACT'S SWEEP
+
+With the direction fix applied, spinothalamic runs from dx 50 at the subcortex to the midline at its
+decussation. **Anything parked between those two values is crossed on the way down**, and the
+oculosympathetic sits there. Five placements were tried — lateral, medial, wider gaps, spreading the
+brainstem lanes past the drawn outline, and splitting decussating tracts into two strokes meeting at the
+midline — and each moved the crossing rather than removing it.
+
+> **The lane table alone cannot express this.** A tract that decussates does not occupy a lane; it occupies
+> a WEDGE from its lateral origin to the midline, and no other pathway may cross that wedge. That is a
+> different constraint from the rank rule already recorded, and the next attempt should model it directly
+> — for example by routing decussating tracts down their lane and turning to the midline only within the
+> decussation band, rather than sweeping the whole way.
+
+**Both are deferred deliberately.** The branch is left at the green state (74 suites, 6756 assertions, zero
+crossings) rather than red or half-fixed. The laterality bug predates this work — it is not a regression —
+but it is now understood and written down.
+
+## Still outstanding from increment 3
+
+- The three missing `decussation` entries (`mlf`, `trigeminothalamic`; `cerebellar` was added and
+  **reverted** — that entry models inflow AND outflow, a pathway that crosses TWICE, which is why
+  cerebellar signs are ipsilateral, and one field cannot say that. Same reasoning as `central_tegmental`).
+- The spinothalamic label discrepancy against Last's p.624 (1-2 segments vs four or five in the cervical
+  cord), still the owner's call.
