@@ -87,5 +87,39 @@ const build = toks => { const obs = new Set(toks); return { obs, r: solve(obs, {
      new Set(cands.map(c => explainedBy(c, obs).join("|"))).size > 1);
 }
 
+// ---- COMPARING A CHOSEN SUBSET (owner's request) ----
+// "The user should be able to select which locations they want to compare." This is the clinical act —
+// you are rarely torn between all candidates at once, you are torn between two of them — and the right
+// examination DEPENDS ON WHICH TWO. Comparing the whole list buries the pairwise test.
+{
+  const { obs, r } = build(["weak_ankle_dorsiflexion@left", "weak_great_toe_extension@left", "weak_foot_eversion@left"]);
+  const all = r.display;
+  const byId = id => all.find(c => c.site.id === id);
+  const nerve = byId("left_nerve_peroneal_common"), l5 = byId("left_root_l5"), plexus = byId("left_plexus_sacral_plexus");
+  ok("the three candidates are the ones expected", !!nerve && !!l5 && !!plexus);
+
+  const dAll = discriminators(all, obs);
+  const dPair = discriminators([nerve, l5], obs);
+  const dOther = discriminators([l5, plexus], obs);
+
+  // A subset can only narrow the set of splitting findings, never widen it — anything that fails to split
+  // the whole list also fails to split any part of it.
+  const tokens = d => new Set(d.map(x => x.token));
+  ok("a subset's discriminators are a subset of the whole list's",
+     [...tokens(dPair)].every(t => tokens(dAll).has(t)));
+
+  // ...but the ORDER changes, and that is the point: the best test for a chosen pair rises to the top.
+  ok("nerve-vs-root and root-vs-plexus lead with DIFFERENT examinations",
+     dPair[0].token !== dOther[0].token, `${dPair[0].token} vs ${dOther[0].token}`);
+  ok("root vs plexus leads with a reflex or a neighbouring dermatome, not a peroneal sensory finding",
+     /reflex|sensory_l4|sensory_s1|plantarflexion|knee/.test(dOther[0].token), dOther[0].token);
+  ok("nerve vs root leads with a peroneal sensory finding or a root sign",
+     /peroneal|sensory_l5|inversion|hip_abduction|radicular/.test(dPair[0].token), dPair[0].token);
+
+  // every discriminator over a pair is a clean either/or — one candidate each side
+  ok("over a chosen pair, each discriminator confirms exactly one and excludes the other",
+     dPair.every(x => x.confirms.length === 1 && x.excludes.length === 1));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
