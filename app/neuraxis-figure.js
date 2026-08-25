@@ -132,6 +132,107 @@ export function cropFor(compartments) {
   return [x, y, w, h];
 }
 
+
+// ---- TRACT LANES: where each pathway sits IN CROSS-SECTION at each level ----
+// [dx from the midline, dy from the level's anchor]. Positive dx is lateral; negative dy is dorsal.
+//
+// WHY THIS TABLE EXISTS. Every tract used to be drawn through its LEVEL'S anchor — one point shared by
+// all of them — so paths were guaranteed to converge and cross. Wallenberg rendered 16 pairwise crossings
+// away from any decussation, which does not happen in neuroanatomy. Giving each pathway its own lane is
+// the fix, and test/neuraxis-diagram.test.js asserts no two paths may cross except at a declared
+// decussation.
+//
+// The positions are read off Last's Anatomy 9th ed, ch.7 (pp. 612-613, 623-625) — the same source already
+// recorded in the spec but never used for drawing. Page references are per entry.
+// THE LATERAL ORDER OF THE LANES MUST NOT SWAP BETWEEN LEVELS. Two pathways that trade places between one
+// level and the next are forced to cross, whatever the anatomy says — corticospinal (46) and spinothalamic
+// (38) did exactly that at the subcortex before inverting at the midbrain (13 vs 18). In three dimensions
+// they do not cross: the lemnisci are DORSAL to the crus, not lateral to it. A flat coronal drawing cannot
+// show dorsoventral separation, so lateral order carries it, and the order chosen is the one the brainstem
+// has: corticobulbar, corticospinal, dorsal column, spinothalamic, medial to lateral.
+export const TRACT_LANE = {
+  // NOTE: the order test in test/neuraxis-figure.test.js compares lanes at SHARED LEVELS, which cannot see
+  // a pair that swaps BETWEEN levels — trigeminothalamic and oculosympathetic share only the medulla, yet
+  // crossed higher up because one was lateral at the thalamus and medial by the pons. The geometric
+  // non-crossing test in test/neuraxis-diagram.test.js is what catches those, and it is the authority.
+  //
+  // ONE CONSISTENT MEDIAL -> LATERAL ORDER, top to bottom of this table:
+  //   mlf · corticobulbar · dorsal column · corticospinal · trigeminothalamic · spinothalamic ·
+  //   cerebellar · oculosympathetic
+  // The ML's DRIFT is still drawn — dx grows from 4 in the medulla to 30 at the thalamus (Last's p.613,
+  // "adjacent to the midline ... deviates laterally") — but its RANK against the other tracts never
+  // changes, because a rank change is a forced crossing.
+  mlf:               { midbrain: [5, -6], pons: [5, -6] },
+  corticobulbar:     { cortex: [56, 0], subcortex: [28, 0], midbrain: [12, 4], pons: [8, 6] },
+  dorsal_column:     { cord: [6, -4], medulla: [4, 0], pons: [9, 0], midbrain: [13, 0], subcortex: [30, 0] },
+  corticospinal:     { cortex: [66, 0], subcortex: [40, 0], midbrain: [16, 4], pons: [12, 6], medulla: [7, 6], cord: [11, 0] },
+  central_tegmental: { midbrain: [9, 0], guillain_mollaret: [40, 0] },
+  trigeminothalamic: { thalamus: [12, 0], pons: [16, -6], medulla: [14, -7] },   // VPM is MEDIAL to VPL
+  spinothalamic:     { cord: [14, 3], medulla: [17, 0], pons: [22, -2], midbrain: [20, -2], subcortex: [50, 0] },
+  cerebellar:        { cerebellum: [60, 0], midbrain: [22, -4], pons: [26, 0], medulla: [28, -4], combined_degeneration: [17, 0] },   // p.625: the spinocerebellar tracts run at the LATERAL EDGE of the cord
+  // Runs WITH the spinal lemniscus through the lateral brainstem (Last's p.613) — the adjacency that
+  // makes one lateral medullary lesion give both a Horner's and contralateral body pain/temperature loss.
+  // In the cord it lies in the lateral funiculus by the lateral horn (p.625), so it stays lateral
+  // throughout rather than changing rank. Its lane is kept nearly STRAIGHT (16 -> 20 -> 16) rather than
+  // bulging: an S-shaped lane let the smoothing overshoot past the cerebellar line, which sat only four
+  // units away at the medulla. Adjacent lanes need clearance from the curve, not just from each other.
+  //
+  // `_via` routes the ASCENDING limb. This is the one pathway that genuinely doubles back — down to T1,
+  // then up the sympathetic chain and the carotid — and a straight run from the cord to the ganglion cut
+  // diagonally across the cerebellar and trigeminal lanes. It swings laterally first, which is where the
+  // chain actually is.
+  // `_break` splits the drawn line after a level. The oculosympathetic is a THREE-NEURON CHAIN and drawing
+  // it as one continuous stroke closed a U from the hypothalamus down to T1 and back up to the orbit —
+  // a loop that ENCLOSED the whole posterior fossa, so every cerebellar and trigeminal line was trapped
+  // inside it and had to cross out. In the body it does not enclose anything: the ascending limb runs on
+  // the carotid, ANTERIOR to the brainstem, a depth difference a coronal drawing cannot show. Splitting it
+  // at the ciliospinal centre is both the fix and the more honest picture — first-order neuron descending,
+  // second and third ascending.
+  oculosympathetic:  { hypothalamus: [16, 0], medulla: [20, 5], cord: [16, 2], sympathetic: [100, 0], skull_base: [140, 0],
+                       _break: "cord" },
+  visual:            { skull_base: [130, 0], visual_pathway: [30, 0], subcortex: [60, 0], cortex: [90, 0] },
+};
+
+
+// A pathway with no authored lane at a level falls back INSIDE its level, not onto the shared anchor.
+export function laneFor(tractId, level) {
+  const t = TRACT_LANE[tractId];
+  if (t && t[level]) return t[level];
+  const a = ANCHOR[level];
+  return [a ? Math.abs(a[0]) * 0.6 : 30, 0];
+}
+
+// Extra knots to insert after a level, for a pathway whose real course doubles back (see oculosympathetic).
+// Does the drawn line stop after this level and resume as a separate stroke?
+export function breaksAfter(tractId, level) {
+  const t = TRACT_LANE[tractId];
+  return !!(t && t._break === level);
+}
+
+// A pathway whose course is not monotonic along the neuraxis doubles back on itself, and its excursion
+// crosses whatever lies between. The cerebellar entry bundles INFLOW and OUTFLOW, which travel opposite
+// ways, so its course order is a description of connections rather than one fibre's route. Ordering those
+// knots along the neuraxis instead removes a self-crossing that means nothing anatomically. A pathway that
+// authors an explicit route (`_via` or `_break`) is left exactly as written.
+export function routeIsAuthored(tractId) {
+  const t = TRACT_LANE[tractId];
+  return !!(t && (t._via || t._break));
+}
+
+export function viaAfter(tractId, level) {
+  const t = TRACT_LANE[tractId];
+  return (t && t._via && t._via[level]) || [];
+}
+
+// The point a tract passes through at a level, on a given side.
+export function tractPoint(tractId, level, side) {
+  const a = ANCHOR[level];
+  if (!a) return null;
+  const [dx, dy] = laneFor(tractId, level);
+  const sign = side === "right" ? 1 : -1;
+  return [MX + (side === "midline" || side === "bilateral" ? 0 : sign * dx), a[1] + dy];
+}
+
 // ---- the drawing itself ----
 // AUTHORED AS ONE HALF AND MIRRORED. Symmetry holds by construction and there is no second copy of the
 // anatomy to drift out of step — the same reasoning as markSVG() in brand.js drawing one geometry twice.

@@ -132,5 +132,29 @@ ok(`every anatomy class in the figure has a CSS rule (${usedClasses.length} clas
 const dead = ruledClasses.filter(c => !usedClasses.includes(c));
 ok("no anatomy CSS rule is dead", dead.length === 0, "unused: " + dead.join(", "));
 
+// ---- 7. LANE ORDER MUST NOT SWAP BETWEEN LEVELS ----
+// Two pathways that trade lateral places between one level and the next are FORCED to cross, whatever the
+// anatomy says, because a flat coronal drawing has no dorsoventral axis to separate them with. This is
+// the structural cause behind most of the 22 spurious crossings the owner reported, and it is far easier
+// to reason about here than in the rendered geometry.
+import { TRACT_LANE } from "../app/neuraxis-figure.js";
+const tractIds = Object.keys(TRACT_LANE);
+let swaps = 0;
+for (let i = 0; i < tractIds.length; i++) {
+  for (let j = i + 1; j < tractIds.length; j++) {
+    const A = TRACT_LANE[tractIds[i]], B = TRACT_LANE[tractIds[j]];
+    const shared = Object.keys(A).filter(l => !l.startsWith("_") && B[l]);
+    if (shared.length < 2) continue;
+    const sign = l => Math.sign(A[l][0] - B[l][0]);
+    const signs = [...new Set(shared.map(sign))].filter(s => s !== 0);
+    if (signs.length > 1) {
+      swaps++;
+      ok(`${tractIds[i]} and ${tractIds[j]} keep a consistent lateral order`, false,
+         shared.map(l => `${l}:${A[l][0]}v${B[l][0]}`).join(" "));
+    }
+  }
+}
+ok(`no two tracts swap lateral order across the levels they share`, swaps === 0, `${swaps} swapped pairs`);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

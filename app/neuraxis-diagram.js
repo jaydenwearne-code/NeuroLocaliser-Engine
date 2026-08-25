@@ -4,7 +4,7 @@
 // DRIVEN BY CANDIDATE SITES, NOT BY TRACTS. The previous version harvested its sites from tractsFor(), so a
 // picture with no implicated long tract had no sites and rendered "" — eight of the seventeen shipped
 // examples, including Foot drop and Cauda equina. Tracts are now an OVERLAY.
-import { MX, FIG_W, FIG_H, anchorFor, baseFigure, regionCaptions, sideCaptions, cropFor } from "./neuraxis-figure.js";
+import { MX, FIG_W, FIG_H, ANCHOR, anchorFor, tractPoint, viaAfter, breaksAfter, routeIsAuthored, baseFigure, regionCaptions, sideCaptions, cropFor } from "./neuraxis-figure.js";
 import { compartmentOf } from "../src/model/compartments.js";
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -26,6 +26,35 @@ function pin(c, x, y, n, sel) {
     + shape + `<text class="nx-n" x="${x}" y="${y + 3}">${n}</text></g>`;
 }
 
+// CENTRIPETAL Catmull-Rom (alpha = 0.5), sampled.
+//
+// Uniform parameterisation LOOPS where a course doubles back on itself, and two of these pathways
+// genuinely do: the oculosympathetic descends to T1 and then ascends the carotid, and the cerebellar
+// outflow climbs to the midbrain after entering at the medulla. A uniform spline puts a cusp at that
+// reversal, and the overshoot crossed every neighbouring tract. Centripetal parameterisation is the
+// standard cure — it cannot produce cusps or self-intersections.
+function spline(k, per) {
+  if (k.length === 2) return k;
+  const P = [k[0], ...k, k[k.length - 1]], out = [];
+  const dist = (a, b) => Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]) || 1e-6, 0.5);
+  for (let i = 1; i < P.length - 2; i++) {
+    const [p0, p1, p2, p3] = [P[i - 1], P[i], P[i + 1], P[i + 2]];
+    const t0 = 0, t1 = t0 + dist(p0, p1), t2 = t1 + dist(p1, p2), t3 = t2 + dist(p2, p3);
+    for (let sN = 0; sN < per; sN++) {
+      const t = t1 + (t2 - t1) * (sN / per);
+      const A1 = lerp(p0, p1, (t1 - t) / (t1 - t0 || 1), (t - t0) / (t1 - t0 || 1));
+      const A2 = lerp(p1, p2, (t2 - t) / (t2 - t1 || 1), (t - t1) / (t2 - t1 || 1));
+      const A3 = lerp(p2, p3, (t3 - t) / (t3 - t2 || 1), (t - t2) / (t3 - t2 || 1));
+      const B1 = lerp(A1, A2, (t2 - t) / (t2 - t0 || 1), (t - t0) / (t2 - t0 || 1));
+      const B2 = lerp(A2, A3, (t3 - t) / (t3 - t1 || 1), (t - t1) / (t3 - t1 || 1));
+      out.push(lerp(B1, B2, (t2 - t) / (t2 - t1 || 1), (t - t1) / (t2 - t1 || 1)));
+    }
+  }
+  out.push(k[k.length - 1]);
+  return out;
+}
+const lerp = (a, b, wa, wb) => [a[0] * wa + b[0] * wb, a[1] * wa + b[1] * wb];
+
 const TRACT_DASH = ["none", "6 3", "2 3", "10 3 2 3", "1 4"];   // FORM, not hue alone
 
 // Each implicated pathway drawn along its modelled course, on the correct side, crossing where the model
@@ -42,25 +71,43 @@ function tractOverlay(tracts, crop) {
   const one = (t, i) => {
     const d = t.decussation || {};
     const crossAt = d.between ? d.between[1] : d.inLevel || null;
-    // the side the pathway is drawn on before its crossing: whichever side this tract's findings came from
     const side = (t.sides || []).includes("left") ? "left" : "right";
     const other = side === "left" ? "right" : "left";
-    const levels = t.tract.course.map(w => w.level);
+    const levels = t.tract.course.map(w => w.level).filter(l => ANCHOR[l]);
     const crossIdx = crossAt ? levels.indexOf(crossAt) : -1;
-    const pts = levels.map((lvl, k) => {
-      const a = anchorFor(lvl, "-", crossIdx >= 0 && k >= crossIdx ? other : side);
-      return `${a.x},${a.y}`;
+
+    // EACH TRACT HAS ITS OWN LANE at each level (see TRACT_LANE). Sharing one anchor per level is what
+    // made paths converge and cross where no decussation exists.
+    // Order along the neuraxis unless the pathway authors its own route (see routeIsAuthored).
+    const ordered = routeIsAuthored(t.tract.id) ? levels
+      : [...levels].sort((a, b) => ANCHOR[a][1] - ANCHOR[b][1]);
+    const strokes = [[]];
+    ordered.forEach((lvl, k) => {
+      const sd = crossIdx >= 0 && levels.indexOf(lvl) >= crossIdx ? other : side;
+      const pt = tractPoint(t.tract.id, lvl, sd);
+      if (pt) strokes[strokes.length - 1].push(pt);
+      for (const v of viaAfter(t.tract.id, lvl)) {
+        const sign = sd === "right" ? 1 : -1;
+        strokes[strokes.length - 1].push([MX + sign * v[0], ANCHOR[lvl][1] + v[1]]);
+      }
+      if (breaksAfter(t.tract.id, lvl) && k < ordered.length - 1) strokes.push([]);
     });
-    if (pts.length < 2) return { path: "", mark: "" };
+    const usable = strokes.filter(st => st.length >= 2);
+    if (!usable.length) return { path: "", mark: "" };
+
+    // Sample a Catmull-Rom spline so the path FOLLOWS the neuraxis instead of chording between distant
+    // levels — the owner's "your lines cut corners". Emitted as a dense polyline rather than a <path> so
+    // the non-crossing invariant can read the actual geometry it draws.
     const dash = TRACT_DASH[i % TRACT_DASH.length];
-    const path = `<polyline class="nx-tract nx-tract-${i % 5}" points="${pts.join(" ")}"`
-      + (dash === "none" ? "" : ` stroke-dasharray="${dash}"`)
-      + ` marker-end="url(#nx-arrow)"/>`;
-    // No modelled crossing → draw none. See the note above; oculosympathetic is CORRECTLY empty.
+    const path = usable.map((st, si) => {
+      const pts = spline(st, 14);
+      return `<polyline class="nx-tract nx-tract-${i % 5}" points="${pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")}"`
+        + (dash === "none" ? "" : ` stroke-dasharray="${dash}"`)
+        + (si === usable.length - 1 ? ` marker-end="url(#nx-arrow)"` : "") + `/>`;
+    }).join("");
     if (crossIdx < 0) return { path, mark: "" };
-    const a = anchorFor(crossAt, "-", side), b = anchorFor(crossAt, "-", other);
-    const mark = `<g class="nx-decus"><line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/></g>`;
-    return { path, mark };
+    const a = tractPoint(t.tract.id, crossAt, side), b = tractPoint(t.tract.id, crossAt, other);
+    return { path, mark: `<g class="nx-decus"><line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/></g>` };
   };
 
   const drawn = tracts.map(one);
