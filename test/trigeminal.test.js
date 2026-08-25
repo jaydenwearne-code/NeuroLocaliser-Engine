@@ -4,7 +4,8 @@
 // Run: node test/trigeminal.test.js
 import { CROSSES, NON_LATERALISED, isFinding } from "../src/model/findings.js";
 import { LOCALISING } from "../src/engine/score.js";
-import { SITE_BY_ID, composeLateralPontineTrigeminalSites } from "../src/model/sites.js";
+import { SITE_BY_ID, SITES, composeLateralPontineTrigeminalSites } from "../src/model/sites.js";
+import { STRUCTURES } from "../src/model/structures.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { solve } from "../src/engine/inverse.js";
 import { nameForSite } from "../src/data/syndromes.js";
@@ -50,6 +51,32 @@ for (const id of ["face_touch_loss", "jaw_weakness"]) {
      best && best.site.id === "left_pons_lateral_trigeminal");
   ok("union names Marie-Foix with trigeminal",
      best && /trigeminal/i.test(nameForSite(best.site).name));
+}
+
+// ---- THE TRIGEMINAL LEMNISCUS IN THE MIDBRAIN (added 2026-08-25, owner's ruling) ----
+// The model recorded the trigeminal nuclei (pons, medulla) and their thalamic target (VPM) but NOTHING in
+// between, so the pathway jumped pons -> thalamus. Last's 9th ed p.613: the medial lemniscus "is joined by
+// the trigeminal lemniscus" on its way up through pons and midbrain. It goes on the LATERAL midbrain,
+// where ml_midbrain and stt_midbrain already run, rather than on a new part — the lemnisci travel
+// together, which is the whole reason a lateral midbrain lesion takes out face and body sensation at once.
+{
+  const S = STRUCTURES.find(s => s.id === "tl_midbrain");
+  ok("the trigeminal lemniscus is modelled in the midbrain", !!S);
+  ok("...on the LATERAL part, with the other two lemnisci",
+     S && S.level === "midbrain" && S.part === "lateral");
+  ok("...carrying all facial modalities above the nuclei", S && S.produces === "face_sensory_loss");
+
+  // ABOVE the nuclei the pathway is crossed, so the deficit is CONTRALATERAL — unlike the spinal
+  // trigeminal nucleus in the medulla, which gives the ipsilateral face of Wallenberg.
+  const exp = expectedFindings(SITES.find(s => s.id === "left_midbrain_lateral"));
+  ok("a LEFT lateral midbrain lesion gives RIGHT-sided facial sensory loss",
+     [...exp].includes("face_sensory_loss@right"), [...exp].filter(t => /face/.test(t)).join(", "));
+
+  // and it now localises: the finding must reach the midbrain
+  const r = solve(new Set(["face_sensory_loss@right", "spinothalamic@right"]), {});
+  ok("right face + right body sensory loss reaches the lateral midbrain",
+     r.differential.some(c => c.site.id === "left_midbrain_lateral"),
+     r.differential.slice(0, 4).map(c => c.site.id).join(", "));
 }
 
 console.log("====================================================");

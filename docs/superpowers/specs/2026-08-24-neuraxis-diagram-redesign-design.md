@@ -598,3 +598,202 @@ That is more than one plan, so:
   three missing `decussation` entries, and **the non-crossing invariant**. Carries a clinical review gate.
 - **Increment 4 — regional views.** The offer mechanism plus the three views: cranial-nerve course, upper
   limb, lower limb.
+
+
+---
+
+# Amendment (2026-08-25b): the traced plate belongs to a REGIONAL view, not the main figure
+
+**Discovered by building it, and reverted.** The traced Gray 717 coronal section was composed into the
+main figure as its cerebrum, with the authored brainstem, cerebellum and cord continuing below.
+
+**It cannot work, and the reason is anatomical, not cosmetic.** A coronal section at the thalamus ALREADY
+CONTAINS the midbrain and pons, and the cord is not in that plane at all. Bolting an authored brainstem
+below a real section therefore produces a brain on a stick. The junction itself can be made flush — the
+plate hands over a pons 112 units wide and the authored stem was 26, which was a real defect and was
+fixed — but no amount of coordinate tuning repairs the premise.
+
+> **THE MAIN FIGURE IS A SCHEMATIC COMPOSITE OF THE WHOLE NEURAXIS. It is not any real section — which is
+> precisely why a real section cannot be its spine.** This is the same objection that rejected stitching
+> different projections into one picture; it applies to the main figure too.
+
+**The correction follows the owner's own ruling, one level up: realism lives in the REGIONAL views.** A
+true coronal section is exactly the right thing to show in a *brain* regional view, where the projection
+is chosen for the region. So the four validated plates and the traced coronal section move to increment 4
+and the main figure stays schematic.
+
+**Three fixes from the attempt were kept**, because each was a genuine defect:
+
+1. **Every anatomy class must have a CSS rule** — an SVG shape with no `fill` declared defaults to BLACK,
+   so seven new classes painted solid wedges over the anatomy. This is now an invariant in
+   `test/neuraxis-figure.test.js`, asserted in BOTH directions: no class may be unstyled, and no rule may
+   be dead. The reverse direction immediately removed nine rules left behind by the revert.
+2. **`REGIONS` held stale coordinates** through the plate swap and every caption landed on the brain. A
+   caption has no invariant; only looking caught it.
+3. **Crops are floored and centred**, because several compartments are a thin band that cropped to a tiny
+   box and filled the panel with one structure.
+
+**Increment 2 is therefore complete at:** the plate-adoption pipeline (`app/plates.js` + registry), the
+tracer (`tools/trace`), the four validated plates, the traced coronal section, and the three fixes above.
+The main figure is unchanged from increment 1 apart from the crop floor.
+
+---
+
+# Amendment (2026-08-25c): tract geometry landed; two defects found — BOTH NOW FIXED (2026-08-25d)
+
+**Increment 3's geometry is done and merged into the branch.** The 22 spurious crossings are gone (spec
+amendment 2026-08-25a). Attempting the second half — the three missing decussations — surfaced two further
+defects that are **recorded here rather than half-fixed**.
+
+## 1. THE SIDE ASSIGNMENT IS DIRECTION-BLIND (a real laterality bug)
+
+`tractOverlay` decides which side of the midline each level is drawn on by walking the course array and
+switching at the decussation index. **That assumes course order equals direction of travel, and for an
+ASCENDING tract it does not.** `tract.course` is written rostral-to-caudal for every pathway, so an
+ascending tract has its ORIGIN at the END of the array.
+
+The consequence is visible on Wallenberg: the trigeminal nuclei render contralateral and the thalamus
+ipsilateral — backwards. It is the exact relationship the app teaches (ipsilateral face, contralateral
+body), drawn the wrong way round.
+
+**The fix is known and small** — split the course at the decussation and put the half containing the
+origin on the finding's side, choosing the origin by `tract.direction`. It is not landed because it
+**moves the geometry**, and with the current lanes it reintroduces one crossing (below).
+
+## 2. A LANE CANNOT SIT INSIDE A DECUSSATING TRACT'S SWEEP
+
+With the direction fix applied, spinothalamic runs from dx 50 at the subcortex to the midline at its
+decussation. **Anything parked between those two values is crossed on the way down**, and the
+oculosympathetic sits there. Five placements were tried — lateral, medial, wider gaps, spreading the
+brainstem lanes past the drawn outline, and splitting decussating tracts into two strokes meeting at the
+midline — and each moved the crossing rather than removing it.
+
+> **The lane table alone cannot express this.** A tract that decussates does not occupy a lane; it occupies
+> a WEDGE from its lateral origin to the midline, and no other pathway may cross that wedge. That is a
+> different constraint from the rank rule already recorded, and the next attempt should model it directly
+> — for example by routing decussating tracts down their lane and turning to the midline only within the
+> decussation band, rather than sweeping the whole way.
+
+**Both are deferred deliberately.** The branch is left at the green state (74 suites, 6756 assertions, zero
+crossings) rather than red or half-fixed. The laterality bug predates this work — it is not a regression —
+but it is now understood and written down.
+
+## Still outstanding from increment 3
+
+- The three missing `decussation` entries (`mlf`, `trigeminothalamic`; `cerebellar` was added and
+  **reverted** — that entry models inflow AND outflow, a pathway that crosses TWICE, which is why
+  cerebellar signs are ipsilateral, and one field cannot say that. Same reasoning as `central_tegmental`).
+- The spinothalamic label discrepancy against Last's p.624 (1-2 segments vs four or five in the cervical
+  cord), still the owner's call.
+
+
+---
+
+# Amendment (2026-08-25d): both defects fixed, and what the fixing found
+
+## 1. Laterality — FIXED
+
+`tractOverlay` now decides sides by DIRECTION. `course` is written rostral-to-caudal for every pathway, so
+a descending tract originates at the start of the array and an ascending one at the END; the half holding
+the origin takes the finding's side. Verified on Wallenberg, which now draws the crossed-body,
+uncrossed-face pattern correctly: the trigeminal nuclei sit LEFT with the lesion and the pathway crosses
+to the RIGHT thalamus, while the spinothalamic enters the cord on the RIGHT with the body findings and
+ascends on the LEFT.
+
+## 2. The decussating sweep — FIXED, by four changes, of which the last was the real one
+
+- **A decussating tract is drawn as TWO STROKES meeting at the midline.** As one line, spinothalamic ran
+  from dx 50 in the subcortex across to the other side and cut through every lane in between.
+- **The spline is CLAMPED to its own knots.** Even centripetal parameterisation leaves the segment it
+  interpolates, and lines correctly ordered at every knot still wove together across a six-unit gap.
+  Clamping makes the drawn geometry match what the lane check predicts.
+- **A six-unit ladder** replaced hand-tuned values.
+- **THE LANE-ORDER INVARIANT NOW COMPARES AT EVERY HEIGHT, not just at shared levels** — and that is what
+  actually cracked it. Spinothalamic and oculosympathetic agree at both levels they share and still cross,
+  because spinothalamic's lane narrows from 50 to 17 and sweeps across the other in between. Comparing only
+  at shared levels gave false confidence for several rounds.
+
+## Three things the fixing turned up
+
+**`_planar: false`.** Two pathways LEAVE THE CORONAL PLANE — the oculosympathetic ascending on the carotid
+and the visual pathway from the orbit, both ANTERIOR to the brainstem. Their separation from everything
+else is in depth, which the drawing has no axis for, so their lines must traverse other lanes on the page
+while crossing nothing in the body. They are exempt from lane ordering and from the non-crossing rule, and
+marking that is honest; forcing them into the order is not, and five attempts to place the
+oculosympathetic "correctly" only moved the crossing around.
+
+**A DEAD LANE.** A midbrain lane was added to trigeminothalamic to steer it between the thalamus and the
+pons — and did nothing, because a lane only takes effect at a level the tract's COURSE visits, and that
+course has no midbrain. Dead data that looks like a fix is worse than no data, so `test/neuraxis-figure.test.js`
+now asserts every lane key is a level its tract actually visits.
+
+**A GAP IN THE MODEL, left for the owner.** That dead lane exposed something real: the trigeminothalamic
+course jumps pons → thalamus with no midbrain segment, though the trigeminal lemniscus ascends through the
+midbrain beside the medial lemniscus (Last's p.613). Between those levels the tract can therefore only draw
+a straight line, and it was PROVED that no straight line clears both the corticospinal lane (falling 35 to
+21 over that span) and the spinothalamic lane (33) at once. **Recording the segment needs a producing
+structure at that level, which creates a NEW CANDIDATE SITE — a localisation change, not a drawing change,
+so it is the owner's call.** Until then the one affected pair is exempt by name with its reason, the idiom
+`NOT_LOCALISING_BY_DESIGN` already uses.
+
+## Decussations
+
+`mlf` and `trigeminothalamic` are now recorded, each with its Last's citation, **flagged for clinical
+review**. `cerebellar` was added and REVERTED: that entry models inflow and outflow together, a pathway
+that crosses TWICE — which is why cerebellar signs are ipsilateral — and one field cannot say that.
+`oculosympathetic` stays empty and asserted, being uncrossed throughout.
+
+74 suites / 6769 assertions green.
+
+
+---
+
+# Amendment (2026-08-25e): the midbrain gains the trigeminal lemniscus — ⚠ AWAITING CLINICAL REVIEW
+
+**Owner's ruling: "midbrain needs a site."** The gap recorded in amendment 2026-08-25d is closed.
+
+## What was missing
+
+The model held the trigeminal NUCLEI (principal sensory in the pons, spinal in the medulla) and their
+thalamic target (VPM), **but nothing in between** — so the trigeminothalamic course jumped pons → thalamus.
+Last's 9th ed p.613: the medial lemniscus, climbing through pons and midbrain, *"is joined by the
+trigeminal lemniscus, fibres from the main sensory and spinal nuclei of the trigeminal."*
+
+## What was added
+
+`tl_midbrain` — on the **existing** `midbrain|lateral` part, beside `ml_midbrain` and `stt_midbrain`, NOT a
+new part. The three lemnisci travel together, which is precisely why one lateral midbrain lesion takes out
+face and body sensation at once. It produces `face_sensory_loss`, whose `CROSSES` default is contralateral —
+matching `thal_vpm` one level up, and matching both lemnisci already on that part.
+
+Plus the matching `midbrain` segment in the trigeminothalamic course.
+
+## What it changes in localisation
+
+`left_midbrain_lateral` now predicts **`dorsal_sensory@right`, `spinothalamic@right`, `face_sensory_loss@right`**
+— all three lemnisci, all contralateral. The discriminator this creates is the clinically important one and
+it ranks correctly:
+
+| picture | top candidate |
+|---|---|
+| **ipsilateral** face + contralateral body | Lateral medullary syndrome (Wallenberg) — *medulla* |
+| **contralateral** face + contralateral body | Lateral midbrain / tegmental syndrome — *midbrain* |
+
+Wallenberg is unchanged. No new site was created; an existing one is now complete.
+
+## How it was found, which is the part worth keeping
+
+**The drawing exposed a gap in the model.** The diagram had nowhere to place the pathway between the pons
+and the thalamus and cut across its neighbours as a result. Chasing that geometric defect — and PROVING no
+lane value could fix it, since no straight line clears both the corticospinal lane falling 35 to 21 and the
+spinothalamic lane at 33 — is what surfaced the missing anatomy. A figure that must be drawable is a
+constraint on the model, not just a view of it.
+
+**The exemption is gone.** One tract pair had been exempted from the non-crossing invariant by name and
+with its reason; fixing the model removed the need for it entirely, which is the outcome an exemption
+should always be pushing towards. There are now no exemptions.
+
+> **⚠ CLINICAL REVIEW REQUIRED**, alongside the two decussations (`mlf`, `trigeminothalamic`) from
+> amendment 2026-08-25d. All three are flagged in the source.
+
+74 suites / 6774 assertions green.
