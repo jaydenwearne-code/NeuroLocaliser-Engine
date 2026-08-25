@@ -563,14 +563,38 @@ nerve's whole course, plus labyrinth and the three semicircular canals), and the
 triangle, XII, recurrent laryngeal, Collet-Sicard, Villaret). **A single "skull base from above" plate
 holds about half of them**, which is the open design question below.
 
-## Open question
+## The three regional views (owner's rulings, 2026-08-25)
 
-What organises the skull-base regional view — the BONE (foramina seen from above) or the NERVE COURSE
-(each cranial nerve from nucleus → cisternal segment → foramen → target)? The facial nerve's five sites
-spread along a course; the jugular-foramen group clusters at one hole. Owner's call.
+**The skull-base view is organised by CRANIAL NERVE COURSE, not by bone.** Each nerve is drawn from its
+nucleus → cisternal segment → its foramen → its target, with sites pinned along that course.
 
-## Order of work (owner's ruling)
+This is the ruling that makes the view possible at all. A bone plate is a plane and the sites are not in
+one; **a nerve course crosses all four zones by its nature**, so the same view holds the foramen, the
+cavernous sinus, the temporal bone and the neck exit. It also matches how the pathology varies: the facial
+nerve's five sites (geniculate → tympanic → mastoid → stylomastoid → parotid) ARE a course, and localising
+along it is the clinical skill the app teaches. The jugular-foramen group still clusters at one hole,
+which is correct — they genuinely are one place.
 
-**Artwork first**, then tract geometry, then regional detail — the tract courses must be authored against
-whatever anatomy is settled, so doing it before the redraw would be waste. The 16 spurious crossings stand
-until then.
+**The peripheral regions get the same treatment: an UPPER LIMB and a LOWER LIMB view.** Together
+nerve + root + plexus is **101 sites, 27% of the model**, and the compression sites — fibular neck, carpal
+tunnel, cubital tunnel, spiral groove, suprascapular notch — are exactly what a line down a limb cannot
+show. `Brachial_plexus_2.svg` is validated and ready; the lower limb traces from `Gray823`/`Gray828`.
+
+**A regional view is offered, never forced.** The main figure stays the answer to "where"; a regional view
+opens when the candidate set lands in that region, because that is when its sites need room.
+
+## Order of work, and the split into three increments
+
+The owner's ruling is **artwork first, then tract geometry, then regional detail** — tract courses must be
+authored against settled anatomy, so drawing them before the redraw would be waste. The 16 spurious
+crossings stand until then.
+
+That is more than one plan, so:
+
+- **Increment 2 — artwork.** The plate-adoption pipeline (de-label, recolour by luminance, reject
+  flattened-glyph plates), the four validated plates, tracing the coronal brain from `Gray717_without_text`,
+  and the main neuraxis figure redrawn at TRUE ANATOMICAL PROPORTIONS.
+- **Increment 3 — tract geometry.** Per-tract cross-sectional waypoints from Last's, smooth curves, the
+  three missing `decussation` entries, and **the non-crossing invariant**. Carries a clinical review gate.
+- **Increment 4 — regional views.** The offer mechanism plus the three views: cranial-nerve course, upper
+  limb, lower limb.
