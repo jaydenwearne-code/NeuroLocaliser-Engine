@@ -454,3 +454,147 @@ Each new suite is added to the `test` script in `package.json` and the README ch
 - Any other engine or model change.
 - Atlas mode's own rendering.
 - The `--mimic` / `--iatro` dead tokens from the 2026-08-22 contrast pass.
+
+---
+
+# Amendment (2026-08-25): artwork, regional views, and the tract-geometry bug
+
+Increment 1 shipped and was reviewed in the browser by the owner, who set the direction for the rest.
+
+## What the owner reported, and what measurement confirmed
+
+1. **Tract lines cross where no decussation exists.** Confirmed and quantified: **Wallenberg alone renders 16
+   pairwise crossings between tract paths, none at a decussation.**
+2. **Tract lines cut corners.** Same root cause.
+3. **No neighbouring anatomy** — a common fibular palsy gives no sense that the FIBULAR NECK is the
+   compression site.
+4. **The drawings look primitive.**
+
+**1 and 2 are one bug.** Tracts are polylines through *shared level anchors*: the medulla anchor is a
+single point, so the spinothalamic, oculosympathetic, cerebellar and trigeminothalamic paths all pass
+through the same coordinate and are *guaranteed* to converge. One waypoint per level also makes the
+cortex→cord segment a straight chord across the brain.
+
+**The fix** is per-tract, per-level cross-sectional geometry — which Last's already supplied and this spec
+already records (§Cross-check against Last's) but the drawing never used: corticospinal in the central
+three-fifths of the crus with arm medial to leg; the medial lemniscus hugging the midline in the medulla
+and drifting laterally; the spinal lemniscus at the lateral then dorsal edge of it with the descending
+sympathetic fibres alongside. Plus dense waypoints and smooth curves so a path follows a contour instead
+of chording across it.
+
+**THE INVARIANT: no two tract paths may intersect except at a declared decussation.** Mechanically
+testable by pairwise segment intersection, and it would have failed on day one.
+
+## Artwork: OPTION D — public-domain VECTOR plates, recoloured (owner's ruling)
+
+Copyright is the hard constraint: **Last's figures cannot ship** — it is in copyright and the app is
+publicly deployed. Last's is read for anatomy, never copied.
+
+Four options were built with real assets and compared in the browser. **Option D won**: a public-domain
+*vector* plate can be de-labelled and have its hard-coded 1918 colours mapped onto the app's palette by
+LUMINANCE, so it themes, crops and highlights like authored SVG while carrying real anatomical geometry.
+Option B (raster base) was rejected on measurement: a plate stays a white rectangle in dark mode, its
+burned-in labels collide with ours, pins sit on pixels so nothing can light up, and the crop can only ever
+be the one view.
+
+### The plate set is chosen by SITE COUNT, not by convenience
+
+Measured distribution across all 377 candidate sites:
+
+| compartment | sites | share |
+|---|---|---|
+| brain | 119 | 32% |
+| **skull_base** | **72** | **19%** |
+| nerve | 51 | 14% |
+| brainstem | 40 | 11% |
+| root | 34 | 9% |
+| plexus | 16 | 4% |
+| optic | 13 | 3% |
+| **cord** | **11** | **3%** |
+
+**The figure built in increment 1 is weighted backwards**: the cord has 11 sites and the most prominent
+structure on the page; the skull base has 72 and a dotted line.
+
+**PASS — usable directly (all public domain, verified via the Commons API):**
+
+| plate | serves | sites |
+|---|---|---|
+| `Brain_diagram_without_text.svg` | cortex — lobes, sulci, cerebellum | ~71 |
+| `Gray728.svg` | cerebral hemisphere, lobe boundaries | ~71 |
+| `Gray722.svg` | visual pathway | ~20 |
+| `Brachial_plexus_2.svg` | plexus + upper-limb nerves | ~16 |
+
+**REJECTED, with the reason — this is the reusable rule:**
+
+- `Medulla_section_uk.svg` — **zero font markers, 215 of 431 paths are outlined glyphs.** The Ukrainian
+  labels were flattened into paths indistinguishable from anatomy. No rule can separate them.
+- `Gray669-ja.svg` — nested Inkscape groups; the strip **kept only 36% of paths and still left Japanese
+  text**, deleting anatomy and missing labels at once.
+
+> **A foreign-language plate is only safe when its labels are real `<text>` or tagged Inkscape groups
+> (`id="text…"` / `flowRoot…` / a `font-size` style). Flattened glyphs mean REJECT, never half-clean.**
+
+**GAPS — no public-domain vector exists; trace from public-domain RASTER** (all downloaded; tracing a PD
+work carries no licence obligation, so the whole set stays free of CC BY-SA):
+
+| gap | source | why it matters |
+|---|---|---|
+| skull base foramina | `Gray191.png` | 72 sites, the second-largest compartment |
+| coronal brain, deep grey | `Gray717_without_text.png` | ~31 sites; already label-free |
+| base of brain + cranial nerves | `Gray724.png` | CN origins |
+| lumbosacral plexus / fibular neck | `Gray823.png`, `Gray828.png` | the owner's point 3 |
+| brainstem cross-sections | PD raster | increment 2's tract adjacency |
+
+## Regional views (owner's ruling, 2026-08-25)
+
+> **Anatomical proportions stay TRUE TO LIFE in the main figure. Where the pathology involves the skull
+> base, a SEPARATE picture is offered that lets those sites spread.**
+
+This is anatomically forced, not a layout preference: the foramen ovale, the jugular foramen and the IAM
+sit at different depths and **cannot be separated on a coronal view at all**. So **the projection follows
+the region** — coronal for the neuraxis, a different projection for a regional view.
+
+A regional view is therefore NOT a crop. A crop is the same drawing zoomed; a regional view is a different
+projection chosen because it is the one in which that region's sites are distinguishable.
+
+**Measured: the skull-base compartment spans FOUR anatomical zones, not one plane** — 36 distinct parts
+across the skull base floor (foramina), the cavernous sinus and orbit, the temporal bone (the facial
+nerve's whole course, plus labyrinth and the three semicircular canals), and the upper neck (XI posterior
+triangle, XII, recurrent laryngeal, Collet-Sicard, Villaret). **A single "skull base from above" plate
+holds about half of them**, which is the open design question below.
+
+## The three regional views (owner's rulings, 2026-08-25)
+
+**The skull-base view is organised by CRANIAL NERVE COURSE, not by bone.** Each nerve is drawn from its
+nucleus → cisternal segment → its foramen → its target, with sites pinned along that course.
+
+This is the ruling that makes the view possible at all. A bone plate is a plane and the sites are not in
+one; **a nerve course crosses all four zones by its nature**, so the same view holds the foramen, the
+cavernous sinus, the temporal bone and the neck exit. It also matches how the pathology varies: the facial
+nerve's five sites (geniculate → tympanic → mastoid → stylomastoid → parotid) ARE a course, and localising
+along it is the clinical skill the app teaches. The jugular-foramen group still clusters at one hole,
+which is correct — they genuinely are one place.
+
+**The peripheral regions get the same treatment: an UPPER LIMB and a LOWER LIMB view.** Together
+nerve + root + plexus is **101 sites, 27% of the model**, and the compression sites — fibular neck, carpal
+tunnel, cubital tunnel, spiral groove, suprascapular notch — are exactly what a line down a limb cannot
+show. `Brachial_plexus_2.svg` is validated and ready; the lower limb traces from `Gray823`/`Gray828`.
+
+**A regional view is offered, never forced.** The main figure stays the answer to "where"; a regional view
+opens when the candidate set lands in that region, because that is when its sites need room.
+
+## Order of work, and the split into three increments
+
+The owner's ruling is **artwork first, then tract geometry, then regional detail** — tract courses must be
+authored against settled anatomy, so drawing them before the redraw would be waste. The 16 spurious
+crossings stand until then.
+
+That is more than one plan, so:
+
+- **Increment 2 — artwork.** The plate-adoption pipeline (de-label, recolour by luminance, reject
+  flattened-glyph plates), the four validated plates, tracing the coronal brain from `Gray717_without_text`,
+  and the main neuraxis figure redrawn at TRUE ANATOMICAL PROPORTIONS.
+- **Increment 3 — tract geometry.** Per-tract cross-sectional waypoints from Last's, smooth curves, the
+  three missing `decussation` entries, and **the non-crossing invariant**. Carries a clinical review gate.
+- **Increment 4 — regional views.** The offer mechanism plus the three views: cranial-nerve course, upper
+  limb, lower limb.

@@ -13,7 +13,7 @@
 <script>try{var t=localStorage.getItem('nl_theme_v1');
 if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 <style>
-  :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--on-danger:#ffffff;--ink:#16283f;--muted:#4a5768;--faint:#6b6a64;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;
+  :root{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--navy-2:#274063;--terra:#d36d52;--on-danger:#ffffff;--ink:#16283f;--muted:#4a5768;--faint:#6b6a64;--line:#e5ded3;--band:#f2ece2;--mimic:#3f7f96;--iatro:#9c5a86;--tract-1:#3f6ea8;--tract-2:#8e5296;--tract-3:#3d7a63;--tract-4:#9a6a24;--tract-5:#a04352;
     --ipsi:#34755b;--ipsi-bg:#e6f2ec;--contra:#ac4d34;--contra-bg:#f8e7e0;--bilat:#6959cc;--bilat-bg:#ece9fb;--none:#5e6b80;--none-bg:#eef2f7;--gold:#84662d;--gold-bg:#f3ebd8;
     --red:#b32b1c;--red-bg:#fbe9e7;--shadow:0 1px 2px rgba(29,49,77,.05),0 6px 20px rgba(29,49,77,.06);--radius:12px;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -22,11 +22,11 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
        uppercase micro-captions and mono tokens. Exceptions, deliberate: the wordmark and the code-stroke
        clock, which are doing a different job. */
     --fs-answer:17px;--fs-body:13px;--fs-meta:11px;--fs-cap:10px;}
-  @media (prefers-color-scheme:dark){:root{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--on-danger:#ffffff;--ink:#e9edf3;--muted:#a8b3c4;--faint:#8d9bb1;--line:#26364d;--band:#1b2942;--mimic:#7fbcd6;--iatro:#d296b8;
+  @media (prefers-color-scheme:dark){:root{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--navy-2:#b7c6dd;--terra:#e79075;--on-danger:#ffffff;--ink:#e9edf3;--muted:#a8b3c4;--faint:#8d9bb1;--line:#26364d;--band:#1b2942;--mimic:#7fbcd6;--iatro:#d296b8;--tract-1:#7fb0e0;--tract-2:#c79ccd;--tract-3:#7cc0a2;--tract-4:#d6ab63;--tract-5:#e0919c;
     --ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
-  :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#4a5768;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--on-danger:#ffffff;--ipsi:#34755b;--ipsi-bg:#e6f2ec;--contra:#ac4d34;--contra-bg:#f8e7e0;--bilat:#6959cc;--bilat-bg:#ece9fb;--none:#5e6b80;--none-bg:#eef2f7;--gold:#84662d;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#6b6a64;--mimic:#3f7f96;--iatro:#9c5a86;}
-  :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#a8b3c4;--line:#26364d;--band:#1b2942;--terra:#e79075;--on-danger:#ffffff;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#8d9bb1;--mimic:#7fbcd6;--iatro:#d296b8;}
+  :root[data-theme="light"]{--cream:#faf7f2;--paper:#fffdfb;--navy:#16283f;--ink:#16283f;--muted:#4a5768;--line:#e5ded3;--band:#f2ece2;--terra:#d36d52;--on-danger:#ffffff;--ipsi:#34755b;--ipsi-bg:#e6f2ec;--contra:#ac4d34;--contra-bg:#f8e7e0;--bilat:#6959cc;--bilat-bg:#ece9fb;--none:#5e6b80;--none-bg:#eef2f7;--gold:#84662d;--gold-bg:#f3ebd8;--red:#b32b1c;--red-bg:#fbe9e7;--navy-2:#274063;--faint:#6b6a64;--mimic:#3f7f96;--iatro:#9c5a86;--tract-1:#3f6ea8;--tract-2:#8e5296;--tract-3:#3d7a63;--tract-4:#9a6a24;--tract-5:#a04352;}
+  :root[data-theme="dark"]{--cream:#0f1824;--paper:#16223a;--navy:#dbe4f1;--ink:#e9edf3;--muted:#a8b3c4;--line:#26364d;--band:#1b2942;--terra:#e79075;--on-danger:#ffffff;--ipsi:#63b892;--ipsi-bg:#17342a;--contra:#e8a184;--contra-bg:#3a2318;--bilat:#a99cf0;--bilat-bg:#262052;--none:#8ea0b8;--none-bg:#1f2c42;--gold:#c9a765;--gold-bg:#2c2718;--red:#c94429;--red-bg:#3a2318;--navy-2:#b7c6dd;--faint:#8d9bb1;--mimic:#7fbcd6;--iatro:#d296b8;--tract-1:#7fb0e0;--tract-2:#c79ccd;--tract-3:#7cc0a2;--tract-4:#d6ab63;--tract-5:#e0919c;}
   /* selected-pathology row + chip (spec 2026-08-18). Defined for all four theme states so the toggle
      wins in both directions and the system default is never left borrowing the host page background. */
   :root{--sel-bg:#f8ece7;}
@@ -111,17 +111,54 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .why-site>summary{cursor:pointer;font-size:var(--fs-body);color:var(--muted);}
   .neuraxis-wrap{margin:10px 0;border:1px solid var(--line);border-radius:8px;padding:8px;overflow-x:auto;}
   .nx-cap{font-size:var(--fs-meta);color:var(--faint);margin-bottom:4px;}
-  .neuraxis{max-width:100%;height:auto;color:var(--ink);}
-  .neuraxis .nx-band{font-size:var(--fs-cap);fill:var(--faint);text-transform:capitalize;}
-  .neuraxis .nx-decus{stroke:var(--gold);stroke-dasharray:3 2;stroke-width:1;}
-  .neuraxis .nx-decus-t{font-size:var(--fs-cap);fill:var(--gold);text-anchor:middle;}
-  .neuraxis .nx-tract{fill:none;stroke:var(--muted);stroke-width:1.5;opacity:.55;}
-  .neuraxis .nx-dot{fill:var(--muted);}
-  .neuraxis .nx-node{cursor:pointer;}
-  .neuraxis .nx-node .nx-label{font-size:var(--fs-cap);fill:var(--ink);}
-  .neuraxis .nx-node.sel .nx-dot{fill:var(--terra);stroke:var(--terra);stroke-width:2;}
-  .neuraxis .nx-node.sel .nx-label{fill:var(--terra);font-weight:700;}
-  .neuraxis .nx-node:hover .nx-label{fill:var(--navy);}
+  .neuraxis{max-width:100%;height:auto;color:var(--ink);display:block;}
+  /* Anatomy strokes are --muted, NOT --line: --line is #26364d in dark and is invisible. */
+  .anatomy path,.anatomy ellipse,.anatomy circle,.anatomy line{vector-effect:non-scaling-stroke;}
+  .an-brain,.an-stem,.an-cbm,.an-cord{fill:var(--band);stroke:var(--muted);stroke-width:1.3;opacity:.8;}
+  .an-line,.an-deep,.an-optic,.an-chiasm,.an-plexus,.an-nerve{fill:none;stroke:var(--muted);stroke-width:1;opacity:.65;}
+  .an-roots path{fill:none;stroke:var(--muted);stroke-width:1;opacity:.65;}
+  .an-folia{fill:none;stroke:var(--muted);stroke-width:.7;opacity:.45;}
+  .an-plate{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3;opacity:.45;}
+  .an-symp{fill:none;stroke:var(--muted);stroke-width:1.1;stroke-dasharray:3 2.5;opacity:.7;}
+  .an-gang,.an-eye{fill:var(--band);stroke:var(--muted);stroke-width:1;opacity:.8;}
+  .an-pupil{fill:var(--muted);stroke:none;opacity:.7;}
+  .an-mid{stroke:var(--muted);stroke-width:.6;stroke-dasharray:1 4;opacity:.5;}
+  .nx-side{font-size:var(--fs-cap);fill:var(--faint);letter-spacing:.09em;text-transform:uppercase;}
+  .nx-region{font-size:var(--fs-cap);fill:var(--faint);}
+  .nx-tract{fill:none;stroke-width:2.2;opacity:.9;stroke-linecap:round;stroke-linejoin:round;}
+  .nx-tract-0{stroke:var(--tract-1);}.nx-tract-1{stroke:var(--tract-2);}.nx-tract-2{stroke:var(--tract-3);}
+  .nx-tract-3{stroke:var(--tract-4);}.nx-tract-4{stroke:var(--tract-5);}
+  .nx-arrowhead{fill:var(--muted);}
+  .nx-decus line{stroke:var(--gold);stroke-width:1.2;stroke-dasharray:3 2;}
+  .nx-legend-bg{fill:var(--cream);stroke:var(--line);stroke-width:1;opacity:.9;}
+  .nx-legend-t{font-size:var(--fs-cap);fill:var(--faint);}
+  .nx-pin{cursor:pointer;}
+  .nx-pin .nx-dot{fill:var(--paper);stroke:var(--muted);stroke-width:1.2;}
+  .nx-pin .nx-n{font-size:var(--fs-cap);fill:var(--muted);text-anchor:middle;font-weight:600;}
+  .nx-pin.sel .nx-dot{fill:var(--terra);stroke:var(--terra);}
+  .nx-pin.sel .nx-n{fill:var(--on-danger);}
+  .nx-cluster{cursor:pointer;}
+  .nx-cluster .nx-clusterdot{fill:var(--band);stroke:var(--muted);stroke-width:1.4;}
+  .nx-cluster .nx-fan{display:none;}
+  .nx-cluster.open .nx-fan{display:inline;}
+  .nx-cluster.open .nx-clusterdot{opacity:.35;}
+  .nx-locator .nx-loc-bg{fill:var(--cream);stroke:var(--line);stroke-width:1;opacity:.96;}
+  /* The thumbnail redraws the SAME authored half at small scale, so it is deliberately faint and
+     non-scaling strokes are switched off — at 0.2x a non-scaling stroke would read as thick as the
+     full-size figure and the inset would shout louder than the drawing it indexes. */
+  .nx-locator .nx-loc-fig{opacity:.45;}
+  .nx-locator .nx-loc-fig path,.nx-locator .nx-loc-fig ellipse,
+  .nx-locator .nx-loc-fig circle,.nx-locator .nx-loc-fig line{vector-effect:none;}
+  /* NOT terracotta. test/brand.test.js rejected that on the first run and it was right: a locator's crop
+     rectangle is neither the product's identity nor THE answer, so it takes the neutral ink — the same
+     judgement that saw a terracotta focus ring deleted rather than allowlisted. */
+  .nx-locator .nx-loc-box{fill:none;stroke:var(--ink);stroke-width:2;}
+  .nx-idx{columns:3;column-gap:20px;font-size:var(--fs-meta);margin:10px 0 0;padding:0;list-style:none;}
+  .nx-idx .nx-row{break-inside:avoid;margin:0 0 3px;padding-left:20px;text-indent:-20px;line-height:1.35;cursor:pointer;color:var(--ink);}
+  .nx-idx .nx-row b{display:inline-block;width:15px;text-align:right;margin-right:5px;color:var(--muted);font-weight:600;}
+  .nx-idx .nx-row.sel{color:var(--terra);font-weight:700;}
+  .nx-idx .nx-row.sel b{color:var(--terra);}
+  @media (max-width:640px){.nx-idx{columns:1;}}
   /* complete-the-sieve (Sub-project C) */
   .sieve>summary{cursor:pointer;font-size:var(--fs-body);color:var(--muted);margin-top:4px;}
   .sieve .c{font-family:var(--mono);font-size:var(--fs-cap);color:var(--faint);}

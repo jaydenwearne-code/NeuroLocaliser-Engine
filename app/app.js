@@ -9,7 +9,7 @@ import { nextStepsFor, combinedNextSteps, pathologyNextStepsFor } from "../src/d
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
 import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
-import { neuraxisSVG } from "./neuraxis-diagram.js";
+import { neuraxisSVG, neuraxisIndex } from "./neuraxis-diagram.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { readTheme, writeTheme, nextTheme, applyTheme, themeGlyph, themeLabel } from "./theme.js";
@@ -288,13 +288,21 @@ function renderResults() {
     + pmsg + rmsg
     + whereCard(list, cands, total, r)
     + together
-    + whyCard(tf, sel, total)
+    + whyCard(tf, sel, total, list)
     + whatCard(sel.site, r, list)
     + nextCard(sel.site, r, list);
   wireCardControls();
   wireJumpLinks(el);
-  const nx = el.querySelector(".neuraxis");
-  if (nx) nx.onclick = e => { const g = e.target.closest("[data-k]"); if (!g) return; S.selectedPathology = undefined; S.selected = g.dataset.k; renderResults(); };
+  // Bound on the WRAP, not the <svg>: the numbered index lives beside the figure and its rows carry the
+  // same data-k, so one handler serves both.
+  const nx = el.querySelector(".neuraxis-wrap");
+  if (nx) nx.onclick = e => {
+    // A cluster expands in place. It is a DRAWING decision, so it must not change the selection.
+    const cluster = e.target.closest(".nx-cluster");
+    if (cluster && !e.target.closest(".nx-fan")) { cluster.classList.toggle("open"); return; }
+    const g = e.target.closest("[data-k]"); if (!g) return;
+    S.selectedPathology = undefined; S.selected = g.dataset.k; renderResults();
+  };
   // Selecting a cause narrows the Next card to that pathology; clicking the selected one clears it.
   // Bound on BOTH cards: the What rows and the Next card's chip carry data-px, so one handler shape
   // serves them and the chip's x needs no separate wiring. card() emits id="sec-<anchor>" (app.js:301).
@@ -631,10 +639,14 @@ function synthesisHTML(tf) {
   return `${clauses}${converge}`;
 }
 
-function neuraxisBlock(tf, selectedId) {
-  if (!tf.length) return "";
-  const svg = neuraxisSVG(tf, { selectedId, labelFor: s => siteName(s) });
-  return `<div class="neuraxis-wrap"><div class="nx-cap">Neuraxis — click a site to select it</div>${svg}</div>`;
+// THE INPUT CONTRACT: candidates come from solve() (`list` is r.display), not from tractsFor(). Harvesting
+// sites from tracts is why eight of the seventeen shipped examples rendered no diagram at all — a picture
+// with no implicated long tract had no sites, so the diagram rendered "".
+function neuraxisBlock(list, tf, selectedId) {
+  if (!list || !list.length) return "";
+  const opts = { selectedId, labelFor: s => siteName(s) };
+  return `<div class="neuraxis-wrap"><div class="nx-cap">Neuraxis — click a site to select it</div>`
+    + neuraxisSVG(list, tf, opts) + neuraxisIndex(list, opts) + `</div>`;
 }
 
 // A `finding@side` token as a clinician reads it: "Right · Arm weakness". The raw token stays in the title
@@ -666,14 +678,19 @@ function whyBlock(c, total, collapsed = false) {
 }
 
 // ② Why — composed Course narrative + Why-this (parsimony) + Why-not (derived, level-grouped) + diagram
-function whyCard(tf, sel, total) {
+function whyCard(tf, sel, total, list) {
   const pat = umnLmnPattern(S.tokens);
   const umnlmn = pat.verdict
     ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
     : "";
+  // THE DIAGRAM IS BUILT ONCE AND SHOWN IN BOTH BRANCHES. It used to sit only after this early return, so
+  // a picture implicating no long tract — foot drop, cauda equina — got no figure even though the builder
+  // renders one perfectly well. THAT WAS A SECOND GATE behind the one in neuraxisSVG, and moving only the
+  // first left the app unchanged while the unit tests went green. Keep them together.
+  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>Neuraxis diagram</summary>${neuraxisBlock(list, tf, sel.site.id)}</details>`;
   if (!tf.length) {
-    // non-tract findings: no tract narrative/diagram — lead with the per-site explanation, expanded.
-    return card("Why", `${umnlmn}${whyBlock(sel, total, false)}`, "why");
+    // No tract narrative to compose, but the figure still localises: lead with the per-site explanation.
+    return card("Why", `${umnlmn}${diagram}${whyBlock(sel, total, false)}`, "why");
   }
   const course = tf.map(t => `<p class="synth"><b>Course.</b> ${esc(tractNarrative(t.tract))}</p>`).join("");
   const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
@@ -690,7 +707,6 @@ function whyCard(tf, sel, total) {
   const whyNot = lines
     ? `<div class="whynot"><b>Why not elsewhere.</b><ul class="whynot-list">${lines}</ul><p class="derived">None reported — examine specifically to exclude.</p></div>`
     : "";
-  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>Neuraxis diagram</summary>${neuraxisBlock(tf, sel.site.id)}</details>`;
   return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`, "why");
 }
 

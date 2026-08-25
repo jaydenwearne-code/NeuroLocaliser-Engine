@@ -112,6 +112,13 @@ const NOT_TEXT = {
        + "CLAUDE.md claims the mimic category has 'its own --mimic CSS token'; the token exists, nothing "
        + "uses it. Wiring it up or deleting it is separate work.",
   iatro: "DEAD TOKEN: same as --mimic — defined four times, never referenced.",
+  "tract-1": "a tract STROKE on the neuraxis figure, never text. The five tract colours identify pathways "
+           + "on a drawing; they are additionally distinguished by DASH PATTERN, so the figure stays "
+           + "readable in greyscale and for a colourblind reader without any of them carrying text.",
+  "tract-2": "a tract STROKE on the neuraxis figure, never text — see --tract-1.",
+  "tract-3": "a tract STROKE on the neuraxis figure, never text — see --tract-1.",
+  "tract-4": "a tract STROKE on the neuraxis figure, never text — see --tract-1.",
+  "tract-5": "a tract STROKE on the neuraxis figure, never text — see --tract-1.",
 };
 for (const [tok, why] of Object.entries(NOT_TEXT)) {
   ok(`--${tok} is declared NOT-TEXT with a stated reason`, why.length > 40, why.slice(0, 56));
