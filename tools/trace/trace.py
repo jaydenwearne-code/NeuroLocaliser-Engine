@@ -8,35 +8,46 @@ def load(p):
     w, h = map(int, t[0].split())
     return [t[1 + y] for y in range(h)], w, h
 
-def derule(grid, w, h, min_run=22, max_width=3):
+def derule(grid, w, h, cover=0.55, min_ink=40, max_width=3):
     """Erase leader RULES from the bitmap, before tracing.
-    Filtering them afterwards does not work: a rule that touches the brain outline is traced as part of
-    the SAME contour as the anatomy, so there is nothing to drop without dropping structure too. In the
-    bitmap they are still separable — a rule is a long vertical run only a few pixels wide."""
+
+    Filtering them after tracing does not work: a rule that touches the brain outline is traced as part of
+    the SAME contour as the anatomy, so there is nothing to drop without dropping structure too.
+
+    AND A RULE IS OFTEN DASHED. Thresholding an engraving breaks a long thin line into a broken column of
+    marks, so looking for one CONTIGUOUS run catches only the few solid ones (13 of ~40 on the first
+    pass). Work per COLUMN instead: gather every pixel in that column whose ink is narrow, group them
+    allowing short gaps, and erase a group that spans a long distance — dashes included.
+
+    `max_width` is what protects anatomy. A ventricle wall or the midline is part of a wider connected
+    structure; a leader rule is a hairline with clear space either side."""
     g = [list(r) for r in grid]
     killed = 0
     for x in range(w):
-        y = 0
-        while y < h:
-            if g[y][x] != "1": y += 1; continue
-            y2 = y
-            while y2 < h and g[y2][x] == "1": y2 += 1
-            run = y2 - y
-            if run >= min_run:
-                # how wide is the ink here? measure at a few sample heights
-                wide = False
-                for sy in range(y, y2, max(1, run // 5)):
-                    span = 1
-                    xx = x - 1
-                    while xx >= 0 and g[sy][xx] == "1": span += 1; xx -= 1
-                    xx = x + 1
-                    while xx < w and g[sy][xx] == "1": span += 1; xx += 1
-                    if span > max_width: wide = True; break
-                if not wide:
-                    for yy in range(y, y2): g[yy][x] = "0"
-                    killed += 1
-            y = y2
-    print(f"de-ruled {killed} vertical runs")
+        narrow = []
+        for y in range(h):
+            if g[y][x] != "1":
+                continue
+            span, xx = 1, x - 1
+            while xx >= 0 and g[y][xx] == "1":
+                span += 1; xx -= 1
+            xx = x + 1
+            while xx < w and g[y][xx] == "1":
+                span += 1; xx += 1
+            if span <= max_width:
+                narrow.append(y)
+        if len(narrow) < min_ink:
+            continue
+        # DECIDE PER COLUMN, NOT PER FRAGMENT. A rule crossing a thick gyrus is interrupted for 20-60px
+        # while it runs through dark anatomy, so grouping the narrow pixels with a small gap tolerance
+        # split one rule into fragments that each looked too short — column x=321 held 201 narrow pixels
+        # and not one fragment survived the span test. What identifies a rule is that its hairline ink
+        # spans most of the IMAGE, however often the anatomy interrupts it.
+        if narrow[-1] - narrow[0] >= h * cover and len(narrow) >= min_ink:
+            for y in narrow:
+                g[y][x] = "0"
+            killed += 1
+    print(f"de-ruled {killed} vertical rules (dashes included)")
     return ["".join(r) for r in g]
 
 def trace(grid, w, h, min_pts=14):
@@ -86,7 +97,8 @@ if __name__ == "__main__":
     eps = float(sys.argv[3]) if len(sys.argv) > 3 else 1.1
     minpts = int(sys.argv[4]) if len(sys.argv) > 4 else 22
     grid, w, h = load(src)
-    grid = derule(grid, w, h)
+    cover = float(sys.argv[5]) if len(sys.argv) > 5 else 0.55
+    grid = derule(grid, w, h, cover=cover)
     cs = trace(grid, w, h, minpts)
     # THE LABEL-FREE PLATE STILL HAS ITS LEADER LINES. Gray717_without_text.png dropped the captions but
     # kept the rules that pointed at them, so the trace picks up long thin vertical strokes that are not
