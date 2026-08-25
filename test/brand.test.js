@@ -56,8 +56,6 @@ const TERRA_ALLOWED = [
   ".wordmark .l",                      // the wordmark — identity
   ".lockup-mark",                      // the mark's colour holder — identity (markSVG uses currentColor)
   ".out-head",                         // the focal answer card's rule — THE answer
-  ".nx-pin.sel",                       // the selected lesion pin on the figure — THE answer
-  ".nx-idx .nx-row.sel",               // its index row — the same answer, read as text
   // The selected PATHOLOGY (spec 2026-08-18) — the same category as the selected lesion above. Once a
   // cause is chosen the Next card's lower tiers are about that disease and nothing else, so the marker on
   // the row, and the chip naming it, are THE answer in exactly the sense .out-head is.

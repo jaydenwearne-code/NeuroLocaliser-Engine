@@ -9,7 +9,7 @@ import { nextStepsFor, combinedNextSteps, pathologyNextStepsFor } from "../src/d
 import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
 import { COURSES } from "../src/model/course.js";
 import { prevalenceOf } from "../src/model/prevalence.js";
-import { neuraxisSVG, neuraxisIndex, neuraxisLegend } from "./neuraxis-diagram.js";
+import { discriminators, explainedBy } from "./discriminators.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
 import { readTheme, writeTheme, nextTheme, applyTheme, themeGlyph, themeLabel } from "./theme.js";
@@ -50,7 +50,7 @@ const fid = t => t.split("@")[0];
 const sideTag = s => s === "left" ? "L" : s === "right" ? "R" : s === "midline" ? "M" : s === "bilateral" ? "B" : "•";
 const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 
-const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), selectedPathology:undefined, selectedEntity:undefined, scope:"site",
+const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), compare:undefined, selectedPathology:undefined, selectedEntity:undefined, scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
 
@@ -295,14 +295,6 @@ function renderResults() {
   wireJumpLinks(el);
   // Bound on the WRAP, not the <svg>: the numbered index lives beside the figure and its rows carry the
   // same data-k, so one handler serves both.
-  const nx = el.querySelector(".neuraxis-wrap");
-  if (nx) nx.onclick = e => {
-    // A cluster expands in place. It is a DRAWING decision, so it must not change the selection.
-    const cluster = e.target.closest(".nx-cluster");
-    if (cluster && !e.target.closest(".nx-fan")) { cluster.classList.toggle("open"); return; }
-    const g = e.target.closest("[data-k]"); if (!g) return;
-    S.selectedPathology = undefined; S.selected = g.dataset.k; renderResults();
-  };
   // Selecting a cause narrows the Next card to that pathology; clicking the selected one clears it.
   // Bound on BOTH cards: the What rows and the Next card's chip carry data-px, so one handler shape
   // serves them and the chip's x needs no separate wiring. card() emits id="sec-<anchor>" (app.js:301).
@@ -342,6 +334,10 @@ function renderResults() {
   } catch (err) { el.innerHTML = `<h3>Possible lesions</h3>` + errorPanel(err); return; }
   const dl = document.getElementById("difflist");
   if (dl) dl.onclick = e => {
+    // The compare checkbox is handled on CHANGE, not here — a <label> wrapping an <input> forwards the
+    // click, so a delegated click handler sees it TWICE and the toggle cancelled itself out. This branch
+    // only stops the click falling through and re-selecting the row.
+    if (e.target.closest("label.cmp")) return;
     const pin = e.target.closest("[data-pin]");
     if (pin) {                      // pin toggle — must not fall through to row selection
       const id = pin.dataset.pin;
@@ -353,6 +349,16 @@ function renderResults() {
     if (!row) return;
     S.selectedPathology = undefined;   // a pathology chosen at one lesion is meaningless at another
     S.selected = row.dataset.k;
+    renderResults();
+  };
+  if (dl) dl.onchange = e => {
+    const cmp = e.target.closest("[data-cmp]");
+    if (!cmp) return;
+    const id = cmp.dataset.cmp;
+    const ids = [...dl.querySelectorAll("input[data-cmp]")].map(i => i.dataset.cmp);
+    const cur = compareSet(ids);
+    cur.has(id) ? cur.delete(id) : cur.add(id);
+    S.compare = cur;                // now explicit, and may legitimately be empty
     renderResults();
   };
   const el2 = document.getElementById("results");
@@ -453,6 +459,18 @@ function setAside(reason, n, body, open = false) {
 }
 
 // ① Where — the differential list + localisation annotations + (collapsed) ruled-out
+// `S.compare` UNDEFINED means the reader has not chosen, so the top two are compared — useful before
+// anyone clicks. Once they touch a checkbox it becomes an explicit Set, which may legitimately be empty.
+// Sites that are no longer candidates drop out here rather than lingering invisibly.
+// Takes the candidate IDS, not the candidate objects, so it can be called from the event wiring — which
+// is a different scope and has no `list` in it. Relying on that closure threw ReferenceError on every
+// toggle, silently: the handler ran, died, and the panel simply never updated.
+function compareSet(ids) {
+  if (S.compare === undefined) return new Set(ids.slice(0, 2));
+  return new Set([...S.compare].filter(id => ids.includes(id)));
+}
+const idsOf = list => list.map(c => c.site.id);
+
 function whereCard(list, cands, total, r) {
   const nAll = r.explainAll.length;
   const near = (!nAll && r.nearFit)
@@ -468,7 +486,10 @@ function whereCard(list, cands, total, r) {
     const w = Math.round((c.n/total)*54);
     const fit = c.n===total ? `<span class="dall">✓ all</span>` : `<span class="dfrac">${c.n}/${total}</span>`;
     const pinned = S.pinned.has(c.site.id) ? " pinned" : "";
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site to compare across lesions">📌</button></div>`;
+    // TWO CONTROLS, TWO CLAIMS. The checkbox says "I am choosing between these" (one lesion, which one?);
+    // the pin says "these are both real" (two lesions). Opposite claims, so they cannot share a control.
+    const cmpOn = compareSet(idsOf(list)).has(c.site.id) ? " checked" : "";
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? setAside("contradicted by a normal finding", r.ruledOut.length,
@@ -642,11 +663,28 @@ function synthesisHTML(tf) {
 // THE INPUT CONTRACT: candidates come from solve() (`list` is r.display), not from tractsFor(). Harvesting
 // sites from tracts is why eight of the seventeen shipped examples rendered no diagram at all — a picture
 // with no implicated long tract had no sites, so the diagram rendered "".
-function neuraxisBlock(list, tf, selectedId) {
-  if (!list || !list.length) return "";
-  const opts = { selectedId, labelFor: s => siteName(s) };
-  return `<div class="neuraxis-wrap"><div class="nx-cap">Neuraxis — click a site to select it</div>`
-    + neuraxisSVG(list, tf, opts) + neuraxisLegend(tf) + neuraxisIndex(list, opts) + `</div>`;
+// THE COMPARE PANEL replaces the neuraxis diagram, which was rebuilt three times and never carried the
+// argument. A picture of the neuraxis is in every textbook; what separates THESE candidates is not.
+function comparePanel(list) {
+  const picked = list.filter(c => compareSet(idsOf(list)).has(c.site.id));
+  if (picked.length < 2) {
+    return `<p class="cmp-hint">Tick two or more locations in <b>Where</b> to see what separates them.</p>`;
+  }
+  const d = discriminators(picked, S.tokens);
+  const names = picked.map(c => esc(siteName(c.site)));
+  // The explained sets differ only when NO single site accounts for everything — the multifocal signature.
+  const sets = picked.map(c => explainedBy(c, S.tokens).sort().join("|"));
+  const lead = new Set(sets).size === 1
+    ? `<p class="cmp-lead">All ${picked.length} explain <b>every</b> finding entered — which is why they are all still in. What separates them is below.</p>`
+    : `<p class="cmp-lead">These explain <b>different</b> findings, so no single lesion accounts for the whole picture.</p>`;
+  if (!d.length) return lead + `<p class="cmp-hint">Nothing separates them — they predict the same findings.</p>`;
+
+  const rows = d.slice(0, 10).map(x => `<tr><td class="cf"><span class="cside">${sideTag(x.token.split("@")[1] || "")}</span> ${esc(desc(fid(x.token)))}</td>`
+    + `<td class="cy">${x.confirms.map(i => names[i]).join(", ")}</td>`
+    + `<td class="cn">${x.excludes.map(i => names[i]).join(", ")}</td></tr>`).join("");
+  return lead + `<table class="cmp-tbl"><thead><tr><th>Examine</th><th>If present</th><th>If absent</th></tr></thead>`
+    + `<tbody>${rows}</tbody></table>`
+    + (d.length > 10 ? `<p class="cmp-hint">…and ${d.length - 10} more.</p>` : "");
 }
 
 // A `finding@side` token as a clinician reads it: "Right · Arm weakness". The raw token stays in the title
@@ -683,11 +721,11 @@ function whyCard(tf, sel, total, list) {
   const umnlmn = pat.verdict
     ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
     : "";
-  // THE DIAGRAM IS BUILT ONCE AND SHOWN IN BOTH BRANCHES. It used to sit only after this early return, so
-  // a picture implicating no long tract — foot drop, cauda equina — got no figure even though the builder
-  // renders one perfectly well. THAT WAS A SECOND GATE behind the one in neuraxisSVG, and moving only the
-  // first left the app unchanged while the unit tests went green. Keep them together.
-  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>Neuraxis diagram</summary>${neuraxisBlock(list, tf, sel.site.id)}</details>`;
+  // THE PANEL IS BUILT ONCE AND SHOWN IN BOTH BRANCHES. The diagram it replaced used to sit only after
+  // this early return, so a picture implicating no long tract — foot drop, cauda equina — got nothing
+  // even though the builder
+  // renders one perfectly well. Keep the panel built once and shown in both branches.
+  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>What separates these locations</summary><div class="cmp-wrap">${comparePanel(list)}</div></details>`;
   if (!tf.length) {
     // No tract narrative to compose, but the figure still localises: lead with the per-site explanation.
     return card("Why", `${umnlmn}${diagram}${whyBlock(sel, total, false)}`, "why");

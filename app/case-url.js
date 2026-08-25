@@ -23,6 +23,12 @@ export function encodeCase(state) {
   if (state.distalReach) p.set("dr", state.distalReach);
   const pins = [...(state.pinned || [])];
   if (pins.length) p.set("p", pins.join(","));
+  // `cmp` is a DIFFERENT CLAIM from `p`, and they must not share a parameter. A pin says "both of these
+  // are real lesions" (the multifocal Together card); a compare says "only one of these is real, help me
+  // choose". One list cannot carry both meanings — the same reason selectedEntity and selectedPathology
+  // are separate fields. Undefined means "not chosen", which renders the default pair.
+  const cmp = state.compare ? [...state.compare] : null;
+  if (cmp) p.set("cmp", cmp.join(","));
   return p.toString();
 }
 
@@ -67,6 +73,13 @@ export function decodeCase(hash, opts = {}) {
   if (pn) {
     const ids = pn.split(",").map(t => t.trim()).filter(Boolean).filter(id => !validSites || validSites.has(id));
     if (ids.length) out.pinned = new Set(ids);
+  }
+  const cm = p.get("cmp");
+  if (cm !== null) {
+    // An EMPTY cmp is meaningful — it says the reader deliberately cleared the comparison — so it round
+    // trips as an empty Set rather than being dropped back to the default pair.
+    const ids = cm.split(",").map(t => t.trim()).filter(Boolean).filter(id => !validSites || validSites.has(id));
+    out.compare = new Set(ids);
   }
   return out;
 }

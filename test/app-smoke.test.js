@@ -106,6 +106,28 @@ ok("Tone is its own top-level leaf", EXAM_TREE.some(n => n.id === "tone") && !!t
   ok("course serialises with no findings entered", bare.course === "progressive");
 }
 
+// ---- EVERY app/*.js FILE MUST PARSE ----
+// app.js is DOM-bound, so no suite imports it and a SYNTAX ERROR SHIPS SILENTLY. It happened twice in one
+// change: a duplicate `const sideTag`, and an orphaned `}` left by a deletion — the full suite stayed
+// green through both, and only loading the page in a browser showed anything wrong. Parsing every module
+// here costs nothing and closes that hole.
+{
+  const { readdirSync } = await import("node:fs");
+  const { execFileSync } = await import("node:child_process");
+  const { fileURLToPath } = await import("node:url");
+  // fileURLToPath, NOT .pathname: this project's path contains a space ("Claude Code"), so .pathname is
+  // percent-encoded and node cannot open the file — which made every module look like a parse failure.
+  const dir = fileURLToPath(new URL("../app/", import.meta.url));
+  const files = readdirSync(dir).filter(f => f.endsWith(".js"));
+  ok(`there are app modules to check (${files.length})`, files.length > 5);
+  for (const f of files) {
+    let err = null;
+    try { execFileSync(process.execPath, ["--check", dir + f], { stdio: "pipe" }); }
+    catch (e) { err = String(e.stderr || e.message).split("\n").find(l => /SyntaxError/.test(l)) || "parse failed"; }
+    ok(`app/${f} parses`, err === null, err || "");
+  }
+}
+
 console.log("\nNeuroLocaliser — EXAM TREE integrity (Sub-project D)\n" + "=".repeat(52));
 for (const r of log) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);
 console.log("=".repeat(52));
