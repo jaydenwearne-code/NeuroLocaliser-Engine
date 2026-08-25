@@ -47,7 +47,16 @@ function spline(k, per) {
       const A3 = lerp(p2, p3, (t3 - t) / (t3 - t2 || 1), (t - t2) / (t3 - t2 || 1));
       const B1 = lerp(A1, A2, (t2 - t) / (t2 - t0 || 1), (t - t0) / (t2 - t0 || 1));
       const B2 = lerp(A2, A3, (t3 - t) / (t3 - t1 || 1), (t - t1) / (t3 - t1 || 1));
-      out.push(lerp(B1, B2, (t2 - t) / (t2 - t1 || 1), (t - t1) / (t2 - t1 || 1)));
+      const q = lerp(B1, B2, (t2 - t) / (t2 - t1 || 1), (t - t1) / (t2 - t1 || 1));
+      // CLAMP THE CURVE TO ITS OWN KNOTS. Even centripetal parameterisation leaves the segment it is
+      // interpolating, and lines that were correctly ordered at every knot still wove into each other
+      // across a six-unit gap. Clamping makes the drawn geometry match what the lane-order check predicts
+      // from linear interpolation, so that check becomes genuinely predictive instead of merely
+      // suggestive.
+      out.push([
+        Math.min(Math.max(q[0], Math.min(p1[0], p2[0])), Math.max(p1[0], p2[0])),
+        Math.min(Math.max(q[1], Math.min(p1[1], p2[1])), Math.max(p1[1], p2[1])),
+      ]);
     }
   }
   out.push(k[k.length - 1]);
@@ -75,22 +84,41 @@ function tractOverlay(tracts, crop) {
     const other = side === "left" ? "right" : "left";
     const levels = t.tract.course.map(w => w.level).filter(l => ANCHOR[l]);
     const crossIdx = crossAt ? levels.indexOf(crossAt) : -1;
+    // THE DECUSSATION SPLITS THE COURSE, and the half holding the tract's ORIGIN is the side its findings
+    // came from. Which half that is depends on DIRECTION: `course` is written rostral-to-caudal for every
+    // pathway, so a DESCENDING tract originates at the start of the array and an ASCENDING one at the end.
+    // Ignoring direction drew the trigeminal nuclei contralateral and the thalamus ipsilateral — backwards,
+    // and precisely the relationship the app teaches (ipsilateral face, contralateral body).
+    const ascending = t.tract.direction === "ascending";
+    const onOriginSide = k => (ascending ? k >= crossIdx : k < crossIdx);
 
     // EACH TRACT HAS ITS OWN LANE at each level (see TRACT_LANE). Sharing one anchor per level is what
     // made paths converge and cross where no decussation exists.
     // Order along the neuraxis unless the pathway authors its own route (see routeIsAuthored).
     const ordered = routeIsAuthored(t.tract.id) ? levels
       : [...levels].sort((a, b) => ANCHOR[a][1] - ANCHOR[b][1]);
+    // A DECUSSATING TRACT IS DRAWN AS TWO STROKES MEETING AT THE MIDLINE, not one line weaving across it.
+    // Threading a single path from a lateral lane on one side to the other made it sweep through every
+    // lane in between — spinothalamic runs at dx 50 in the subcortex and crosses at the cord, so as one
+    // stroke it cut across the whole left side on the way down. Two strokes meeting at the decussation say
+    // the same thing and confine the traverse to the band where crossings are expected.
     const strokes = [[]];
+    let prevSide = null;
     ordered.forEach((lvl, k) => {
-      const sd = crossIdx >= 0 && levels.indexOf(lvl) >= crossIdx ? other : side;
+      const sd = crossIdx < 0 ? side : (onOriginSide(levels.indexOf(lvl)) ? side : other);
+      if (prevSide !== null && sd !== prevSide) {
+        const yMid = ANCHOR[lvl][1];
+        strokes[strokes.length - 1].push([MX, yMid]);
+        strokes.push([[MX, yMid]]);
+      }
+      prevSide = sd;
       const pt = tractPoint(t.tract.id, lvl, sd);
       if (pt) strokes[strokes.length - 1].push(pt);
       for (const v of viaAfter(t.tract.id, lvl)) {
         const sign = sd === "right" ? 1 : -1;
         strokes[strokes.length - 1].push([MX + sign * v[0], ANCHOR[lvl][1] + v[1]]);
       }
-      if (breaksAfter(t.tract.id, lvl) && k < ordered.length - 1) strokes.push([]);
+      if (breaksAfter(t.tract.id, lvl) && k < ordered.length - 1) { strokes.push([]); prevSide = null; }
     });
     const usable = strokes.filter(st => st.length >= 2);
     if (!usable.length) return { path: "", mark: "" };

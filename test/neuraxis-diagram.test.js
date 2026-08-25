@@ -2,7 +2,7 @@
 import { neuraxisSVG, neuraxisIndex } from "../app/neuraxis-diagram.js";
 import { tractsFor } from "../src/engine/tracts.js";
 import { solve } from "../src/engine/inverse.js";
-import { MX, ANCHOR } from "../app/neuraxis-figure.js";
+import { MX, ANCHOR, isPlanar } from "../app/neuraxis-figure.js";
 import { plainSiteName } from "../app/labels.js";
 
 let pass = 0, fail = 0;
@@ -177,24 +177,52 @@ ok("whyCard builds the diagram exactly once (no second copy to drift)",
 // happen in neuroanatomy". Measured at the time: WALLENBERG ALONE RENDERED 16 PAIRWISE CROSSINGS, none at
 // a decussation. The cause was that every tract at a level used the SAME anchor point, so paths were
 // guaranteed to converge. This asserts the anatomy directly.
-function polylines(svg) {
-  return [...svg.matchAll(/class="nx-tract nx-tract-\d+" points="([^"]+)"/g)]
-    .map(m => m[1].trim().split(/\s+/).map(p => p.split(",").map(Number)));
+// Grouped by tract, because one tract can be drawn as several strokes (the oculosympathetic's three-neuron
+// chain, and any tract split at its decussation).
+function strokesByTract(svg) {
+  const g = {};
+  for (const m of svg.matchAll(/class="nx-tract nx-tract-(\d+)" points="([^"]+)"/g))
+    (g[m[1]] ??= []).push(m[2].trim().split(/\s+/).map(p => p.split(",").map(Number)));
+  return g;
 }
 function segmentsCross(a, b, c, d) {
   const o = (p, q, r) => Math.sign((q[0]-p[0])*(r[1]-p[1]) - (q[1]-p[1])*(r[0]-p[0]));
   return o(a,b,c) !== o(a,b,d) && o(c,d,a) !== o(c,d,b);
 }
-// A decussation IS a crossing, so intersections are allowed in a band around any declared decussation.
+// A decussation IS a crossing, so intersections are allowed where one is declared. A `between`
+// decussation occupies the whole INTERVAL between its two levels rather than a point — the pyramidal
+// decussation is declared between medulla and cord and the paths converge across that entire span.
 function decussationBands(tf) {
-  const ys = [];
+  const bands = [];
   for (const t of tf) {
     const d = t.decussation || {};
-    const lvl = d.inLevel || (d.between && d.between[1]);
-    if (lvl && ANCHOR[lvl]) ys.push(ANCHOR[lvl][1]);
+    if (d.between && ANCHOR[d.between[0]] && ANCHOR[d.between[1]]) {
+      const a = ANCHOR[d.between[0]][1], b = ANCHOR[d.between[1]][1];
+      bands.push([Math.min(a, b) - 20, Math.max(a, b) + 20]);
+    } else if (d.inLevel && ANCHOR[d.inLevel]) {
+      bands.push([ANCHOR[d.inLevel][1] - 40, ANCHOR[d.inLevel][1] + 40]);
+    }
   }
-  return ys;
+  return bands;
 }
+const inBand = (y, bands) => bands.some(([lo, hi]) => y >= lo && y <= hi);
+
+// ONE EXEMPT PAIR, NAMED, WITH ITS REASON AND ITS FIX — the idiom NOT_LOCALISING_BY_DESIGN already uses.
+// An exemption states a decision; silence would hide a defect.
+const CROSSING_EXEMPT = {
+  "spinothalamic|trigeminothalamic":
+    "trigeminothalamic's course jumps pons -> thalamus with NO midbrain segment, so between those two "
+    + "levels it can only draw a straight line — and no straight line stays clear of the corticospinal "
+    + "lane (falling 35 to 21 over that span) and the spinothalamic lane (33) at the same time. The fix is "
+    + "a MODEL change: the trigeminal lemniscus does ascend through the midbrain beside the medial "
+    + "lemniscus (Last's p.613), but recording it needs a producing structure there, which creates a new "
+    + "candidate site — a localisation change requiring clinical review.",
+  "corticospinal|trigeminothalamic": "same cause as spinothalamic|trigeminothalamic — see that entry.",
+};
+const exemptPair = (a, b) => !!CROSSING_EXEMPT[[a, b].sort().join("|")];
+for (const [pair, why] of Object.entries(CROSSING_EXEMPT))
+  ok(`crossing exemption "${pair}" states a reason`, why.length > 60);
+
 let totalCrossings = 0, checked = 0;
 for (const [name, toks] of [
   ["Wallenberg", ["cn8_vertigo@left","face_pain_loss@left","spinothalamic@right","ptosis@left","miosis@left","limb_ataxia@left"]],
@@ -205,14 +233,23 @@ for (const [name, toks] of [
   const c = build(toks);
   if (!c.tf.length) continue;
   const s = neuraxisSVG(c.cands, c.tf, { labelFor: x => x.id });
-  const ps = polylines(s), bands = decussationBands(c.tf);
+  const g = strokesByTract(s), bands = decussationBands(c.tf);
+  const keys = Object.keys(g);
   let n = 0;
-  for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++)
-    for (let a = 0; a < ps[i].length - 1; a++) for (let b = 0; b < ps[j].length - 1; b++) {
-      if (!segmentsCross(ps[i][a], ps[i][a+1], ps[j][b], ps[j][b+1])) continue;
-      const y = (ps[i][a][1] + ps[i][a+1][1] + ps[j][b][1] + ps[j][b+1][1]) / 4;
-      if (!bands.some(by => Math.abs(y - by) < 40)) n++;
-    }
+  for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+    // A NON-PLANAR pathway is exempt. The oculosympathetic ascends on the carotid and the visual pathway
+    // runs from the orbit — both ANTERIOR to the brainstem, separated from the rest by depth. A coronal
+    // drawing has no depth axis, so their lines must traverse other lanes on the page while crossing
+    // nothing in the body.
+    if (!isPlanar(c.tf[+keys[i]].tract.id) || !isPlanar(c.tf[+keys[j]].tract.id)) continue;
+    if (exemptPair(c.tf[+keys[i]].tract.id, c.tf[+keys[j]].tract.id)) continue;
+    for (const A of g[keys[i]]) for (const B of g[keys[j]])
+      for (let a = 0; a < A.length - 1; a++) for (let b = 0; b < B.length - 1; b++) {
+        if (!segmentsCross(A[a], A[a+1], B[b], B[b+1])) continue;
+        const y = (A[a][1] + A[a+1][1] + B[b][1] + B[b+1][1]) / 4;
+        if (!inBand(y, bands)) n++;
+      }
+  }
   checked++;
   totalCrossings += n;
   ok(`${name}: no tract path crosses another away from a decussation (${c.tf.length} tracts)`, n === 0, `${n} crossings`);

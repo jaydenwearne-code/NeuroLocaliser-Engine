@@ -156,41 +156,57 @@ export const TRACT_LANE = {
   // crossed higher up because one was lateral at the thalamus and medial by the pons. The geometric
   // non-crossing test in test/neuraxis-diagram.test.js is what catches those, and it is the authority.
   //
+  // `_planar: false` marks a pathway that LEAVES THE CORONAL PLANE, and lane ordering does not apply to it.
+  // Two do. The oculosympathetic ascends on the internal carotid and the visual pathway runs from the
+  // orbit — both ANTERIOR to the brainstem, separated from everything else by depth rather than by side.
+  // A coronal drawing has no depth axis, so their lines must traverse other lanes on the page while
+  // crossing nothing in the body. Marking them is honest; forcing them into the lane order is not, and
+  // five attempts to place the oculosympathetic "correctly" only moved the crossing around.
+  //
   // ONE CONSISTENT MEDIAL -> LATERAL ORDER, top to bottom of this table:
   //   mlf · corticobulbar · dorsal column · corticospinal · trigeminothalamic · spinothalamic ·
   //   cerebellar · oculosympathetic
   // The ML's DRIFT is still drawn — dx grows from 4 in the medulla to 30 at the thalamus (Last's p.613,
   // "adjacent to the midline ... deviates laterally") — but its RANK against the other tracts never
   // changes, because a rank change is a forced crossing.
-  mlf:               { midbrain: [5, -6], pons: [5, -6] },
-  corticobulbar:     { cortex: [56, 0], subcortex: [28, 0], midbrain: [12, 4], pons: [8, 6] },
-  dorsal_column:     { cord: [6, -4], medulla: [4, 0], pons: [9, 0], midbrain: [13, 0], subcortex: [30, 0] },
-  corticospinal:     { cortex: [66, 0], subcortex: [40, 0], midbrain: [16, 4], pons: [12, 6], medulla: [7, 6], cord: [11, 0] },
-  central_tegmental: { midbrain: [9, 0], guillain_mollaret: [40, 0] },
-  trigeminothalamic: { thalamus: [12, 0], pons: [16, -6], medulla: [14, -7] },   // VPM is MEDIAL to VPL
-  spinothalamic:     { cord: [14, 3], medulla: [17, 0], pons: [22, -2], midbrain: [20, -2], subcortex: [50, 0] },
-  cerebellar:        { cerebellum: [60, 0], midbrain: [22, -4], pons: [26, 0], medulla: [28, -4], combined_degeneration: [17, 0] },   // p.625: the spinocerebellar tracts run at the LATERAL EDGE of the cord
-  // Runs WITH the spinal lemniscus through the lateral brainstem (Last's p.613) — the adjacency that
-  // makes one lateral medullary lesion give both a Horner's and contralateral body pain/temperature loss.
-  // In the cord it lies in the lateral funiculus by the lateral horn (p.625), so it stays lateral
-  // throughout rather than changing rank. Its lane is kept nearly STRAIGHT (16 -> 20 -> 16) rather than
-  // bulging: an S-shaped lane let the smoothing overshoot past the cerebellar line, which sat only four
-  // units away at the medulla. Adjacent lanes need clearance from the curve, not just from each other.
+  // A LADDER WITH SIX-UNIT GAPS between neighbours at each level.
   //
-  // `_via` routes the ASCENDING limb. This is the one pathway that genuinely doubles back — down to T1,
-  // then up the sympathetic chain and the carotid — and a straight run from the cord to the ganglion cut
-  // diagonally across the cerebellar and trigeminal lanes. It swings laterally first, which is where the
-  // chain actually is.
-  // `_break` splits the drawn line after a level. The oculosympathetic is a THREE-NEURON CHAIN and drawing
-  // it as one continuous stroke closed a U from the hypothalamus down to T1 and back up to the orbit —
-  // a loop that ENCLOSED the whole posterior fossa, so every cerebellar and trigeminal line was trapped
-  // inside it and had to cross out. In the body it does not enclose anything: the ascending limb runs on
-  // the carotid, ANTERIOR to the brainstem, a depth difference a coronal drawing cannot show. Splitting it
-  // at the ciliospinal centre is both the fix and the more honest picture — first-order neuron descending,
-  // second and third ascending.
-  oculosympathetic:  { hypothalamus: [16, 0], medulla: [20, 5], cord: [16, 2], sympathetic: [100, 0], skull_base: [140, 0],
+  // Four units was not enough and the reason is worth recording: the ORDER CHECK interpolates lanes
+  // LINEARLY, but the figure draws a SPLINE, which leaves its knots between levels. Lines that are
+  // correctly ordered at every knot still wove into each other across a four-unit gap. The geometric
+  // non-crossing test in test/neuraxis-diagram.test.js reads the drawn geometry and is the authority; the
+  // order check here is the cheaper early warning.
+  //
+  // The lateral lanes sit outside the drawn brainstem, deliberately — the stem is ~20 units half-width and
+  // seven pathways run through it. A teaching figure shows the lanes legibly rather than to scale.
+  mlf:               { midbrain: [3, -6], pons: [3, -6] },
+  corticobulbar:     { cortex: [50, 0], subcortex: [20, 0], midbrain: [9, 4], pons: [9, 6] },
+  central_tegmental: { midbrain: [9, 0], guillain_mollaret: [40, 0] },
+  dorsal_column:     { cord: [4, -4], medulla: [3, 0], pons: [15, 0], midbrain: [15, 0], subcortex: [30, 0] },
+  corticospinal:     { cortex: [66, 0], subcortex: [40, 0], midbrain: [21, 4], pons: [21, 6], medulla: [9, 6], cord: [10, 0] },
+  // VPM is medial to VPL (50). A LANE ONLY EXISTS AT A LEVEL THE TRACT'S COURSE ACTUALLY VISITS, and this
+  // one had no midbrain — so a midbrain lane was dead data and the line ran straight from the thalamus to
+  // the pons, cutting across corticospinal and spinothalamic on the way.
+  //
+  // NO LANE VALUE CAN FIX IT, and that was proved rather than assumed. Between y=186 and y=296 the
+  // corticospinal lane falls from 35 to 21 while the spinothalamic sits at 33; a STRAIGHT line (which is
+  // all this tract can draw, having no knot in between) would need to be above 37 at the top and below 31
+  // in the middle and above 23 at the bottom, which is not a line. The real fix is a MODEL change — the
+  // course jumps pons -> thalamus with no midbrain segment, though the trigeminal lemniscus ascends
+  // through the midbrain beside the medial lemniscus (Last's p.613). Adding it needs a producing structure
+  // at that level, which creates a NEW CANDIDATE SITE and is a localisation change, so it is the owner's
+  // call. Until then the pair is exempted in test/neuraxis-diagram.test.js, by name and with this reason.
+  trigeminothalamic: { thalamus: [40, 0], pons: [27, -6], medulla: [15, -7] },
+  spinothalamic:     { cord: [16, 3], medulla: [21, 0], pons: [33, -2], midbrain: [33, -2], subcortex: [50, 0] },
+  cerebellar:        { cerebellum: [60, 0], midbrain: [39, -4], pons: [39, 0], medulla: [27, -4], combined_degeneration: [22, 0] },
+  // Runs WITH the spinal lemniscus through the lateral brainstem (Last's p.613) — the adjacency that makes
+  // one lateral medullary lesion give both a Horner's and contralateral body pain and temperature loss.
+  // In the cord it lies in the lateral funiculus by the lateral horn (p.625).
+  oculosympathetic:  { _planar: false,
+                       hypothalamus: [16, 0], medulla: [20, 5], cord: [16, 2], sympathetic: [100, 0], skull_base: [140, 0],
                        _break: "cord" },
-  visual:            { skull_base: [130, 0], visual_pathway: [30, 0], subcortex: [60, 0], cortex: [90, 0] },
+  visual:            { _planar: false,
+                       skull_base: [130, 0], visual_pathway: [30, 0], subcortex: [60, 0], cortex: [90, 0] },
 };
 
 
@@ -214,6 +230,13 @@ export function breaksAfter(tractId, level) {
 // ways, so its course order is a description of connections rather than one fibre's route. Ordering those
 // knots along the neuraxis instead removes a self-crossing that means nothing anatomically. A pathway that
 // authors an explicit route (`_via` or `_break`) is left exactly as written.
+// Does this pathway stay in the coronal plane? A non-planar one is exempt from lane ordering and from the
+// non-crossing rule, because its separation from the others is in DEPTH, which the drawing cannot show.
+export function isPlanar(tractId) {
+  const t = TRACT_LANE[tractId];
+  return !(t && t._planar === false);
+}
+
 export function routeIsAuthored(tractId) {
   const t = TRACT_LANE[tractId];
   return !!(t && (t._via || t._break));

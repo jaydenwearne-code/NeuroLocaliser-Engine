@@ -639,7 +639,7 @@ The main figure is unchanged from increment 1 apart from the crop floor.
 
 ---
 
-# Amendment (2026-08-25c): tract geometry landed; TWO defects found and NOT yet fixed
+# Amendment (2026-08-25c): tract geometry landed; two defects found — BOTH NOW FIXED (2026-08-25d)
 
 **Increment 3's geometry is done and merged into the branch.** The 22 spurious crossings are gone (spec
 amendment 2026-08-25a). Attempting the second half — the three missing decussations — surfaced two further
@@ -685,3 +685,62 @@ but it is now understood and written down.
   cerebellar signs are ipsilateral, and one field cannot say that. Same reasoning as `central_tegmental`).
 - The spinothalamic label discrepancy against Last's p.624 (1-2 segments vs four or five in the cervical
   cord), still the owner's call.
+
+
+---
+
+# Amendment (2026-08-25d): both defects fixed, and what the fixing found
+
+## 1. Laterality — FIXED
+
+`tractOverlay` now decides sides by DIRECTION. `course` is written rostral-to-caudal for every pathway, so
+a descending tract originates at the start of the array and an ascending one at the END; the half holding
+the origin takes the finding's side. Verified on Wallenberg, which now draws the crossed-body,
+uncrossed-face pattern correctly: the trigeminal nuclei sit LEFT with the lesion and the pathway crosses
+to the RIGHT thalamus, while the spinothalamic enters the cord on the RIGHT with the body findings and
+ascends on the LEFT.
+
+## 2. The decussating sweep — FIXED, by four changes, of which the last was the real one
+
+- **A decussating tract is drawn as TWO STROKES meeting at the midline.** As one line, spinothalamic ran
+  from dx 50 in the subcortex across to the other side and cut through every lane in between.
+- **The spline is CLAMPED to its own knots.** Even centripetal parameterisation leaves the segment it
+  interpolates, and lines correctly ordered at every knot still wove together across a six-unit gap.
+  Clamping makes the drawn geometry match what the lane check predicts.
+- **A six-unit ladder** replaced hand-tuned values.
+- **THE LANE-ORDER INVARIANT NOW COMPARES AT EVERY HEIGHT, not just at shared levels** — and that is what
+  actually cracked it. Spinothalamic and oculosympathetic agree at both levels they share and still cross,
+  because spinothalamic's lane narrows from 50 to 17 and sweeps across the other in between. Comparing only
+  at shared levels gave false confidence for several rounds.
+
+## Three things the fixing turned up
+
+**`_planar: false`.** Two pathways LEAVE THE CORONAL PLANE — the oculosympathetic ascending on the carotid
+and the visual pathway from the orbit, both ANTERIOR to the brainstem. Their separation from everything
+else is in depth, which the drawing has no axis for, so their lines must traverse other lanes on the page
+while crossing nothing in the body. They are exempt from lane ordering and from the non-crossing rule, and
+marking that is honest; forcing them into the order is not, and five attempts to place the
+oculosympathetic "correctly" only moved the crossing around.
+
+**A DEAD LANE.** A midbrain lane was added to trigeminothalamic to steer it between the thalamus and the
+pons — and did nothing, because a lane only takes effect at a level the tract's COURSE visits, and that
+course has no midbrain. Dead data that looks like a fix is worse than no data, so `test/neuraxis-figure.test.js`
+now asserts every lane key is a level its tract actually visits.
+
+**A GAP IN THE MODEL, left for the owner.** That dead lane exposed something real: the trigeminothalamic
+course jumps pons → thalamus with no midbrain segment, though the trigeminal lemniscus ascends through the
+midbrain beside the medial lemniscus (Last's p.613). Between those levels the tract can therefore only draw
+a straight line, and it was PROVED that no straight line clears both the corticospinal lane (falling 35 to
+21 over that span) and the spinothalamic lane (33) at once. **Recording the segment needs a producing
+structure at that level, which creates a NEW CANDIDATE SITE — a localisation change, not a drawing change,
+so it is the owner's call.** Until then the one affected pair is exempt by name with its reason, the idiom
+`NOT_LOCALISING_BY_DESIGN` already uses.
+
+## Decussations
+
+`mlf` and `trigeminothalamic` are now recorded, each with its Last's citation, **flagged for clinical
+review**. `cerebellar` was added and REVERTED: that entry models inflow and outflow together, a pathway
+that crosses TWICE — which is why cerebellar signs are ipsilateral — and one field cannot say that.
+`oculosympathetic` stays empty and asserted, being uncrossed throughout.
+
+74 suites / 6769 assertions green.

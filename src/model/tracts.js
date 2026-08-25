@@ -101,7 +101,11 @@ export const TRACTS = [
       { level: "midbrain", label: "medial-rectus subnucleus", detail: "medial-rectus subnucleus of the oculomotor nucleus in the midbrain", supply: "PCA / basilar perforators" },
       { level: "pons",     label: "abducens nucleus / PPRF",  detail: "abducens internuclear neurons in the pons",                          supply: "basilar perforators" },
     ],
-    decussation: {}, // the internuclear crossing is a detail; the localising fact is that INO is ipsilateral to the lesion
+    // ADDED 2026-08-25, FLAGGED FOR CLINICAL REVIEW. Last's 9th ed p.613: the MLF links the vestibular
+    // nuclei with the third, fourth and sixth nuclei. The internuclear fibres from the abducens nucleus
+    // cross the midline and ascend in the CONTRALATERAL MLF, which is why an MLF lesion fails adduction on
+    // its own side.
+    decussation: { inLevel: "pons", label: "abducens internuclear fibres cross to the contralateral MLF" }, // the internuclear crossing is a detail; the localising fact is that INO is ipsilateral to the lesion
     crossingNote: "an internuclear ophthalmoplegia is ipsilateral to the lesion — the adducting eye fails and the abducting eye shows nystagmus; bilateral INO suggests MS in the young and brainstem stroke in the older patient",
   },
   {
@@ -154,7 +158,11 @@ export const TRACTS = [
       { level: "pons",     label: "principal sensory nucleus", detail: "principal sensory (chief) trigeminal nucleus — fine touch",           supply: "basilar perforators" },
       { level: "medulla",  label: "spinal trigeminal nucleus", detail: "spinal trigeminal nucleus — pain & temperature (extends into the upper cord)", supply: "PICA / vertebral" },
     ],
-    decussation: {},
+    // ADDED 2026-08-25, FLAGGED FOR CLINICAL REVIEW. Last's 9th ed p.613: axons from the trigeminal sensory
+    // nuclei "run up to join the medial lemniscus" — they cross, which is exactly the crossed-body,
+    // uncrossed-face pattern the crossingNote below already describes in prose. The model stated it in
+    // words but not in data, so the diagram drew the pathway with no crossing at all.
+    decussation: { inLevel: "pons", label: "trigeminal lemniscus — crosses to join the contralateral medial lemniscus" },
     crossingNote: "second-order fibres cross and ascend as the trigeminothalamic tract, so a lesion above the nuclei gives CONTRALATERAL facial sensory loss; a lesion of the spinal trigeminal nucleus itself (e.g. the lateral medulla) gives IPSILATERAL facial pain/temperature loss — the crossed-body, uncrossed-face pattern of Wallenberg",
   },
 ];

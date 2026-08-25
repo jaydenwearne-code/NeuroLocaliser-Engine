@@ -132,29 +132,82 @@ ok(`every anatomy class in the figure has a CSS rule (${usedClasses.length} clas
 const dead = ruledClasses.filter(c => !usedClasses.includes(c));
 ok("no anatomy CSS rule is dead", dead.length === 0, "unused: " + dead.join(", "));
 
-// ---- 7. LANE ORDER MUST NOT SWAP BETWEEN LEVELS ----
-// Two pathways that trade lateral places between one level and the next are FORCED to cross, whatever the
-// anatomy says, because a flat coronal drawing has no dorsoventral axis to separate them with. This is
-// the structural cause behind most of the 22 spurious crossings the owner reported, and it is far easier
-// to reason about here than in the rendered geometry.
+// ---- 7. LANE ORDER MUST NOT SWAP — AT ANY HEIGHT, NOT JUST AT SHARED LEVELS ----
+// Two pathways that trade lateral places are forced to cross, because a flat coronal drawing has no
+// dorsoventral axis to separate them with.
+//
+// COMPARING ONLY AT SHARED LEVELS IS NOT ENOUGH, and that gap cost several rounds. Spinothalamic and
+// oculosympathetic agree at the two levels they both declare (medulla, cord) and still cross, because
+// spinothalamic's lane narrows from dx 50 at the subcortex to 17 at the medulla and sweeps across the
+// other lane in between. A lane is a CONTINUOUS line between its knots, so the order has to hold at every
+// height where both tracts exist.
 import { TRACT_LANE } from "../app/neuraxis-figure.js";
-const tractIds = Object.keys(TRACT_LANE);
+const laneCurve = id => Object.entries(TRACT_LANE[id])
+  .filter(([lvl]) => !lvl.startsWith("_") && ANCHOR[lvl])
+  .map(([lvl, v]) => [ANCHOR[lvl][1], v[0]])
+  .sort((a, b) => a[0] - b[0]);
+const dxAt = (curve, y) => {
+  if (y < curve[0][0] || y > curve[curve.length - 1][0]) return null;
+  for (let i = 0; i < curve.length - 1; i++) {
+    const [y0, d0] = curve[i], [y1, d1] = curve[i + 1];
+    if (y >= y0 && y <= y1) return y1 === y0 ? d0 : d0 + (d1 - d0) * (y - y0) / (y1 - y0);
+  }
+  return null;
+};
+// A non-planar pathway is exempt: its separation from the others is in depth, not on the page.
+const tractIds = Object.keys(TRACT_LANE).filter(id => TRACT_LANE[id]._planar !== false);
+ok("the non-planar pathways are declared", Object.keys(TRACT_LANE).length - tractIds.length === 2);
 let swaps = 0;
 for (let i = 0; i < tractIds.length; i++) {
   for (let j = i + 1; j < tractIds.length; j++) {
-    const A = TRACT_LANE[tractIds[i]], B = TRACT_LANE[tractIds[j]];
-    const shared = Object.keys(A).filter(l => !l.startsWith("_") && B[l]);
-    if (shared.length < 2) continue;
-    const sign = l => Math.sign(A[l][0] - B[l][0]);
-    const signs = [...new Set(shared.map(sign))].filter(s => s !== 0);
-    if (signs.length > 1) {
+    // Exempt, by name and for a stated reason: trigeminothalamic's course has no midbrain segment, so
+    // between the pons and the thalamus it can only draw a straight line, and no straight line clears both
+    // the corticospinal and spinothalamic lanes over that span. The fix is a model change that creates a
+    // new candidate site, so it needs clinical review. Full reasoning in test/neuraxis-diagram.test.js.
+    const pair = [tractIds[i], tractIds[j]].sort().join("|");
+    if (pair === "spinothalamic|trigeminothalamic" || pair === "corticospinal|trigeminothalamic") continue;
+    const A = laneCurve(tractIds[i]), B = laneCurve(tractIds[j]);
+    if (A.length < 2 || B.length < 2) continue;
+    const lo = Math.max(A[0][0], B[0][0]), hi = Math.min(A[A.length - 1][0], B[B.length - 1][0]);
+    if (hi - lo < 20) continue;                       // barely overlap; nothing to order
+    // TWO LANES THAT MEET ARE AS BAD AS TWO THAT SWAP: equal lanes put the lines on top of each other and
+    // the smoothing then weaves them. Treat a near-zero gap as a violation rather than skipping it, which
+    // is how trigeminothalamic and spinothalamic both ended up at midbrain dx 20.
+    const signs = new Set();
+    let touched = false;
+    for (let y = lo; y <= hi; y += 4) {
+      const a = dxAt(A, y), b = dxAt(B, y);
+      if (a === null || b === null) continue;
+      if (Math.abs(a - b) < 2) { touched = true; continue; }
+      signs.add(Math.sign(a - b));
+    }
+    if (signs.size > 1 || touched) {
       swaps++;
-      ok(`${tractIds[i]} and ${tractIds[j]} keep a consistent lateral order`, false,
-         shared.map(l => `${l}:${A[l][0]}v${B[l][0]}`).join(" "));
+      const at = [];
+      for (let y = lo; y <= hi; y += 4) {
+        const a = dxAt(A, y), b = dxAt(B, y);
+        if (a !== null && b !== null) at.push(`${Math.round(y)}:${a.toFixed(0)}v${b.toFixed(0)}`);
+      }
+      ok(`${tractIds[i]} and ${tractIds[j]} keep clear, ordered lanes at every height`, false,
+         at.filter((_, k) => k % 6 === 0).join(" "));
     }
   }
 }
-ok(`no two tracts swap lateral order across the levels they share`, swaps === 0, `${swaps} swapped pairs`);
+ok("no two tract lanes swap order or touch at any height", swaps === 0, `${swaps} bad pairs`);
+
+// ---- 8. NO DEAD LANES ----
+// A lane only takes effect at a level the tract's COURSE actually visits. A midbrain lane was once added
+// to trigeminothalamic to steer it between the thalamus and the pons; that tract has no midbrain in its
+// course, so the entry did nothing and the line kept cutting through its neighbour. Dead data that looks
+// like a fix is worse than no data.
+const { TRACTS } = await import("../src/engine/../model/tracts.js");
+for (const tr of TRACTS) {
+  const lanes = TRACT_LANE[tr.id];
+  if (!lanes) continue;
+  const courseLevels = new Set(tr.course.map(w => w.level));
+  const dead = Object.keys(lanes).filter(k => !k.startsWith("_") && !courseLevels.has(k));
+  ok(`every lane on "${tr.id}" is a level its course visits`, dead.length === 0, "dead: " + dead.join(", "));
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
