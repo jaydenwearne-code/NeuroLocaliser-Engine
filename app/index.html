@@ -123,15 +123,6 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .an-gang,.an-eye{fill:var(--band);stroke:var(--muted);stroke-width:1;opacity:.8;}
   .an-pupil{fill:var(--muted);stroke:none;opacity:.7;}
   .an-mid{stroke:var(--muted);stroke-width:.6;stroke-dasharray:1 4;opacity:.5;}
-  /* The traced plate is stroke-only; this just tempers its weight against the authored anatomy. */
-  .an-brain-plate{opacity:.85;}
-  /* EVERY anatomy class needs a rule. An SVG shape with no fill declared defaults to BLACK, so a missing
-     rule does not degrade quietly — it paints a solid blob. Seven of these arrived with the brainstem
-     detail and rendered as black wedges until this was added. */
-  .an-peduncle,.an-pyramid,.an-olive,.an-greymatter{fill:var(--paper);stroke:var(--muted);stroke-width:.9;opacity:.6;}
-  .an-stemline,.an-cauda{fill:none;stroke:var(--muted);stroke-width:1;opacity:.55;}
-  .an-limb{fill:none;stroke:var(--muted);stroke-width:1.2;opacity:.35;}
-  .an-fibhead{fill:var(--band);stroke:var(--muted);stroke-width:1.5;opacity:.9;}
 
   .nx-side{font-size:var(--fs-cap);fill:var(--faint);letter-spacing:.09em;text-transform:uppercase;}
   .nx-region{font-size:var(--fs-cap);fill:var(--faint);}

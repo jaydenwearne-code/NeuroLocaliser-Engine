@@ -598,3 +598,41 @@ That is more than one plan, so:
   three missing `decussation` entries, and **the non-crossing invariant**. Carries a clinical review gate.
 - **Increment 4 — regional views.** The offer mechanism plus the three views: cranial-nerve course, upper
   limb, lower limb.
+
+
+---
+
+# Amendment (2026-08-25b): the traced plate belongs to a REGIONAL view, not the main figure
+
+**Discovered by building it, and reverted.** The traced Gray 717 coronal section was composed into the
+main figure as its cerebrum, with the authored brainstem, cerebellum and cord continuing below.
+
+**It cannot work, and the reason is anatomical, not cosmetic.** A coronal section at the thalamus ALREADY
+CONTAINS the midbrain and pons, and the cord is not in that plane at all. Bolting an authored brainstem
+below a real section therefore produces a brain on a stick. The junction itself can be made flush — the
+plate hands over a pons 112 units wide and the authored stem was 26, which was a real defect and was
+fixed — but no amount of coordinate tuning repairs the premise.
+
+> **THE MAIN FIGURE IS A SCHEMATIC COMPOSITE OF THE WHOLE NEURAXIS. It is not any real section — which is
+> precisely why a real section cannot be its spine.** This is the same objection that rejected stitching
+> different projections into one picture; it applies to the main figure too.
+
+**The correction follows the owner's own ruling, one level up: realism lives in the REGIONAL views.** A
+true coronal section is exactly the right thing to show in a *brain* regional view, where the projection
+is chosen for the region. So the four validated plates and the traced coronal section move to increment 4
+and the main figure stays schematic.
+
+**Three fixes from the attempt were kept**, because each was a genuine defect:
+
+1. **Every anatomy class must have a CSS rule** — an SVG shape with no `fill` declared defaults to BLACK,
+   so seven new classes painted solid wedges over the anatomy. This is now an invariant in
+   `test/neuraxis-figure.test.js`, asserted in BOTH directions: no class may be unstyled, and no rule may
+   be dead. The reverse direction immediately removed nine rules left behind by the revert.
+2. **`REGIONS` held stale coordinates** through the plate swap and every caption landed on the brain. A
+   caption has no invariant; only looking caught it.
+3. **Crops are floored and centred**, because several compartments are a thin band that cropped to a tiny
+   box and filled the panel with one structure.
+
+**Increment 2 is therefore complete at:** the plate-adoption pipeline (`app/plates.js` + registry), the
+tracer (`tools/trace`), the four validated plates, the traced coronal section, and the three fixes above.
+The main figure is unchanged from increment 1 apart from the crop floor.

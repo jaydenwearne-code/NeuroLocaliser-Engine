@@ -112,5 +112,25 @@ ok("a region caption outside the crop is not drawn",
 ok("midline region captions sit in the crop's left margin, clear of midline pins",
    /x="274"/.test(regionCaptions([268, 380, 224, 200])) || regionCaptions([268, 380, 224, 200]) === "");
 
+// ---- 6. EVERY ANATOMY CLASS MUST HAVE A CSS RULE, AND EVERY RULE MUST BE USED ----
+// An SVG shape with no `fill` declared defaults to BLACK. A missing rule therefore does not degrade
+// quietly — it paints a solid wedge over the anatomy, which is exactly what happened when the brainstem
+// detail classes were introduced during the traced-plate composition. Nothing caught it but looking.
+// The reverse direction matters too: this project deletes dead CSS rather than letting it accumulate.
+import { readFileSync } from "node:fs";
+const HTML = readFileSync(new URL("../app/index.html", import.meta.url), "utf8");
+const STYLE = HTML.slice(HTML.indexOf("<style>"), HTML.indexOf("</style>"));
+const figSVG = baseFigure();
+
+const usedClasses = [...new Set([...figSVG.matchAll(/class="(an-[a-z0-9-]+)"/g)].map(m => m[1]))];
+const ruledClasses = [...new Set([...STYLE.matchAll(/\.(an-[a-z0-9-]+)/g)].map(m => m[1]))];
+
+const unstyled = usedClasses.filter(c => !ruledClasses.includes(c));
+ok(`every anatomy class in the figure has a CSS rule (${usedClasses.length} classes)`,
+   unstyled.length === 0, "would paint BLACK: " + unstyled.join(", "));
+
+const dead = ruledClasses.filter(c => !usedClasses.includes(c));
+ok("no anatomy CSS rule is dead", dead.length === 0, "unused: " + dead.join(", "));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
