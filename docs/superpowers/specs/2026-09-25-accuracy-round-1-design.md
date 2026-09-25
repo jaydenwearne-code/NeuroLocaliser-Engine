@@ -1,6 +1,6 @@
 # Accuracy round 1 — design (2026-09-25)
 
-**Status: DESIGN — awaiting owner review of §4 (clinical content) before implementation.**
+**Status: APPROVED (owner, 2026-09-25) — §4B rulings recorded inline. Ready for the implementation plan.**
 Branch: `feat/accuracy-round-1` (off `main` at `c184fdc`).
 
 This is sub-project 1 of 3 from the 2026-09-25 request ("interrogate the engine for accuracy with all
@@ -104,6 +104,12 @@ urgent — the cry-wolf outcome the 2026-08-18 ruling exists to prevent.
 4. **Cauda equina**: predicts absent ankle jerks on both sides AND tolerates asymmetry.
 5. **In scope**: a "forehead also weak" finding; a Guillain–Barré site; tighter-fit ranking; stroke
    urgency at hyperacute onset.
+6. **§4B open items (ruled the same day):** B1 central cord gets no sphincter — agreed. B2 — the owner
+   asked "why not?" of excluding the MCA inferior division, and there is no good reason: the inferior
+   division already predicts BOTH quadrantanopias on one side, and Wernicke + hemianopia (its classic
+   picture) currently yields a false two-lesion claim. **Included.** B7 ankle jerks only. B10 SMA joins
+   the ACA composite. B12 Horner's joins the AICA picture. B14 GBS predicts no sensory loss. B16 the
+   hyperacute escalation applies even when a vascular cause is selected.
 
 ---
 
@@ -137,8 +143,8 @@ with no `onset` the return value is byte-identical to today (the existing guaran
 (internal capsule, thalamic VL, striatum, subthalamic, optic tract, LGN, chiasm/apoplexy, flocculonodular
 cerebellum, ACA/MCA branch cortex, corpus callosum, cord lateral, lateral hypothalamus, pons trigeminal…).
 Excluded by the CNS rule: peripheral vestibular (a peripheral HINTS pattern is the reassuring one), the
-IAM, microvascular CN III, lumbar plexus. **An authored pathology urgency still wins once a cause is
-selected** (tranche-1 ruling) — see B16.
+IAM, microvascular CN III, lumbar plexus. When a cause is selected, an authored pathology urgency still wins **unless** the selected cause is
+vascular and onset is hyperacute (B16).
 
 **A5. The panel never offers a dead side.** A new pure module `app/sides.js` owns the side-offer logic
 now inlined in `app.js`: `offeredSides(findingId)` returns the buttons to show. For a finding whose every
@@ -151,26 +157,26 @@ producer is a symmetric bilateral site it returns a single **Both** option, whic
 ### 4B. Clinical content — ⚠ FOR OWNER REVIEW
 
 Each row is a clinical claim. Model rows follow the recipe (structure → site); every new structure gets a
-row in `docs/artifacts/anatomy-model.html`. **Recommendations are marked; items marked ❓ need a ruling.**
+row in `docs/artifacts/anatomy-model.html`. **All rulings recorded (2026-09-25).**
 
 | # | Site(s) | Change | Audit case it fixes |
 |---|---|---|---|
-| B1 | Bilateral cord — anterior (ASA) and transverse | New structure: sphincter dysfunction, `emit:"midline"`, on a composite-only `cord|autonomic` part pulled in by `composeBilateralCordSites()` for anterior + transverse only. Hemicord and posterior cord do not get it. ❓ **Central cord** (syrinx) — recommend NO (sphincter involvement is late and inconsistent) | Cord compression + retention → "multifocal" |
-| B2 | Complete MCA (`cortex_mca`) | Add the deep `optic_radiation` part to the composite's `deepParts` (as `internal_capsule` already is) → predicts homonymous hemianopia. ❓ **MCA inferior division** — recommend NO for this round (hemianopia there is variable; it already predicts the superior quadrantanopia) | Complete MCA + hemianopia → "multifocal" |
+| B1 | Bilateral cord — anterior (ASA) and transverse | New structure: sphincter dysfunction, `emit:"midline"`, on a composite-only `cord|autonomic` part pulled in by `composeBilateralCordSites()` for anterior + transverse only. Hemicord and posterior cord do not get it. **Central cord: NO** (owner, agreed — sphincter involvement is late and inconsistent) | Cord compression + retention → "multifocal" |
+| B2 | Complete MCA (`cortex_mca`) and MCA inferior division (`cortex_mca_inferior`) | Add the deep `optic_radiation` part to the composite's `deepParts` (as `internal_capsule` already is) → predicts homonymous hemianopia. **MCA inferior division: YES** (owner) — it already predicts both quadrantanopias; Wernicke + hemianopia is its classic picture and currently reads as two lesions. Superior division: no | Complete MCA + hemianopia → "multifocal" |
 | B3 | Posterior, horizontal and anterior canal (BPPV) | Add vertigo (`cn8_vertigo`, ipsilateral) to each canal | BPPV → "multifocal" |
 | B4 | Labyrinth | Add hearing loss (ipsilateral). Vestibular neuritis still matches (hearing becomes an unreported prediction, below the ranking band) | Labyrinthitis → "labyrinth + CPA" |
 | B5 | Length-dependent polyneuropathy | Add absent ankle jerks (bilateral) | Neuropathy + areflexia → "no single lesion" |
 | B6 | SCD | Add absent ankle jerks (bilateral). With A3, SCD then beats Friedreich's on tightness | SCD → Friedreich's first |
-| B7 | Cauda equina | Add absent ankle jerks, `emit:"bilateral"`, asymmetric (ruling 4). ❓ **Knee jerks** — recommend NO (ankle jerks are the rule; knee loss implies a high cauda lesion and would widen every knee-jerk differential) | Cauda + absent ankle jerk |
+| B7 | Cauda equina | Add absent ankle jerks, `emit:"bilateral"`, asymmetric (ruling 4). **Knee jerks: NO** (owner — ankle only) | Cauda + absent ankle jerk |
 | B8 | Percheron (bilateral paramedian thalamus) | Add amnesia (bilateral-only structure) | Percheron triad → "no single lesion" |
 | B9 | Every aphasia site | Add a dominant-hemisphere `naming_impaired` structure to operculum (Broca), temporoparietal (Wernicke), arcuate (conduction), anterior + posterior watershed (transcortical), and the hand-listed global / mixed-transcortical / striatocapsular composites. Isolated anomia still ranks the angular gyrus first (tightest) | Broca/Wernicke + anomia → "no single lesion" |
-| B10 | ACA composite | Add `paracentral` to the ACA `DIVISION` → urinary incontinence + gait apraxia. ❓ **SMA** (alien limb) — recommend YES, it is medial frontal ACA territory and alien limb is a classic ACA sign | ACA + incontinence → "no single lesion" |
+| B10 | ACA composite | Add `paracentral` to the ACA `DIVISION` → urinary incontinence + gait apraxia. **SMA: YES** (owner) — also add `sma` to the ACA `DIVISION` → alien limb | ACA + incontinence → "no single lesion" |
 | B11 | Thalamus — VPL (`subcortex|thalamus`) | Add contralateral facial sensory loss (VPM sits beside VPL; the pure-sensory lacune is face-arm-leg, as the site's own note says) | Pure sensory stroke → midbrain first |
-| B12 | Lateral pons (AICA) | Add, all ipsilateral: LMN facial weakness (facial nucleus) + forehead also weak (B13); hearing loss (cochlear nuclei / labyrinthine artery); facial pain-temperature loss (spinal trigeminal nucleus, caudal pons). ❓ **Horner's** (descending sympathetic, lateral tegmentum) — recommend YES, it is part of the classic AICA syndrome. Inherited by the lateral-pons + trigeminal composite and the hemipons | AICA → lateral medulla first |
+| B12 | Lateral pons (AICA) | Add, all ipsilateral: LMN facial weakness (facial nucleus) + forehead also weak (B13); hearing loss (cochlear nuclei / labyrinthine artery); facial pain-temperature loss (spinal trigeminal nucleus, caudal pons). **Horner's: YES** (owner) — ipsilateral miosis + ptosis (descending sympathetic, lateral tegmentum). Inherited by the lateral-pons + trigeminal composite and the hemipons | AICA → lateral medulla first |
 | B13 | New finding `forehead_involved` | "Forehead also weak — cannot raise the eyebrow or wrinkle the forehead". Ipsilateral, **LOCALISING** (the mirror of `forehead_spared`, which is). Produced by the facial fascicle (medial pons), the new facial nucleus (B12), IAM, CPA, geniculate, tympanic, mastoid, stylomastoid, and GBS (bilateral). Not the parotid (a single branch). Placed in the exam tree's VII group | Isolated facial weakness → cortex first |
-| B14 | **New site: acute polyradiculoneuropathy (Guillain–Barré)** | `polyradiculoneuropathy_acute`, bilateral, **symmetric**, compartment `root`, RARE. Predicts: LMN weakness, proximal + distal weakness, absent biceps/brachioradialis/triceps/knee/ankle jerks, bilateral LMN facial weakness + forehead involved, dysphagia, weak diaphragm, autonomic features. ❓ **Sensory**: recommend NOT predicting distal sensory loss (GBS is motor-predominant; predicting it would blur GBS into the length-dependent neuropathy). Full content to the existing gates: phonebook entry, ≥6 curated causes with features and a red must-not-miss (GBS/AIDP, AMAN, CIDP of acute onset, botulism, tick paralysis, hypokalaemic periodic paralysis, acute porphyria, infective polyradiculitis — CMV/HIV/Lyme, cord compression as mimic), a four-tier workup (serial FVC, bulbar and autonomic monitoring, NCS, LP, ICU referral threshold), pathology plans or aliases for every cause name, labels, compartment/topography/substrate rows | GBS picture → Friedreich's first |
+| B14 | **New site: acute polyradiculoneuropathy (Guillain–Barré)** | `polyradiculoneuropathy_acute`, bilateral, **symmetric**, compartment `root`, RARE. Predicts: LMN weakness, proximal + distal weakness, absent biceps/brachioradialis/triceps/knee/ankle jerks, bilateral LMN facial weakness + forehead involved, dysphagia, weak diaphragm, autonomic features. **Sensory: NO** (owner) — no distal sensory loss predicted (GBS is motor-predominant). Full content to the existing gates: phonebook entry, ≥6 curated causes with features and a red must-not-miss (GBS/AIDP, AMAN, CIDP of acute onset, botulism, tick paralysis, hypokalaemic periodic paralysis, acute porphyria, infective polyradiculitis — CMV/HIV/Lyme, cord compression as mimic), a four-tier workup (serial FVC, bulbar and autonomic monitoring, NCS, LP, ICU referral threshold), pathology plans or aliases for every cause name, labels, compartment/topography/substrate rows | GBS picture → Friedreich's first |
 | B15 | Cause tempo | Add `hyperacute` to: `Small-vessel lacunar infarct` at the internal capsule; `Small precentral (hand-knob) infarct`; the capsular `Hypertensive haemorrhage`. Brings them in line with the same causes at other sites | Lacunar stroke demoted at hyperacute onset |
-| B16 | Pathology urgency | ❓ With hyperacute onset and *Small-vessel lacunar infarct* (or any stroke cause) **selected**, the authored plan urgency wins over A4. Recommend: A4's escalation applies whether or not a cause is selected, when the selected cause is itself vascular | Selecting the lacune could quieten a hyperacute badge |
+| B16 | Pathology urgency | With hyperacute onset and a **vascular** cause selected, A4's escalation still applies (owner: YES) — the authored plan urgency no longer quietens a hyperacute stroke badge. A non-vascular selection keeps its authored urgency | Selecting the lacune could quieten a hyperacute badge |
 
 ### 4C. Tests (TDD — each written red first)
 
