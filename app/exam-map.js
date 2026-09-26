@@ -36,7 +36,7 @@ export const EXAM_TREE = [
     { id: "cn5", label: "V — face & jaw", findings: [
       "v1_sensory","v2_sensory","v3_sensory","face_pain_loss","face_touch_loss","face_sensory_loss","jaw_weakness" ] },
     { id: "cn7", label: "VII — facial", findings: [
-      "facial_weakness","forehead_spared","facial_weak_branch","lacrimation_loss","hyperacusis","taste_loss","gustatory_loss" ] },
+      "facial_weakness","forehead_spared","forehead_involved","facial_weak_branch","lacrimation_loss","hyperacusis","taste_loss","gustatory_loss" ] },
     { id: "cn8", label: "VIII — hearing & vestibular", findings: [
       "hearing_loss","cn8_vertigo","nystagmus_peripheral","head_impulse_abnormal",
       "nystagmus_positional_posterior","nystagmus_positional_horizontal","nystagmus_positional_anterior" ] },

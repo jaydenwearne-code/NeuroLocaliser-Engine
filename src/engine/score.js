@@ -20,6 +20,9 @@ const LOCALISING = new Set([
   "cn8_vertigo","dysphagia","cn12_palsy",
   // facial_weakness is shared LMN+UMN → NON-localising; forehead_spared is the UMN discriminator (localising)
   "forehead_spared",
+  // forehead_involved is the LMN discriminator (the mirror of forehead_spared): without it, isolated facial
+  // weakness could never separate Bell's palsy from a cortical lesion (accuracy round 1, B13)
+  "forehead_involved",
   "gaze_palsy","ino","vertical_gaze_palsy","miosis","limb_ataxia","face_pain_loss","tremor_rubral",
   "dysmetria","dysdiadochokinesis","intention_tremor","truncal_ataxia","ataxic_dysarthria", // cerebellar organ
   "nystagmus_peripheral","nystagmus_gaze_evoked","nystagmus_downbeat","nystagmus_upbeat","nystagmus_convergence_retraction","nystagmus_pendular", // nystagmus taxonomy

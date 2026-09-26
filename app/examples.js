@@ -13,9 +13,11 @@ export const EXAMPLES = [
     label: "Wallenberg",
     teaches: "one lesion, an eponym",
     // The full syndrome is 13 findings, which nobody records at the bedside. This is the clinically
-    // representative six and still resolves 6/6.
+    // representative seven and still resolves 7/7. DYSPHAGIA is in it on purpose: without a bulbar sign
+    // the picture is shared with the AICA lateral pons (accuracy round 1) — the nucleus ambiguus is what
+    // makes it medullary.
     tokens: ["cn8_vertigo@left", "face_pain_loss@left", "spinothalamic@right",
-             "ptosis@left", "miosis@left", "limb_ataxia@left"],
+             "ptosis@left", "miosis@left", "limb_ataxia@left", "dysphagia@left"],
     onset: "hyperacute",
   },
   {

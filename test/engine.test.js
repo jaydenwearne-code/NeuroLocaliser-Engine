@@ -74,9 +74,11 @@ check("Weber mirrored (R CN III + L hemiparesis)",
 // ============ MULTIFOCAL (minimal-set) ============
 // Two lesions: a left medial midbrain (CN III + R hemiparesis) AND a right lateral medulla
 //   (R face pain + L body STT + R Horner). No single site explains all -> minimal set of 2.
+// A bulbar sign (dysphagia) is what makes the second lesion MEDULLARY rather than lateral pontine (AICA):
+// since accuracy round 1 the lateral pons predicts facial pain loss, crossed body pain loss and Horner too.
 check("Two lesions: L midbrain + R lateral medulla",
   ["ptosis@left", "weak_adduction@left", "weak_elevation@left", "weak_depression@left", "weak_arm@right","weak_leg@right",
-   "face_pain_loss@right", "spinothalamic@left", "miosis@right","ptosis@right"],
+   "face_pain_loss@right", "spinothalamic@left", "miosis@right","ptosis@right","dysphagia@right"],
   null, { expectMulti: true, anySite: true, expectSites: ["left_midbrain_medial", "right_medulla_lateral"] });
 
 // ============ EMERGENCE OF AN UNNAMED COMBINATION ============

@@ -4,6 +4,10 @@ import { STRUCTURE_BY_ID } from "../src/model/structures.js";
 import { expectedFindings, explain } from "../src/engine/forward.js";
 import { candidateSites, differential, ruledOutSites, solve, PREVALENCE_ALLOWANCE, rankKey } from "../src/engine/inverse.js";
 import { prevalenceOf, COMMON, UNCOMMON, RARE } from "../src/model/prevalence.js";
+import { SITE_BY_ID } from "../src/model/sites.js";
+import { FINDINGS, CROSSES } from "../src/model/findings.js";
+import { LOCALISING } from "../src/engine/score.js";
+import { EXAM_TREE, flattenFindings } from "../app/exam-map.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (c ? "" : `  ${d}`)); };
@@ -79,6 +83,28 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("length-dependent polyneuropathy is COMMON (the bilateral rule no longer shadows it)",
      prevalenceOf(byId("polyneuropathy_length_dependent")) === COMMON);
   ok("other bilateral sites stay RARE", ["locked_in", "motor_unit_muscle", "bilateral_cord_transverse"].every(id => prevalenceOf(byId(id)) === RARE));
+}
+
+// ---- B13: forehead also weak — the LMN facial discriminator ----
+{
+  ok("forehead_involved is a finding, ipsilateral, LOCALISING, and in the exam tree",
+     !!FINDINGS.forehead_involved && CROSSES.forehead_involved === false && LOCALISING.has("forehead_involved")
+     && flattenFindings(EXAM_TREE).includes("forehead_involved"));
+  const lmnVII = ["left_skull_base_iam", "left_skull_base_cpa", "left_skull_base_vii_geniculate", "left_skull_base_vii_tympanic",
+                  "left_skull_base_vii_mastoid", "left_skull_base_vii_stylomastoid", "left_pons_medial", "left_pons_lateral"];
+  const cs = candidateSites(); const byId = id => cs.find(s => s.id === id);
+  ok("every LMN facial site predicts the forehead weak on the SAME side",
+     lmnVII.every(id => expectedFindings(byId(id), { dominantSide: "left" }).has("forehead_involved@left")),
+     lmnVII.filter(id => !expectedFindings(byId(id), { dominantSide: "left" }).has("forehead_involved@left")).join(", "));
+  ok("the parotid (a single branch) does not predict the forehead", !expectedFindings(byId("left_skull_base_vii_parotid")).has("forehead_involved@left"));
+  ok("no UMN facial site predicts it", !expectedFindings(byId("right_cortex_motor_facearm")).has("forehead_involved@left"));
+}
+
+// ---- B12: the AICA / lateral inferior pontine syndrome ----
+{
+  const e = expectedFindings(SITE_BY_ID.left_pons_lateral, { dominantSide: "left" });
+  const want = ["facial_weakness@left", "forehead_involved@left", "hearing_loss@left", "face_pain_loss@left", "miosis@left", "ptosis@left"];
+  ok("the lateral pons predicts the AICA features, all ipsilateral", want.every(t => e.has(t)), want.filter(t => !e.has(t)).join(", "));
 }
 
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);

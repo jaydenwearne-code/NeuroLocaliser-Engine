@@ -49,14 +49,14 @@ const eq = (a, b) => JSON.stringify([...(a || [])].sort()) === JSON.stringify([.
 
 // facial nerve chain — proximal produces MORE, each distal spares one branch
 ok("iam -> VII triad + motor + VIII hearing",
-   eq(baseOf("iam"), ["facial_weakness","lacrimation_loss","hyperacusis","taste_loss","hearing_loss"]));
+   eq(baseOf("iam"), ["facial_weakness","forehead_involved","lacrimation_loss","hyperacusis","taste_loss","hearing_loss"]));
 ok("vii_geniculate -> motor + lacrimation + hyperacusis + taste",
-   eq(baseOf("vii_geniculate"), ["facial_weakness","lacrimation_loss","hyperacusis","taste_loss"]));
+   eq(baseOf("vii_geniculate"), ["facial_weakness","forehead_involved","lacrimation_loss","hyperacusis","taste_loss"]));
 ok("vii_tympanic -> motor + hyperacusis + taste (lacrimation SPARED)",
-   eq(baseOf("vii_tympanic"), ["facial_weakness","hyperacusis","taste_loss"]));
+   eq(baseOf("vii_tympanic"), ["facial_weakness","forehead_involved","hyperacusis","taste_loss"]));
 ok("vii_mastoid -> motor + taste (hyperacusis SPARED)",
-   eq(baseOf("vii_mastoid"), ["facial_weakness","taste_loss"]));
-ok("vii_stylomastoid -> motor only (taste SPARED)", eq(baseOf("vii_stylomastoid"), ["facial_weakness"]));
+   eq(baseOf("vii_mastoid"), ["facial_weakness","forehead_involved","taste_loss"]));
+ok("vii_stylomastoid -> motor only (taste SPARED)", eq(baseOf("vii_stylomastoid"), ["facial_weakness","forehead_involved"]));
 ok("vii_parotid -> single branch", eq(baseOf("vii_parotid"), ["facial_weak_branch"]));
 
 // trigeminal divisions
@@ -86,7 +86,7 @@ ok("xi_jugular -> SCM + trapezius", eq(baseOf("xi_jugular"), ["weak_scm","weak_t
 ok("xi_posterior_triangle -> trapezius only (SCM SPARED)", eq(baseOf("xi_posterior_triangle"), ["weak_trapezius"]));
 ok("hypoglossal_canal -> XII", eq(baseOf("hypoglossal_canal"), ["cn12_palsy"]));
 ok("xii_neck -> XII", eq(baseOf("xii_neck"), ["cn12_palsy"]));
-ok("cpa -> VII + hearing + V1 + ataxia", eq(baseOf("cpa"), ["facial_weakness","hearing_loss","v1_sensory","limb_ataxia"]));
+ok("cpa -> VII + hearing + V1 + ataxia", eq(baseOf("cpa"), ["facial_weakness","forehead_involved","hearing_loss","v1_sensory","limb_ataxia"]));
 // the optic canal now also carries the FUNDOSCOPY + ACUITY companions (2026-08-11): a pale disc once the
 // damage is established, and acuity loss that does NOT correct with a pinhole (i.e. organic)
 ok("optic_canal -> optic + RAPD + disc pallor + non-correcting acuity",

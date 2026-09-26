@@ -59,7 +59,7 @@ const build = toks => { const obs = new Set(toks); return { obs, r: solve(obs, {
 // ---- WALLENBERG: two candidates, and the discriminators all point one way ----
 {
   const { obs, r } = build(["cn8_vertigo@left", "face_pain_loss@left", "spinothalamic@right",
-                            "ptosis@left", "miosis@left", "limb_ataxia@left"]);
+                            "ptosis@left", "miosis@left", "limb_ataxia@left", "dysphagia@left"]);
   const cands = r.display, d = discriminators(cands, obs);
   ok(`Wallenberg narrows to two (${cands.length})`, cands.length === 2);
   ok("discriminators are offered for the pair", d.length > 0);
@@ -67,6 +67,23 @@ const build = toks => { const obs = new Set(toks); return { obs, r: solve(obs, {
   const names = d.map(x => x.token);
   ok("a corticospinal or hypoglossal sign is offered, which is what separates them",
      names.some(t => /weak_arm|weak_leg|cn12|babinski|dorsal_sensory/.test(t)), names.slice(0, 6).join(", "));
+}
+
+// ---- WALLENBERG WITHOUT A BULBAR SIGN ties with AICA (accuracy round 1) ----
+// The lateral pons and the lateral medulla share facial pain loss, crossed body pain loss, Horner, ataxia and
+// vertigo. What separates them is exactly what the compare panel must offer: bulbar signs point to the
+// medulla, facial palsy and deafness to the pons.
+{
+  const { obs, r } = build(["cn8_vertigo@left", "face_pain_loss@left", "spinothalamic@right",
+                            "ptosis@left", "miosis@left", "limb_ataxia@left"]);
+  const ids = r.display.map(c => c.site.id);
+  ok("without a bulbar sign, the lateral pons and lateral medulla are both candidates",
+     ids.includes("left_medulla_lateral") && ids.includes("left_pons_lateral"), ids.join(", "));
+  const pair = r.display.filter(c => c.site.id === "left_medulla_lateral" || c.site.id === "left_pons_lateral");
+  const names = discriminators(pair, obs).map(x => x.token);
+  ok("the discriminators name a bulbar sign AND a facial-or-hearing sign",
+     names.some(t => /dysphagia|palatal|vocal_cord/.test(t)) && names.some(t => /facial_weakness|forehead_involved|hearing_loss/.test(t)),
+     names.join(", "));
 }
 
 // ---- A SINGLE CANDIDATE HAS NOTHING TO DISCRIMINATE ----
