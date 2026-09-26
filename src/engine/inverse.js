@@ -108,7 +108,9 @@ export function differential(observedSet, opts = {}) {
     if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
     let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
     let contradicted = false;
-    for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
+    // An ASYMMETRIC site (motor-unit disease, cauda equina) may present on one side: the un-entered side is
+    // not evidence against it, so the known-negative exclusion does not apply to it.
+    if (!site.asymmetric) for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
     if (contradicted) continue;
     const explained = observed.filter(t => exp.has(t));
     // Papilloedema on its own explains nothing site-specific, but it is still informative: every
@@ -134,6 +136,7 @@ export function ruledOutSites(observedSet, opts = {}) {
     let explainsSomething = false;
     for (const t of observedSet) if (exp.has(t)) { explainsSomething = true; break; }
     if (!explainsSomething) continue;
+    if (site.asymmetric) continue; // never excluded by a known negative, so never "ruled out" by one
     let contradictedBy = null;
     for (const neg of negatives) if (exp.has(neg)) { contradictedBy = neg; break; }
     if (contradictedBy) out.push({ site, contradictedBy });

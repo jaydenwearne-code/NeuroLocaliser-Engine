@@ -367,7 +367,9 @@ export function composeCaudaConusSites() {
     return structures.length ? [{ id, side: "midline", level, part,
       territory: TERRITORY[`${level}|${part}`], structures, composite: true }] : [];
   };
-  return [ ...build("cauda_equina", "cauda", "equina"),
+  // The cauda equina is often ASYMMETRIC (its own phonebook note says so; owner ruling 2026-09-25) — one
+  // absent ankle jerk must not exclude it. The conus is early and symmetric by its own description.
+  return [ ...build("cauda_equina", "cauda", "equina").map(s => ({ ...s, asymmetric: true })),
            ...build("conus_medullaris", "conus", "medullaris") ];
 }
 
@@ -560,8 +562,12 @@ export function composeMotorUnitSites() {
   for (const part of parts) {
     const structures = STRUCTURES.filter(s => s.level === "motor_unit" && s.part === part).map(s => s.id);
     if (structures.length === 0) continue;
+    // ASYMMETRIC (owner ruling 2026-09-25): the motor-unit diseases often present on one side first —
+    // unilateral fatigable ptosis is classic myasthenia, and MND starts in one limb. The site still predicts
+    // BOTH sides (the un-entered side is an ordinary unreported prediction), but the known-negative filter
+    // must not treat the other side as examined-and-normal and exclude the whole disease.
     sites.push({ id: `motor_unit_${part}`, side: "bilateral", level: "motor_unit", part,
-      territory: TERRITORY[`motor_unit|${part}`], structures, composite: true });
+      territory: TERRITORY[`motor_unit|${part}`], structures, composite: true, asymmetric: true });
   }
   return sites;
 }
