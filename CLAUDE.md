@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**75 test suites / 6871 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**75 test suites / 6880 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1038,9 +1038,14 @@ source site gains a row, or the stale copy out-ranks the real site. The whole ch
 scratch copy against the full suite before the plan was written — that is how the Wallenberg tie, the
 anterior-canal tie-break and the thalamic-aphasia copy were found before they shipped.
 
-**Open for the owner (not changed):** myasthenia does not predict plain `ptosis`; the pontine Horner rows
-omit anhidrosis; an isolated Babinski ranks the cortical hand knob first; `tl_midbrain` (added 2026-08-25)
-has no row in `docs/artifacts/anatomy-model.html`.
+**Follow-ups closed the same day:** myasthenia predicts `ptosis` (its commonest presenting sign); the
+lateral pons carries all four central-Horner rows (anhidrosis added) and the lateral medulla is COMMON so a
+bare central Horner still shows Wallenberg first (owner ruling) — two assertions moved from the scored `best`
+(no prior) to the displayed first answer; `tl_midbrain` got its anatomy-sheet row, so every model id now
+has a row and vice versa; and removing the LAST finding now clears the case from the URL (`renderResults()`
+used to return before `syncURL()`). **Deliberately unchanged:** an isolated Babinski ranks the cortical hand
+knob first — `ctx_hand_bab` is a signed-off design choice, and an extensor plantar genuinely does not
+localise along the tract; the integrated Why (sub-project 2) is what should say so.
 
 Spec/plan: `docs/superpowers/specs/2026-09-25-accuracy-round-1-design.md`,
 `docs/superpowers/plans/2026-09-26-accuracy-round-1.md`.
