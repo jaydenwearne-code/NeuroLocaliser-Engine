@@ -59,8 +59,11 @@ ok("Pancoast composite exists (preganglionic ∪ C8/T1)", !!pancoast());
 const centralSet = ["miosis@left","ptosis@left","anhidrosis_face@left","anhidrosis_body@left"];
 ok("isolated hemibody Horner + cervical level -> cord (central)",
    best(centralSet, { sensoryLevel: "C7" }).site.id === "left_cord_lateral");
+// Asserted on the DISPLAYED first answer since 2026-09-26: the lateral pons now carries the same four
+// central-Horner rows, so the scored `best` (which has no prior) cannot separate them; the lateral medulla's
+// COMMON prior (owner ruling — Wallenberg is the commonest brainstem syndrome) is what the reader sees.
 ok("isolated hemibody Horner, no level -> lateral medulla (central, brainstem default)",
-   best(centralSet).site.id === "left_medulla_lateral");
+   solve(new Set(centralSet)).display[0].site.id === "left_medulla_lateral");
 ok("cervical Brown-Séquard + Horner (@C5) -> one hemicord lesion",
    best(["weak_arm@left","weak_leg@left","dorsal_sensory@left","spinothalamic@right","miosis@left","ptosis@left","anhidrosis_face@left","anhidrosis_body@left"], { sensoryLevel: "C5" }).site.id === "left_cord_hemi");
 ok("isolated face-only Horner -> preganglionic",

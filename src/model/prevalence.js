@@ -23,6 +23,9 @@ const COMMON_PARTS = new Set([
   "subcortex/anterior_choroidal", "subcortex/sensorimotor",
   // posterior-canal BPPV — the commonest cause of vertigo (owner ruling 2026-09-26)
   "peripheral_vestibular/posterior_canal",
+  // the lateral medulla — Wallenberg is the commonest brainstem stroke syndrome (owner, 2026-09-26). Once the
+  // lateral pons carried the full central-Horner row set, a bare central Horner ranked the pons first.
+  "medulla/lateral",
 ]);
 // Rare by (level, part).
 // anterior-canal BPPV is the rarest canal (owner ruling 2026-09-26: once the canals predict vertigo, an

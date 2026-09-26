@@ -225,6 +225,13 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("fatigable ptosis + ptosis on one side → myasthenia first, one lesion",
      (() => { const r = solve(new Set(["fatigable_ocular@left", "ptosis@left"]), { dominantSide: "left" });
               return r.display[0]?.site.id === "motor_unit_nmj_postsynaptic" && r.multi === null; })());
+  // A central (first-order) Horner gives HEMIBODY anhidrosis — the pontine rows now match the medullary ones
+  // (owner, 2026-09-26), and the lateral medulla is COMMON so Wallenberg still leads a bare central Horner.
+  ok("the lateral pons predicts facial and hemibody anhidrosis, ipsilateral",
+     e("left_pons_lateral").has("anhidrosis_face@left") && e("left_pons_lateral").has("anhidrosis_body@left"));
+  ok("the lateral medulla is COMMON (Wallenberg — the commonest brainstem stroke syndrome)", prevalenceOf(byId("left_medulla_lateral")) === COMMON);
+  ok("an isolated central Horner shows the lateral medulla first",
+     solve(new Set(["ptosis@left", "miosis@left", "anhidrosis_face@left", "anhidrosis_body@left"]), { dominantSide: "left" }).display[0]?.site.id === "left_medulla_lateral");
 }
 
 // ---- every site's own complete picture localises back to it (true on 2026-09-25; now pinned) ----

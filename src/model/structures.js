@@ -115,6 +115,12 @@ export const STRUCTURES = [
     note: "descending sympathetic fibres (lateral tegmentum) — IPSI Horner (miosis)" },
   { id: "sym_pons_ptosis", level: "pons", part: "lateral", produces: "ptosis",
     note: "descending sympathetic fibres (lateral tegmentum) — IPSI Horner (ptosis)" },
+  // ADDED 2026-09-26 (follow-up, owner-approved): a central (first-order) Horner gives HEMIBODY anhidrosis — the same four
+  // sympathetic rows the lateral medulla carries, so the anhidrosis axis reads "central" here too.
+  { id: "sym_pons_anhface", level: "pons", part: "lateral", produces: "anhidrosis_face",
+    note: "descending sympathetic fibres — IPSI facial anhidrosis (central Horner)" },
+  { id: "sym_pons_anhbody", level: "pons", part: "lateral", produces: "anhidrosis_body",
+    note: "descending sympathetic fibres — IPSI hemibody anhidrosis: the central-Horner marker" },
   { id: "trig_main_sensory", level: "pons", part: "trigeminal", produces: "face_touch_loss",
     note: "principal / main sensory nucleus (pons) — discriminative facial touch; ipsilateral" },
   { id: "trig_motor",        level: "pons", part: "trigeminal", produces: "jaw_weakness",
