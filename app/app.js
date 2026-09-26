@@ -248,7 +248,16 @@ function renderChips() {
 
 function renderResults() {
   const el = document.getElementById("results");
-  if (!S.tokens.size) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`; return; }
+  if (!S.tokens.size) {
+    // THE HASH IS THE SHAREABLE CASE: once the last finding is removed it must say so, or a reload, a copied
+    // link or the feedback button brings back findings the user has cleared (found by driving the app,
+    // 2026-09-26). The per-case selections go with them — a chosen lesion or cause means nothing without
+    // findings. Settings (onset, dominant hemisphere, scope) are the reader's and are kept.
+    S.selected = undefined; S.selectedPathology = undefined; S.selectedEntity = undefined;
+    syncURL();
+    el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`;
+    return;
+  }
   try {
   // Papilloedema is an AXIS, not a site finding (see raisedPressureAxis): no site's expected findings
   // contain it, so it must not be counted in the "explains n/total" denominator or every intracranial site
