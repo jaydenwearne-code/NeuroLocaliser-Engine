@@ -427,7 +427,7 @@ function resultHeader(sel, list, total, r) {
   // a time-poor reader needs before anything else, so it sits in the header and links to the Next card.
   let urg = "";
   try {
-    const u = nextStepsFor(sel.site).urgency;
+    const u = nextStepsFor(sel.site, { onset: S.onset || undefined }).urgency;
     const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
     const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
     const emerg = u === "emergency" ? " urg-emergency" : "";
@@ -894,9 +894,11 @@ function nextCard(site, r, list) {
   const combined = sites.length >= 2 && S.scope === "all";
   // Per-site selection is single-site only; the CROSS-SITE selection is the combined view's answer to
   // "whose pathology?" — the disease the Together card named as spanning these sites (spec 2026-08-21).
+  // The onset is threaded through so a hyperacute stroke badges EMERGENCY (accuracy round 1, A4/B16).
+  const onsetOpt = { onset: S.onset || undefined };
   const nx = combined
-    ? combinedNextSteps(sites, S.selectedEntity || null)
-    : pathologyNextStepsFor(site, S.selectedPathology || null);
+    ? combinedNextSteps(sites, S.selectedEntity || null, onsetOpt)
+    : pathologyNextStepsFor(site, S.selectedPathology || null, onsetOpt);
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
   return card(cap, nextBlock(nx, combined), "next");
 }

@@ -2601,8 +2601,9 @@ export const CAUSES = {
   ],
   // --- cortex / subcortex ---
   subcortex_internal_capsule: [
-    c("Small-vessel lacunar infarct", "vascular", ["acute"], "common", false, "Pure motor (or sensorimotor) deficit, no cortical signs; hypertension/diabetes"),
-    c("Hypertensive haemorrhage", "vascular", ["acute"], "uncommon", true, "Deep bleed on CT; headache, reduced consciousness, very high BP"),
+    // Tempo aligned 2026-09-26 (B15): the same causes are hyperacute at every other site that names them.
+    c("Small-vessel lacunar infarct", "vascular", ["hyperacute","acute"], "common", false, "Pure motor (or sensorimotor) deficit, no cortical signs; hypertension/diabetes"),
+    c("Hypertensive haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true, "Deep bleed on CT; headache, reduced consciousness, very high BP"),
     c("Capsular warning syndrome", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Stuttering, crescendo, recurrent stereotyped episodes of pure motor weakness that keep resolving — a high risk of completing into a fixed capsular infarct, so it needs admission rather than reassurance"),
     c("Hypoglycaemia", "mimic", ["hyperacute","acute"], "common", true,
@@ -2697,7 +2698,7 @@ export const CAUSES = {
       "Headache, seizures and visual disturbance with severe hypertension, eclampsia or calcineurin-inhibitor exposure; posterior-predominant oedema that reverses once the trigger is treated"),
   ],
   cortex_hand_knob: [
-    c("Small precentral (hand-knob) infarct", "vascular", ["acute"], "common", false,
+    c("Small precentral (hand-knob) infarct", "vascular", ["hyperacute","acute"], "common", false,
       "Abrupt isolated hand weakness that looks exactly like an ulnar or median nerve palsy — the PSEUDO-PERIPHERAL cortical hand. What gives it away is that the weakness does not respect any single nerve or root, and a brisk reflex or subtle pronator drift betrays its cortical origin"),
     c("Cortical vein thrombosis", "vascular", ["acute","subacute"], "rare", true,
       "Focal hand weakness with SEIZURES and headache in a prothrombotic state, pregnancy or the puerperium — the deficit fits no arterial territory, which is the clue to image the veins"),

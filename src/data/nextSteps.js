@@ -3,14 +3,15 @@
 // These are TEACHING PROMPTS, not clinical directives — no drug doses, no definitive management. The app
 // pairs them with an explicit "not clinical advice" disclaimer.
 //
-//   nextStepsFor(site) -> { immediate, investigations, confirmatory, monitoring, urgency, referral, curated }
+//   nextStepsFor(site, { onset }) -> { immediate, investigations, confirmatory, monitoring, urgency, referral, curated }
 //
 // Curated per-site entries (by site.id, else level_part) carry the site-specific first-line investigations
 // and referral; the immediate / confirmatory / monitoring tiers are DERIVED from urgency + region so EVERY
 // site gets a full, structured plan (derive-don't-store spirit). A curated entry may override any tier via
 // its optional `extra` ({ immediate, confirmatory, monitoring }).
 import { expectedFindings } from "../engine/forward.js";
-import { CAUSES } from "./causes.js";
+import { CAUSES, causesFor } from "./causes.js";
+import { compartmentOf } from "../model/compartments.js";
 import { pathologyPlanFor } from "./pathologyNextSteps.js";
 import { multifocalPlanFor } from "./multifocalNextSteps.js";
 
@@ -2333,18 +2334,36 @@ function causeEntry(site, causeName) {
   return (CAUSES[key] || []).find(c => c.name === causeName) || null;
 }
 
-export function resolveUrgency(site, causeName) {
-  const siteUrgency = nextStepsFor(site).urgency || "routine";
+export function resolveUrgency(site, causeName, opts = {}) {
+  const siteUrgency = nextStepsFor(site, opts).urgency || "routine";
   if (!causeName) return siteUrgency;
   const plan = pathologyPlanFor(causeName, site);
   const chosen = (plan && plan.urgency) || siteUrgency;
   const entry = causeEntry(site, causeName);
+  // B16 (owner, 2026-09-25): a VASCULAR cause selected at hyperacute onset in a CNS compartment keeps the
+  // emergency badge — the authored plan urgency must not quieten a stroke inside the treatment window. Only a
+  // cause that can itself BE hyperacute: post-stroke pain is vascular but chronic, and is not a window.
+  if (entry && entry.cat === "vascular" && entry.tempo.includes("hyperacute") && opts.onset === "hyperacute"
+      && STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return "emergency";
   if (!entry || !entry.red) return chosen;
   return URGENCY_RANK[chosen] >= URGENCY_RANK[RED_FLOOR] ? chosen : RED_FLOOR;
 }
 
+// ---- hyperacute stroke escalation (accuracy round 1, A4 + B16, owner-approved 2026-09-25) ----
+// A CNS site whose LEADING cause at hyperacute onset is vascular is inside the thrombolysis window — an
+// emergency, whatever its curated badge says when the tempo is unknown. Derived from the causes layer, never
+// hand-listed. Peripheral compartments are excluded on purpose: a peripheral HINTS pattern is the reassuring
+// one, and a microvascular cranial neuropathy is not a thrombolysis question.
+const STROKE_WINDOW_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "cord", "optic"]);
+export function hyperacuteVascular(site, onset) {
+  if (onset !== "hyperacute" || !STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return false;
+  let lead;
+  try { lead = causesFor(site, { onset }).all.find(c => c.cat !== "mimic"); } catch { return false; }
+  return !!lead && lead.cat === "vascular";
+}
+
 // ---- public API ----
-export function nextStepsFor(site) {
+export function nextStepsFor(site, opts = {}) {
   const key = NEXT[site.id] ? site.id : `${site.level}_${site.part}`;
   const base = NEXT[key] ? { ...NEXT[key], curated: true } : { ...derive(site), curated: false };
   // The ophthalmic prompt is appended (never spliced into the curated array in place, which would mutate
@@ -2354,7 +2373,7 @@ export function nextStepsFor(site) {
     investigations: [...(base.investigations || []), ...ophthalmicImaging(site)],
     confirmatory: base.confirmatory || deriveConfirmatory(site),
     monitoring: base.monitoring || deriveMonitoring(site, base.urgency),
-    urgency: base.urgency,
+    urgency: hyperacuteVascular(site, opts.onset) ? "emergency" : base.urgency,
     referral: base.referral,
     curated: base.curated,
   };
@@ -2371,15 +2390,15 @@ export function nextStepsFor(site) {
 //
 // `causeName: null` returns exactly what nextStepsFor() returns, so the card has ONE code path and the
 // no-selection view cannot drift from the pre-2026-08-18 behaviour.
-export function pathologyNextStepsFor(site, causeName) {
-  const base = nextStepsFor(site);
+export function pathologyNextStepsFor(site, causeName, opts = {}) {
+  const base = nextStepsFor(site, opts);
   if (!causeName) return { ...base, pathology: null, pathologyCurated: false };
   const plan = pathologyPlanFor(causeName, site);
   return {
     ...base,
     confirmatory: plan ? plan.confirmatory : base.confirmatory,
     monitoring:   plan ? plan.monitoring   : base.monitoring,
-    urgency:      resolveUrgency(site, causeName),
+    urgency:      resolveUrgency(site, causeName, opts),
     referral:     (plan && plan.referral) || base.referral,
     pathology: causeName,
     pathologyCurated: !!plan,
@@ -2402,8 +2421,8 @@ const URGENCY_ORDER = ["emergency", "urgent", "routine"];
 // `entityName: null` returns EXACTLY the object this function returned before this argument existed — no
 // added keys — so the no-selection view has one code path and cannot drift. An unknown name degrades to
 // the same thing rather than throwing.
-export function combinedNextSteps(sites, entityName = null) {
-  const all = sites.map(nextStepsFor);
+export function combinedNextSteps(sites, entityName = null, opts = {}) {
+  const all = sites.map(s => nextStepsFor(s, opts));
   const union = key => [...new Set(all.flatMap(n => n[key] || []))];
   const siteUrgency = URGENCY_ORDER.find(u => all.some(n => n.urgency === u)) || "routine";
   const referral = [...new Set(all.map(n => n.referral).filter(Boolean))].join(" · ");

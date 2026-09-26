@@ -8,8 +8,8 @@ import { SITE_BY_ID } from "../src/model/sites.js";
 import { FINDINGS, CROSSES } from "../src/model/findings.js";
 import { LOCALISING } from "../src/engine/score.js";
 import { EXAM_TREE, flattenFindings } from "../app/exam-map.js";
-import { CAUSES } from "../src/data/causes.js";
-import { nextStepsFor, pathologyNextStepsFor } from "../src/data/nextSteps.js";
+import { CAUSES, causesFor } from "../src/data/causes.js";
+import { nextStepsFor, pathologyNextStepsFor, hyperacuteVascular, combinedNextSteps } from "../src/data/nextSteps.js";
 import { compartmentOf } from "../src/model/compartments.js";
 import { BY_SITE } from "../src/data/syndromes.js";
 
@@ -179,6 +179,39 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("every cause at the site has an authored pathology plan",
      !!gbs && causes.every(c => pathologyNextStepsFor(gbs, c.name).pathologyCurated),
      gbs ? causes.filter(c => !pathologyNextStepsFor(gbs, c.name).pathologyCurated).map(c => c.name).join(", ") : "no site");
+}
+
+// ---- B15 / A4 / B16: stroke at hyperacute onset ----
+{
+  const cs = candidateSites(); const byId = id => cs.find(s => s.id === id);
+  const ic = byId("left_subcortex_internal_capsule");
+  const lac = causesFor(ic, { onset: "hyperacute" }).all.map(c => c.name);
+  ok("a lacunar infarct is CONCORDANT with hyperacute onset at the capsule (B15)", lac.includes("Small-vessel lacunar infarct"));
+  ok("the capsule badges emergency at hyperacute onset", nextStepsFor(ic, { onset: "hyperacute" }).urgency === "emergency");
+  ok("…and keeps its curated badge with no onset", nextStepsFor(ic).urgency === "urgent");
+  ok("a peripheral vestibular site does NOT escalate (peripheral compartment)", nextStepsFor(byId("left_peripheral_vestibular_labyrinth"), { onset: "hyperacute" }).urgency !== "emergency");
+  ok("a microvascular CN III does NOT escalate", nextStepsFor(byId("left_pupil_cn3_ischaemic"), { onset: "hyperacute" }).urgency !== "emergency");
+  ok("hyperacuteVascular is false without hyperacute onset", !hyperacuteVascular(ic, "acute") && !hyperacuteVascular(ic, undefined));
+  // The no-onset call is byte-identical to the pre-change call, at every site kind.
+  const seen = new Set(); let identical = true;
+  for (const s of cs) { const k = `${s.level}_${s.part}`; if (seen.has(k)) continue; seen.add(k);
+    if (JSON.stringify(nextStepsFor(s)) !== JSON.stringify(nextStepsFor(s, {}))) identical = false; }
+  ok(`nextStepsFor(site) === nextStepsFor(site, {}) at all ${seen.size} site kinds`, identical);
+  // B16: a VASCULAR cause selected at hyperacute onset keeps the emergency badge. Tested on a cause whose
+  // AUTHORED plan urgency is routine, so the assertion can only pass because of B16.
+  const vl = byId("left_thalamus_vl");
+  ok("precondition: the thalamic infarct plan is authored below emergency",
+     pathologyNextStepsFor(vl, "Thalamic infarct or haemorrhage").urgency !== "emergency");
+  ok("a selected vascular cause at hyperacute onset is EMERGENCY (B16)",
+     pathologyNextStepsFor(vl, "Thalamic infarct or haemorrhage", { onset: "hyperacute" }).urgency === "emergency");
+  // …but only a vascular cause that can BE hyperacute: post-stroke pain is vascular and chronic.
+  const vpl = byId("left_subcortex_thalamus");
+  ok("a chronic vascular cause (post-stroke pain) is NOT escalated by a hyperacute onset",
+     pathologyNextStepsFor(vpl, "Déjerine-Roussy (central post-stroke pain)", { onset: "hyperacute" }).urgency
+       === pathologyNextStepsFor(vpl, "Déjerine-Roussy (central post-stroke pain)").urgency);
+  ok("a selected NON-vascular cause keeps its authored urgency",
+     pathologyNextStepsFor(ic, "Demyelinating plaque", { onset: "hyperacute" }).urgency === pathologyNextStepsFor(ic, "Demyelinating plaque").urgency);
+  ok("combinedNextSteps threads the onset", combinedNextSteps([ic, byId("left_root_l5")], null, { onset: "hyperacute" }).urgency === "emergency");
 }
 
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);
