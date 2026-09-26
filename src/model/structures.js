@@ -167,6 +167,13 @@ export const STRUCTURES = [
   { id: "cst_cord_leg", level: "cord", part: "anterior", produces: "weak_leg", crosses: false, note: "corticospinal (cord) — IPSI leg weakness below the level" },
   { id: "stt_cord",  level: "cord", part: "anterior",  produces: "spinothalamic",  crosses: true,
     note: "spinothalamic tract — crosses within the cord (~1–2 levels), so CONTRALATERAL pain/temperature loss below the level" },
+  // ADDED 2026-09-26 (accuracy round 1, owner-approved B1): bladder and bowel control from BOTH sides of the
+  // cord. A composite-only part (not in sites.js PARTS, like cord|central), pulled in by the bilateral
+  // ANTERIOR and TRANSVERSE composites only — sphincter failure needs both descending pathways, so the
+  // hemicord does not get it, and in a syrinx it is late and inconsistent (owner: central cord NO).
+  // emit:"midline" because bladder function has no side: it must match the token cauda/conus emit.
+  { id: "cord_sphincter", level: "cord", part: "autonomic", produces: "sphincter_dysfunction", crosses: false, emit: "midline",
+    note: "bilateral descending autonomic pathways — sphincter dysfunction below the level" },
   { id: "dc_cord",   level: "cord", part: "posterior", produces: "dorsal_sensory", crosses: false,
     note: "dorsal columns (PSA-supplied) — ascend uncrossed to the medulla, so IPSILATERAL vibration/proprioception loss" },
   { id: "dc_sensory_ataxia", level: "cord", part: "posterior", produces: "sensory_ataxia", crosses: false,
@@ -576,6 +583,9 @@ export const STRUCTURES = [
   { id: "scd_ataxia", level: "combined_degeneration", part: "scd", produces: "sensory_ataxia", note: "SCD — sensory (Romberg-positive) ataxia" },
   { id: "scd_spast",  level: "combined_degeneration", part: "scd", produces: "spasticity",     note: "SCD — lateral corticospinal (spastic legs)" },
   { id: "scd_bab",    level: "combined_degeneration", part: "scd", produces: "babinski",       note: "SCD — extensor plantars (corticospinal)" },
+  // ADDED 2026-09-26 (B6): absent ankle jerks WITH extensor plantars — the co-existing B12 neuropathy.
+  { id: "scd_ankle_reflex", level: "combined_degeneration", part: "scd", produces: "reflex_ankle_loss",
+    note: "SCD — ankle jerks lost with extensor plantars (co-existing neuropathy)" },
   { id: "fr_dc",       level: "combined_degeneration", part: "friedreich", produces: "dorsal_sensory", note: "Friedreich — dorsal columns" },
   { id: "fr_ataxia_s", level: "combined_degeneration", part: "friedreich", produces: "sensory_ataxia", note: "Friedreich — sensory ataxia" },
   { id: "fr_ataxia_c", level: "combined_degeneration", part: "friedreich", produces: "limb_ataxia",    note: "Friedreich — spinocerebellar / cerebellar limb ataxia" },
@@ -870,6 +880,9 @@ export const STRUCTURES = [
     note: "length-dependent sensory axonopathy — distal symmetric (stocking-glove)" },
   { id: "poly_motor",   level: "polyneuropathy", part: "length_dependent", produces: "distal_motor_weakness",
     note: "length-dependent motor axonopathy — distal symmetric weakness" },
+  // ADDED 2026-09-26 (B5): the ankle jerks go first — the longest reflex arc. The site's own note already said so.
+  { id: "poly_ankle_reflex", level: "polyneuropathy", part: "length_dependent", produces: "reflex_ankle_loss",
+    note: "length-dependent — the ANKLE jerks are lost first (the longest reflex arc)" },
 
   // ---- NAMED PERIPHERAL NERVES (mononeuropathy; part = nerve) ----
   // Each nerve is a territory site: its cutaneous sensory territory + the movements it supplies. It
@@ -995,6 +1008,11 @@ export const STRUCTURES = [
   { id: "conus_bulbo", level: "conus", part: "medullaris", produces: "bulbocavernosus_loss", crosses: false, note: "S2–4 sacral arc — bulbocavernosus lost" },
   { id: "cauda_anal", level: "cauda", part: "equina", produces: "anal_wink_loss", crosses: false, note: "S2–4 sacral roots — anal wink lost" },
   { id: "cauda_bulbo", level: "cauda", part: "equina", produces: "bulbocavernosus_loss", crosses: false, note: "S2–4 sacral roots — bulbocavernosus lost" },
+  // ADDED 2026-09-26 (B7): the S1 roots in the cauda carry the ankle jerk. emit:"bilateral" because the
+  // clinician records it per side and the cauda site is midline; the site is ASYMMETRIC (owner), so one absent
+  // ankle jerk does not exclude it. Knee jerks deliberately NOT added (owner: ankle only).
+  { id: "cauda_ankle_reflex", level: "cauda", part: "equina", produces: "reflex_ankle_loss", crosses: false, emit: "bilateral",
+    note: "S1 roots in the cauda — ankle jerk lost, often asymmetrically" },
   // Frontal release signs — contralateral (grasp) / non-specific (palmomental), frontal cortex.
   { id: "ctx_grasp", level: "cortex", part: "medial_pfc", produces: "grasp_reflex", note: "medial frontal — contralateral grasp reflex" },
   { id: "ctx_palmomental", level: "cortex", part: "orbitofrontal", produces: "palmomental", note: "frontal release — palmomental (non-specific)" },

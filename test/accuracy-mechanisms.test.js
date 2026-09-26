@@ -118,5 +118,20 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("horizontal-canal BPPV stays UNCOMMON", prevalenceOf(byId("left_peripheral_vestibular_horizontal_canal")) === UNCOMMON);
 }
 
+// ---- B1 / B5 / B6 / B7: sphincter and ankle jerks ----
+{
+  const cs = candidateSites(); const e = id => expectedFindings(cs.find(s => s.id === id), { dominantSide: "left" });
+  ok("the bilateral ANTERIOR cord predicts sphincter dysfunction @midline", e("bilateral_cord_anterior").has("sphincter_dysfunction@midline"));
+  ok("the TRANSVERSE cord predicts sphincter dysfunction @midline", e("bilateral_cord_transverse").has("sphincter_dysfunction@midline"));
+  ok("the central cord does NOT (owner: late and inconsistent)", !e("bilateral_cord_central").has("sphincter_dysfunction@midline"));
+  ok("the hemicord does NOT", ![...e("left_cord_hemi")].some(t => t.startsWith("sphincter_dysfunction")));
+  ok("the cauda predicts an absent ankle jerk on EACH side", e("cauda_equina").has("reflex_ankle_loss@left") && e("cauda_equina").has("reflex_ankle_loss@right"));
+  ok("the cauda does NOT predict knee jerks (owner: ankle only)", ![...e("cauda_equina")].some(t => t.startsWith("reflex_knee_loss")));
+  ok("the polyneuropathy predicts absent ankle jerks", e("polyneuropathy_length_dependent").has("reflex_ankle_loss@left"));
+  ok("SCD predicts absent ankle jerks", e("combined_degeneration_scd").has("reflex_ankle_loss@right"));
+  ok("no cord structure is a standalone site at the composite-only `autonomic` part",
+     !cs.some(s => s.level === "cord" && s.part === "autonomic"));
+}
+
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

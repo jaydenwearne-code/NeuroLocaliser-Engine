@@ -329,9 +329,12 @@ export function composeBilateralCordSites() {
   const structuresForPart = part =>
     STRUCTURES.filter(s => s.level === "cord" && s.part === part).map(s => s.id);
 
+  // Bladder/bowel control (cord|autonomic, composite-only) belongs to the ANTERIOR and TRANSVERSE bilateral
+  // lesions only — accuracy round 1, B1.
+  const autonomic = structuresForPart("autonomic");
   const sites = [];
   for (const part of cordParts) {
-    const structures = structuresForPart(part);
+    const structures = [...structuresForPart(part), ...(part === "anterior" ? autonomic : [])];
     if (structures.length === 0) continue;
     sites.push({
       id: `bilateral_cord_${part}`,
@@ -352,7 +355,7 @@ export function composeBilateralCordSites() {
       id: "bilateral_cord_transverse",
       side: "bilateral", level: "cord", part: "transverse",
       territory: "complete cord cross-section (transverse myelopathy)",
-      structures: belowLevel, composite: true
+      structures: [...belowLevel, ...autonomic], composite: true
     });
   }
   return sites;
