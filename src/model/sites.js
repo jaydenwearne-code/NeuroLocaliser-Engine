@@ -179,6 +179,7 @@ const TERRITORY = {
   "root|l5": "L5 nerve root (dorsum foot · great-toe extension)",
   "root|s1": "S1 nerve root (lateral foot · plantarflexion · ankle jerk)",
   "polyneuropathy|length_dependent": "peripheral nerves diffusely (length-dependent, distal-predominant)",
+  "polyradiculoneuropathy|acute": "nerve roots and peripheral nerves diffusely (acute inflammatory polyradiculoneuropathy)",
   "nerve|axillary":         "axillary nerve (C5-6, posterior cord)",
   "nerve|musculocutaneous": "musculocutaneous nerve (C5-6, lateral cord)",
   "nerve|suprascapular":    "suprascapular nerve (C5-6)",
@@ -807,6 +808,16 @@ export function composeCerebellumPancerebellarSites() {
 // like the motor-unit sites; `polyneuropathy` is not in LEVELS/PARTS). WHICH site it is is trivial; HOW
 // FAR the deficit has ascended (and whether the stocking-glove has appeared) is the orthogonal
 // nerveLength.js axis, attached by inverse.describeLength.
+// ACUTE POLYRADICULONEUROPATHY (Guillain-Barré; accuracy round 1, B14). One diffuse bilateral site, like the
+// polyneuropathy — but SYMMETRIC by definition (no `asymmetric` flag): an asymmetric picture points away from
+// GBS, toward mononeuritis multiplex or a structural cause. Picked up by candidateSites() via reflection.
+export function composePolyradiculoneuropathySites() {
+  const structures = STRUCTURES.filter(s => s.level === "polyradiculoneuropathy" && s.part === "acute").map(s => s.id);
+  if (structures.length === 0) return [];
+  return [{ id: "polyradiculoneuropathy_acute", side: "bilateral", level: "polyradiculoneuropathy",
+    part: "acute", territory: TERRITORY["polyradiculoneuropathy|acute"], structures, composite: true }];
+}
+
 export function composePolyneuropathySites() {
   const structures = STRUCTURES.filter(s => s.level === "polyneuropathy" && s.part === "length_dependent").map(s => s.id);
   if (structures.length === 0) return [];

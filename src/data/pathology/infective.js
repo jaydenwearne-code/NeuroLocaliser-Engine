@@ -432,6 +432,9 @@ export default {
 
   // A polyradiculitis, not a myelopathy — and it is treatable.
   "Elsberg syndrome (CMV or HSV-2 polyradiculitis)": dz("Elsberg syndrome (CMV or HSV-2 polyradiculitis)", {
+    bySite: {
+      polyradiculoneuropathy_acute: { level: "leg power, the reflexes and the bladder" },
+    },
     confirmatory: [
       "CSF for HSV-2 and CMV PCR with cell count and protein — a lymphocytic pleocytosis with acute urinary retention and sacral sensory loss is the picture",
       "MRI lumbosacral spine WITH contrast: enhancement of the cauda equina roots and sometimes the conus, which is what distinguishes this from a compressive cause",
@@ -484,6 +487,9 @@ export default {
 
   // A toxin at the presynaptic terminal. The neurology is the presentation of a public health event.
   "Botulism": dz("Botulism", {
+    bySite: {
+      polyradiculoneuropathy_acute: { level: "the DIRECTION of spread — eyes, pupils and swallow first, then the limbs" },
+    },
     confirmatory: [
       "THE DIAGNOSIS IS CLINICAL AND TREATMENT IS TIME-CRITICAL: a DESCENDING, symmetric, flaccid paralysis with prominent BULBAR and PUPILLARY involvement, and a patient who is afebrile and fully alert throughout",
       "Send serum, stool and any suspect food or wound sample for toxin and organism — but do NOT wait for the result to give antitoxin, which only prevents further binding and cannot reverse what has bound",
@@ -502,6 +508,9 @@ export default {
 
   // The one paralysis cured by examination.
   "Tick paralysis": dz("Tick paralysis", {
+    bySite: {
+      polyradiculoneuropathy_acute: { level: "limb power and the reflexes as the paralysis ascends" },
+    },
     confirmatory: [
       "SEARCH FOR THE TICK — the scalp and hairline, behind the ears, the axillae and the groin. This is the one ascending paralysis CURED BY EXAMINATION, and the tick is small and easily hidden in hair",
       "The picture is an ASCENDING flaccid paralysis with areflexia in a child or a returning traveller — it imitates Guillain-Barré closely, and the discriminator is a NORMAL CSF PROTEIN plus a rapid course",
@@ -792,6 +801,10 @@ export default {
     urgency: "urgent",
     referral: "Neurology with infectious diseases",
     bySite: {
+      polyradiculoneuropathy_acute: {
+        level: "the pattern of weakness across several roots, and the face",
+        flavour: "a multi-root picture with a facial palsy is the one most easily mistaken for Guillain-Barré — the lymphocytic CSF separates them",
+      },
       root_t4: {
         level: "nothing motor at this level — follow the pain and the sensory band",
         flavour: "Bannwarth syndrome is characteristically THORACIC and characteristically painful, and is repeatedly worked up as a cardiac or abdominal problem first",

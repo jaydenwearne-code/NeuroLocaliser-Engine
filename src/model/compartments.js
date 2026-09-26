@@ -48,7 +48,7 @@ export const LEVEL_COMPARTMENT = {
   // --- skull base / peripheral vestibular ---
   skull_base: "skull_base", peripheral_vestibular: "skull_base",
   // --- peripheral nervous system ---
-  root: "root", plexus: "plexus", nerve: "nerve", polyneuropathy: "nerve",
+  root: "root", plexus: "plexus", nerve: "nerve", polyneuropathy: "nerve", polyradiculoneuropathy: "root",
   motor_unit: "motor_unit",
 };
 

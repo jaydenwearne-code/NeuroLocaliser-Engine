@@ -905,6 +905,25 @@ export const STRUCTURES = [
   { id: "poly_ankle_reflex", level: "polyneuropathy", part: "length_dependent", produces: "reflex_ankle_loss",
     note: "length-dependent — the ANKLE jerks are lost first (the longest reflex arc)" },
 
+  // ---- ACUTE POLYRADICULONEUROPATHY (Guillain-Barré; bilateral, symmetric site) ----
+  // ADDED 2026-09-26 (accuracy round 1, owner-approved B14). Roots and nerves inflamed together, so the
+  // weakness is PROXIMAL as well as distal (not length-dependent) and EVERY reflex goes. Motor-predominant:
+  // no sensory row, by owner ruling — predicting it would blur GBS into the length-dependent neuropathy.
+  { id: "gbs_lmn",             level: "polyradiculoneuropathy", part: "acute", produces: "lmn_weakness",               note: "ascending flaccid (LMN) weakness, legs usually before arms" },
+  { id: "gbs_prox",            level: "polyradiculoneuropathy", part: "acute", produces: "proximal_weakness",          note: "PROXIMAL as well as distal — the roots are involved, so it is not length-dependent" },
+  { id: "gbs_distal",          level: "polyradiculoneuropathy", part: "acute", produces: "distal_motor_weakness",      note: "distal weakness" },
+  { id: "gbs_hypotonia",       level: "polyradiculoneuropathy", part: "acute", produces: "hypotonia",                  note: "flaccid" },
+  { id: "gbs_areflex_biceps",  level: "polyradiculoneuropathy", part: "acute", produces: "reflex_biceps_loss",         note: "biceps jerk lost — generalised areflexia" },
+  { id: "gbs_areflex_br",      level: "polyradiculoneuropathy", part: "acute", produces: "reflex_brachioradialis_loss", note: "supinator jerk lost" },
+  { id: "gbs_areflex_triceps", level: "polyradiculoneuropathy", part: "acute", produces: "reflex_triceps_loss",        note: "triceps jerk lost" },
+  { id: "gbs_areflex_knee",    level: "polyradiculoneuropathy", part: "acute", produces: "reflex_knee_loss",           note: "knee jerk lost" },
+  { id: "gbs_areflex_ankle",   level: "polyradiculoneuropathy", part: "acute", produces: "reflex_ankle_loss",          note: "ankle jerk lost" },
+  { id: "gbs_face",            level: "polyradiculoneuropathy", part: "acute", produces: "facial_weakness", crosses: false, note: "BILATERAL LMN facial weakness (facial nerve roots) — never Bell's palsy" },
+  { id: "gbs_forehead",        level: "polyradiculoneuropathy", part: "acute", produces: "forehead_involved",          note: "LMN, so the forehead is weak too" },
+  { id: "gbs_bulbar",          level: "polyradiculoneuropathy", part: "acute", produces: "dysphagia",                  note: "bulbar weakness — swallow and cough" },
+  { id: "gbs_resp",            level: "polyradiculoneuropathy", part: "acute", produces: "weak_diaphragm",             note: "diaphragm weakness — measure the vital capacity, not the saturation" },
+  { id: "gbs_autonomic",       level: "polyradiculoneuropathy", part: "acute", produces: "autonomic_features",         note: "dysautonomia — arrhythmia and labile blood pressure" },
+
   // ---- NAMED PERIPHERAL NERVES (mononeuropathy; part = nerve) ----
   // Each nerve is a territory site: its cutaneous sensory territory + the movements it supplies. It
   // SHARES movement findings with the roots that feed it, so root-vs-nerve discriminators emerge from

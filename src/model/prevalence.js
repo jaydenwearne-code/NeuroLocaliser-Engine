@@ -11,7 +11,7 @@ export const COMMON = 2, UNCOMMON = 1, RARE = 0; // higher sorts first
 const RARE_LEVELS = new Set([
   "locked_in", "combined_degeneration", "guillain_mollaret", "pseudobulbar", "brainstem_aras",
   "thalamus_arousal", "corpus_callosum", "hypothalamus", "pontomesencephalic", "dorsal_midbrain",
-  "craniocervical_junction", "central_vestibular",
+  "craniocervical_junction", "central_vestibular", "polyradiculoneuropathy",
 ]);
 // Common by level — default for the whole level unless a rare rule fires.
 const COMMON_LEVELS = new Set(["cortex", "basal_ganglia", "root", "nerve", "polyneuropathy"]);

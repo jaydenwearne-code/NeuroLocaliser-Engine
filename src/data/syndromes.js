@@ -668,6 +668,13 @@ export const BY_SITE = {
     red: "A rapidly ascending or NON-length-dependent pattern (hands before feet, asymmetric, or areflexia out of proportion) points away from a stocking-glove axonopathy — think Guillain-Barré, vasculitis or a demyelinating neuropathy, and act urgently."
   },
 
+  polyradiculoneuropathy_acute: {
+    name: "Acute polyradiculoneuropathy (Guillain–Barré)",
+    note: "Roots and nerves inflamed together: ascending, roughly symmetric flaccid weakness over days, PROXIMAL as well as distal, with GENERALISED areflexia, often bilateral facial weakness, and few objective sensory signs — a motor-predominant picture whose danger is respiratory, bulbar and autonomic failure.",
+    ddx: ["Guillain–Barré syndrome (AIDP / AMAN)", "Acute-onset CIDP", "Botulism (descending)", "Tick paralysis", "Acute intermittent porphyria", "Hypokalaemic periodic paralysis (mimic)"],
+    red: "Measure the forced vital capacity, not the oxygen saturation — respiratory failure shows late on the monitor and early in the patient. A sensory level or early sphincter failure means cord compression until an MRI says otherwise."
+  },
+
   // ---- BRACHIAL / LUMBOSACRAL PLEXUS (root composites) ----
   plexus_upper_trunk: { name: "Erb's palsy (upper trunk, C5-6)", note: "Upper brachial plexus: the 'waiter's tip' arm — weak shoulder abduction, external rotation and elbow flexion, with C5-6 sensory loss and a depressed biceps jerk.", ddx: ["Birth injury (shoulder dystocia)", "Traction / motorcycle injury", "Rucksack palsy", "Neuralgic amyotrophy (Parsonage-Turner)"], red: "Acute painful upper-limb weakness with patchy wasting may be neuralgic amyotrophy — but exclude traction injury and malignant infiltration." },
   plexus_lower_trunk: { name: "Klumpke's palsy (lower trunk, C8-T1)", note: "Lower brachial plexus: intrinsic hand weakness (claw hand), finger flexion/abduction and thumb abduction weak, with C8-T1 sensory loss (± a Horner's from T1 sympathetic).", ddx: ["Traction (arm-up fall)", "Pancoast (apical lung) tumour", "Cervical rib / thoracic outlet", "Birth injury"], red: "A lower-trunk plexopathy with a Horner's is a Pancoast tumour until proven otherwise — image the lung apex." },

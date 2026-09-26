@@ -43,7 +43,7 @@ const REGION_ORDER = ["cortex","subcortex","corpus_callosum","thalamus","hypotha
   "midbrain","dorsal_midbrain","pons","pontomesencephalic","medulla","brainstem_aras","guillain_mollaret","locked_in",
   "cerebellum","cerebrum","thalamus_arousal","pseudobulbar","cord","combined_degeneration","cauda","conus","craniocervical_junction",
   "olfactory","visual_pathway","skull_base","peripheral_vestibular","central_vestibular","pupil","sympathetic",
-  "motor_unit","root","plexus","nerve","polyneuropathy"];
+  "motor_unit","root","plexus","nerve","polyneuropathy","polyradiculoneuropathy"];
 
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const fid = t => t.split("@")[0];

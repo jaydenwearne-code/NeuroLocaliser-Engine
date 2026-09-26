@@ -8,6 +8,10 @@ import { SITE_BY_ID } from "../src/model/sites.js";
 import { FINDINGS, CROSSES } from "../src/model/findings.js";
 import { LOCALISING } from "../src/engine/score.js";
 import { EXAM_TREE, flattenFindings } from "../app/exam-map.js";
+import { CAUSES } from "../src/data/causes.js";
+import { nextStepsFor, pathologyNextStepsFor } from "../src/data/nextSteps.js";
+import { compartmentOf } from "../src/model/compartments.js";
+import { BY_SITE } from "../src/data/syndromes.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (c ? "" : `  ${d}`)); };
@@ -151,6 +155,30 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("the VPL thalamus predicts contralateral facial sensory loss", e("left_subcortex_thalamus").has("face_sensory_loss@right"));
   ok("so does the thalamic-aphasia composite, which hand-lists the VPL rows", e("thalamic_aphasia_left").has("face_sensory_loss@right"));
   ok("the lateral midbrain is RARE (owner ruling 7)", prevalenceOf(byId("left_midbrain_lateral")) === RARE);
+}
+
+// ---- B14: the acute polyradiculoneuropathy (Guillain-Barré) site ----
+{
+  const gbs = candidateSites().find(s => s.id === "polyradiculoneuropathy_acute");
+  ok("the GBS site exists, bilateral and SYMMETRIC", !!gbs && gbs.side === "bilateral" && !gbs.asymmetric);
+  const e = gbs ? expectedFindings(gbs) : new Set();
+  const want = ["lmn_weakness@left", "proximal_weakness@right", "distal_motor_weakness@left", "hypotonia@left",
+                "reflex_biceps_loss@left", "reflex_brachioradialis_loss@left", "reflex_triceps_loss@left", "reflex_knee_loss@right",
+                "reflex_ankle_loss@left", "facial_weakness@left", "forehead_involved@right", "dysphagia@left", "weak_diaphragm@right",
+                "autonomic_features@left"];
+  ok("it predicts motor, areflexia, LMN face, bulbar, respiratory and autonomic failure", want.every(t => e.has(t)), want.filter(t => !e.has(t)).join(", "));
+  ok("it predicts NO sensory loss (owner: motor-predominant)", ![...e].some(t => /sensory/.test(t)));
+  ok("compartment root, RARE", !!gbs && compartmentOf(gbs) === "root" && prevalenceOf(gbs) === RARE);
+  ok("it has a phonebook entry", !!BY_SITE.polyradiculoneuropathy_acute);
+  const causes = CAUSES.polyradiculoneuropathy_acute || [];
+  ok(`it has a curated cause list (${causes.length} ≥ 6, each with a feature, ≥1 red)`,
+     causes.length >= 6 && causes.every(c => c.feature) && causes.some(c => c.red));
+  const nx = gbs ? nextStepsFor(gbs) : {};
+  ok("its workup is curated, EMERGENCY, and fills all four tiers",
+     nx.curated === true && nx.urgency === "emergency" && ["immediate", "investigations", "confirmatory", "monitoring"].every(k => (nx[k] || []).length > 0));
+  ok("every cause at the site has an authored pathology plan",
+     !!gbs && causes.every(c => pathologyNextStepsFor(gbs, c.name).pathologyCurated),
+     gbs ? causes.filter(c => !pathologyNextStepsFor(gbs, c.name).pathologyCurated).map(c => c.name).join(", ") : "no site");
 }
 
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);
