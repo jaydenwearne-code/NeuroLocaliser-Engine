@@ -1,6 +1,6 @@
 # Accuracy round 1 — design (2026-09-25)
 
-**Status: APPROVED (owner, 2026-09-25) — §4B rulings recorded inline. Ready for the implementation plan.**
+**Status: IMPLEMENTED (2026-09-26) on `feat/accuracy-round-1`.** Approved by the owner 2026-09-25; §4B rulings recorded inline.
 Branch: `feat/accuracy-round-1` (off `main` at `c184fdc`).
 
 This is sub-project 1 of 3 from the 2026-09-25 request ("interrogate the engine for accuracy with all

@@ -214,5 +214,16 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("combinedNextSteps threads the onset", combinedNextSteps([ic, byId("left_root_l5")], null, { onset: "hyperacute" }).urgency === "emergency");
 }
 
+// ---- every site's own complete picture localises back to it (true on 2026-09-25; now pinned) ----
+{
+  const missing = [];
+  for (const s of candidateSites()) {
+    let E; try { E = expectedFindings(s, { dominantSide: "left" }); } catch { continue; }
+    if (!E.size) continue; // non-dominant mirrors of dominant-only cortex predict nothing, by design
+    if (!solve(E, { dominantSide: "left" }).explainAll.some(c => c.site.id === s.id)) missing.push(s.id);
+  }
+  ok("every non-empty site's complete picture is explained by that site", missing.length === 0, missing.join(", "));
+}
+
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
