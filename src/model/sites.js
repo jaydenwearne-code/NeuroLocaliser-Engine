@@ -285,7 +285,11 @@ export const DIVISION = {
   parietal:       { territory: "MCA", division: "inferior" },
   temporoparietal:{ territory: "MCA", division: "inferior" },
   temporal:       { territory: "MCA", division: "inferior" },
-  occipital:      { territory: "PCA" }
+  occipital:      { territory: "PCA" },
+  // ADDED 2026-09-26 (B10, owner-approved): the paracentral lobule (micturition, gait) and the SMA (alien limb)
+  // are medial frontal ACA territory. Without them an ACA stroke with incontinence read as two lesions.
+  paracentral:    { territory: "ACA" },
+  sma:            { territory: "ACA" }
 };
 
 // A larger lesion can span medial+lateral at one level/side (a "hemi-level" lesion).
@@ -432,8 +436,11 @@ export function composeVascularCortexSites() {
   const groups = [
     { part: "aca", parts: aca, terr: "anterior cerebral artery (medial hemisphere)" },
     { part: "mca_superior", parts: mcaSup, terr: "MCA superior division (fronto-opercular)" },
-    { part: "mca_inferior", parts: mcaInf, terr: "MCA inferior division (temporoparietal)" },
-    { part: "mca", parts: [...mcaSup, ...mcaInf], deepParts: ["internal_capsule"], terr: "complete MCA territory (cortical + deep lenticulostriate)" },
+    // B2 (2026-09-26, owner-approved): both the inferior division and the complete MCA reach the geniculo-
+    // calcarine radiation, so both predict homonymous hemianopia — the inferior division already predicted
+    // BOTH quadrantanopias. The superior division does not.
+    { part: "mca_inferior", parts: mcaInf, deepParts: ["optic_radiation"], terr: "MCA inferior division (temporoparietal)" },
+    { part: "mca", parts: [...mcaSup, ...mcaInf], deepParts: ["internal_capsule", "optic_radiation"], terr: "complete MCA territory (cortical + deep lenticulostriate)" },
     { part: "pca", parts: pca, terr: "posterior cerebral artery (occipital)" }
   ];
 
@@ -723,10 +730,12 @@ export function composeGuillainMollaretSites() {
 // structures) + a dominant aphasia feature, so they are never leaner than the plain site for a pure
 // sensory / motor input and win only when the aphasia feature accompanies the subcortical company.
 export function composeAphasiaSites() {
-  const perisylvian = ["ctx_broca_fluency", "ctx_broca_repetition", "ctx_wernicke_comp", "ctx_wernicke_repetition", "ctx_arcuate"];
-  const bothWatersheds = ["ctx_tcma", "ctx_tcsa"];
-  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_pain"];
-  const striatocapsular = ["sc_aphasia_nonfluent", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_spast"];
+  const perisylvian = ["ctx_broca_fluency", "ctx_broca_repetition", "ctx_broca_naming", "ctx_wernicke_comp", "ctx_wernicke_repetition", "ctx_wernicke_naming", "ctx_arcuate", "ctx_arcuate_naming"];
+  const bothWatersheds = ["ctx_tcma", "ctx_tcma_naming", "ctx_tcsa", "ctx_tcsa_naming"];
+  // thal_face keeps this composite in step with the VPL site (B11): without it the NON-dominant composite —
+  // whose dominant-only rows emit nothing — is a VPL lesion missing the face, and out-ranks the real one.
+  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face", "thal_pain"];
+  const striatocapsular = ["sc_aphasia_nonfluent", "sc_aphasia_naming", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_spast"];
   const out = [];
   for (const side of SIDES) {
     out.push({ id: `aphasia_global_${side}`, side, level: "cortex", part: "aphasia_global",

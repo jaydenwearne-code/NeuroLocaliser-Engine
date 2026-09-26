@@ -26,8 +26,9 @@ const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 // capsular lacune is UMN, so this is clinically correct and keeps the pure-motor picture an exact match.
 ok("internal_capsule -> face+arm+leg (dense hemiparesis) + Babinski + Hoffmann + spasticity",
    eq(subOf("internal_capsule"), ["babinski","facial_weakness","forehead_spared","hoffmann","spasticity","weak_arm","weak_leg"].sort()));
-ok("thalamus -> dorsal+spinothalamic+thalamic_pain",
-   eq(subOf("thalamus"), ["dorsal_sensory","spinothalamic","thalamic_pain"].sort()));
+// + VPM face since accuracy round 1 (B11, 2026-09-26): the pure-sensory lacune is face, arm and leg.
+ok("thalamus -> dorsal+spinothalamic+face+thalamic_pain",
+   eq(subOf("thalamus"), ["dorsal_sensory","face_sensory_loss","spinothalamic","thalamic_pain"].sort()));
 ok("optic_radiation -> homonymous_hemianopia", eq(subOf("optic_radiation"), ["homonymous_hemianopia"]));
 // Approach A invariant: no bespoke dense-hemiparesis token; reuse the somatotopic findings.
 ok("no dense_hemiparesis finding invented", !isFinding("dense_hemiparesis"));
@@ -120,9 +121,9 @@ import { solve } from "../src/engine/inverse.js";
   ok("VPL thalamus is a ranked candidate for pure sensory loss",
      single.some(r => r.site.id === "left_subcortex_thalamus"));
 }
-// Déjerine–Roussy: the same thalamus site, now with central pain — an exact match.
+// Déjerine–Roussy: the same thalamus site, now with central pain — face, arm and leg (B11, 2026-09-26).
 {
-  const res = solve(new Set(["dorsal_sensory@right","spinothalamic@right","thalamic_pain@right"]));
+  const res = solve(new Set(["dorsal_sensory@right","spinothalamic@right","face_sensory_loss@right","thalamic_pain@right"]));
   ok("thalamic pain -> left_subcortex_thalamus (exact)", res.best && res.best.site.id === "left_subcortex_thalamus");
   ok("Déjerine–Roussy over-predicts nothing", res.best && res.best.missedByPatient.length === 0);
 }

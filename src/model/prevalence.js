@@ -26,8 +26,10 @@ const COMMON_PARTS = new Set([
 ]);
 // Rare by (level, part).
 // anterior-canal BPPV is the rarest canal (owner ruling 2026-09-26: once the canals predict vertigo, an
-// alphabetical tie-break put it first for isolated vertigo)
-const RARE_PARTS = new Set(["cerebellum/pancerebellar", "cord/transverse", "peripheral_vestibular/anterior_canal"]);
+// alphabetical tie-break put it first for isolated vertigo). The isolated lateral-midbrain sensory syndrome
+// is rare (owner ruling 7, 2026-09-26): it predicts the same pure hemisensory picture as the VPL thalamus,
+// which is the common lacune.
+const RARE_PARTS = new Set(["cerebellum/pancerebellar", "cord/transverse", "peripheral_vestibular/anterior_canal", "midbrain/lateral"]);
 
 export function prevalenceOf(site) {
   const lp = `${site.level}/${site.part}`;

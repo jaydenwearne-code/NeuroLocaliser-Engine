@@ -133,5 +133,25 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
      !cs.some(s => s.level === "cord" && s.part === "autonomic"));
 }
 
+// ---- B2 / B8 / B9 / B10 / B11 / ruling 7: supratentorial ----
+{
+  const cs = candidateSites(); const byId = id => cs.find(s => s.id === id);
+  const e = id => expectedFindings(byId(id), { dominantSide: "left" });
+  ok("the complete MCA predicts homonymous hemianopia", e("left_cortex_mca").has("homonymous_hemianopia@right"));
+  ok("the MCA inferior division predicts homonymous hemianopia", e("left_cortex_mca_inferior").has("homonymous_hemianopia@right"));
+  ok("the MCA superior division does not", !e("left_cortex_mca_superior").has("homonymous_hemianopia@right"));
+  ok("Percheron predicts amnesia", e("thalamus_bilateral_percheron").has("amnesia@none"));
+  const aph = ["left_cortex_operculum", "left_cortex_temporoparietal", "left_cortex_arcuate", "left_cortex_watershed_anterior",
+               "left_cortex_watershed_posterior", "aphasia_global_left", "aphasia_mixed_transcortical_left", "striatocapsular_aphasia_left",
+               "left_cortex_mca_superior", "left_cortex_mca_inferior", "left_cortex_mca"];
+  ok("every dominant aphasia site predicts anomia", aph.every(id => e(id).has("naming_impaired@none")), aph.filter(id => !e(id).has("naming_impaired@none")).join(", "));
+  ok("the non-dominant operculum does not", !expectedFindings(byId("right_cortex_operculum"), { dominantSide: "left" }).has("naming_impaired@none"));
+  ok("the ACA predicts incontinence, gait apraxia and alien limb",
+     ["urinary_incontinence@none", "gait_apraxia@none", "alien_limb@none"].every(t => e("left_cortex_aca").has(t)));
+  ok("the VPL thalamus predicts contralateral facial sensory loss", e("left_subcortex_thalamus").has("face_sensory_loss@right"));
+  ok("so does the thalamic-aphasia composite, which hand-lists the VPL rows", e("thalamic_aphasia_left").has("face_sensory_loss@right"));
+  ok("the lateral midbrain is RARE (owner ruling 7)", prevalenceOf(byId("left_midbrain_lateral")) === RARE);
+}
+
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

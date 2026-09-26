@@ -225,6 +225,10 @@ export const STRUCTURES = [
     note: "frontal operculum (Broca) — non-fluent output; dominant hemisphere" },
   { id: "ctx_broca_repetition", level: "cortex", part: "operculum", produces: "repetition_impaired", hemisphere: "dominant",
     note: "frontal operculum (Broca) — impaired repetition (perisylvian); dominant hemisphere" },
+  // ADDED 2026-09-26 (B9): anomia is part of EVERY aphasia (score.js already said so), but only the angular
+  // gyrus and the thalamus predicted it, so Broca or Wernicke with anomia read as two lesions.
+  { id: "ctx_broca_naming", level: "cortex", part: "operculum", produces: "naming_impaired", hemisphere: "dominant",
+    note: "frontal operculum (Broca) — word-finding failure; anomia accompanies every aphasia" },
   { id: "ctx_motor_prosody", level: "cortex", part: "operculum", produces: "motor_dysprosody", hemisphere: "nondominant",
     note: "right frontal operculum homologue — non-dominant motor aprosodia" },
   { id: "ctx_fef",         level: "cortex", part: "frontal_eye_field", produces: "gaze_deviation",
@@ -283,15 +287,23 @@ export const STRUCTURES = [
     note: "dominant temporoparietal (Wernicke) — impaired comprehension" },
   { id: "ctx_wernicke_repetition", level: "cortex", part: "temporoparietal", produces: "repetition_impaired", hemisphere: "dominant",
     note: "dominant temporoparietal (Wernicke) — impaired repetition (perisylvian)" },
+  { id: "ctx_wernicke_naming", level: "cortex", part: "temporoparietal", produces: "naming_impaired", hemisphere: "dominant",
+    note: "dominant temporoparietal (Wernicke) — anomia with paraphasic errors" },
   { id: "ctx_sensory_prosody", level: "cortex", part: "temporoparietal", produces: "sensory_dysprosody", hemisphere: "nondominant",
     note: "non-dominant temporoparietal — sensory aprosodia" },
   // The rest of the perisylvian / watershed language map (all dominant; new parts, NOT in DIVISION).
   { id: "ctx_arcuate", level: "cortex", part: "arcuate", produces: "repetition_impaired", hemisphere: "dominant",
     note: "arcuate fasciculus / supramarginal gyrus — CONDUCTION aphasia (repetition impaired, fluency + comprehension intact)" },
+  { id: "ctx_arcuate_naming", level: "cortex", part: "arcuate", produces: "naming_impaired", hemisphere: "dominant",
+    note: "arcuate / supramarginal (conduction) — naming marred by phonemic paraphasias" },
   { id: "ctx_tcma", level: "cortex", part: "watershed_anterior", produces: "speech_nonfluent", hemisphere: "dominant",
     note: "anterior watershed (ACA-MCA border / SMA) — TRANSCORTICAL MOTOR (non-fluent, repetition SPARED)" },
+  { id: "ctx_tcma_naming", level: "cortex", part: "watershed_anterior", produces: "naming_impaired", hemisphere: "dominant",
+    note: "anterior watershed (transcortical motor) — anomia" },
   { id: "ctx_tcsa", level: "cortex", part: "watershed_posterior", produces: "comprehension_impaired", hemisphere: "dominant",
     note: "posterior watershed (MCA-PCA border) — TRANSCORTICAL SENSORY (impaired comprehension, repetition SPARED)" },
+  { id: "ctx_tcsa_naming", level: "cortex", part: "watershed_posterior", produces: "naming_impaired", hemisphere: "dominant",
+    note: "posterior watershed (transcortical sensory) — marked anomia" },
   { id: "ctx_anomic", level: "cortex", part: "angular", produces: "naming_impaired", hemisphere: "dominant",
     note: "angular gyrus — ANOMIC aphasia (isolated naming failure; the least-localising aphasia)" },
   // Subcortical aphasia feature structures (composer-only level so they don't pollute the plain
@@ -302,6 +314,8 @@ export const STRUCTURES = [
     note: "dominant thalamus — anomia of thalamic aphasia" },
   { id: "sc_aphasia_nonfluent",level: "aphasia_subcortical", part: "striatocapsular", produces: "speech_nonfluent", hemisphere: "dominant",
     note: "dominant striatum / internal capsule — striatocapsular aphasia (non-fluent, dysarthric)" },
+  { id: "sc_aphasia_naming", level: "aphasia_subcortical", part: "striatocapsular", produces: "naming_impaired", hemisphere: "dominant",
+    note: "dominant striatum / internal capsule — anomia of striatocapsular aphasia" },
   { id: "ctx_hallucinations", level: "cortex", part: "temporal", produces: "hallucinations",
     note: "temporal lobe (either side) — hallucinations / episodic fear" },
   { id: "ctx_mood",        level: "cortex", part: "temporal", produces: "mood_change",
@@ -354,6 +368,10 @@ export const STRUCTURES = [
     note: "VPL thalamus — the relay for the (already crossed) spinothalamic tract" },
   { id: "thal_pain", level: "subcortex", part: "thalamus", produces: "thalamic_pain",
     note: "VPL thalamus — central post-stroke pain (Déjerine–Roussy), the same lesion delayed" },
+  // ADDED 2026-09-26 (B11): VPM sits beside VPL, and the pure-sensory lacune is face, arm AND leg — as this
+  // site's own phonebook note says. Without it a pure sensory stroke localised to the lateral midbrain.
+  { id: "thal_face", level: "subcortex", part: "thalamus", produces: "face_sensory_loss",
+    note: "VPM beside VPL — contralateral facial sensory loss (the pure-sensory lacune is face-arm-leg)" },
   // Other thalamic nuclei — a DEDICATED `thalamus` level (like thalamus_arousal / aphasia_subcortical), so the
   // `subcortex/thalamus` VPL relay is untouched and the subcortex "no gated structure" invariant holds.
   { id: "thal_vpm",  level: "thalamus", part: "vpm", produces: "face_sensory_loss",
@@ -534,6 +552,9 @@ export const STRUCTURES = [
     note: "intralaminar / paramedian thalamus — arousal relay of the ARAS; BILATERAL only (artery of Percheron)" },
   { id: "thal_vgaze_bilat", level: "thalamus_arousal", part: "paramedian", produces: "vertical_gaze_palsy", bilateralOnly: true,
     note: "meso-diencephalic junction — Percheron's vertical gaze palsy; BILATERAL only" },
+  // ADDED 2026-09-26 (B8): memory and confusion are the third limb of the Percheron triad (its own note).
+  { id: "thal_amnesia_bilat", level: "thalamus_arousal", part: "paramedian", produces: "amnesia", bilateralOnly: true,
+    note: "bilateral paramedian (dorsomedial) thalami — amnesia / confusion (Percheron)" },
   { id: "aras_brainstem", level: "brainstem_aras", part: "paramedian_tegmentum", produces: "reduced_consciousness",
     note: "paramedian rostral pons/midbrain tegmentum — ascending reticular activating system (arousal)" },
   { id: "aras_posturing", level: "brainstem_aras", part: "paramedian_tegmentum", produces: "extensor_posturing",
