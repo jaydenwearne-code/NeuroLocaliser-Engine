@@ -44,6 +44,14 @@ const stepOf = (w, tok) => w.steps.find(s => s.token === tok);
   ok("…the face step could arise only at pons or medulla", face.where === "pons, medulla", face.where);
 }
 {
+  // A SHARED finding (ptosis: CN III or sympathetic) takes its pathway from its carrier's siblings at the same
+  // site — the sympathetic ptosis in Wallenberg rides with the sympathetic miosis, not with the cranial nerves.
+  const { w } = chainFor(["face_pain_loss@left", "spinothalamic@right", "ptosis@left", "miosis@left", "dysphagia@left"]);
+  ok("a sympathetic ptosis is explained as the uncrossed sympathetic pathway", /does not cross/.test(stepOf(w, "ptosis@left").reason), stepOf(w, "ptosis@left").reason);
+  const weber = chainFor(["ptosis@left", "weak_adduction@left", "weak_arm@right", "weak_leg@right"]).w;
+  ok("…while a CN III ptosis is explained as a cranial nerve", /cranial nerves serve their own side/.test(stepOf(weber, "ptosis@left").reason), stepOf(weber, "ptosis@left").reason);
+}
+{
   const { w } = chainFor(["ptosis@left", "weak_adduction@left", "weak_arm@right", "weak_leg@right"]);
   ok("Weber meets at the midbrain", w.verdict === "one" && JSON.stringify(w.meet.stations) === '["midbrain"]');
   ok("…arm weakness is opposite side across the pyramidal decussation",

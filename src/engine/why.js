@@ -55,12 +55,15 @@ function relationOf(token, site) {
 // Why is this finding on this side? The relation is already decided by the forward model; this only explains
 // it. A tract is chosen by finding MEMBERSHIP (not course level): the relation is derived, the tract only
 // supplies the words — and the pontine Horner rows sit at a level the oculosympathetic course does not list.
-export function reasonFor(finding, relation, struct, station) {
+// A SHARED finding on no tract (ptosis: CN III or sympathetic) takes the tract of a SIBLING — a structure at
+// the same site with the same carrier — so a sympathetic ptosis rides with the sympathetic miosis.
+export function reasonFor(finding, relation, struct, station, siblingFindings = []) {
   if (relation === "both") return REASON.both;
   if (relation === "midline") return REASON.midline;
   if (relation === "none") return struct?.hemisphere === "dominant" ? REASON.noneDominant
     : struct?.hemisphere === "nondominant" ? REASON.noneNondominant : REASON.none;
-  const tract = TRACTS.find(t => t.findings.includes(finding));
+  const tract = TRACTS.find(t => t.findings.includes(finding))
+    || TRACTS.find(t => siblingFindings.some(f => t.findings.includes(f)));
   if (tract) {
     if (relation === "same" && TRACT_SAME[tract.id]) return TRACT_SAME[tract.id];
     if (tract.decussation && tract.decussation.label) {
@@ -84,17 +87,19 @@ export function whyChain(observedSet, site, opts = {}) {
   const toks = [...observedSet].filter(t => idx.has(t));
   const station = stationOf(site);
   const ex = explain(site, opts);
+  const carrierOf = e => STRUCTURE_BY_ID[e.structure].note.split(" — ")[0];
   const steps = toks.map((token, order) => {
     const [finding, bodySide] = token.split("@");
     const e = ex.find(x => `${x.finding}@${x.bodySide}` === token);
     const struct = e ? STRUCTURE_BY_ID[e.structure] : null;
     const stations = [...idx.get(token)].sort(byOrder);
     const relation = relationOf(token, site);
+    const siblings = e ? ex.filter(x => x.finding !== finding && carrierOf(x) === carrierOf(e)).map(x => x.finding) : [];
     return {
       token, finding, bodySide, explained: !!e,
       carrier: struct ? struct.note.split(" — ")[0] : null,
       structure: struct ? struct.id : null,
-      relation, reason: e ? reasonFor(finding, relation, struct, station) : "",
+      relation, reason: e ? reasonFor(finding, relation, struct, station, siblings) : "",
       stations, where: renderWhere(stations), order,
     };
   }).sort((a, b) => a.stations.length - b.stations.length || a.order - b.order);

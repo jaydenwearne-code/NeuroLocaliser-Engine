@@ -74,6 +74,14 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .sc.on { background:var(--sel-bg); color:var(--ink); border-color:var(--navy-2); }
   .why-list{display:flex;flex-direction:column;gap:4px;} .why-item{display:flex;gap:8px;align-items:baseline;font-size:var(--fs-body);} .why-item .k{width:16px;text-align:center;} .ok{color:var(--ipsi);} .no{color:var(--contra);} .warn{color:var(--gold);}
   .why-item .t{font-family:var(--mono);font-size:var(--fs-meta);} .why-item .d{color:var(--muted);font-size:var(--fs-meta);}
+  .wc-h{font-size:var(--fs-body);font-weight:600;margin:4px 0 6px;color:var(--ink);}
+  .why-chain{display:flex;flex-direction:column;gap:8px;}
+  .wc-step{border-left:2px solid var(--line);padding-left:8px;}
+  .wc-f{font-size:var(--fs-body);color:var(--ink);}
+  .wc-d{font-size:var(--fs-meta);color:var(--ink);line-height:1.45;}
+  .wc-d.wc-no{color:var(--muted);}
+  .wc-w{font-size:var(--fs-meta);color:var(--muted);}
+  .wc-meet{font-size:var(--fs-body);font-weight:600;margin:10px 0 2px;color:var(--ink);line-height:1.45;}
   .annot{font-size:var(--fs-body);color:var(--muted);background:var(--band);border-radius:8px;padding:7px 9px;margin-top:8px;} .annot b{color:var(--ink);}
   .multi{border:1px dashed var(--contra);border-radius:9px;padding:9px 10px;margin-top:8px;font-size:var(--fs-body);background:var(--contra-bg);}
   /* causes */
@@ -106,8 +114,6 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   footer{margin-top:20px;font-size:var(--fs-meta);color:var(--faint);}
   /* why-synthesis (Sub-project B) */
   .synth{font-size:var(--fs-body);line-height:1.5;margin:6px 0;color:var(--ink);}
-  .synth .cross{color:var(--muted);}
-  .synth.converge{border-left:2px solid var(--navy-2);padding-left:8px;}
   .why-site>summary{cursor:pointer;font-size:var(--fs-body);color:var(--muted);}
   /* THE COMPARE PANEL — what separates the locations the reader is choosing between. */
   .cmp{display:flex;align-items:center;padding:0 2px;cursor:pointer;}
@@ -141,10 +147,6 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .out-cap .oc-n{color:var(--muted);letter-spacing:0;}
   .nx-toggle>summary{cursor:pointer;font-size:var(--fs-body);color:var(--muted);}
   .what-cap{font-size:var(--fs-meta);color:var(--muted);margin:0 0 6px;}
-  .whynot{font-size:var(--fs-body);line-height:1.5;margin:6px 0;color:var(--ink);}
-  .whynot-list{margin:4px 0 2px;padding-left:18px;}
-  .whynot-list li{margin:2px 0;}
-  .whynot .wn-terr{color:var(--faint);font-family:var(--mono);font-size:var(--fs-cap);}
   /* entry gate + safety bar (ED stress-test build) */
   #gate,#app-shell{display:none;}
   .gate{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:24px;
