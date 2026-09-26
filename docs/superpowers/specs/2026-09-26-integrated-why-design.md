@@ -1,6 +1,6 @@
 # Integrated Why — design (2026-09-26)
 
-**Status: DESIGN — approved in conversation 2026-09-26; ⚠ the two content tables (§4) await owner review.**
+**Status: APPROVED (owner, 2026-09-26), including the §4.2 and §4.3 tables.** Refinements found while prototyping are in §6.
 Branch: `feat/integrated-why` (off `feat/accuracy-round-1`, whose engine changes it uses).
 
 Sub-project 2 of 3 from the 2026-09-25 request: *"the why should integrate all of the findings to explain
@@ -161,3 +161,27 @@ separate work.
   every finding, the meet contains the first-ranked site's station (where none does, the meet is empty and the
   verdict is `none`, by design).
 - `whyCard` is DOM-bound: parse-checked by `test/app-smoke.test.js`, verified in the browser.
+
+## 6. Refinements from prototyping (2026-09-26, before the plan)
+
+Prototyped end to end against the repo before writing the plan; all spec cases behave as §2 describes and
+every one of the 364 non-empty sites' own pictures meets at its own station.
+
+1. **Side-reason wording made direction-free.** "far/near side of the crossing" was ambiguous (a descending
+   tract in the cord has crossed ABOVE; an ascending tract in the medulla has not crossed yet — both are
+   "same side"). The phrases now read *"…crosses at the {crossing}, and that crossing lies between this
+   level and the side it serves"* (opposite) / *"…but that crossing does not lie between this level and the
+   side it serves"* (same) — correct for descending, ascending and ocular pathways alike.
+2. **Two tract-specific same-side phrases** (content, `TRACT_SAME`): the cerebellar outflow crosses TWICE,
+   so its net same side must not read "does not cross"; the oculosympathetic pathway genuinely does not.
+3. **Tract chosen by finding membership, not by course level.** The pontine Horner rows (round-1 follow-up)
+   sit at a level the oculosympathetic course table does not list; the relation is already derived, so the
+   tract only supplies the explanation.
+4. **`meet` = the differential's explain-all set** mapped to (station, side), rather than a raw
+   intersection of possible places. It applies the known-negative rule, so the Why and the Where cannot
+   disagree (a raw intersection let locked-in "meet" a right-arm + left-leg picture).
+5. **Station label shortened**: "deep white matter" (the internal capsule is deep white matter), so the
+   verdict sentence reads "the left deep white matter" rather than a clause.
+6. **The Why-agrees-with-Where invariant is asserted over every site's complete picture** (364 cases)
+   rather than only the 84 vignettes, which cannot be imported (each suite exits on completion).
+
