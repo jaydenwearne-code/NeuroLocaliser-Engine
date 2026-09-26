@@ -438,10 +438,19 @@ export const STRUCTURES = [
     note: "labyrinth / vestibular nerve — vertigo (vestibular neuritis, labyrinthitis, Ménière, BPPV)" },
   { id: "vest_head_impulse", level: "peripheral_vestibular", part: "labyrinth", produces: "head_impulse_abnormal",
     note: "labyrinth / vestibular nerve — abnormal head impulse (corrective saccade); the peripheral HINTS sign" },
+  // ADDED 2026-09-26 (B4, owner-approved): the labyrinth now predicts hearing loss. Vestibular neuritis (no
+  // hearing loss) still matches — the hearing becomes an unreported prediction — while labyrinthitis and
+  // Ménière no longer read as "labyrinth + CPA". This REVERSES the earlier neuritis-only modelling.
+  { id: "vest_periph_hearing", level: "peripheral_vestibular", part: "labyrinth", produces: "hearing_loss",
+    note: "cochlea (labyrinthine artery) — IPSI sensorineural hearing loss: labyrinthitis / Ménière" },
   // canal-specific BPPV — positional nystagmus DIRECTION localises the semicircular canal
   { id: "bppv_post",  level: "peripheral_vestibular", part: "posterior_canal",  produces: "nystagmus_positional_posterior",  note: "posterior semicircular canal — up-beat torsional positional nystagmus (BPPV)" },
   { id: "bppv_horiz", level: "peripheral_vestibular", part: "horizontal_canal", produces: "nystagmus_positional_horizontal", note: "horizontal (lateral) canal — horizontal positional nystagmus (BPPV)" },
   { id: "bppv_ant",   level: "peripheral_vestibular", part: "anterior_canal",   produces: "nystagmus_positional_anterior",   note: "anterior canal — down-beat torsional positional nystagmus (BPPV, rare)" },
+  // ADDED 2026-09-26 (B3): BPPV is VERTIGO — without these, vertigo + a positive Dix-Hallpike read as two lesions.
+  { id: "bppv_post_vertigo",  level: "peripheral_vestibular", part: "posterior_canal",  produces: "cn8_vertigo", note: "posterior canal BPPV — brief positional vertigo" },
+  { id: "bppv_horiz_vertigo", level: "peripheral_vestibular", part: "horizontal_canal", produces: "cn8_vertigo", note: "horizontal canal BPPV — positional vertigo on rolling" },
+  { id: "bppv_ant_vertigo",   level: "peripheral_vestibular", part: "anterior_canal",   produces: "cn8_vertigo", note: "anterior canal BPPV — positional vertigo" },
 
   // ---- CENTRAL VESTIBULAR (vestibular nucleus / nodulus) — the lean HINTS-central AVS site ----
   // The central counterpart to the peripheral labyrinth: continuous vertigo with a NORMAL head impulse,

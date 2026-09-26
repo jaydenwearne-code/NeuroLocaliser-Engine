@@ -107,5 +107,16 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("the lateral pons predicts the AICA features, all ipsilateral", want.every(t => e.has(t)), want.filter(t => !e.has(t)).join(", "));
 }
 
+// ---- B3 / B4 / ruling 8: the vestibular periphery ----
+{
+  const cs = candidateSites(); const byId = id => cs.find(s => s.id === id);
+  for (const c of ["posterior_canal", "horizontal_canal", "anterior_canal"])
+    ok(`BPPV ${c} predicts vertigo on its own side`, expectedFindings(byId(`left_peripheral_vestibular_${c}`)).has("cn8_vertigo@left"));
+  ok("the labyrinth predicts hearing loss (labyrinthitis / Ménière)", expectedFindings(byId("left_peripheral_vestibular_labyrinth")).has("hearing_loss@left"));
+  ok("posterior-canal BPPV is COMMON", prevalenceOf(byId("left_peripheral_vestibular_posterior_canal")) === COMMON);
+  ok("anterior-canal BPPV is RARE", prevalenceOf(byId("left_peripheral_vestibular_anterior_canal")) === RARE);
+  ok("horizontal-canal BPPV stays UNCOMMON", prevalenceOf(byId("left_peripheral_vestibular_horizontal_canal")) === UNCOMMON);
+}
+
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

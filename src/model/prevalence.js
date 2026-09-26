@@ -21,9 +21,13 @@ const COMMON_BILATERAL_LEVELS = new Set(["polyneuropathy"]);
 const COMMON_PARTS = new Set([
   "subcortex/internal_capsule", "subcortex/corona_radiata",
   "subcortex/anterior_choroidal", "subcortex/sensorimotor",
+  // posterior-canal BPPV — the commonest cause of vertigo (owner ruling 2026-09-26)
+  "peripheral_vestibular/posterior_canal",
 ]);
 // Rare by (level, part).
-const RARE_PARTS = new Set(["cerebellum/pancerebellar", "cord/transverse"]);
+// anterior-canal BPPV is the rarest canal (owner ruling 2026-09-26: once the canals predict vertigo, an
+// alphabetical tie-break put it first for isolated vertigo)
+const RARE_PARTS = new Set(["cerebellum/pancerebellar", "cord/transverse", "peripheral_vestibular/anterior_canal"]);
 
 export function prevalenceOf(site) {
   const lp = `${site.level}/${site.part}`;

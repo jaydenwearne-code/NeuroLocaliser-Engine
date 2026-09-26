@@ -240,7 +240,11 @@ const tokensFor = (...ids) => new Set(ids.flatMap(id => [...expectedFindings(sit
   const { solve } = await import("../src/engine/inverse.js");
   const left = siteById("left_peripheral_vestibular_labyrinth");
   const right = siteById("right_peripheral_vestibular_labyrinth");
-  const toks = new Set([...expectedFindings(left), ...expectedFindings(right)]);
+  // Explicit tokens, not the two sites' full predictions: since 2026-09-26 each labyrinth also predicts
+  // hearing loss, and a side contributing two findings has no SINGLE forcing finding — which is not what
+  // this block tests. Vertigo on each side is the one finding the other labyrinth cannot explain.
+  const toks = new Set(["nystagmus_peripheral@none", "head_impulse_abnormal@none", "cn8_vertigo@left", "cn8_vertigo@right"]);
+  void left; void right;
   const f = forcingFindings(toks, {});
   ok("both mirrored labyrinth lesions produce two forcing findings", f.findings.length === 2,
      JSON.stringify(f.findings));
