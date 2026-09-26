@@ -2,7 +2,8 @@
 // Content (which structures sit where) is asserted in the regional suites; this suite pins the machinery.
 import { STRUCTURE_BY_ID } from "../src/model/structures.js";
 import { expectedFindings, explain } from "../src/engine/forward.js";
-import { candidateSites, differential, ruledOutSites } from "../src/engine/inverse.js";
+import { candidateSites, differential, ruledOutSites, solve, PREVALENCE_ALLOWANCE, rankKey } from "../src/engine/inverse.js";
+import { prevalenceOf, COMMON, UNCOMMON, RARE } from "../src/model/prevalence.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (c ? "" : `  ${d}`)); };
@@ -49,6 +50,35 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
      !ids(["distal_sensory_loss@left"]).includes("polyneuropathy_length_dependent"));
   const ruled = ruledOutSites(new Set(["fatigable_ocular@left", "fasciculations@left"]), { dominantSide: "left" });
   ok("ruledOutSites never lists an asymmetric site", !ruled.some(x => x.site.asymmetric), ruled.map(x => x.site.id).join(", "));
+}
+
+// ---- A3: tighter-fit ranking ----
+{
+  ok("each prevalence tier is worth 3 unreported predictions", PREVALENCE_ALLOWANCE === 3);
+  ok("rankKey = over − 3 × prevalence", rankKey({ over: 7, prevalence: 2 }) === 1 && rankKey({ over: 0, prevalence: 0 }) === 0);
+  // Transitivity: the order must be a total preorder, or Array.sort is undefined. Check every pair of a
+  // large real differential against the documented key.
+  const d = differential(new Set(["weak_arm@left"]), { dominantSide: "left" });
+  let consistent = true;
+  for (let i = 0; i < d.length; i++) for (let j = i + 1; j < d.length; j++) {
+    const a = d[i], b = d[j];
+    const before = a.n > b.n || (a.n === b.n && (rankKey(a) < rankKey(b) || (rankKey(a) === rankKey(b)
+      && (a.prevalence > b.prevalence || (a.prevalence === b.prevalence && (a.over < b.over
+      || (a.over === b.over && a.site.id.localeCompare(b.site.id) <= 0)))))));
+    if (!before) consistent = false;
+  }
+  ok(`the differential is a total order under the documented key (${d.length} candidates)`, consistent);
+  const first = toks => solve(new Set(toks), { dominantSide: "left" }).display[0]?.site.id;
+  ok("thalamic pain → the thalamus, not the sensorimotor stroke that predicts 7 unreported signs",
+     first(["thalamic_pain@left"]) === "right_subcortex_thalamus", first(["thalamic_pain@left"]));
+}
+
+// ---- A6: prevalence ordering ----
+{
+  const cs = candidateSites(); const byId = id => cs.find(s => s.id === id);
+  ok("length-dependent polyneuropathy is COMMON (the bilateral rule no longer shadows it)",
+     prevalenceOf(byId("polyneuropathy_length_dependent")) === COMMON);
+  ok("other bilateral sites stay RARE", ["locked_in", "motor_unit_muscle", "bilateral_cord_transverse"].every(id => prevalenceOf(byId(id)) === RARE));
 }
 
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);

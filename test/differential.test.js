@@ -2,7 +2,7 @@
 // Every candidate site COMPATIBLE with the findings so far (predicted ⊇ some observed); ranked by how many
 // findings it explains, then tightness, then site.id (phonebook-free tie-break). explainAll = strict superset;
 // display = explainAll if any, else the full differential; defaultSite = the site to select by default.
-import { solve, differential } from "../src/engine/inverse.js";
+import { solve, differential, rankKey } from "../src/engine/inverse.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -47,15 +47,18 @@ ok("every explainAll entry has n === total", clean.explainAll.every(c => c.n ===
 // --- differential() is exported and ordering respects (n desc, over asc, site.id asc) at every step ---
 const d = differential(new Set(["weak_arm@left","weak_leg@left"]), opts);
 let ordered = true;
+// Accuracy round 1 (2026-09-26): fit is weighed against prior (rankKey) BEFORE prevalence alone — the old
+// order let a common site that over-predicts beat an exact uncommon fit. See inverse.js PREVALENCE_ALLOWANCE.
 for (let i = 1; i < d.length; i++) {
   const a = d[i - 1], b = d[i];
   const bad = a.n < b.n
-    || (a.n === b.n && a.prevalence < b.prevalence)
-    || (a.n === b.n && a.prevalence === b.prevalence && a.over > b.over)
-    || (a.n === b.n && a.prevalence === b.prevalence && a.over === b.over && a.site.id.localeCompare(b.site.id) > 0);
+    || (a.n === b.n && rankKey(a) > rankKey(b))
+    || (a.n === b.n && rankKey(a) === rankKey(b) && a.prevalence < b.prevalence)
+    || (a.n === b.n && rankKey(a) === rankKey(b) && a.prevalence === b.prevalence && a.over > b.over)
+    || (a.n === b.n && rankKey(a) === rankKey(b) && a.prevalence === b.prevalence && a.over === b.over && a.site.id.localeCompare(b.site.id) > 0);
   if (bad) { ordered = false; break; }
 }
-ok("differential is sorted by n desc, prevalence desc, over asc, then site.id asc", ordered);
+ok("differential is sorted by n desc, rankKey asc, prevalence desc, over asc, then site.id asc", ordered);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

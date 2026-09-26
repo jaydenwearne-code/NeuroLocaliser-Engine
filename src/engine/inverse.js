@@ -97,6 +97,17 @@ export function raisedPressureAxis(observedSet) {
   };
 }
 
+// ---- ranking (accuracy round 1, spec 2026-09-25 A3) ----
+// Coverage first, always. Among sites that explain the same number of findings, the old order put
+// PREVALENCE before tightness, so a common site predicting seven signs the patient does not have beat an
+// uncommon site predicting exactly what was entered (hemisensory loss → "sensorimotor stroke"; thalamic
+// pain → the same). Now each prevalence tier is worth PREVALENCE_ALLOWANCE unreported predictions.
+// A LINEAR key, deliberately: the pairwise rule first measured ("tighter wins when the gap is ≥ 3") is not
+// transitive — three sites can beat each other in a cycle — and gave identical results on every measured
+// set (84 vignettes, 364 complete pictures, 233 single findings) while this one is a total order.
+export const PREVALENCE_ALLOWANCE = 3;
+export const rankKey = c => c.over - PREVALENCE_ALLOWANCE * c.prevalence;
+
 export function differential(observedSet, opts = {}) {
   // The pressure token is stripped before matching: no site's expectedFindings contain it, so leaving it in
   // would make every site fail to explain it and collapse the differential to nothing.
@@ -119,8 +130,9 @@ export function differential(observedSet, opts = {}) {
     cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
                  n: explained.length, prevalence: prevalenceOf(site) });
   }
-  // coverage first (localisation), then prevalence (commoner lesion), then tightness, then deterministic id.
-  cands.sort((a, b) => b.n - a.n || b.prevalence - a.prevalence || a.over - b.over || a.site.id.localeCompare(b.site.id));
+  // coverage first (localisation), then fit weighed against prior (rankKey), then prevalence, tightness, id.
+  cands.sort((a, b) => b.n - a.n || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence
+    || a.over - b.over || a.site.id.localeCompare(b.site.id));
   return cands;
 }
 

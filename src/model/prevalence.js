@@ -15,6 +15,8 @@ const RARE_LEVELS = new Set([
 ]);
 // Common by level — default for the whole level unless a rare rule fires.
 const COMMON_LEVELS = new Set(["cortex", "basal_ganglia", "root", "nerve", "polyneuropathy"]);
+// Bilateral sites that are nonetheless COMMON — see the bilateral rule in prevalenceOf().
+const COMMON_BILATERAL_LEVELS = new Set(["polyneuropathy"]);
 // Common by (level, part) — the lacunar subcortical parts.
 const COMMON_PARTS = new Set([
   "subcortex/internal_capsule", "subcortex/corona_radiata",
@@ -25,7 +27,10 @@ const RARE_PARTS = new Set(["cerebellum/pancerebellar", "cord/transverse"]);
 
 export function prevalenceOf(site) {
   const lp = `${site.level}/${site.part}`;
-  if (site.side === "bilateral") return RARE;   // rare wins
+  // Bilateral sites are rare EXCEPT where the bilateral picture IS the common disease. A length-dependent
+  // polyneuropathy is bilateral by definition and the commonest neurological condition there is; listing it
+  // in COMMON_LEVELS did nothing while this rule ran first (accuracy round 1, A6).
+  if (site.side === "bilateral") return COMMON_BILATERAL_LEVELS.has(site.level) ? COMMON : RARE;
   if (RARE_LEVELS.has(site.level)) return RARE;
   if (RARE_PARTS.has(lp)) return RARE;
   if (COMMON_PARTS.has(lp)) return COMMON;      // explicit (level,part) before level default
