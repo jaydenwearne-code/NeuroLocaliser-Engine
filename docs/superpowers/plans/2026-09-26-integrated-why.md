@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: NOT YET IMPLEMENTED.** Spec: `docs/superpowers/specs/2026-09-26-integrated-why-design.md` (approved;
+**Status: IMPLEMENTED (2026-09-26).** Spec: `docs/superpowers/specs/2026-09-26-integrated-why-design.md` (approved;
 §6 records the refinements this plan implements).
 
 **Goal:** Replace the Why card's per-tract lead with a derived reasoning chain — for each entered finding, what

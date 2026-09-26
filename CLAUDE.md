@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**75 test suites / 6880 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**76 test suites / 6907 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1049,6 +1049,36 @@ localise along the tract; the integrated Why (sub-project 2) is what should say 
 
 Spec/plan: `docs/superpowers/specs/2026-09-25-accuracy-round-1-design.md`,
 `docs/superpowers/plans/2026-09-26-accuracy-round-1.md`.
+
+## Integrated Why (DONE 2026-09-26) — ✅ owner-approved tables
+
+**Branch `feat/integrated-why` (stacked on `feat/accuracy-round-1`).** The Why card used to lead with a
+per-tract Course narrative — the same textbook journey for every site on the tract — and never showed what
+decided the answer. It now leads with a DERIVED reasoning chain (`src/engine/why.js` `whyChain`): for each
+entered finding, the structure that carries it at the chosen site (its note's own words), why it is on that
+side, and every station where it could arise on its own; then where they all meet — one place, several
+(→ the compare panel), or none (→ Together). An isolated sign that does not localise says so ("an extensor
+plantar alone does not localise: cortex → cord").
+
+**`meet` is the differential's explain-all set mapped to (station, side)**, not a raw intersection: it
+applies the known-negative rule, so the Why and the Where cannot disagree (asserted over all 364 sites' own
+pictures). **Stations** (`src/model/stations.js`) project levels onto a readable neuraxis, keyed
+`${level}|${part}` for overrides; **side reasons** (`src/data/sideReasons.js`) are content only. The crossing
+phrase is direction-free on purpose — *"that crossing lies (or does not lie) between this level and the side
+it serves"* — because a descending tract in the cord has crossed above and an ascending tract in the medulla
+has not crossed yet, and both are "same side". The cerebellar outflow crosses TWICE, so its same side has its
+own sentence rather than "does not cross".
+
+**Trap found by driving the app:** a SHARED finding that sits on no tract (ptosis: CN III or sympathetic)
+read as "cranial nerves serve their own side" in Wallenberg. It now takes its pathway from a SIBLING — a
+structure at the same site with the same carrier — so a sympathetic ptosis rides with the sympathetic miosis
+while a CN III ptosis stays a cranial nerve (both asserted).
+
+`whyNotOthers()` is deleted (the compare panel answers "why not elsewhere" for the candidates actually in
+play); the Course narratives live on behind "Pathway anatomy".
+
+Spec/plan: `docs/superpowers/specs/2026-09-26-integrated-why-design.md`,
+`docs/superpowers/plans/2026-09-26-integrated-why.md`.
 
 ## Commands
 

@@ -1,6 +1,6 @@
 # Integrated Why — design (2026-09-26)
 
-**Status: APPROVED (owner, 2026-09-26), including the §4.2 and §4.3 tables.** Refinements found while prototyping are in §6.
+**Status: IMPLEMENTED (2026-09-26) on `feat/integrated-why`.** Owner-approved, including the §4.2 and §4.3 tables; refinements in §6.
 Branch: `feat/integrated-why` (off `feat/accuracy-round-1`, whose engine changes it uses).
 
 Sub-project 2 of 3 from the 2026-09-25 request: *"the why should integrate all of the findings to explain
@@ -184,4 +184,8 @@ every one of the 364 non-empty sites' own pictures meets at its own station.
    verdict sentence reads "the left deep white matter" rather than a clause.
 6. **The Why-agrees-with-Where invariant is asserted over every site's complete picture** (364 cases)
    rather than only the 84 vignettes, which cannot be imported (each suite exits on completion).
+7. **Shared findings take their pathway from a sibling** (found by driving the app). Ptosis is on no tract
+   (it is CN III or sympathetic), so in Wallenberg it read "cranial nerves serve their own side". A shared
+   finding now takes the tract of a structure at the same site with the same carrier: a sympathetic ptosis
+   rides with the sympathetic miosis; a CN III ptosis stays a cranial nerve.
 
