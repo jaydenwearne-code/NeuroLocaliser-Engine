@@ -35,8 +35,9 @@ ok("anterior_horn -> lmn_weakness + fasciculations + bulbar (dysphagia+dysarthri
    eq(muOf("anterior_horn"), ["dysphagia","dysarthria","fasciculations","hypotonia","lmn_weakness","wasting"].sort()));
 ok("anterior_horn does NOT produce umn_signs (ALS is not a site — pathology layer)",
    !muOf("anterior_horn").includes("umn_signs"));
-ok("nmj_postsynaptic -> fatigable weakness + ocular + bulbar (dysphagia+dysarthria) + proximal",
-   eq(muOf("nmj_postsynaptic"), ["dysphagia","dysarthria","fatigable_ocular","fatigable_weakness","proximal_weakness"].sort()));
+// + ptosis since 2026-09-26 (accuracy round 1 follow-up): the commonest presenting sign of myasthenia.
+ok("nmj_postsynaptic -> fatigable weakness + ocular + ptosis + bulbar (dysphagia+dysarthria) + proximal",
+   eq(muOf("nmj_postsynaptic"), ["dysphagia","dysarthria","fatigable_ocular","fatigable_weakness","proximal_weakness","ptosis"].sort()));
 ok("nmj_presynaptic -> facilitating + autonomic + proximal",
    eq(muOf("nmj_presynaptic"), ["autonomic_features","facilitating_weakness","proximal_weakness"].sort()));
 ok("muscle -> proximal weakness only", eq(muOf("muscle"), ["proximal_weakness"]));

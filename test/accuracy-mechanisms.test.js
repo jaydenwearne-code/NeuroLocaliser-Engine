@@ -214,6 +214,19 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   ok("combinedNextSteps threads the onset", combinedNextSteps([ic, byId("left_root_l5")], null, { onset: "hyperacute" }).urgency === "emergency");
 }
 
+// ---- follow-ups (2026-09-26, the round's open items) ----
+{
+  const cs = candidateSites(); const byId = id => cs.find(s => s.id === id);
+  const e = id => expectedFindings(byId(id), { dominantSide: "left" });
+  // Ptosis is the commonest presenting sign of myasthenia; without it, plain ptosis never listed MG.
+  ok("myasthenia predicts ptosis on either side", e("motor_unit_nmj_postsynaptic").has("ptosis@left") && e("motor_unit_nmj_postsynaptic").has("ptosis@right"));
+  const ids = toks => differential(new Set(toks), { dominantSide: "left" }).map(c => c.site.id);
+  ok("one-sided ptosis alone lists myasthenia", ids(["ptosis@left"]).includes("motor_unit_nmj_postsynaptic"));
+  ok("fatigable ptosis + ptosis on one side → myasthenia first, one lesion",
+     (() => { const r = solve(new Set(["fatigable_ocular@left", "ptosis@left"]), { dominantSide: "left" });
+              return r.display[0]?.site.id === "motor_unit_nmj_postsynaptic" && r.multi === null; })());
+}
+
 // ---- every site's own complete picture localises back to it (true on 2026-09-25; now pinned) ----
 {
   const missing = [];

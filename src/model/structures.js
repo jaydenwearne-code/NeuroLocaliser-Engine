@@ -801,6 +801,11 @@ export const STRUCTURES = [
     note: "post-synaptic NMJ (AChR) — fatigable weakness worsening with effort (myasthenia gravis)" },
   { id: "mg_ocular", level: "motor_unit", part: "nmj_postsynaptic", produces: "fatigable_ocular",
     note: "ocular myasthenia — fatigable ptosis and diplopia (separates MG from LEMS)" },
+  // ADDED 2026-09-26 (accuracy round 1 follow-up): ptosis is the commonest presenting sign of myasthenia, but
+  // only `fatigable_ocular` was modelled, so plain ptosis never listed MG. The site is ASYMMETRIC, so a
+  // one-sided ptosis keeps it — unilateral fatigable ptosis is the classic picture.
+  { id: "mg_ptosis", level: "motor_unit", part: "nmj_postsynaptic", produces: "ptosis",
+    note: "myasthenia — ptosis, often asymmetric and fatigable (the commonest presenting sign)" },
   { id: "mg_bulbar_dysph", level: "motor_unit", part: "nmj_postsynaptic", produces: "dysphagia",
     note: "bulbar myasthenia — fatigable dysphagia" },
   { id: "mg_bulbar_dysar", level: "motor_unit", part: "nmj_postsynaptic", produces: "dysarthria",
