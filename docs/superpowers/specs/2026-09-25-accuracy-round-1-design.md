@@ -110,6 +110,13 @@ urgent — the cry-wolf outcome the 2026-08-18 ruling exists to prevent.
    picture) currently yields a false two-lesion claim. **Included.** B7 ankle jerks only. B10 SMA joins
    the ACA composite. B12 Horner's joins the AICA picture. B14 GBS predicts no sensory loss. B16 the
    hyperacute escalation applies even when a vascular cause is selected.
+7. **Pure hemisensory loss (2026-09-26):** once B11 gives the VPL thalamus face sensation, it predicts the
+   same picture as the lateral midbrain (which gained the trigeminal lemniscus on 2026-08-25), and both
+   were "uncommon". Ruling: **the lateral midbrain becomes RARE** (`RARE_PARTS` `midbrain/lateral`), so a
+   pure sensory stroke ranks the thalamus first.
+8. **BPPV priors (2026-09-26):** B3 makes the three canals predict vertigo, so isolated vertigo ranked
+   the ANTERIOR canal first on an alphabetical tie-break. Ruling: **posterior canal COMMON, anterior canal
+   RARE**, horizontal unchanged. Isolated vertigo → posterior-canal BPPV, then the labyrinth.
 
 ---
 
@@ -130,10 +137,13 @@ by `forward.expectedFindings()` and `forward.explain()`:
 - `"bilateral"` — emit `@left` and `@right` from a midline site. For the cauda reflexes, so they match
   what a clinician enters ("absent ankle jerk, right").
 
-**A3. Tighter-fit ranking.** The `differential()` comparator becomes: coverage `n` → **if the two
-sites' over-prediction differs by ≥ `TIGHT_FIT_BAND` (3), the tighter one** → prevalence → over-prediction
-→ id. `minimalSet()` and `display` inherit it. The band is a named constant with the measurement in its
-comment.
+**A3. Tighter-fit ranking.** The `differential()` comparator becomes: coverage `n` → **`over −
+PREVALENCE_ALLOWANCE × prevalence`, lower first** (each prevalence tier is worth `PREVALENCE_ALLOWANCE` = 3
+unreported predictions) → prevalence → over-prediction → id. `minimalSet()` and `display` inherit it.
+*Why this form:* the pairwise rule first measured ("tighter wins when the gap is ≥ 3") is NOT transitive —
+three sites can beat each other in a cycle, leaving the sort order undefined. The linear key is a total
+order and produced IDENTICAL results on every measured set (84 vignettes, 364 complete pictures, 233
+single findings).
 
 **A4. Onset-aware stroke urgency.** `nextStepsFor(site, { onset })`: when `onset === "hyperacute"`, the
 site's compartment is CNS (`brain`, `brainstem`, `cerebellum`, `cord`, `optic`), and the first
@@ -204,3 +214,11 @@ row in `docs/artifacts/anatomy-model.html`. **All rulings recorded (2026-09-25).
 - **13 candidate sites predict nothing** (non-dominant mirrors of dominant-only cortex, `cord|lateral`
   without a sensory level). Correct under the gating; harmless.
 - **Isolated Babinski ranks the cortical hand knob first** — noted for the owner; not changed.
+- **Consequences found by prototyping (2026-09-26), handled in the plan, not new clinical claims:** the
+  Wallenberg worked example (no bulbar sign) now ties with the AICA lateral pons, which is anatomically
+  honest — it gains `dysphagia` so it still teaches Wallenberg; the right-sided (non-dominant) thalamic
+  aphasia composite hand-lists the VPL rows and must gain the new face row or it out-ranks the thalamus;
+  21 existing assertions encoded exact predicted sets that the approved additions change on purpose.
+- **Follow-ups for the owner, not in this round:** myasthenia does not predict `ptosis` (only
+  `fatigable_ocular`), so plain ptosis never lists MG; the new pontine Horner rows omit anhidrosis, unlike
+  the medullary ones.
