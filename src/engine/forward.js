@@ -56,6 +56,7 @@ function structActiveAt(struct, site, dominantSide) {
 
 // Expected signed findings for a lesion at a site. Emission per structure:
 //   - non-lateralised findings (higher-cortical/behavioural) -> `${finding}@none`
+//   - a structure's own `emit` ("midline" | "bilateral") overrides the site-side rules below
 //   - midline site  -> `${finding}@midline`
 //   - bilateral site -> both `@left` and `@right`
 //   - one-sided site -> crossing rule places it ipsi/contra
@@ -77,6 +78,14 @@ export function expectedFindings(site, opts = {}) {
     const f = struct.produces;
     if (NON_LATERALISED.has(f)) {
       out.add(signed(f, "none"));
+    } else if (struct.emit === "midline") {
+      // A finding with no side of its own (bladder control) produced by a BILATERAL site must match the
+      // token the midline sites emit, or cord compression with retention reads as two lesions.
+      out.add(signed(f, "midline"));
+    } else if (struct.emit === "bilateral") {
+      // A lateralised finding (an ankle jerk) produced by a MIDLINE site: the clinician records it per side.
+      out.add(signed(f, "left"));
+      out.add(signed(f, "right"));
     } else if (site.side === "midline") {
       out.add(signed(f, "midline"));
     } else if (site.side === "bilateral") {
@@ -101,6 +110,8 @@ export function explain(site, opts = {}) {
     }
     const f = s.produces;
     const sides = NON_LATERALISED.has(f) ? ["none"]
+      : s.emit === "midline" ? ["midline"]
+      : s.emit === "bilateral" ? ["left", "right"]
       : site.side === "midline" ? ["midline"]
       : site.side === "bilateral" ? ["left", "right"]
       : [bodySideFor(f, site.side, s)];
