@@ -6,8 +6,6 @@
 // MCA) map correctly even though the cord/anterior primitive is a buildingBlock.
 import { TRACTS, NEURAXIS, neuraxisIndex } from "../model/tracts.js";
 import { differential } from "./inverse.js";
-import { expectedFindings } from "./forward.js";
-import { LOCALISING } from "./score.js";
 
 const idOf = tok => tok.split("@")[0];
 const sideOf = tok => tok.split("@")[1];
@@ -58,44 +56,5 @@ export function tractNarrative(tract) {
   return s;
 }
 
-// Level buckets for the "why not the other sites" reasoning.
-const BUCKET = {
-  cortex: "cortical", subcortex: "deep subcortical", aphasia_subcortical: "deep subcortical",
-  thalamus: "deep subcortical", hypothalamus: "deep subcortical",
-  midbrain: "brainstem", pons: "brainstem", medulla: "brainstem", cord: "spinal cord",
-  guillain_mollaret: "brainstem", combined_degeneration: "spinal cord", cerebellum: "cerebellum",
-  // non-classical pathway stations (oculosympathetic, visual)
-  sympathetic: "sympathetic chain", skull_base: "skull base / orbit", visual_pathway: "chiasm / optic tract", pupil: "orbit / pupil",
-};
-const BUCKET_ORDER = ["cortical", "deep subcortical", "brainstem", "cerebellum", "spinal cord",
-  "chiasm / optic tract", "sympathetic chain", "skull base / orbit", "orbit / pupil"];
-const bucketOf = level => BUCKET[level] || "other";
-
-// For the SELECTED lesion, derive what each OTHER candidate on its tract(s) would additionally produce (and
-// which is absent) — grouped by neuraxis-level bucket, with the bucket's blood supply. This is the "why this
-// site and not the others" reasoning: the discriminating signs to examine for and exclude.
-export function whyNotOthers(observedSet, selectedSite, opts = {}) {
-  const tf = tractsFor(observedSet, opts);
-  const relevant = tf.filter(t => t.sites.some(s => s.site.id === selectedSite.id));
-  let selExp; try { selExp = expectedFindings(selectedSite, opts); } catch { selExp = new Set(); }
-  const bucketSupply = {};
-  for (const t of relevant) for (const w of t.tract.course) {
-    const b = bucketOf(w.level); if (w.supply && !bucketSupply[b]) bucketSupply[b] = w.supply;
-  }
-  const byBucket = {}; const seen = new Set();
-  for (const t of relevant) for (const s of t.sites) {
-    if (s.site.id === selectedSite.id || seen.has(s.site.id)) continue; seen.add(s.site.id);
-    let exp; try { exp = expectedFindings(s.site, opts); } catch { continue; }
-    const b = bucketOf(s.site.level);
-    for (const tok of exp) {
-      if (selExp.has(tok) || observedSet.has(tok)) continue;
-      const id = tok.split("@")[0];
-      (byBucket[b] ??= new Map()).set(id, (byBucket[b].get(id) || 0) + (LOCALISING.has(id) ? 2 : 1));
-    }
-  }
-  const buckets = BUCKET_ORDER.filter(b => byBucket[b]).map(b => ({
-    bucket: b, label: b, supply: bucketSupply[b] || "",
-    findings: [...byBucket[b].entries()].sort((a, c) => c[1] - a[1]).slice(0, 4).map(([id]) => id),
-  }));
-  return { selectedBucket: bucketOf(selectedSite.level), buckets };
-}
+// whyNotOthers() was retired 2026-09-26 — the integrated Why (src/engine/why.js) and the compare panel answer
+// "why not elsewhere" for the candidates actually in play (spec 2026-09-26).

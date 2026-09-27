@@ -6,9 +6,9 @@ import { nameForSite } from "../src/data/syndromes.js";
 import { causesFor, combinedCauses, canonicalKey, CAUSES, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
 import { nextStepsFor, combinedNextSteps, pathologyNextStepsFor } from "../src/data/nextSteps.js";
-import { tractsFor, tractNarrative, whyNotOthers } from "../src/engine/tracts.js";
+import { tractsFor, tractNarrative } from "../src/engine/tracts.js";
+import { whyChain } from "../src/engine/why.js";
 import { COURSES } from "../src/model/course.js";
-import { prevalenceOf } from "../src/model/prevalence.js";
 import { discriminators, explainedBy } from "./discriminators.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
 import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
@@ -297,7 +297,7 @@ function renderResults() {
     + pmsg + rmsg
     + whereCard(list, cands, total, r)
     + together
-    + whyCard(tf, sel, total, list)
+    + whyCard(tf, sel, list)
     + whatCard(sel.site, r, list)
     + nextCard(sel.site, r, list);
   wireCardControls();
@@ -652,23 +652,6 @@ function togetherCard(r, list) {
   return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc, "together");
 }
 
-const sideName = s => s === "left" ? "left" : s === "right" ? "right" : s === "bilateral" ? "both sides" : "the affected side";
-
-// Tract-level SYNTHESIS composed from the derived facts (no stored paragraphs). Leads the "why".
-function synthesisHTML(tf) {
-  if (!tf.length) return "";
-  const clauses = tf.map(t => {
-    const labels = t.sites.map(s => siteName(s.site));
-    const shown = labels.slice(0, 6).map(esc).join(" · ");
-    const more = labels.length > 6 ? ` … (+${labels.length - 6})` : "";
-    return `<p class="synth"><b>${esc(t.tract.label)}</b> — ${esc(t.tract.together)}. A lesion can lie anywhere along its course: ${shown}${more}. <span class="cross">${esc(t.tract.crossingNote)}.</span></p>`;
-  }).join("");
-  const converge = tf.length > 1
-    ? `<p class="synth converge">These tracts cross at <b>different</b> points, so their combination pins the level and side: ${tf.map(t => esc(t.tract.label)).join(" + ")}.</p>`
-    : "";
-  return `${clauses}${converge}`;
-}
-
 // THE INPUT CONTRACT: candidates come from solve() (`list` is r.display), not from tractsFor(). Harvesting
 // sites from tracts is why eight of the seventeen shipped examples rendered no diagram at all — a picture
 // with no implicated long tract had no sites, so the diagram rendered "".
@@ -704,57 +687,46 @@ function tokenLabel(t) {
   return `<span class="t" title="${esc(t)}">${sd !== "•" ? `<span class="sd">${sd}</span> ` : ""}${esc(shortFindingLabel(f))}</span>`;
 }
 
-function whyBlock(c, total, collapsed = false) {
-  const observed = [...S.tokens];
-  const explained = new Set(c.explained);
-  const ok = c.explained.map(t=>`<div class="why-item"><span class="k ok">✓</span>${tokenLabel(t)}</div>`).join("");
-  const no = observed.filter(t=>!explained.has(t)).map(t=>`<div class="why-item"><span class="k no">✗</span>${tokenLabel(t)}<span class="d">not explained by this site</span></div>`).join("");
-  const missed = [...c.exp].filter(t=>!S.tokens.has(t));
-  const warn = missed.map(t=>`<div class="why-item"><span class="k warn">⚠</span>${tokenLabel(t)}<span class="d">predicted here but not reported</span></div>`).join("");
-  const body = `<div class="why-list">${ok}${no}</div>
-    ${warn?`<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--muted)">Predicted here but not reported <span class="c">${missed.length}</span></summary><div class="why-list" style="margin-top:4px">${warn}</div></details>`:""}`;
-  // The site name used to be given the brand accent through an INLINE style. Two problems, both real:
-  // an inline style walks past the accent allowlist in test/brand.test.js (which scans only the
-  // stylesheet), and terracotta on
-  // paper at 13px bold is 3.40:1 — under AA. That token is PINNED by that suite, so it cannot
-  // move; the name takes --ink and the row already reads as the answer from its position.
-  const head = `<b>${esc(siteName(c.site))}</b> explains ${c.n}/${total}`;
-  return collapsed
-    ? `<details class="why-site" style="margin-top:10px"><summary style="font-weight:700">Why this specific site — ${head}</summary><div style="margin-top:6px">${body}</div></details>`
-    : `<h3 style="margin-top:14px">Why — ${head}</h3>${body}`;
+// ② Why — the integrated reasoning chain (spec 2026-09-26): for each finding, what carries it HERE and why it
+// is on that side, and everywhere else it could arise; then where they all meet. Derived by src/engine/why.js.
+// The compare panel follows (what to examine next); the old tract Course narratives sit behind "Pathway
+// anatomy". "Why not elsewhere" was retired — the compare panel answers it for the candidates actually in play.
+function meetSentence(w) {
+  const n = w.steps.length;
+  const side = w.meet.sides.length === 1 ? w.meet.sides[0] : null;
+  const at = st => side === "left" || side === "right" ? `the ${side} ${st}` : side === "bilateral" ? `the ${st} (both sides)` : `the ${st}`;
+  if (w.verdict === "none") return "No single place carries all of these findings — together they need more than one lesion, or a finding needs re-checking.";
+  if (w.verdict === "one") return n === 1 ? `This finding arises only in ${at(w.meet.stations[0])}.` : `Only ${at(w.meet.stations[0])} carries all ${n} findings.`;
+  if (n === 1) return `${shortFindingLabel(w.steps[0].finding)} alone does not localise: it can arise at ${w.steps[0].where}.`;
+  return `These findings fit ${w.meet.stations.map(at).join(" or ")} — see what separates them below.`;
 }
-
-// ② Why — composed Course narrative + Why-this (parsimony) + Why-not (derived, level-grouped) + diagram
-function whyCard(tf, sel, total, list) {
+const capFirst = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+function whyStepHTML(s) {
+  const how = s.explained
+    ? `<div class="wc-d">Carried here by <b>${esc(s.carrier)}</b>. ${esc(capFirst(s.reason.replace(" — ", ": ")))}.</div>`
+    : `<div class="wc-d wc-no">Not carried at this site.</div>`;
+  return `<div class="wc-step"><div class="wc-f">${tokenLabel(s.token)}</div>${how}<div class="wc-w">Could arise at: ${esc(s.where)}</div></div>`;
+}
+function whyCard(tf, sel, list) {
   const pat = umnLmnPattern(S.tokens);
   const umnlmn = pat.verdict
     ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
     : "";
-  // THE PANEL IS BUILT ONCE AND SHOWN IN BOTH BRANCHES. The diagram it replaced used to sit only after
-  // this early return, so a picture implicating no long tract — foot drop, cauda equina — got nothing
-  // even though the builder
-  // renders one perfectly well. Keep the panel built once and shown in both branches.
-  const diagram = `<details class="nx-toggle" open style="margin-top:6px"><summary>What separates these locations</summary><div class="cmp-wrap">${comparePanel(list)}</div></details>`;
-  if (!tf.length) {
-    // No tract narrative to compose, but the figure still localises: lead with the per-site explanation.
-    return card("Why", `${umnlmn}${diagram}${whyBlock(sel, total, false)}`, "why");
-  }
-  const course = tf.map(t => `<p class="synth"><b>Course.</b> ${esc(tractNarrative(t.tract))}</p>`).join("");
   const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
-  const wn = whyNotOthers(S.tokens, sel.site, opts);
-  const common = prevalenceOf(sel.site) === 2;
-  const tractLabels = tf.map(t => esc(t.tract.label)).join(" and ");
-  const whyThis = `<p class="synth"><b>Why this site.</b> The findings map onto the ${tractLabels}, so the lesion lies somewhere along that pathway; the accompanying signs (and the ones that are absent) place it at ${esc(siteName(sel.site))}.${common ? " Lesions here are also common." : ""}</p>`;
-  const lines = wn.buckets.map(b => {
-    const signs = b.findings.map(id => esc(desc(id))).join(", ");
-    const lead = b.bucket === wn.selectedBucket ? `A neighbouring ${esc(b.bucket)} lesion` : `If ${esc(b.bucket)}`;
-    const terr = b.supply ? ` <span class="wn-terr">(${esc(b.supply)})</span>` : "";
-    return `<li>${lead}${terr} — you'd also expect ${signs}.</li>`;
-  }).join("");
-  const whyNot = lines
-    ? `<div class="whynot"><b>Why not elsewhere.</b><ul class="whynot-list">${lines}</ul><p class="derived">None reported — examine specifically to exclude.</p></div>`
+  const w = whyChain(S.tokens, sel.site, opts);
+  const chain = w.steps.length
+    ? `<p class="wc-h">Why ${esc(siteName(sel.site))}</p><div class="why-chain">${w.steps.map(whyStepHTML).join("")}</div><p class="wc-meet">${esc(meetSentence(w))}</p>`
     : "";
-  return card("Why", `${course}${umnlmn}${whyThis}${whyNot}${diagram}${whyBlock(sel, total, true)}`, "why");
+  const compare = `<details class="nx-toggle" open style="margin-top:6px"><summary>What separates these locations</summary><div class="cmp-wrap">${comparePanel(list)}</div></details>`;
+  let missed = [];
+  try { missed = [...expectedFindings(sel.site, opts)].filter(t => !S.tokens.has(t)); } catch { missed = []; }
+  const expected = missed.length
+    ? `<details class="nx-toggle" style="margin-top:6px"><summary>Also expected here, not reported <span class="c">${missed.length}</span></summary><div class="why-list" style="margin-top:4px">${missed.map(t => `<div class="why-item"><span class="k warn">⚠</span>${tokenLabel(t)}</div>`).join("")}</div><p class="derived">Examine for these to confirm the site.</p></details>`
+    : "";
+  const anatomy = tf.length
+    ? `<details class="nx-toggle" style="margin-top:6px"><summary>Pathway anatomy</summary>${tf.map(t => `<p class="synth"><b>${esc(capFirst(t.tract.label))}.</b> ${esc(tractNarrative(t.tract))}</p>`).join("")}</details>`
+    : "";
+  return card("Why", `${umnlmn}${chain}${compare}${expected}${anatomy}`, "why");
 }
 
 // Merged causes/workup render through the cards that already OWN that presentation, rather than a third

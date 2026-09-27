@@ -14,7 +14,7 @@ be causing it — then **what to do next**.
 | Pathology | **1294 causes** across 202 sites, tempo-aware, every one with a discriminating feature |
 | Workup | **1294 / 1294 causes carry an authored, pathology-specific plan** (816 plans, 71 families) |
 | Cross-site | **13 diseases** that explain a multifocal picture as one illness |
-| Tests | 75 suites, **6880 assertions**, zero dependencies, no build step |
+| Tests | 76 suites, **6907 assertions**, zero dependencies, no build step |
 
 ## The idea
 
@@ -90,7 +90,7 @@ node app/serve.mjs
 ```
 
 then <http://localhost:8137/app/>. Each test file is a standalone Node script that asserts with a local
-`ok()` helper and exits non-zero on failure; `npm test` runs all 75 in sequence. A new suite goes in
+`ok()` helper and exits non-zero on failure; `npm test` runs all 76 in sequence. A new suite goes in
 `test/` and into the `test` script in `package.json`.
 
 > On the original development Mac there is no system Node — see the runtime note at the top of
