@@ -58,7 +58,9 @@ labels (§5.1): the arm-weakness row reads "Arm weakness — upper motor neuron 
 ### 3.1 The answer card
 
 Replaces today's hero card (site name + urgency + "2 lesions explain all 7 findings"). Keeps the urgency
-badge, the site id toggle and "Report a problem" in its header.
+badge, the site id toggle and "Report a problem" in its header; the mono location line under the title goes,
+because the Where line now names the place. **The badge follows the RESOLVED plan** — the same one the Next line
+and the Next card show — so selecting a cause moves all three together (it used to read the site plan only).
 
 ```
 [EMERGENCY]                                        [Report a problem]
@@ -71,7 +73,7 @@ Next   Acute stroke team — hyperacute pathway; keep nil by mouth until swallow
 ```
 
 Every line is DERIVED from what `app.js` already computes; nothing is authored per site. A pure module,
-`app/answer.js`, builds them (`answerSummary(...)` → `{ where, why, what, next, red }`), so every path is
+`app/answer.js`, builds them (`answerFor(...)` → `{ lines: { where, why, what, next, red }, nx, combined, twoLesions }`), so every path is
 testable in node.
 
 | Line | Built from | Rule |
@@ -112,8 +114,10 @@ stays open as findings change, until they close it. Open/closed state is view st
 
 Below the 860px single-column breakpoint, once there is a result and the answer card is out of view, a slim bar
 pins to the bottom of the viewport: *"Left lateral medulla · Emergency · 2 fit — View"*. Tapping it scrolls to
-the answer card. It hides whenever the card is on screen (an `IntersectionObserver`), sits above the safety
-bar, and does not exist on desktop.
+the answer card. It hides whenever the card is on screen — measured on scroll and resize with `getBoundingClientRect()`, because
+an `IntersectionObserver` was measured NOT to deliver callbacks in a throttled tab (the strip never appeared). It
+leads with the urgency (*"Emergency · 2 fit · Lateral medullary syndrome…"*) so a narrow screen truncates the
+name, never the urgency; it sits above the safety bar and does not exist on desktop.
 
 ---
 
@@ -154,7 +158,8 @@ for midline and non-lateralised findings; clues joined by " + ".
 - verdict **one**: "{clues} → only the {side} {station}."
 - verdict **several**: "{clues} → the {side} {A, B or C}; see Where for what separates them." — or, when the
   stations form a range, "… → anywhere from the {X} to the {Y}; …"
-- verdict **none**: "No single place explains every finding."
+- verdict **none**: "These findings need more than one lesion — see Together." (the Where line already says no single
+  place explains them, so the Why line does not repeat it)
 
 **Prototype output (2026-09-27, the final algorithm over `test/clinical-vignettes.test.js` — all 85 cases reach
 the answer's place, none needs more than 3 clues; plain labels are interim):**
@@ -189,7 +194,8 @@ example".
 ### 5.1 Plain labels and common/less common — `app/plain-labels.js` (content, owner review round 1)
 
 `PLAIN[findingId] = { label, note?, less? }` for **all 234 findings**:
-- `label` is a short, plain noun phrase ("face droop, one side", "eye won't turn in", "saddle numbness",
+- `label` is a short, plain, COMMA-FREE noun phrase (the "Less common" summary lists labels comma-separated, and
+  "taste loss, front of tongue" read as two findings) ("face droop, one side", "eye won't turn in", "saddle numbness",
   "arm weakness"). One table, four consumers: the exam rows, the entered-finding chips,
   the Why line and the search. It closes the parked plain-labels item. The existing `shortFindingLabel()` cuts
   the long descriptions mechanically and cannot sit mid-sentence — the prototype produced "Whitened",
@@ -203,7 +209,8 @@ example".
 ### 5.2 Plain rows, common first
 
 Each row leads with the plain label; the existing technical description sits beneath it in small muted text,
-so the tree keeps teaching the textbook name.
+clamped to ONE line (the full text stays in the row's title — three lines of it per row made the list dense
+again), so the tree keeps teaching the textbook name.
 
 ```
 Face droop, one side                                   [L] [R]
@@ -271,9 +278,10 @@ weakness" would give a peroneal foot drop a pyramidal finding it does not have (
 ### 5.5 Search — `app/synonyms.js` (content, owner review round 3)
 
 The box matches the finding id, the long description, the plain label and a bedside-phrase table
-(`SYNONYMS[phrase] → [findingId]`: "foot drop", "slurred speech", "droopy eyelid", "can't find words",
-"wrist drop", "numb saddle"…). Today it matches only the id and description, so "slurred speech" and
-"foot drop" find nothing. Filtering the tree in place, as today, is unchanged.
+(`SYNONYMS[phrase] → [findingId]`: "slurred speech", "droopy eyelid", "dizzy", "Horner", "face droop",
+"hemiparesis", "can't find words"…). Today it matches only the id and the long description — measured on
+2026-09-27, "foot drop" and "wrist drop" already work (their descriptions contain them), while "slurred speech",
+"droopy eyelid", "dizzy", "Horner", "face droop" and "hemiparesis" find nothing. Filtering the tree in place, as today, is unchanged.
 
 ### 5.6 Unchanged
 
@@ -294,7 +302,7 @@ body map; and moving the compare panel's "examine next" suggestions to the top o
 | `app/plain-labels.js` | content | `PLAIN` — label + less-common tag for all 234 findings |
 | `app/follow-ups.js` | content | `FOLLOW_UPS` + `visibleFollowUps(entered)` |
 | `app/synonyms.js` | content | `SYNONYMS` + `searchFindings(query)` |
-| `app/answer.js` | pure | `answerSummary(...)` → the five lines |
+| `app/answer.js` | pure | `whereLine` / `whySentence` / `whatLine`, `resolveNext()` (the ONE workup resolution the Next card also uses) and `answerFor()` → the five lines |
 | `app/sides.js` | pure, extended | `tokensForRow(finding, defaultSide)` |
 | `app/app.js`, `app/index.html` | DOM | the rows, the card, the closed detail, the strip |
 
