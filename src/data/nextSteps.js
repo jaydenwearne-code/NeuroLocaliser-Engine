@@ -3,14 +3,15 @@
 // These are TEACHING PROMPTS, not clinical directives — no drug doses, no definitive management. The app
 // pairs them with an explicit "not clinical advice" disclaimer.
 //
-//   nextStepsFor(site) -> { immediate, investigations, confirmatory, monitoring, urgency, referral, curated }
+//   nextStepsFor(site, { onset }) -> { immediate, investigations, confirmatory, monitoring, urgency, referral, curated }
 //
 // Curated per-site entries (by site.id, else level_part) carry the site-specific first-line investigations
 // and referral; the immediate / confirmatory / monitoring tiers are DERIVED from urgency + region so EVERY
 // site gets a full, structured plan (derive-don't-store spirit). A curated entry may override any tier via
 // its optional `extra` ({ immediate, confirmatory, monitoring }).
 import { expectedFindings } from "../engine/forward.js";
-import { CAUSES } from "./causes.js";
+import { CAUSES, causesFor } from "./causes.js";
+import { compartmentOf } from "../model/compartments.js";
 import { pathologyPlanFor } from "./pathologyNextSteps.js";
 import { multifocalPlanFor } from "./multifocalNextSteps.js";
 
@@ -1434,6 +1435,25 @@ export const NEXT = {
                    "Falls prevention and balance physiotherapy",
                    "Neuropathic pain management (amitriptyline, duloxetine, gabapentinoids) with review of efficacy",
                    "If progression is RAPID or ascending, monitor VITAL CAPACITY and escalate immediately — respiratory failure in Guillain-Barre is the danger"] }),
+  // ACUTE POLYRADICULONEUROPATHY (Guillain-Barré; accuracy round 1, B14).
+  polyradiculoneuropathy_acute: ns(
+    ["FORCED VITAL CAPACITY at the bedside now and serially — with bulbar function and cough, it decides the level of care",
+     "Nerve conduction studies (demyelinating vs axonal; may be normal in the first days) and LUMBAR PUNCTURE for albuminocytological dissociation — raised protein WITHOUT cells, which may also be normal early",
+     "Bloods: potassium, calcium, magnesium, phosphate, creatine kinase, glucose, renal and liver function, and HIV, CMV, EBV and Campylobacter serology; urine porphobilinogen where abdominal pain or hyponatraemia accompany it",
+     "MRI of the spine if there is a sensory level, early sphincter failure or marked asymmetry — cord compression must not be called Guillain-Barré"],
+    "emergency",
+    "Neurology urgently, with critical care involved early — before, not after, the vital capacity falls.",
+    { immediate: ["AIRWAY AND BREATHING FIRST: a single-breath count, the strength of the cough and swallow, and any paradoxical abdominal movement",
+                  "Test EVERY reflex and power proximally and distally in all four limbs, and look for bilateral facial weakness",
+                  "Look for a SENSORY LEVEL and ask about the bladder — either points to the cord, not the roots",
+                  "Cardiac monitoring and repeated blood pressure — autonomic instability causes arrhythmia and wide swings in pressure"],
+      confirmatory: ["Repeat nerve conduction studies if the first are normal or equivocal — they can lag behind the clinical picture",
+                     "Anti-ganglioside antibodies (GQ1b for the ocular and bulbar variants, GM1 for the axonal form)",
+                     "Look for the trigger: Campylobacter stool culture, and a history of recent infection or vaccination"],
+      monitoring: ["Serial vital capacity and bulbar assessment at defined intervals — a FALLING vital capacity, weak cough or failing swallow means critical care review now",
+                   "Continuous cardiac monitoring for autonomic arrhythmia, and treat the pain, which is common and severe",
+                   "Thromboprophylaxis and pressure-area care in the immobile patient",
+                   "Immunotherapy (immunoglobulin or plasma exchange) is started by neurology — early treatment shortens the illness"] }),
   motor_unit_nmj_presynaptic: ns(
     ["CT CHEST (with PET-CT if negative) — around half of Lambert-Eaton cases have an underlying SMALL CELL LUNG CANCER, and the neurology may precede it",
      "Voltage-gated calcium channel (VGCC) antibodies",
@@ -2314,18 +2334,36 @@ function causeEntry(site, causeName) {
   return (CAUSES[key] || []).find(c => c.name === causeName) || null;
 }
 
-export function resolveUrgency(site, causeName) {
-  const siteUrgency = nextStepsFor(site).urgency || "routine";
+export function resolveUrgency(site, causeName, opts = {}) {
+  const siteUrgency = nextStepsFor(site, opts).urgency || "routine";
   if (!causeName) return siteUrgency;
   const plan = pathologyPlanFor(causeName, site);
   const chosen = (plan && plan.urgency) || siteUrgency;
   const entry = causeEntry(site, causeName);
+  // B16 (owner, 2026-09-25): a VASCULAR cause selected at hyperacute onset in a CNS compartment keeps the
+  // emergency badge — the authored plan urgency must not quieten a stroke inside the treatment window. Only a
+  // cause that can itself BE hyperacute: post-stroke pain is vascular but chronic, and is not a window.
+  if (entry && entry.cat === "vascular" && entry.tempo.includes("hyperacute") && opts.onset === "hyperacute"
+      && STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return "emergency";
   if (!entry || !entry.red) return chosen;
   return URGENCY_RANK[chosen] >= URGENCY_RANK[RED_FLOOR] ? chosen : RED_FLOOR;
 }
 
+// ---- hyperacute stroke escalation (accuracy round 1, A4 + B16, owner-approved 2026-09-25) ----
+// A CNS site whose LEADING cause at hyperacute onset is vascular is inside the thrombolysis window — an
+// emergency, whatever its curated badge says when the tempo is unknown. Derived from the causes layer, never
+// hand-listed. Peripheral compartments are excluded on purpose: a peripheral HINTS pattern is the reassuring
+// one, and a microvascular cranial neuropathy is not a thrombolysis question.
+const STROKE_WINDOW_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "cord", "optic"]);
+export function hyperacuteVascular(site, onset) {
+  if (onset !== "hyperacute" || !STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return false;
+  let lead;
+  try { lead = causesFor(site, { onset }).all.find(c => c.cat !== "mimic"); } catch { return false; }
+  return !!lead && lead.cat === "vascular";
+}
+
 // ---- public API ----
-export function nextStepsFor(site) {
+export function nextStepsFor(site, opts = {}) {
   const key = NEXT[site.id] ? site.id : `${site.level}_${site.part}`;
   const base = NEXT[key] ? { ...NEXT[key], curated: true } : { ...derive(site), curated: false };
   // The ophthalmic prompt is appended (never spliced into the curated array in place, which would mutate
@@ -2335,7 +2373,7 @@ export function nextStepsFor(site) {
     investigations: [...(base.investigations || []), ...ophthalmicImaging(site)],
     confirmatory: base.confirmatory || deriveConfirmatory(site),
     monitoring: base.monitoring || deriveMonitoring(site, base.urgency),
-    urgency: base.urgency,
+    urgency: hyperacuteVascular(site, opts.onset) ? "emergency" : base.urgency,
     referral: base.referral,
     curated: base.curated,
   };
@@ -2352,15 +2390,15 @@ export function nextStepsFor(site) {
 //
 // `causeName: null` returns exactly what nextStepsFor() returns, so the card has ONE code path and the
 // no-selection view cannot drift from the pre-2026-08-18 behaviour.
-export function pathologyNextStepsFor(site, causeName) {
-  const base = nextStepsFor(site);
+export function pathologyNextStepsFor(site, causeName, opts = {}) {
+  const base = nextStepsFor(site, opts);
   if (!causeName) return { ...base, pathology: null, pathologyCurated: false };
   const plan = pathologyPlanFor(causeName, site);
   return {
     ...base,
     confirmatory: plan ? plan.confirmatory : base.confirmatory,
     monitoring:   plan ? plan.monitoring   : base.monitoring,
-    urgency:      resolveUrgency(site, causeName),
+    urgency:      resolveUrgency(site, causeName, opts),
     referral:     (plan && plan.referral) || base.referral,
     pathology: causeName,
     pathologyCurated: !!plan,
@@ -2383,8 +2421,8 @@ const URGENCY_ORDER = ["emergency", "urgent", "routine"];
 // `entityName: null` returns EXACTLY the object this function returned before this argument existed — no
 // added keys — so the no-selection view has one code path and cannot drift. An unknown name degrades to
 // the same thing rather than throwing.
-export function combinedNextSteps(sites, entityName = null) {
-  const all = sites.map(nextStepsFor);
+export function combinedNextSteps(sites, entityName = null, opts = {}) {
+  const all = sites.map(s => nextStepsFor(s, opts));
   const union = key => [...new Set(all.flatMap(n => n[key] || []))];
   const siteUrgency = URGENCY_ORDER.find(u => all.some(n => n.urgency === u)) || "routine";
   const referral = [...new Set(all.map(n => n.referral).filter(Boolean))].join(" · ");

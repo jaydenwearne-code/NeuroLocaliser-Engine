@@ -20,6 +20,7 @@ export const FINDINGS = {
   vertical_diplopia:{ desc: "Vertical double vision, worse on down-gaze / head tilt", group: "Eye movements" },
   facial_weakness: { desc: "Weakness of one side of the face", group: "Cranial nerve" },
   forehead_spared: { desc: "Forehead movement preserved (upper face spared)", group: "Cranial nerve" },
+  forehead_involved: { desc: "Forehead also weak (cannot raise the eyebrow or wrinkle the forehead)", group: "Cranial nerve" },
   cn8_vertigo:    { desc: "Vertigo (peripheral or central vestibular)", group: "Cranial nerve" },
   dysphagia:      { desc: "Difficulty swallowing", group: "Cranial nerve" },
   cn12_palsy:     { desc: "CN XII palsy (tongue deviation/wasting)", group: "Cranial nerve" },
@@ -313,6 +314,8 @@ export const CROSSES = {
   // facial weakness: UMN (corticobulbar) is contralateral (default true); peripheral VII structures
   // override crosses:false (ipsilateral). forehead_spared rides with the UMN face (contralateral).
   facial_weakness: true, forehead_spared: true,
+  // the LMN mirror of forehead_spared: the facial nucleus and nerve are ipsilateral to the face they move
+  forehead_involved: false,
   dorsal_sensory: true,    // medial lemniscus has crossed in the medulla
   spinothalamic: true,     // spinothalamic crossed in the cord
   suspended_sensory: false,// bilateral by nature (commissural); crossing is moot for the bilateral central site

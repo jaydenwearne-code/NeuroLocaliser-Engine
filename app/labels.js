@@ -141,6 +141,7 @@ export const PART_LABEL = {
   "cauda|equina": "cauda equina",
   "conus|medullaris": "conus medullaris",
   "polyneuropathy|length_dependent": "length-dependent polyneuropathy",
+  "polyradiculoneuropathy|acute": "acute polyradiculoneuropathy",
   "cerebrum|diffuse": "diffuse cerebral involvement",
 
   // --- motor unit ---

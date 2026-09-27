@@ -35,8 +35,9 @@ ok("spasticity produced across the whole corticospinal tract",
    ["midbrain","pons","medulla","cord","subcortex","cortex","conus"].every(l => levelsProducing("spasticity").includes(l)));
 ok("the CORD + CONUS spasticity are ipsilateral/local (crosses:false)",
    producersOf("spasticity").filter(s => s.level === "cord" || s.level === "conus").every(s => s.crosses === false));
-ok("hypotonia is generalised-flaccid ONLY (anterior horn, cauda, polyneuropathy)",
-   JSON.stringify(levelsProducing("hypotonia")) === JSON.stringify(["cauda","motor_unit","polyneuropathy"]));
+// + the acute polyradiculoneuropathy since accuracy round 1 (B14, 2026-09-26) — GBS is flaccid too.
+ok("hypotonia is generalised-flaccid ONLY (anterior horn, cauda, polyneuropathy, GBS)",
+   JSON.stringify(levelsProducing("hypotonia")) === JSON.stringify(["cauda","motor_unit","polyneuropathy","polyradiculoneuropathy"]));
 ok("hypotonia only at the anterior horn part of the motor unit",
    producersOf("hypotonia").filter(s => s.level === "motor_unit").every(s => s.part === "anterior_horn"));
 ok("wasting spans the broad LMN set (motor unit, cauda, polyneuropathy, root, nerve)",

@@ -57,8 +57,9 @@ ok("left_peripheral_vestibular_labyrinth exists", !!SITE_BY_ID.left_peripheral_v
   const lab = expectedFindings(SITE_BY_ID.left_peripheral_vestibular_labyrinth);
   ok("left labyrinth -> nystagmus_peripheral@none", lab.has("nystagmus_peripheral@none"));
   ok("left labyrinth -> cn8_vertigo@left (ipsi)", lab.has("cn8_vertigo@left"));
-  ok("left labyrinth emits NO hearing_loss (vestibular neuritis, not labyrinthitis)",
-     ![...lab].some(t => t.startsWith("hearing_loss")));
+  // REVERSED 2026-09-26 (owner, B4): the labyrinth predicts hearing loss, so labyrinthitis and Ménière match
+  // one site; vestibular neuritis still matches with hearing as an unreported prediction.
+  ok("left labyrinth emits hearing_loss@left (labyrinthitis / Ménière)", lab.has("hearing_loss@left"));
 }
 
 // --- Task 4: central directional generators (downbeat CVJ, upbeat pontomesencephalic) ---
@@ -96,11 +97,12 @@ ok("pontomesencephalic_tegmentum exists (midline)",
   ok("upbeat names a pontomesencephalic syndrome",
      best && /upbeat/i.test(nameForSite(best.site).name));
 }
-// isolated cn8_vertigo prefers the peripheral labyrinth over the central nucleus clusters
+// isolated cn8_vertigo prefers a PERIPHERAL site over the central nucleus clusters. Since 2026-09-26 the
+// BPPV canals predict vertigo and posterior-canal BPPV is COMMON (owner ruling 8), so it leads.
 {
   const { best } = solve(new Set(["cn8_vertigo@left"]));
-  ok("isolated vertigo -> peripheral labyrinth (fewer over-predictions)",
-     best && best.site.id === "left_peripheral_vestibular_labyrinth");
+  ok("isolated vertigo -> a peripheral site (posterior-canal BPPV)",
+     best && best.site.id === "left_peripheral_vestibular_posterior_canal");
 }
 
 // ---- report ----

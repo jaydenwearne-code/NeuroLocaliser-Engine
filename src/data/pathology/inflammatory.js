@@ -111,6 +111,22 @@ const NEUROMUSCULAR_SPINE = {
 };
 
 export default {
+  // Accuracy round 1 (B14): the GBS that is not GBS. The COURSE is the diagnosis.
+  "Acute-onset CIDP": dz("Acute-onset CIDP", {
+    confirmatory: [
+      "Nerve conduction studies showing DEMYELINATION — slowed conduction, conduction block and prolonged distal latencies — in several limbs; the pattern overlaps Guillain-Barré, so it is the COURSE, not a single study, that separates them",
+      "CSF protein is raised without cells, as in Guillain-Barré — a raised cell count points to an infective or infiltrative polyradiculopathy instead",
+      "Serum protein electrophoresis with immunofixation, and nodal or paranodal antibodies where the picture is atypical — a paraprotein or a nodopathy changes the treatment",
+    ],
+    monitoring: [
+      "SAFETY NET: suspect CIDP when a presumed Guillain-Barré keeps worsening beyond the usual nadir or relapses after immunoglobulin — re-examine rather than simply repeating the first treatment",
+      "Track power and function with a disability scale at each review, so a slow decline is seen rather than remembered",
+      "Maintenance immunotherapy is the rule, and the response to it is itself confirmatory — document it objectively",
+    ],
+    urgency: "urgent",
+    referral: "Neurology (neuromuscular), with the same respiratory vigilance as Guillain-Barré while the course declares itself",
+  }),
+
   // ================= ROUND 6 (tranche 3): the inflammatory NON-red set =================
   // Ten of the thirty-three names in this bucket turned out to be spellings of DEMYELINATION and are
   // aliased in ../pathologyNextSteps.js rather than authored here. What remains are the genuinely
@@ -578,6 +594,12 @@ export default {
     "Guillain-Barré syndrome": {
       slots: { level: "facial movement on BOTH sides, plus limb power and reflexes",
                flavour: "a BILATERAL facial palsy is Guillain-Barré until proven otherwise — and the areflexia and the ascending pattern are what to look for once the face has drawn attention" },
+      bySite: {
+        polyradiculoneuropathy_acute: {
+          level: "power proximally and distally in all four limbs, every reflex, the face, the swallow and the vital capacity",
+          flavour: "a demyelinating pattern (AIDP) or a pure motor axonal one (AMAN) — the axonal form after Campylobacter recovers more slowly",
+        },
+      },
     },
     "Guillain-Barré syndrome (inflammatory polyradiculopathy)": {
       slots: { level: "leg power, reflexes and sphincter function",

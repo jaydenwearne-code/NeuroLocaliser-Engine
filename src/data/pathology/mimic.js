@@ -94,6 +94,22 @@ const PERIPHERAL_MIMIC = {
 };
 
 export default {
+  // Accuracy round 1 (B14): the flaccid paralysis that a potassium level diagnoses.
+  "Hypokalaemic periodic paralysis": dz("Hypokalaemic periodic paralysis", {
+    confirmatory: [
+      "SERUM POTASSIUM DURING THE ATTACK — it is low, and the level between attacks may be normal, so the attack sample is the one that counts",
+      "Thyroid function in every case — thyrotoxic periodic paralysis is common in some populations and is cured by treating the thyroid",
+      "Consider the familial channelopathy where attacks began in adolescence or there is a family history; a long exercise test on EMG supports it between attacks",
+    ],
+    monitoring: [
+      "SAFETY NET: an ECG during the attack — hypokalaemia causes arrhythmia, and potassium replaced too fast or too freely causes REBOUND hyperkalaemia as potassium shifts back out of the cells",
+      "Weakness that spares the face and breathing and recovers fully is the pattern; weakness that involves breathing or does not recover is NOT periodic paralysis — re-examine for Guillain-Barré",
+      "Avoid the triggers — carbohydrate loads and rest straight after exertion — and review diuretics and other potassium-wasting drugs",
+    ],
+    urgency: "urgent",
+    referral: "Acute medicine; endocrinology if thyrotoxic, the neuromuscular clinic for the familial form",
+  }),
+
   // ---- SINGLETON MIMICS ----
   "Delirium": dz("Delirium", {
     slots: { flavour: "the deficit is one of ATTENTION rather than of a domain" },

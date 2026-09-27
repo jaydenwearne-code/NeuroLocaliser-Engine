@@ -1,7 +1,7 @@
 // app.js — NeuroLocaliser prototype UI. Pure consumer of the engine + causes layer (no model changes).
 import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
-import { FINDINGS, NON_LATERALISED } from "../src/model/findings.js";
+import { FINDINGS } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { causesFor, combinedCauses, canonicalKey, CAUSES, CATEGORIES, TEMPO } from "../src/data/causes.js";
 import { umnLmnPattern, functionalFlag, refractiveFlag } from "../src/engine/patterns.js";
@@ -24,16 +24,11 @@ import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName, shortFindingLabel } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
+import { offersFor } from "./sides.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
-// which body-sides can each finding appear on? (data-driven side controls)
-const SIDES = {};
-for (const site of CANDIDATES) {
-  let exp; try { exp = expectedFindings(site); } catch { continue; }
-  for (const tok of exp) { const [f, s] = tok.split("@"); (SIDES[f] ??= new Set()).add(s); }
-}
-const sidesOf = f => [...(SIDES[f] || ["none"])];
+// Which side buttons each finding offers lives in ./sides.js (pure, tested): no offered option may return nothing.
 
 // dedupe sites by level_part for the atlas (one representative per site kind)
 const ATLAS = [];
@@ -43,7 +38,7 @@ const REGION_ORDER = ["cortex","subcortex","corpus_callosum","thalamus","hypotha
   "midbrain","dorsal_midbrain","pons","pontomesencephalic","medulla","brainstem_aras","guillain_mollaret","locked_in",
   "cerebellum","cerebrum","thalamus_arousal","pseudobulbar","cord","combined_degeneration","cauda","conus","craniocervical_junction",
   "olfactory","visual_pathway","skull_base","peripheral_vestibular","central_vestibular","pupil","sympathetic",
-  "motor_unit","root","plexus","nerve","polyneuropathy"];
+  "motor_unit","root","plexus","nerve","polyneuropathy","polyradiculoneuropathy"];
 
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const fid = t => t.split("@")[0];
@@ -137,10 +132,9 @@ function examAccordion() {
   return tree.map(n => renderNode(n, 0)).join("");
 }
 function frow(f) {
-  const sides = sidesOf(f);
-  const btns = (NON_LATERALISED.has(f) || (sides.length===1 && sides[0]==="none"))
-    ? `<button data-f="${f}" data-s="none">add</button>`
-    : sides.filter(s=>s!=="none").map(s=>`<button data-f="${f}" data-s="${s}">${sideTag(s)}</button>`).join("");
+  // data-t carries the token(s) a button toggles: "Both" enters two at once (app/sides.js explains why).
+  const label = o => o.key === "none" ? "add" : o.key === "both" ? "Both" : sideTag(o.key);
+  const btns = offersFor(f).map(o => `<button data-f="${f}" data-s="${o.key}" data-t="${o.tokens.join(" ")}">${label(o)}</button>`).join("");
   // The id stays in the title attribute — reachable for a bug report, off the screen for a clinician.
   return `<div class="frow" data-fid="${f}" title="${esc(f)} — ${esc(desc(f))}"><div class="nm"><span class="fd-primary">${esc(desc(f))}</span></div><div class="sides">${btns}</div></div>`;
 }
@@ -153,8 +147,8 @@ function wireLocalise() {
   on("slevel", "oninput", e => { S.sensoryLevel = e.target.value.trim(); renderResults(); });
   on("reach", "oninput", e => { S.distalReach = e.target.value.trim(); renderResults(); });
   on("search", "oninput", e => filterFindings(e.target.value.toLowerCase()));
-  on("acc", "onclick", e => { const b = e.target.closest("button[data-f]"); if (!b) return;
-    toggleToken(`${b.dataset.f}@${b.dataset.s}`); });
+  on("acc", "onclick", e => { const b = e.target.closest("button[data-t]"); if (!b) return;
+    toggleTokens(b.dataset.t.split(" ")); });
   markSides();
 }
 
@@ -192,6 +186,12 @@ function filterFindings(q) {
   if (!q) acc.querySelectorAll("details").forEach(d => { d.open = false; });
 }
 function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); markSides(); syncLevelCtrls(); }
+// A panel button may carry several tokens ("Both"): all on → all off, otherwise all on.
+function toggleTokens(toks) {
+  const allOn = toks.every(t => S.tokens.has(t));
+  for (const t of toks) allOn ? S.tokens.delete(t) : S.tokens.add(t);
+  renderChips(); renderResults(); markSides(); syncLevelCtrls();
+}
 // Show the level inputs the moment a cord / length-dependent finding appears. Toggling visibility rather
 // than re-rendering renderLocalise() keeps the accordion's open sections and scroll position intact.
 function syncLevelCtrls() {
@@ -200,7 +200,7 @@ function syncLevelCtrls() {
 }
 function markSides() {
   const acc = document.getElementById("acc"); if (!acc) return;
-  acc.querySelectorAll("button[data-f]").forEach(b => b.classList.toggle("on", S.tokens.has(`${b.dataset.f}@${b.dataset.s}`)));
+  acc.querySelectorAll("button[data-t]").forEach(b => b.classList.toggle("on", b.dataset.t.split(" ").every(t => S.tokens.has(t))));
 }
 // Loading an example is just setting state — it round-trips through the case URL like any hand-entered
 // case, so a tester can share the exact example they were looking at. renderLocalise() rather than a
@@ -248,7 +248,16 @@ function renderChips() {
 
 function renderResults() {
   const el = document.getElementById("results");
-  if (!S.tokens.size) { el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`; return; }
+  if (!S.tokens.size) {
+    // THE HASH IS THE SHAREABLE CASE: once the last finding is removed it must say so, or a reload, a copied
+    // link or the feedback button brings back findings the user has cleared (found by driving the app,
+    // 2026-09-26). The per-case selections go with them — a chosen lesion or cause means nothing without
+    // findings. Settings (onset, dominant hemisphere, scope) are the reader's and are kept.
+    S.selected = undefined; S.selectedPathology = undefined; S.selectedEntity = undefined;
+    syncURL();
+    el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`;
+    return;
+  }
   try {
   // Papilloedema is an AXIS, not a site finding (see raisedPressureAxis): no site's expected findings
   // contain it, so it must not be counted in the "explains n/total" denominator or every intracranial site
@@ -427,7 +436,7 @@ function resultHeader(sel, list, total, r) {
   // a time-poor reader needs before anything else, so it sits in the header and links to the Next card.
   let urg = "";
   try {
-    const u = nextStepsFor(sel.site).urgency;
+    const u = nextStepsFor(sel.site, { onset: S.onset || undefined }).urgency;
     const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
     const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
     const emerg = u === "emergency" ? " urg-emergency" : "";
@@ -894,9 +903,11 @@ function nextCard(site, r, list) {
   const combined = sites.length >= 2 && S.scope === "all";
   // Per-site selection is single-site only; the CROSS-SITE selection is the combined view's answer to
   // "whose pathology?" — the disease the Together card named as spanning these sites (spec 2026-08-21).
+  // The onset is threaded through so a hyperacute stroke badges EMERGENCY (accuracy round 1, A4/B16).
+  const onsetOpt = { onset: S.onset || undefined };
   const nx = combined
-    ? combinedNextSteps(sites, S.selectedEntity || null)
-    : pathologyNextStepsFor(site, S.selectedPathology || null);
+    ? combinedNextSteps(sites, S.selectedEntity || null, onsetOpt)
+    : pathologyNextStepsFor(site, S.selectedPathology || null, onsetOpt);
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
   return card(cap, nextBlock(nx, combined), "next");
 }

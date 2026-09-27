@@ -32,9 +32,10 @@ for (const id of NEW) {
 const baseOf = (l, p) => STRUCTURES.filter(s => s.level === l && s.part === p).map(s => s.produces).sort();
 const eq = (a, b) => JSON.stringify([...(a || [])].sort()) === JSON.stringify([...(b || [])].sort());
 ok("labyrinth incl head_impulse", baseOf("peripheral_vestibular", "labyrinth").includes("head_impulse_abnormal"));
-ok("posterior_canal -> positional_posterior", eq(baseOf("peripheral_vestibular", "posterior_canal"), ["nystagmus_positional_posterior"]));
-ok("horizontal_canal -> positional_horizontal", eq(baseOf("peripheral_vestibular", "horizontal_canal"), ["nystagmus_positional_horizontal"]));
-ok("anterior_canal -> positional_anterior", eq(baseOf("peripheral_vestibular", "anterior_canal"), ["nystagmus_positional_anterior"]));
+// Accuracy round 1 (B3, 2026-09-26): each canal also predicts vertigo — BPPV is vertigo.
+ok("posterior_canal -> positional_posterior + vertigo", eq(baseOf("peripheral_vestibular", "posterior_canal"), ["cn8_vertigo", "nystagmus_positional_posterior"]));
+ok("horizontal_canal -> positional_horizontal + vertigo", eq(baseOf("peripheral_vestibular", "horizontal_canal"), ["cn8_vertigo", "nystagmus_positional_horizontal"]));
+ok("anterior_canal -> positional_anterior + vertigo", eq(baseOf("peripheral_vestibular", "anterior_canal"), ["cn8_vertigo", "nystagmus_positional_anterior"]));
 ok("central_vestibular nucleus -> vertigo+gaze+skew", eq(baseOf("central_vestibular", "nucleus"), ["cn8_vertigo", "nystagmus_gaze_evoked", "skew_deviation"]));
 ok("medulla lateral now includes skew", baseOf("medulla", "lateral").includes("skew_deviation"));
 for (const id of ["left_peripheral_vestibular_posterior_canal", "left_peripheral_vestibular_horizontal_canal",

@@ -53,7 +53,10 @@ const win = set => solve(set).best?.site ?? null;
 // ---------------------------------------------------------------------------
 // B4a — Horner (horner retired → miosis + shared ptosis, + existing anhidrosis)
 // ---------------------------------------------------------------------------
-{ const s = win(S("miosis@left","ptosis@left","anhidrosis_face@left","anhidrosis_body@left"));
+// On the DISPLAYED first answer since 2026-09-26: the lateral pons now carries the same four central-Horner
+// rows, so the scored `best` (no prior) cannot separate them; the lateral medulla's COMMON prior (owner
+// ruling — Wallenberg is the commonest brainstem syndrome) is what the reader sees.
+{ const s = solve(S("miosis@left","ptosis@left","anhidrosis_face@left","anhidrosis_body@left")).display[0]?.site;
   ok("miosis+ptosis+anhidrosis(face+body) -> central (1st-order) Horner, lateral medulla",
      s?.level === "medulla" && s?.part === "lateral"); }
 

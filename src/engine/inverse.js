@@ -97,6 +97,17 @@ export function raisedPressureAxis(observedSet) {
   };
 }
 
+// ---- ranking (accuracy round 1, spec 2026-09-25 A3) ----
+// Coverage first, always. Among sites that explain the same number of findings, the old order put
+// PREVALENCE before tightness, so a common site predicting seven signs the patient does not have beat an
+// uncommon site predicting exactly what was entered (hemisensory loss → "sensorimotor stroke"; thalamic
+// pain → the same). Now each prevalence tier is worth PREVALENCE_ALLOWANCE unreported predictions.
+// A LINEAR key, deliberately: the pairwise rule first measured ("tighter wins when the gap is ≥ 3") is not
+// transitive — three sites can beat each other in a cycle — and gave identical results on every measured
+// set (84 vignettes, 364 complete pictures, 233 single findings) while this one is a total order.
+export const PREVALENCE_ALLOWANCE = 3;
+export const rankKey = c => c.over - PREVALENCE_ALLOWANCE * c.prevalence;
+
 export function differential(observedSet, opts = {}) {
   // The pressure token is stripped before matching: no site's expectedFindings contain it, so leaving it in
   // would make every site fail to explain it and collapse the differential to nothing.
@@ -108,7 +119,9 @@ export function differential(observedSet, opts = {}) {
     if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
     let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
     let contradicted = false;
-    for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
+    // An ASYMMETRIC site (motor-unit disease, cauda equina) may present on one side: the un-entered side is
+    // not evidence against it, so the known-negative exclusion does not apply to it.
+    if (!site.asymmetric) for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
     if (contradicted) continue;
     const explained = observed.filter(t => exp.has(t));
     // Papilloedema on its own explains nothing site-specific, but it is still informative: every
@@ -117,8 +130,9 @@ export function differential(observedSet, opts = {}) {
     cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
                  n: explained.length, prevalence: prevalenceOf(site) });
   }
-  // coverage first (localisation), then prevalence (commoner lesion), then tightness, then deterministic id.
-  cands.sort((a, b) => b.n - a.n || b.prevalence - a.prevalence || a.over - b.over || a.site.id.localeCompare(b.site.id));
+  // coverage first (localisation), then fit weighed against prior (rankKey), then prevalence, tightness, id.
+  cands.sort((a, b) => b.n - a.n || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence
+    || a.over - b.over || a.site.id.localeCompare(b.site.id));
   return cands;
 }
 
@@ -134,6 +148,7 @@ export function ruledOutSites(observedSet, opts = {}) {
     let explainsSomething = false;
     for (const t of observedSet) if (exp.has(t)) { explainsSomething = true; break; }
     if (!explainsSomething) continue;
+    if (site.asymmetric) continue; // never excluded by a known negative, so never "ruled out" by one
     let contradictedBy = null;
     for (const neg of negatives) if (exp.has(neg)) { contradictedBy = neg; break; }
     if (contradictedBy) out.push({ site, contradictedBy });

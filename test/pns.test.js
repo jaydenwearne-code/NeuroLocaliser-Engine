@@ -44,8 +44,9 @@ ok("C8 root -> C8 dermatome + finger movements + pain (no classic reflex)",
 ok("S1 root -> S1 dermatome + ankle reflex + plantarflexion + pain",
    ["sensory_s1","reflex_ankle_loss","weak_ankle_plantarflexion","radicular_pain"].every(f => rootOf("s1").includes(f)));
 ok("knee reflex is shared by L3 AND L4", rootOf("l3").includes("reflex_knee_loss") && rootOf("l4").includes("reflex_knee_loss"));
-ok("polyneuropathy -> distal sensory + motor + hypotonia + wasting (generalised LMN companions)",
-   eq(STRUCTURES.filter(s => s.level === "polyneuropathy").map(s => s.produces).sort(), ["distal_motor_weakness","distal_sensory_loss","hypotonia","wasting"].sort()));
+// + absent ankle jerks since accuracy round 1 (B5, 2026-09-26) — the site's own note always said "distal areflexia".
+ok("polyneuropathy -> distal sensory + motor + hypotonia + wasting + absent ankle jerks",
+   eq(STRUCTURES.filter(s => s.level === "polyneuropathy").map(s => s.produces).sort(), ["distal_motor_weakness","distal_sensory_loss","hypotonia","reflex_ankle_loss","wasting"].sort()));
 {
   const pnsStructs = STRUCTURES.filter(s => s.level === "root" || s.level === "polyneuropathy");
   ok("no PNS structure sets a crosses override / gate",

@@ -1951,6 +1951,25 @@ export const CAUSES = {
     c("Vasculitic neuropathy or inflammatory neuropathy (GBS / CIDP)", "inflammatory", ["hyperacute","acute","subacute"], "uncommon", true,
       "RAPID progression, ASYMMETRY, prominent pain, or motor-predominant weakness is NOT a length-dependent metabolic neuropathy — ascending weakness over days is Guillain-Barre needing vital-capacity monitoring, and a stepwise painful asymmetric pattern is vasculitis needing urgent immunosuppression"),
   ],
+  // ---- ACUTE POLYRADICULONEUROPATHY (Guillain-Barré site; accuracy round 1, B14, 2026-09-26) ----
+  polyradiculoneuropathy_acute: [
+    c("Guillain-Barré syndrome", "inflammatory", ["acute","subacute"], "common", true,
+      "Ascending, roughly SYMMETRIC flaccid weakness over days with the reflexes LOST early and few objective sensory signs despite tingling — often weeks after a diarrhoeal (Campylobacter) or respiratory illness; back and limb pain are common and easily mistaken for a disc"),
+    c("Acute-onset CIDP", "inflammatory", ["subacute","chronic"], "uncommon", false,
+      "A presumed Guillain-Barré that keeps worsening well beyond the usual nadir, or relapses after treatment — the distinction matters because CIDP needs maintenance treatment rather than a single course"),
+    c("Botulism", "infective", ["hyperacute","acute"], "rare", true,
+      "DESCENDING paralysis that starts with the eyes, pupils and swallow and spreads to the limbs, in an alert, afebrile patient — the direction of travel is the discriminator from Guillain-Barré, which ascends; ask about home-preserved food and injecting drug use"),
+    c("Tick paralysis", "infective", ["acute"], "rare", true,
+      "An ascending flaccid paralysis indistinguishable at the bedside from Guillain-Barré, usually in a child after outdoor exposure, with a NORMAL CSF protein — search the scalp and skin folds, because removing the tick cures it"),
+    c("Elsberg syndrome (CMV or HSV-2 polyradiculitis)", "infective", ["acute","subacute"], "rare", false,
+      "A painful lumbosacral polyradiculitis with URINARY RETENTION in an immunocompromised patient (CMV) or after genital herpes — the CSF shows cells, which Guillain-Barré does not"),
+    c("Lyme radiculitis (Bannwarth syndrome)", "infective", ["subacute"], "rare", false,
+      "Severe radicular pain that is worse at night, followed by patchy weakness and often a facial palsy, weeks after a tick bite or an erythema migrans rash in an endemic area — a lymphocytic CSF separates it from Guillain-Barré"),
+    c("Acute intermittent porphyria", "metabolic", ["acute","subacute"], "rare", true,
+      "A motor-predominant neuropathy that can begin in the ARMS, preceded by severe abdominal pain, confusion or psychiatric change and hyponatraemia, often triggered by a drug, alcohol or fasting — many drugs given for the pain make it worse"),
+    c("Hypokalaemic periodic paralysis", "mimic", ["hyperacute","acute"], "rare", false,
+      "Flaccid weakness on waking or after a carbohydrate-heavy meal or rest after exertion, sparing the face and breathing, with a LOW potassium and full recovery between attacks — thyrotoxicosis is a common trigger, so check the thyroid"),
+  ],
   motor_unit_nmj_presynaptic: [
     c("Small cell lung carcinoma (paraneoplastic LEMS)", "neoplastic", ["subacute"], "common", true,
       "Proximal leg weakness with AUGMENTATION — power and depressed reflexes IMPROVE for a few seconds after sustained contraction, the opposite of myasthenia's fatigue; around half of cases have an underlying small cell lung cancer, so CT chest is mandatory even if the neurology settles",
@@ -2582,8 +2601,9 @@ export const CAUSES = {
   ],
   // --- cortex / subcortex ---
   subcortex_internal_capsule: [
-    c("Small-vessel lacunar infarct", "vascular", ["acute"], "common", false, "Pure motor (or sensorimotor) deficit, no cortical signs; hypertension/diabetes"),
-    c("Hypertensive haemorrhage", "vascular", ["acute"], "uncommon", true, "Deep bleed on CT; headache, reduced consciousness, very high BP"),
+    // Tempo aligned 2026-09-26 (B15): the same causes are hyperacute at every other site that names them.
+    c("Small-vessel lacunar infarct", "vascular", ["hyperacute","acute"], "common", false, "Pure motor (or sensorimotor) deficit, no cortical signs; hypertension/diabetes"),
+    c("Hypertensive haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true, "Deep bleed on CT; headache, reduced consciousness, very high BP"),
     c("Capsular warning syndrome", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Stuttering, crescendo, recurrent stereotyped episodes of pure motor weakness that keep resolving — a high risk of completing into a fixed capsular infarct, so it needs admission rather than reassurance"),
     c("Hypoglycaemia", "mimic", ["hyperacute","acute"], "common", true,
@@ -2678,7 +2698,7 @@ export const CAUSES = {
       "Headache, seizures and visual disturbance with severe hypertension, eclampsia or calcineurin-inhibitor exposure; posterior-predominant oedema that reverses once the trigger is treated"),
   ],
   cortex_hand_knob: [
-    c("Small precentral (hand-knob) infarct", "vascular", ["acute"], "common", false,
+    c("Small precentral (hand-knob) infarct", "vascular", ["hyperacute","acute"], "common", false,
       "Abrupt isolated hand weakness that looks exactly like an ulnar or median nerve palsy — the PSEUDO-PERIPHERAL cortical hand. What gives it away is that the weakness does not respect any single nerve or root, and a brisk reflex or subtle pronator drift betrays its cortical origin"),
     c("Cortical vein thrombosis", "vascular", ["acute","subacute"], "rare", true,
       "Focal hand weakness with SEIZURES and headache in a prothrombotic state, pregnancy or the puerperium — the deficit fits no arterial territory, which is the clue to image the veins"),

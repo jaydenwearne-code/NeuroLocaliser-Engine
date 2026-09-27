@@ -179,6 +179,7 @@ const TERRITORY = {
   "root|l5": "L5 nerve root (dorsum foot · great-toe extension)",
   "root|s1": "S1 nerve root (lateral foot · plantarflexion · ankle jerk)",
   "polyneuropathy|length_dependent": "peripheral nerves diffusely (length-dependent, distal-predominant)",
+  "polyradiculoneuropathy|acute": "nerve roots and peripheral nerves diffusely (acute inflammatory polyradiculoneuropathy)",
   "nerve|axillary":         "axillary nerve (C5-6, posterior cord)",
   "nerve|musculocutaneous": "musculocutaneous nerve (C5-6, lateral cord)",
   "nerve|suprascapular":    "suprascapular nerve (C5-6)",
@@ -285,7 +286,11 @@ export const DIVISION = {
   parietal:       { territory: "MCA", division: "inferior" },
   temporoparietal:{ territory: "MCA", division: "inferior" },
   temporal:       { territory: "MCA", division: "inferior" },
-  occipital:      { territory: "PCA" }
+  occipital:      { territory: "PCA" },
+  // ADDED 2026-09-26 (B10, owner-approved): the paracentral lobule (micturition, gait) and the SMA (alien limb)
+  // are medial frontal ACA territory. Without them an ACA stroke with incontinence read as two lesions.
+  paracentral:    { territory: "ACA" },
+  sma:            { territory: "ACA" }
 };
 
 // A larger lesion can span medial+lateral at one level/side (a "hemi-level" lesion).
@@ -329,9 +334,12 @@ export function composeBilateralCordSites() {
   const structuresForPart = part =>
     STRUCTURES.filter(s => s.level === "cord" && s.part === part).map(s => s.id);
 
+  // Bladder/bowel control (cord|autonomic, composite-only) belongs to the ANTERIOR and TRANSVERSE bilateral
+  // lesions only — accuracy round 1, B1.
+  const autonomic = structuresForPart("autonomic");
   const sites = [];
   for (const part of cordParts) {
-    const structures = structuresForPart(part);
+    const structures = [...structuresForPart(part), ...(part === "anterior" ? autonomic : [])];
     if (structures.length === 0) continue;
     sites.push({
       id: `bilateral_cord_${part}`,
@@ -352,7 +360,7 @@ export function composeBilateralCordSites() {
       id: "bilateral_cord_transverse",
       side: "bilateral", level: "cord", part: "transverse",
       territory: "complete cord cross-section (transverse myelopathy)",
-      structures: belowLevel, composite: true
+      structures: [...belowLevel, ...autonomic], composite: true
     });
   }
   return sites;
@@ -367,7 +375,9 @@ export function composeCaudaConusSites() {
     return structures.length ? [{ id, side: "midline", level, part,
       territory: TERRITORY[`${level}|${part}`], structures, composite: true }] : [];
   };
-  return [ ...build("cauda_equina", "cauda", "equina"),
+  // The cauda equina is often ASYMMETRIC (its own phonebook note says so; owner ruling 2026-09-25) — one
+  // absent ankle jerk must not exclude it. The conus is early and symmetric by its own description.
+  return [ ...build("cauda_equina", "cauda", "equina").map(s => ({ ...s, asymmetric: true })),
            ...build("conus_medullaris", "conus", "medullaris") ];
 }
 
@@ -427,8 +437,11 @@ export function composeVascularCortexSites() {
   const groups = [
     { part: "aca", parts: aca, terr: "anterior cerebral artery (medial hemisphere)" },
     { part: "mca_superior", parts: mcaSup, terr: "MCA superior division (fronto-opercular)" },
-    { part: "mca_inferior", parts: mcaInf, terr: "MCA inferior division (temporoparietal)" },
-    { part: "mca", parts: [...mcaSup, ...mcaInf], deepParts: ["internal_capsule"], terr: "complete MCA territory (cortical + deep lenticulostriate)" },
+    // B2 (2026-09-26, owner-approved): both the inferior division and the complete MCA reach the geniculo-
+    // calcarine radiation, so both predict homonymous hemianopia — the inferior division already predicted
+    // BOTH quadrantanopias. The superior division does not.
+    { part: "mca_inferior", parts: mcaInf, deepParts: ["optic_radiation"], terr: "MCA inferior division (temporoparietal)" },
+    { part: "mca", parts: [...mcaSup, ...mcaInf], deepParts: ["internal_capsule", "optic_radiation"], terr: "complete MCA territory (cortical + deep lenticulostriate)" },
     { part: "pca", parts: pca, terr: "posterior cerebral artery (occipital)" }
   ];
 
@@ -560,8 +573,12 @@ export function composeMotorUnitSites() {
   for (const part of parts) {
     const structures = STRUCTURES.filter(s => s.level === "motor_unit" && s.part === part).map(s => s.id);
     if (structures.length === 0) continue;
+    // ASYMMETRIC (owner ruling 2026-09-25): the motor-unit diseases often present on one side first —
+    // unilateral fatigable ptosis is classic myasthenia, and MND starts in one limb. The site still predicts
+    // BOTH sides (the un-entered side is an ordinary unreported prediction), but the known-negative filter
+    // must not treat the other side as examined-and-normal and exclude the whole disease.
     sites.push({ id: `motor_unit_${part}`, side: "bilateral", level: "motor_unit", part,
-      territory: TERRITORY[`motor_unit|${part}`], structures, composite: true });
+      territory: TERRITORY[`motor_unit|${part}`], structures, composite: true, asymmetric: true });
   }
   return sites;
 }
@@ -714,10 +731,12 @@ export function composeGuillainMollaretSites() {
 // structures) + a dominant aphasia feature, so they are never leaner than the plain site for a pure
 // sensory / motor input and win only when the aphasia feature accompanies the subcortical company.
 export function composeAphasiaSites() {
-  const perisylvian = ["ctx_broca_fluency", "ctx_broca_repetition", "ctx_wernicke_comp", "ctx_wernicke_repetition", "ctx_arcuate"];
-  const bothWatersheds = ["ctx_tcma", "ctx_tcsa"];
-  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_pain"];
-  const striatocapsular = ["sc_aphasia_nonfluent", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_spast"];
+  const perisylvian = ["ctx_broca_fluency", "ctx_broca_repetition", "ctx_broca_naming", "ctx_wernicke_comp", "ctx_wernicke_repetition", "ctx_wernicke_naming", "ctx_arcuate", "ctx_arcuate_naming"];
+  const bothWatersheds = ["ctx_tcma", "ctx_tcma_naming", "ctx_tcsa", "ctx_tcsa_naming"];
+  // thal_face keeps this composite in step with the VPL site (B11): without it the NON-dominant composite —
+  // whose dominant-only rows emit nothing — is a VPL lesion missing the face, and out-ranks the real one.
+  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face", "thal_pain"];
+  const striatocapsular = ["sc_aphasia_nonfluent", "sc_aphasia_naming", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_spast"];
   const out = [];
   for (const side of SIDES) {
     out.push({ id: `aphasia_global_${side}`, side, level: "cortex", part: "aphasia_global",
@@ -789,6 +808,16 @@ export function composeCerebellumPancerebellarSites() {
 // like the motor-unit sites; `polyneuropathy` is not in LEVELS/PARTS). WHICH site it is is trivial; HOW
 // FAR the deficit has ascended (and whether the stocking-glove has appeared) is the orthogonal
 // nerveLength.js axis, attached by inverse.describeLength.
+// ACUTE POLYRADICULONEUROPATHY (Guillain-Barré; accuracy round 1, B14). One diffuse bilateral site, like the
+// polyneuropathy — but SYMMETRIC by definition (no `asymmetric` flag): an asymmetric picture points away from
+// GBS, toward mononeuritis multiplex or a structural cause. Picked up by candidateSites() via reflection.
+export function composePolyradiculoneuropathySites() {
+  const structures = STRUCTURES.filter(s => s.level === "polyradiculoneuropathy" && s.part === "acute").map(s => s.id);
+  if (structures.length === 0) return [];
+  return [{ id: "polyradiculoneuropathy_acute", side: "bilateral", level: "polyradiculoneuropathy",
+    part: "acute", territory: TERRITORY["polyradiculoneuropathy|acute"], structures, composite: true }];
+}
+
 export function composePolyneuropathySites() {
   const structures = STRUCTURES.filter(s => s.level === "polyneuropathy" && s.part === "length_dependent").map(s => s.id);
   if (structures.length === 0) return [];

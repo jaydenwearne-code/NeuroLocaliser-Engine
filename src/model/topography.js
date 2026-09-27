@@ -146,6 +146,7 @@ export const TOPOGRAPHY = {
   "plexus|sacral_plexus":                        { lobe: null        , surface: false, system: null },
   "plexus|upper_trunk":                          { lobe: null        , surface: false, system: null },
   "polyneuropathy|length_dependent":             { lobe: null        , surface: false, system: null },
+  "polyradiculoneuropathy|acute":                { lobe: null        , surface: true , system: null },
   "pons|basis_pontis":                           { lobe: null        , surface: false, system: "brainstem" },
   "pons|hemi":                                   { lobe: null        , surface: false, system: "brainstem" },
   "pons|lateral":                                { lobe: null        , surface: false, system: "brainstem" },

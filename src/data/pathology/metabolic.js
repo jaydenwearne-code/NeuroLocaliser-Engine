@@ -151,6 +151,22 @@ const DEFICIENCY = {
 };
 
 export default {
+  // Accuracy round 1 (B14): a neuropathy that the wrong analgesic makes worse.
+  "Acute intermittent porphyria": dz("Acute intermittent porphyria", {
+    confirmatory: [
+      "URINE PORPHOBILINOGEN on a sample taken DURING the attack — it is the screening test, markedly raised in an acute attack, and it can be normal between attacks",
+      "Serum sodium (hyponatraemia is common and contributes to seizures), with renal and liver function",
+      "Nerve conduction studies show an axonal, motor-predominant neuropathy; genetic testing and family screening follow once the biochemistry confirms it",
+    ],
+    monitoring: [
+      "SAFETY NET: STOP every porphyrinogenic drug and check each new prescription against a porphyria drug database before it is given — many analgesics, anticonvulsants and anaesthetic agents precipitate or worsen an attack",
+      "Monitor vital capacity, bulbar function and sodium — the neuropathy can progress to respiratory failure like Guillain-Barré",
+      "Haem therapy is the specific treatment and is started early by the specialist team; carbohydrate loading is only a bridge",
+    ],
+    urgency: "emergency",
+    referral: "Acute medicine with neurology and the regional porphyria service",
+  }),
+
   // ---- DIABETIC ----
   ...family("diabetic-complication", DIABETIC, {
     "Diabetes mellitus": {

@@ -81,6 +81,8 @@ export const STRUCTURES = [
     note: "abducens FASCICLE (caudal pons) — isolated abduction weakness; with cn7 + cst = Millard-Gubler (vs the NUCLEUS, which gives a gaze palsy → abducens_nucleus / Foville)" },
   { id: "cn7_fascicle",   level: "pons", part: "medial",  produces: "facial_weakness", crosses: false,
     note: "facial fascicle looping around the abducens nucleus" },
+  { id: "cn7_fasc_forehead", level: "pons", part: "medial", produces: "forehead_involved",
+    note: "VII fascicle — LMN, so the forehead is weak too" },
   { id: "pprf",           level: "pons", part: "medial",  produces: "gaze_palsy",
     note: "paramedian pontine reticular formation / lateral gaze centre" },
   { id: "mlf_pons",       level: "pons", part: "medial",  produces: "ino",
@@ -97,6 +99,28 @@ export const STRUCTURES = [
     note: "vestibular nuclei laterally" },
   { id: "cn8_pons_nyst",  level: "pons", part: "lateral", produces: "nystagmus_gaze_evoked",
     note: "vestibular nuclei (pons) — central gaze-evoked nystagmus" },
+  // ADDED 2026-09-26 (accuracy round 1, owner-approved B12): the classic AICA / lateral INFERIOR pontine
+  // syndrome. The model held only the peduncle, spinothalamic and vestibular rows here, so an AICA stroke
+  // with deafness and facial palsy localised to the lateral MEDULLA. All ipsilateral. The Wallenberg-vs-AICA
+  // discriminators now EMERGE: bulbar signs (nucleus ambiguus) are medullary; facial palsy and deafness pontine.
+  { id: "cn7_nuc_lat", level: "pons", part: "lateral", produces: "facial_weakness", crosses: false,
+    note: "facial nucleus (caudal pontine tegmentum) — IPSI LMN facial weakness (AICA)" },
+  { id: "cn7_nuc_lat_forehead", level: "pons", part: "lateral", produces: "forehead_involved",
+    note: "facial nucleus — LMN, so the forehead is weak too" },
+  { id: "cochlear_pons", level: "pons", part: "lateral", produces: "hearing_loss",
+    note: "cochlear nuclei / labyrinthine artery (an AICA branch) — IPSI sensorineural deafness" },
+  { id: "sp5_pons", level: "pons", part: "lateral", produces: "face_pain_loss",
+    note: "spinal trigeminal nucleus and tract (caudal pons) — IPSI facial pain/temperature loss" },
+  { id: "sym_pons_miosis", level: "pons", part: "lateral", produces: "miosis",
+    note: "descending sympathetic fibres (lateral tegmentum) — IPSI Horner (miosis)" },
+  { id: "sym_pons_ptosis", level: "pons", part: "lateral", produces: "ptosis",
+    note: "descending sympathetic fibres (lateral tegmentum) — IPSI Horner (ptosis)" },
+  // ADDED 2026-09-26 (follow-up, owner-approved): a central (first-order) Horner gives HEMIBODY anhidrosis — the same four
+  // sympathetic rows the lateral medulla carries, so the anhidrosis axis reads "central" here too.
+  { id: "sym_pons_anhface", level: "pons", part: "lateral", produces: "anhidrosis_face",
+    note: "descending sympathetic fibres — IPSI facial anhidrosis (central Horner)" },
+  { id: "sym_pons_anhbody", level: "pons", part: "lateral", produces: "anhidrosis_body",
+    note: "descending sympathetic fibres — IPSI hemibody anhidrosis: the central-Horner marker" },
   { id: "trig_main_sensory", level: "pons", part: "trigeminal", produces: "face_touch_loss",
     note: "principal / main sensory nucleus (pons) — discriminative facial touch; ipsilateral" },
   { id: "trig_motor",        level: "pons", part: "trigeminal", produces: "jaw_weakness",
@@ -149,6 +173,13 @@ export const STRUCTURES = [
   { id: "cst_cord_leg", level: "cord", part: "anterior", produces: "weak_leg", crosses: false, note: "corticospinal (cord) — IPSI leg weakness below the level" },
   { id: "stt_cord",  level: "cord", part: "anterior",  produces: "spinothalamic",  crosses: true,
     note: "spinothalamic tract — crosses within the cord (~1–2 levels), so CONTRALATERAL pain/temperature loss below the level" },
+  // ADDED 2026-09-26 (accuracy round 1, owner-approved B1): bladder and bowel control from BOTH sides of the
+  // cord. A composite-only part (not in sites.js PARTS, like cord|central), pulled in by the bilateral
+  // ANTERIOR and TRANSVERSE composites only — sphincter failure needs both descending pathways, so the
+  // hemicord does not get it, and in a syrinx it is late and inconsistent (owner: central cord NO).
+  // emit:"midline" because bladder function has no side: it must match the token cauda/conus emit.
+  { id: "cord_sphincter", level: "cord", part: "autonomic", produces: "sphincter_dysfunction", crosses: false, emit: "midline",
+    note: "bilateral descending autonomic pathways — sphincter dysfunction below the level" },
   { id: "dc_cord",   level: "cord", part: "posterior", produces: "dorsal_sensory", crosses: false,
     note: "dorsal columns (PSA-supplied) — ascend uncrossed to the medulla, so IPSILATERAL vibration/proprioception loss" },
   { id: "dc_sensory_ataxia", level: "cord", part: "posterior", produces: "sensory_ataxia", crosses: false,
@@ -200,6 +231,10 @@ export const STRUCTURES = [
     note: "frontal operculum (Broca) — non-fluent output; dominant hemisphere" },
   { id: "ctx_broca_repetition", level: "cortex", part: "operculum", produces: "repetition_impaired", hemisphere: "dominant",
     note: "frontal operculum (Broca) — impaired repetition (perisylvian); dominant hemisphere" },
+  // ADDED 2026-09-26 (B9): anomia is part of EVERY aphasia (score.js already said so), but only the angular
+  // gyrus and the thalamus predicted it, so Broca or Wernicke with anomia read as two lesions.
+  { id: "ctx_broca_naming", level: "cortex", part: "operculum", produces: "naming_impaired", hemisphere: "dominant",
+    note: "frontal operculum (Broca) — word-finding failure; anomia accompanies every aphasia" },
   { id: "ctx_motor_prosody", level: "cortex", part: "operculum", produces: "motor_dysprosody", hemisphere: "nondominant",
     note: "right frontal operculum homologue — non-dominant motor aprosodia" },
   { id: "ctx_fef",         level: "cortex", part: "frontal_eye_field", produces: "gaze_deviation",
@@ -258,15 +293,23 @@ export const STRUCTURES = [
     note: "dominant temporoparietal (Wernicke) — impaired comprehension" },
   { id: "ctx_wernicke_repetition", level: "cortex", part: "temporoparietal", produces: "repetition_impaired", hemisphere: "dominant",
     note: "dominant temporoparietal (Wernicke) — impaired repetition (perisylvian)" },
+  { id: "ctx_wernicke_naming", level: "cortex", part: "temporoparietal", produces: "naming_impaired", hemisphere: "dominant",
+    note: "dominant temporoparietal (Wernicke) — anomia with paraphasic errors" },
   { id: "ctx_sensory_prosody", level: "cortex", part: "temporoparietal", produces: "sensory_dysprosody", hemisphere: "nondominant",
     note: "non-dominant temporoparietal — sensory aprosodia" },
   // The rest of the perisylvian / watershed language map (all dominant; new parts, NOT in DIVISION).
   { id: "ctx_arcuate", level: "cortex", part: "arcuate", produces: "repetition_impaired", hemisphere: "dominant",
     note: "arcuate fasciculus / supramarginal gyrus — CONDUCTION aphasia (repetition impaired, fluency + comprehension intact)" },
+  { id: "ctx_arcuate_naming", level: "cortex", part: "arcuate", produces: "naming_impaired", hemisphere: "dominant",
+    note: "arcuate / supramarginal (conduction) — naming marred by phonemic paraphasias" },
   { id: "ctx_tcma", level: "cortex", part: "watershed_anterior", produces: "speech_nonfluent", hemisphere: "dominant",
     note: "anterior watershed (ACA-MCA border / SMA) — TRANSCORTICAL MOTOR (non-fluent, repetition SPARED)" },
+  { id: "ctx_tcma_naming", level: "cortex", part: "watershed_anterior", produces: "naming_impaired", hemisphere: "dominant",
+    note: "anterior watershed (transcortical motor) — anomia" },
   { id: "ctx_tcsa", level: "cortex", part: "watershed_posterior", produces: "comprehension_impaired", hemisphere: "dominant",
     note: "posterior watershed (MCA-PCA border) — TRANSCORTICAL SENSORY (impaired comprehension, repetition SPARED)" },
+  { id: "ctx_tcsa_naming", level: "cortex", part: "watershed_posterior", produces: "naming_impaired", hemisphere: "dominant",
+    note: "posterior watershed (transcortical sensory) — marked anomia" },
   { id: "ctx_anomic", level: "cortex", part: "angular", produces: "naming_impaired", hemisphere: "dominant",
     note: "angular gyrus — ANOMIC aphasia (isolated naming failure; the least-localising aphasia)" },
   // Subcortical aphasia feature structures (composer-only level so they don't pollute the plain
@@ -277,6 +320,8 @@ export const STRUCTURES = [
     note: "dominant thalamus — anomia of thalamic aphasia" },
   { id: "sc_aphasia_nonfluent",level: "aphasia_subcortical", part: "striatocapsular", produces: "speech_nonfluent", hemisphere: "dominant",
     note: "dominant striatum / internal capsule — striatocapsular aphasia (non-fluent, dysarthric)" },
+  { id: "sc_aphasia_naming", level: "aphasia_subcortical", part: "striatocapsular", produces: "naming_impaired", hemisphere: "dominant",
+    note: "dominant striatum / internal capsule — anomia of striatocapsular aphasia" },
   { id: "ctx_hallucinations", level: "cortex", part: "temporal", produces: "hallucinations",
     note: "temporal lobe (either side) — hallucinations / episodic fear" },
   { id: "ctx_mood",        level: "cortex", part: "temporal", produces: "mood_change",
@@ -329,6 +374,10 @@ export const STRUCTURES = [
     note: "VPL thalamus — the relay for the (already crossed) spinothalamic tract" },
   { id: "thal_pain", level: "subcortex", part: "thalamus", produces: "thalamic_pain",
     note: "VPL thalamus — central post-stroke pain (Déjerine–Roussy), the same lesion delayed" },
+  // ADDED 2026-09-26 (B11): VPM sits beside VPL, and the pure-sensory lacune is face, arm AND leg — as this
+  // site's own phonebook note says. Without it a pure sensory stroke localised to the lateral midbrain.
+  { id: "thal_face", level: "subcortex", part: "thalamus", produces: "face_sensory_loss",
+    note: "VPM beside VPL — contralateral facial sensory loss (the pure-sensory lacune is face-arm-leg)" },
   // Other thalamic nuclei — a DEDICATED `thalamus` level (like thalamus_arousal / aphasia_subcortical), so the
   // `subcortex/thalamus` VPL relay is untouched and the subcortex "no gated structure" invariant holds.
   { id: "thal_vpm",  level: "thalamus", part: "vpm", produces: "face_sensory_loss",
@@ -420,10 +469,19 @@ export const STRUCTURES = [
     note: "labyrinth / vestibular nerve — vertigo (vestibular neuritis, labyrinthitis, Ménière, BPPV)" },
   { id: "vest_head_impulse", level: "peripheral_vestibular", part: "labyrinth", produces: "head_impulse_abnormal",
     note: "labyrinth / vestibular nerve — abnormal head impulse (corrective saccade); the peripheral HINTS sign" },
+  // ADDED 2026-09-26 (B4, owner-approved): the labyrinth now predicts hearing loss. Vestibular neuritis (no
+  // hearing loss) still matches — the hearing becomes an unreported prediction — while labyrinthitis and
+  // Ménière no longer read as "labyrinth + CPA". This REVERSES the earlier neuritis-only modelling.
+  { id: "vest_periph_hearing", level: "peripheral_vestibular", part: "labyrinth", produces: "hearing_loss",
+    note: "cochlea (labyrinthine artery) — IPSI sensorineural hearing loss: labyrinthitis / Ménière" },
   // canal-specific BPPV — positional nystagmus DIRECTION localises the semicircular canal
   { id: "bppv_post",  level: "peripheral_vestibular", part: "posterior_canal",  produces: "nystagmus_positional_posterior",  note: "posterior semicircular canal — up-beat torsional positional nystagmus (BPPV)" },
   { id: "bppv_horiz", level: "peripheral_vestibular", part: "horizontal_canal", produces: "nystagmus_positional_horizontal", note: "horizontal (lateral) canal — horizontal positional nystagmus (BPPV)" },
   { id: "bppv_ant",   level: "peripheral_vestibular", part: "anterior_canal",   produces: "nystagmus_positional_anterior",   note: "anterior canal — down-beat torsional positional nystagmus (BPPV, rare)" },
+  // ADDED 2026-09-26 (B3): BPPV is VERTIGO — without these, vertigo + a positive Dix-Hallpike read as two lesions.
+  { id: "bppv_post_vertigo",  level: "peripheral_vestibular", part: "posterior_canal",  produces: "cn8_vertigo", note: "posterior canal BPPV — brief positional vertigo" },
+  { id: "bppv_horiz_vertigo", level: "peripheral_vestibular", part: "horizontal_canal", produces: "cn8_vertigo", note: "horizontal canal BPPV — positional vertigo on rolling" },
+  { id: "bppv_ant_vertigo",   level: "peripheral_vestibular", part: "anterior_canal",   produces: "cn8_vertigo", note: "anterior canal BPPV — positional vertigo" },
 
   // ---- CENTRAL VESTIBULAR (vestibular nucleus / nodulus) — the lean HINTS-central AVS site ----
   // The central counterpart to the peripheral labyrinth: continuous vertigo with a NORMAL head impulse,
@@ -500,6 +558,9 @@ export const STRUCTURES = [
     note: "intralaminar / paramedian thalamus — arousal relay of the ARAS; BILATERAL only (artery of Percheron)" },
   { id: "thal_vgaze_bilat", level: "thalamus_arousal", part: "paramedian", produces: "vertical_gaze_palsy", bilateralOnly: true,
     note: "meso-diencephalic junction — Percheron's vertical gaze palsy; BILATERAL only" },
+  // ADDED 2026-09-26 (B8): memory and confusion are the third limb of the Percheron triad (its own note).
+  { id: "thal_amnesia_bilat", level: "thalamus_arousal", part: "paramedian", produces: "amnesia", bilateralOnly: true,
+    note: "bilateral paramedian (dorsomedial) thalami — amnesia / confusion (Percheron)" },
   { id: "aras_brainstem", level: "brainstem_aras", part: "paramedian_tegmentum", produces: "reduced_consciousness",
     note: "paramedian rostral pons/midbrain tegmentum — ascending reticular activating system (arousal)" },
   { id: "aras_posturing", level: "brainstem_aras", part: "paramedian_tegmentum", produces: "extensor_posturing",
@@ -549,6 +610,9 @@ export const STRUCTURES = [
   { id: "scd_ataxia", level: "combined_degeneration", part: "scd", produces: "sensory_ataxia", note: "SCD — sensory (Romberg-positive) ataxia" },
   { id: "scd_spast",  level: "combined_degeneration", part: "scd", produces: "spasticity",     note: "SCD — lateral corticospinal (spastic legs)" },
   { id: "scd_bab",    level: "combined_degeneration", part: "scd", produces: "babinski",       note: "SCD — extensor plantars (corticospinal)" },
+  // ADDED 2026-09-26 (B6): absent ankle jerks WITH extensor plantars — the co-existing B12 neuropathy.
+  { id: "scd_ankle_reflex", level: "combined_degeneration", part: "scd", produces: "reflex_ankle_loss",
+    note: "SCD — ankle jerks lost with extensor plantars (co-existing neuropathy)" },
   { id: "fr_dc",       level: "combined_degeneration", part: "friedreich", produces: "dorsal_sensory", note: "Friedreich — dorsal columns" },
   { id: "fr_ataxia_s", level: "combined_degeneration", part: "friedreich", produces: "sensory_ataxia", note: "Friedreich — sensory ataxia" },
   { id: "fr_ataxia_c", level: "combined_degeneration", part: "friedreich", produces: "limb_ataxia",    note: "Friedreich — spinocerebellar / cerebellar limb ataxia" },
@@ -673,24 +737,30 @@ export const STRUCTURES = [
 
   // VII facial — meatal (IAM, with VIII) then intratemporal chain; each distal segment spares one branch.
   { id: "iam_vii_motor", level: "skull_base", part: "iam", produces: "facial_weakness", crosses: false,         note: "IAM — facial motor (VII), before geniculate" },
+  { id: "iam_vii_forehead", level: "skull_base", part: "iam", produces: "forehead_involved", note: "IAM — VII LMN, forehead weak" },
   { id: "iam_vii_lacr",  level: "skull_base", part: "iam", produces: "lacrimation_loss", note: "IAM — greater petrosal (lacrimation)" },
   { id: "iam_vii_hyper", level: "skull_base", part: "iam", produces: "hyperacusis",      note: "IAM — nerve to stapedius (hyperacusis)" },
   { id: "iam_vii_taste", level: "skull_base", part: "iam", produces: "taste_loss",       note: "IAM — chorda tympani (taste)" },
   { id: "iam_viii",      level: "skull_base", part: "iam", produces: "hearing_loss",     note: "IAM — cochlear nerve (VIII); the meatal-vs-geniculate discriminator" },
   { id: "vii_gen_motor", level: "skull_base", part: "vii_geniculate", produces: "facial_weakness", crosses: false,         note: "geniculate — motor (Ramsay Hunt)" },
+  { id: "vii_gen_forehead", level: "skull_base", part: "vii_geniculate", produces: "forehead_involved", note: "geniculate — VII LMN, forehead weak" },
   { id: "vii_gen_lacr",  level: "skull_base", part: "vii_geniculate", produces: "lacrimation_loss", note: "geniculate — greater petrosal (lacrimation)" },
   { id: "vii_gen_hyper", level: "skull_base", part: "vii_geniculate", produces: "hyperacusis",      note: "geniculate — stapedius (hyperacusis)" },
   { id: "vii_gen_taste", level: "skull_base", part: "vii_geniculate", produces: "taste_loss",       note: "geniculate — chorda tympani (taste)" },
   { id: "vii_tym_motor", level: "skull_base", part: "vii_tympanic", produces: "facial_weakness", crosses: false,     note: "tympanic — motor; greater petrosal already left ⊃ lacrimation SPARED" },
+  { id: "vii_tym_forehead", level: "skull_base", part: "vii_tympanic", produces: "forehead_involved", note: "tympanic — VII LMN, forehead weak" },
   { id: "vii_tym_hyper", level: "skull_base", part: "vii_tympanic", produces: "hyperacusis", note: "tympanic — stapedius (hyperacusis)" },
   { id: "vii_tym_taste", level: "skull_base", part: "vii_tympanic", produces: "taste_loss",  note: "tympanic — chorda tympani (taste)" },
   { id: "vii_mas_motor", level: "skull_base", part: "vii_mastoid", produces: "facial_weakness", crosses: false,    note: "mastoid — motor; stapedius already left ⊃ hyperacusis SPARED" },
+  { id: "vii_mas_forehead", level: "skull_base", part: "vii_mastoid", produces: "forehead_involved", note: "mastoid — VII LMN, forehead weak" },
   { id: "vii_mas_taste", level: "skull_base", part: "vii_mastoid", produces: "taste_loss", note: "mastoid — chorda tympani (taste)" },
   { id: "vii_sty_motor", level: "skull_base", part: "vii_stylomastoid", produces: "facial_weakness", crosses: false, note: "stylomastoid foramen — pure motor (Bell's palsy site); chorda already left ⊃ taste SPARED" },
+  { id: "vii_sty_forehead", level: "skull_base", part: "vii_stylomastoid", produces: "forehead_involved", note: "stylomastoid — VII LMN, forehead weak (Bell's palsy)" },
   { id: "vii_par_branch", level: "skull_base", part: "vii_parotid", produces: "facial_weak_branch", note: "parotid — single branch, partial hemiface" },
 
   // CPA — the cerebellopontine angle: VII + VIII + trigeminal root (corneal) + cerebellar compression.
   { id: "cpa_cn7",    level: "skull_base", part: "cpa", produces: "facial_weakness", crosses: false,     note: "facial nerve (VII) at the CPA" },
+  { id: "cpa_cn7_forehead", level: "skull_base", part: "cpa", produces: "forehead_involved", note: "CPA — VII LMN, forehead weak" },
   { id: "cpa_cn8",    level: "skull_base", part: "cpa", produces: "hearing_loss", note: "vestibulocochlear (VIII) at the CPA — sensorineural hearing loss (vestibular schwannoma)" },
   { id: "cpa_v1",     level: "skull_base", part: "cpa", produces: "v1_sensory",  note: "trigeminal root (V) at the CPA — reduced corneal reflex" },
   { id: "cpa_ataxia", level: "skull_base", part: "cpa", produces: "limb_ataxia", note: "cerebellar / peduncle compression by a large CPA mass — ipsilateral ataxia" },
@@ -737,6 +807,11 @@ export const STRUCTURES = [
     note: "post-synaptic NMJ (AChR) — fatigable weakness worsening with effort (myasthenia gravis)" },
   { id: "mg_ocular", level: "motor_unit", part: "nmj_postsynaptic", produces: "fatigable_ocular",
     note: "ocular myasthenia — fatigable ptosis and diplopia (separates MG from LEMS)" },
+  // ADDED 2026-09-26 (accuracy round 1 follow-up): ptosis is the commonest presenting sign of myasthenia, but
+  // only `fatigable_ocular` was modelled, so plain ptosis never listed MG. The site is ASYMMETRIC, so a
+  // one-sided ptosis keeps it — unilateral fatigable ptosis is the classic picture.
+  { id: "mg_ptosis", level: "motor_unit", part: "nmj_postsynaptic", produces: "ptosis",
+    note: "myasthenia — ptosis, often asymmetric and fatigable (the commonest presenting sign)" },
   { id: "mg_bulbar_dysph", level: "motor_unit", part: "nmj_postsynaptic", produces: "dysphagia",
     note: "bulbar myasthenia — fatigable dysphagia" },
   { id: "mg_bulbar_dysar", level: "motor_unit", part: "nmj_postsynaptic", produces: "dysarthria",
@@ -837,6 +912,28 @@ export const STRUCTURES = [
     note: "length-dependent sensory axonopathy — distal symmetric (stocking-glove)" },
   { id: "poly_motor",   level: "polyneuropathy", part: "length_dependent", produces: "distal_motor_weakness",
     note: "length-dependent motor axonopathy — distal symmetric weakness" },
+  // ADDED 2026-09-26 (B5): the ankle jerks go first — the longest reflex arc. The site's own note already said so.
+  { id: "poly_ankle_reflex", level: "polyneuropathy", part: "length_dependent", produces: "reflex_ankle_loss",
+    note: "length-dependent — the ANKLE jerks are lost first (the longest reflex arc)" },
+
+  // ---- ACUTE POLYRADICULONEUROPATHY (Guillain-Barré; bilateral, symmetric site) ----
+  // ADDED 2026-09-26 (accuracy round 1, owner-approved B14). Roots and nerves inflamed together, so the
+  // weakness is PROXIMAL as well as distal (not length-dependent) and EVERY reflex goes. Motor-predominant:
+  // no sensory row, by owner ruling — predicting it would blur GBS into the length-dependent neuropathy.
+  { id: "gbs_lmn",             level: "polyradiculoneuropathy", part: "acute", produces: "lmn_weakness",               note: "ascending flaccid (LMN) weakness, legs usually before arms" },
+  { id: "gbs_prox",            level: "polyradiculoneuropathy", part: "acute", produces: "proximal_weakness",          note: "PROXIMAL as well as distal — the roots are involved, so it is not length-dependent" },
+  { id: "gbs_distal",          level: "polyradiculoneuropathy", part: "acute", produces: "distal_motor_weakness",      note: "distal weakness" },
+  { id: "gbs_hypotonia",       level: "polyradiculoneuropathy", part: "acute", produces: "hypotonia",                  note: "flaccid" },
+  { id: "gbs_areflex_biceps",  level: "polyradiculoneuropathy", part: "acute", produces: "reflex_biceps_loss",         note: "biceps jerk lost — generalised areflexia" },
+  { id: "gbs_areflex_br",      level: "polyradiculoneuropathy", part: "acute", produces: "reflex_brachioradialis_loss", note: "supinator jerk lost" },
+  { id: "gbs_areflex_triceps", level: "polyradiculoneuropathy", part: "acute", produces: "reflex_triceps_loss",        note: "triceps jerk lost" },
+  { id: "gbs_areflex_knee",    level: "polyradiculoneuropathy", part: "acute", produces: "reflex_knee_loss",           note: "knee jerk lost" },
+  { id: "gbs_areflex_ankle",   level: "polyradiculoneuropathy", part: "acute", produces: "reflex_ankle_loss",          note: "ankle jerk lost" },
+  { id: "gbs_face",            level: "polyradiculoneuropathy", part: "acute", produces: "facial_weakness", crosses: false, note: "BILATERAL LMN facial weakness (facial nerve roots) — never Bell's palsy" },
+  { id: "gbs_forehead",        level: "polyradiculoneuropathy", part: "acute", produces: "forehead_involved",          note: "LMN, so the forehead is weak too" },
+  { id: "gbs_bulbar",          level: "polyradiculoneuropathy", part: "acute", produces: "dysphagia",                  note: "bulbar weakness — swallow and cough" },
+  { id: "gbs_resp",            level: "polyradiculoneuropathy", part: "acute", produces: "weak_diaphragm",             note: "diaphragm weakness — measure the vital capacity, not the saturation" },
+  { id: "gbs_autonomic",       level: "polyradiculoneuropathy", part: "acute", produces: "autonomic_features",         note: "dysautonomia — arrhythmia and labile blood pressure" },
 
   // ---- NAMED PERIPHERAL NERVES (mononeuropathy; part = nerve) ----
   // Each nerve is a territory site: its cutaneous sensory territory + the movements it supplies. It
@@ -962,6 +1059,11 @@ export const STRUCTURES = [
   { id: "conus_bulbo", level: "conus", part: "medullaris", produces: "bulbocavernosus_loss", crosses: false, note: "S2–4 sacral arc — bulbocavernosus lost" },
   { id: "cauda_anal", level: "cauda", part: "equina", produces: "anal_wink_loss", crosses: false, note: "S2–4 sacral roots — anal wink lost" },
   { id: "cauda_bulbo", level: "cauda", part: "equina", produces: "bulbocavernosus_loss", crosses: false, note: "S2–4 sacral roots — bulbocavernosus lost" },
+  // ADDED 2026-09-26 (B7): the S1 roots in the cauda carry the ankle jerk. emit:"bilateral" because the
+  // clinician records it per side and the cauda site is midline; the site is ASYMMETRIC (owner), so one absent
+  // ankle jerk does not exclude it. Knee jerks deliberately NOT added (owner: ankle only).
+  { id: "cauda_ankle_reflex", level: "cauda", part: "equina", produces: "reflex_ankle_loss", crosses: false, emit: "bilateral",
+    note: "S1 roots in the cauda — ankle jerk lost, often asymmetrically" },
   // Frontal release signs — contralateral (grasp) / non-specific (palmomental), frontal cortex.
   { id: "ctx_grasp", level: "cortex", part: "medial_pfc", produces: "grasp_reflex", note: "medial frontal — contralateral grasp reflex" },
   { id: "ctx_palmomental", level: "cortex", part: "orbitofrontal", produces: "palmomental", note: "frontal release — palmomental (non-specific)" },

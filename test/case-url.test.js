@@ -1,5 +1,6 @@
 // case-url.test.js — the case ⇄ URL-hash serializer is a pure, DOM-free string function (testable in node).
 import { encodeCase, decodeCase } from "../app/case-url.js";
+import { readFileSync } from "node:fs";
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l); };
@@ -117,6 +118,25 @@ ok("accepts the stroke mode", decodeCase("#m=stroke", {}).mode === "stroke");
   // And the two agree rather than fighting when both are present.
   const both = decodeCase("#" + encodeCase({ scope: "all", selectedEntity: "Multiple sclerosis" }), { validEntities });
   ok("sc and ux agree when both are present", both.scope === "all" && both.selectedEntity === "Multiple sclerosis");
+}
+
+// ---- removing the LAST finding must clear the case from the URL (2026-09-26) ----
+// renderResults() returned early on an empty finding set BEFORE syncURL() ran, so the hash kept the removed
+// findings: a reload, a copied link or the feedback button brought them back. Found by driving the app.
+// app.js is DOM-bound, so the guard is over its source (comments stripped, the same approach as the call-site
+// guard in combined-sites.test.js); the pure half is that an empty case with no selection encodes to nothing.
+{
+  const strip = src => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  const src = strip(readFileSync(new URL("../app/app.js", import.meta.url), "utf8"));
+  const body = src.slice(src.indexOf("function renderResults()"));
+  const emptyStart = body.indexOf("if (!S.tokens.size)");
+  const emptyBranch = emptyStart >= 0 ? body.slice(emptyStart, body.indexOf("return;", emptyStart)) : "";
+  ok("renderResults' empty-findings branch syncs the URL before returning", emptyBranch.includes("syncURL()"));
+  ok("…and clears the per-case selections first",
+     /S\.selected\s*=\s*undefined/.test(emptyBranch) && /S\.selectedPathology\s*=\s*undefined/.test(emptyBranch)
+     && /S\.selectedEntity\s*=\s*undefined/.test(emptyBranch));
+  ok("an empty case with no selection encodes to an empty hash",
+     encodeCase({ tokens: new Set(), mode: "localise", dominant: "left", pinned: new Set() }) === "");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

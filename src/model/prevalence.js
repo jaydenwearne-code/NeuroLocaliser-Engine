@@ -11,21 +11,35 @@ export const COMMON = 2, UNCOMMON = 1, RARE = 0; // higher sorts first
 const RARE_LEVELS = new Set([
   "locked_in", "combined_degeneration", "guillain_mollaret", "pseudobulbar", "brainstem_aras",
   "thalamus_arousal", "corpus_callosum", "hypothalamus", "pontomesencephalic", "dorsal_midbrain",
-  "craniocervical_junction", "central_vestibular",
+  "craniocervical_junction", "central_vestibular", "polyradiculoneuropathy",
 ]);
 // Common by level — default for the whole level unless a rare rule fires.
 const COMMON_LEVELS = new Set(["cortex", "basal_ganglia", "root", "nerve", "polyneuropathy"]);
+// Bilateral sites that are nonetheless COMMON — see the bilateral rule in prevalenceOf().
+const COMMON_BILATERAL_LEVELS = new Set(["polyneuropathy"]);
 // Common by (level, part) — the lacunar subcortical parts.
 const COMMON_PARTS = new Set([
   "subcortex/internal_capsule", "subcortex/corona_radiata",
   "subcortex/anterior_choroidal", "subcortex/sensorimotor",
+  // posterior-canal BPPV — the commonest cause of vertigo (owner ruling 2026-09-26)
+  "peripheral_vestibular/posterior_canal",
+  // the lateral medulla — Wallenberg is the commonest brainstem stroke syndrome (owner, 2026-09-26). Once the
+  // lateral pons carried the full central-Horner row set, a bare central Horner ranked the pons first.
+  "medulla/lateral",
 ]);
 // Rare by (level, part).
-const RARE_PARTS = new Set(["cerebellum/pancerebellar", "cord/transverse"]);
+// anterior-canal BPPV is the rarest canal (owner ruling 2026-09-26: once the canals predict vertigo, an
+// alphabetical tie-break put it first for isolated vertigo). The isolated lateral-midbrain sensory syndrome
+// is rare (owner ruling 7, 2026-09-26): it predicts the same pure hemisensory picture as the VPL thalamus,
+// which is the common lacune.
+const RARE_PARTS = new Set(["cerebellum/pancerebellar", "cord/transverse", "peripheral_vestibular/anterior_canal", "midbrain/lateral"]);
 
 export function prevalenceOf(site) {
   const lp = `${site.level}/${site.part}`;
-  if (site.side === "bilateral") return RARE;   // rare wins
+  // Bilateral sites are rare EXCEPT where the bilateral picture IS the common disease. A length-dependent
+  // polyneuropathy is bilateral by definition and the commonest neurological condition there is; listing it
+  // in COMMON_LEVELS did nothing while this rule ran first (accuracy round 1, A6).
+  if (site.side === "bilateral") return COMMON_BILATERAL_LEVELS.has(site.level) ? COMMON : RARE;
   if (RARE_LEVELS.has(site.level)) return RARE;
   if (RARE_PARTS.has(lp)) return RARE;
   if (COMMON_PARTS.has(lp)) return COMMON;      // explicit (level,part) before level default

@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**69 test suites / 5212 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**75 test suites / 6880 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -998,6 +998,57 @@ dark, and `--contra` inverts so it cannot carry a filled chip. Now `--red`/`--on
 FORM rule (filled = time-critical). Presentation, not clinical content, but **flagged for the owner**.
 
 70 suites / 6519 assertions green. Spec: `docs/superpowers/specs/2026-08-22-contrast-ramp-design.md`.
+
+## Accuracy round 1 (DONE 2026-09-26) — ✅ CLINICALLY SIGNED OFF (rulings in the spec §3)
+
+**Branch `feat/accuracy-round-1`, not merged.** The engine was interrogated against the bedside — every
+site's own picture, 84 textbook/ED vignettes, every finding alone on every side, phonebook-vs-model,
+crossing along every tract. **No site was unreachable and no new crossing error existed**, but the COMMON
+pictures failed in three classes, all now pinned by `test/clinical-vignettes.test.js` (142 assertions — the
+only suite that checks the model against the textbook rather than against itself; 112/30 on `main` before):
+
+1. **False two-lesion claims** — a site missing one of its OWN cardinal features (its phonebook note named
+   it) made the complete picture fail "explains all", so `minimalSet()` invented a second lesion: cord
+   compression + retention, MCA + hemianopia, BPPV, labyrinthitis, aphasia + anomia, ACA + incontinence,
+   Percheron + amnesia, neuropathy/cauda/SCD + absent ankle jerks.
+2. **Dead sides** — eleven findings produced only by bilateral systemic sites returned ZERO candidates on
+   one side (and suggested non-organic). Fixed two ways: motor-unit sites and the cauda are `asymmetric`
+   (the known-negative filter skips them), and `app/sides.js` offers a single "Both" button for a finding
+   only symmetric sites produce. `test/side-offers.test.js` asserts no offered option returns nothing.
+3. **Wrong first answers** — Bell's palsy → cortex (new `forehead_involved`, the LMN mirror of
+   `forehead_spared`); pure sensory stroke → midbrain (thalamus gains VPM face; lateral midbrain RARE);
+   AICA → medulla (the lateral pons gains facial nucleus, cochlear, spinal V, Horner); GBS → Friedreich's
+   (new `polyradiculoneuropathy_acute` site, symmetric, motor-predominant, curated causes/workup/plans).
+
+**Mechanisms, each small:** a structure `emit: "midline" | "bilateral"` override (`forward.js`); the
+`asymmetric` site flag; a LINEAR ranking key `over − 3 × prevalence` after coverage (`PREVALENCE_ALLOWANCE`,
+`rankKey` — the pairwise "gap ≥ 3" rule was measured first and is NOT transitive); polyneuropathy COMMON
+(the bilateral→RARE rule had shadowed it); BPPV posterior canal COMMON / anterior RARE;
+`nextStepsFor(site, { onset })` badges a CNS site EMERGENCY at hyperacute onset when its leading cause is
+vascular, and keeps it when a hyperacute-compatible vascular cause is selected. With no onset every call is
+unchanged. Lacunar and hand-knob infarcts are now tagged hyperacute (they were demoted at hyperacute onset).
+
+**Vocabulary stays STRICT** (owner): `weak_leg`/`weak_arm` mean PYRAMIDAL weakness to the engine; an LMN
+picture is entered with LMN/myotome/reflex findings. The label should say so — parked for the UI round.
+
+**Traps worth knowing:** the Wallenberg worked example needs a BULBAR sign (it now carries `dysphagia`) —
+without one the lateral medulla and the AICA lateral pons genuinely tie, and the compare panel's job is to
+name dysphagia vs facial palsy/deafness. A hand-listed composite (thalamic aphasia) must be updated when its
+source site gains a row, or the stale copy out-ranks the real site. The whole change set was PROTOTYPED in a
+scratch copy against the full suite before the plan was written — that is how the Wallenberg tie, the
+anterior-canal tie-break and the thalamic-aphasia copy were found before they shipped.
+
+**Follow-ups closed the same day:** myasthenia predicts `ptosis` (its commonest presenting sign); the
+lateral pons carries all four central-Horner rows (anhidrosis added) and the lateral medulla is COMMON so a
+bare central Horner still shows Wallenberg first (owner ruling) — two assertions moved from the scored `best`
+(no prior) to the displayed first answer; `tl_midbrain` got its anatomy-sheet row, so every model id now
+has a row and vice versa; and removing the LAST finding now clears the case from the URL (`renderResults()`
+used to return before `syncURL()`). **Deliberately unchanged:** an isolated Babinski ranks the cortical hand
+knob first — `ctx_hand_bab` is a signed-off design choice, and an extensor plantar genuinely does not
+localise along the tract; the integrated Why (sub-project 2) is what should say so.
+
+Spec/plan: `docs/superpowers/specs/2026-09-25-accuracy-round-1-design.md`,
+`docs/superpowers/plans/2026-09-26-accuracy-round-1.md`.
 
 ## Commands
 
