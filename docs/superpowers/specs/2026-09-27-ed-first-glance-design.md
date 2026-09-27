@@ -49,7 +49,7 @@ order is unchanged, the detail is closed rather than tabbed, and the answer card
 the reasoning's gist is on screen before anything is opened. **What does change:** the detail cards are now
 closed by default. That is the point of the round and is stated here so it is not mistaken for a regression.
 The 2026-09-25 vocabulary ruling (`weak_arm`/`weak_leg` mean pyramidal weakness) is carried by the plain
-labels (§5.1): "Arm weakness (upper motor neuron)".
+labels (§5.1): the arm-weakness row reads "Arm weakness — upper motor neuron pattern".
 
 ---
 
@@ -131,16 +131,20 @@ carries them all; only the differential sees that. Selecting by differential rea
 right entries — hence rule 1.
 
 **Algorithm:**
-1. The clue units are the explained steps of `whyChain()`, with a finding entered on BOTH sides treated as one
-   unit (tagged "bilateral").
+1. The clue units are the steps of `whyChain()`, with a finding entered on BOTH sides treated as one unit,
+   tagged "bilateral" and carrying no side relation (it is neither same-side nor opposite-side).
 2. Greedy: repeatedly add the unit that gives the smallest explain-all place set for the chosen units, where a
    place is `(station, side)` exactly as `whyChain().meet` computes it. Ties go, in order, to (a) a unit whose
-   side relation (same / opposite) is not yet represented among the chosen, (b) the unit with fewer possible
-   stations, (c) the earlier-entered unit. Stop as soon as the chosen units' place set lies within the full
+   side relation (same / opposite) is not yet represented among the chosen, then (b) the unit the clinician
+   entered first — measured against station count as the tie-break, entry order gave the more natural clue
+   (Weber: arm weakness rather than forehead sparing; compressive CN III: ptosis rather than weak elevation). Stop as soon as the chosen units' place set lies within the full
    picture's meet.
-3. **Crossed completion.** When the explained steps include both a same-side and an opposite-side finding, the
-   clues carry only one kind, and fewer than 3 clues were chosen, append the first finding of the missing kind
-   in `whyChain()`'s step order (fewest possible stations first, then entry order). This is what makes the crossed
+3. **Crossed completion.** When the chosen clues carry exactly ONE of same-side / opposite-side, fewer than 3
+   were chosen, and a unit of the other kind exists, append the first such unit in `whyChain()`'s step order
+   (fewest possible stations first, then entry order). Clues that carry no side at all are left alone — a
+   whole-MCA picture is pinned by "impaired repetition" alone, and adding sides to it would be noise.
+   Measured 2026-09-27 over every site's own picture: 365/365 reach their place, 5 need more than 3 clues
+   (shown as "+ n more findings"), and no one-sided clue set misses the crossed side. This is what makes the crossed
    pattern visible: Wallenberg gains "right body pain loss".
 4. Show at most 3 clues; if more were needed, append "+ n more findings".
 
@@ -152,7 +156,8 @@ for midline and non-lateralised findings; clues joined by " + ".
   stations form a range, "… → anywhere from the {X} to the {Y}; …"
 - verdict **none**: "No single place explains every finding."
 
-**Prototype output (2026-09-27, against `test/clinical-vignettes.test.js`, with interim plain labels):**
+**Prototype output (2026-09-27, the final algorithm over `test/clinical-vignettes.test.js` — all 85 cases reach
+the answer's place, none needs more than 3 clues; plain labels are interim):**
 
 | Case | Why line |
 |---|---|
@@ -160,12 +165,14 @@ for midline and non-lateralised findings; clues joined by " + ".
 | Wallenberg | Left face pain loss + left swallowing difficulty + right body pain loss → only the left medulla. |
 | Medial medullary | Left tongue weakness + right arm weakness → only the left medulla. |
 | Brown-Séquard | Left leg weakness + right body pain loss → only the left spinal cord. |
-| Complete dominant MCA | Non-fluent speech + poor comprehension → only the left cerebral cortex. |
+| Complete dominant MCA | Non-fluent speech + right half-field loss → only the left cerebral cortex. |
+| Compressive CN III | Left fixed dilated pupil + left droopy eyelid → only the left pupil pathway. |
+| Guillain–Barré | Bilateral floppy weakness + bilateral absent knee jerk → only the nerve root. |
 | L5 radiculopathy | Left L5 numbness → the left nerve root or plexus; see Where for what separates them. |
 | Hemiparesis alone | Right arm weakness → anywhere from the cerebral cortex to the spinal cord; see Where … |
 
-Cost: one `differential()` call per candidate unit per round — 162ms worst case on a site's full synthetic
-picture, far less on a bedside subset. Memoise per render if it shows in the browser.
+Cost: one `differential()` call per candidate unit per round, memoised within the call — 20ms worst case over
+the 85 vignettes (162ms on a site's full synthetic picture, which nobody enters at the bedside).
 
 ---
 
@@ -181,12 +188,15 @@ example".
 
 ### 5.1 Plain labels and common/less common — `app/plain-labels.js` (content, owner review round 1)
 
-`PLAIN[findingId] = { label, less? }` for **all 234 findings**:
+`PLAIN[findingId] = { label, note?, less? }` for **all 234 findings**:
 - `label` is a short, plain noun phrase ("face droop, one side", "eye won't turn in", "saddle numbness",
-  "arm weakness (upper motor neuron)"). One table, four consumers: the exam rows, the entered-finding chips,
+  "arm weakness"). One table, four consumers: the exam rows, the entered-finding chips,
   the Why line and the search. It closes the parked plain-labels item. The existing `shortFindingLabel()` cuts
   the long descriptions mechanically and cannot sit mid-sentence — the prototype produced "Whitened",
   "Flaccid" and "Supranuclear vertical".
+- `note` is a qualifier shown on the exam ROW only — "arm weakness" + *upper motor neuron pattern* carries the
+  strict vocabulary where the finding is chosen, while the Why line and the chips stay short ("right arm
+  weakness").
 - `less: true` marks a finding as less common in ED, which puts it behind its group's "Less common (n)"
   disclosure.
 
@@ -312,8 +322,8 @@ already uses.
 - **`test/side-offers.test.js`** (extended) — `tokensForRow()` never returns an unoffered token, for every
   finding × default side.
 - **Unchanged and must stay green:** the case-URL round trip, `examples.test.js`, `contrast.test.js`,
-  `brand.test.js`, and `app-smoke.test.js`'s full-coverage check of `EXAM_TREE`. **The answer card's accent is
-  terracotta** — it IS the answer — so it needs a justified entry on the `--terra` allowlist.
+  `brand.test.js`, and `app-smoke.test.js`'s full-coverage check of `EXAM_TREE`. **The answer card reuses `.out-head`**, already on
+  the `--terra` allowlist as the focal answer card, so the allowlist does not change.
 - `test/app-smoke.test.js` parse-checks every new `app/*.js` automatically.
 - **Browser:** the four worked examples and a crossed case, desktop and 375px, light and dark; the strip
   appears and hides; a nav link opens its section without rewriting the hash; ticking face droop shows its
