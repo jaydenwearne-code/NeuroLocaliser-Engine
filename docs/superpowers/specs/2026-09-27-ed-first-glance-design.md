@@ -1,6 +1,7 @@
-# ED first glance: the answer card and complaint-first input (design, 2026-09-27)
+# ED first glance: the answer card and a friendlier examination (design, 2026-09-27)
 
-**Status: DESIGN — approved section by section by the owner on 2026-09-27; awaiting review of this written spec.**
+**Status: DESIGN — approved section by section by the owner on 2026-09-27; revised the same day after the owner
+kept the examination tree as the input (§5); awaiting review of this written spec.**
 Branch: `feat/ed-first-glance` (off `main` at `ca4c164`).
 
 This is sub-project 3 of 3 from the 2026-09-25 request. Sub-project 1 (accuracy) is PR #11, sub-project 2
@@ -33,9 +34,11 @@ of it arrives at once.
 2. **Results layout: option A** — one answer card with a line each for Where / Why / What / Next, and today's
    four cards closed underneath (chosen over "four short cards" and "summary + tabs").
 3. **The first glance is a short version of all four** — not action-first or reasoning-first alone.
-4. **Input: option 1, start from the complaint** (chosen over plain-word search alone and a body map), with the
-   plain-word search folded in.
-5. **Onset is asked up front**, optional, on the input side.
+4. **Input: the examination tree stays** — made friendlier with plain rows and the common findings first, and
+   follow-ups that appear under a ticked finding. (Start-from-the-complaint was chosen first, then reversed by
+   the owner the same day.)
+   **Follow-ups are only true refinements** of the ticked finding, never a different kind of finding.
+5. **Onset and the symptoms' side are asked up front**, both optional, in a row above the tree.
 6. **The Why line: key clues + side** — the fewest findings that pin the place, each tagged with its body side.
 7. **Phones get a sticky answer strip.**
 8. **The site's red-flag sentence is a fifth line on the answer card** whenever the site has one.
@@ -166,84 +169,110 @@ picture, far less on a bedside subset. Memoise per render if it shows in the bro
 
 ---
 
-## 5. The input panel
+## 5. The input panel — the examination, made easier to read
 
-Top to bottom: complaints → onset → side → the chosen complaints' findings → search → Full examination →
-"Or try an example". The chips of entered findings stay at the top of the panel.
+**The input stays the examination tree** (owner, 2026-09-27 — reversing the complaint-first choice made earlier
+the same day: *"I prefer the input just being the examination like I had it before"*). The tree's groups,
+order and nesting are unchanged. Three things make it easier to take in: plain rows with the common findings
+first (§5.2), follow-ups that appear under a ticked finding (§5.3), and an onset and side row at the top (§5.4).
 
-### 5.1 Plain labels — `app/plain-labels.js` (content, owner review round 1)
+Top to bottom: the chips of entered findings → onset and side row → search → the examination tree → "Or try an
+example".
 
-`PLAIN[findingId]` — a short, plain noun phrase for **all 234 findings** ("face pain loss", "eye won't turn
-in", "saddle numbness", "arm weakness (upper motor neuron)"). One table, four consumers: the complaint rows, the
-entered-finding chips, the Why line and the search. It closes the parked plain-labels item.
+### 5.1 Plain labels and common/less common — `app/plain-labels.js` (content, owner review round 1)
 
-The existing `shortFindingLabel()` cuts the long descriptions mechanically and cannot be used mid-sentence —
-the prototype produced "Whitened", "Flaccid" and "Supranuclear vertical". The long `desc` stays as the row's
-tooltip and in the Full examination tree.
+`PLAIN[findingId] = { label, less? }` for **all 234 findings**:
+- `label` is a short, plain noun phrase ("face droop, one side", "eye won't turn in", "saddle numbness",
+  "arm weakness (upper motor neuron)"). One table, four consumers: the exam rows, the entered-finding chips,
+  the Why line and the search. It closes the parked plain-labels item. The existing `shortFindingLabel()` cuts
+  the long descriptions mechanically and cannot sit mid-sentence — the prototype produced "Whitened",
+  "Flaccid" and "Supranuclear vertical".
+- `less: true` marks a finding as less common in ED, which puts it behind its group's "Less common (n)"
+  disclosure.
 
-### 5.2 Complaints — `app/complaints.js` (content, owner review round 2)
+### 5.2 Plain rows, common first
 
-Eleven chips, **multi-select**. Each lists 8–13 findings, most common in ED first. A finding may sit under
-several complaints; when two chosen complaints share one it is shown once, under the first. **Draft, for
-review:**
+Each row leads with the plain label; the existing technical description sits beneath it in small muted text,
+so the tree keeps teaching the textbook name.
 
-| Complaint | Findings (by id) |
+```
+Face droop, one side                                   [L] [R]
+Facial weakness (CN VII)
+```
+
+Within each leaf group, the common findings show and the rest sit behind **"Less common (n): a, b, c…"**.
+Opening it lists them in place. A group header shows how many of its findings are entered ("VII — face ·
+1 entered"), so a closed group still says whether it holds part of the case. Search matches every finding
+whatever its tag, and a less-common finding that is entered is always shown.
+
+### 5.3 Follow-ups under a ticked finding — `app/follow-ups.js` (content, owner review round 2)
+
+`FOLLOW_UPS[parentId] = [findingId, …]`. When a parent is entered, its follow-ups appear indented beneath it,
+so depth appears only where something is abnormal.
+
+**Ruling: a follow-up is only a TRUE REFINEMENT** — it describes the SAME deficit more precisely. A different
+kind of finding never nests under a finding, because ticking the parent enters it: myotomes under "leg
+weakness" would give a peroneal foot drop a pyramidal finding it does not have (the strict vocabulary,
+2026-09-25). Myotomes and dermatomes stay in their own exam groups.
+
+**Draft map, for review** (validated against the model on 2026-09-27 — every id real, every side compatible):
+
+| When this is entered | These appear beneath it |
 |---|---|
-| Weakness | weak_arm, weak_leg, facial_weakness, weak_hand, weak_ankle_dorsiflexion, weak_wrist_extension, babinski, spasticity, reflex_ankle_loss, wasting, fatigable_weakness, proximal_weakness, hoovers_sign |
-| Numbness | spinothalamic, dorsal_sensory, face_pain_loss, distal_sensory_loss, saddle_anaesthesia, median_sensory, ulnar_sensory, sensory_c6, sensory_l5, sensory_s1, radicular_pain |
-| Speech or swallowing | dysarthria, speech_nonfluent, comprehension_impaired, naming_impaired, repetition_impaired, dysphagia, vocal_cord_palsy, cn12_palsy, palatal_weakness |
-| Vision | homonymous_hemianopia, optic_neuropathy, central_scotoma, altitudinal_defect, bitemporal_hemianopia, rapd, va_reduced_no_pinhole, va_reduced_pinhole_corrects, papilloedema, retinal_pallor |
-| Double vision or droopy eyelid | ptosis, weak_abduction, weak_adduction, vertical_diplopia, fixed_dilated_pupil, miosis, ino, gaze_palsy, skew_deviation, fatigable_ocular |
-| Dizziness | cn8_vertigo, nystagmus_peripheral, head_impulse_abnormal, nystagmus_gaze_evoked, skew_deviation, hearing_loss, nystagmus_positional_posterior, truncal_ataxia, limb_ataxia |
-| Face droop | facial_weakness, forehead_spared, forehead_involved, hyperacusis, taste_loss, lacrimation_loss, dysarthria, weak_arm |
-| Unsteady or clumsy | limb_ataxia, truncal_ataxia, dysmetria, intention_tremor, sensory_ataxia, dorsal_sensory, nystagmus_gaze_evoked, ataxic_dysarthria |
-| Drowsy or confused | reduced_consciousness, gaze_deviation, fixed_dilated_pupil, neglect, amnesia, extensor_posturing, papilloedema, preserved_vertical_gaze |
-| Back pain with leg symptoms | radicular_pain, saddle_anaesthesia, sphincter_dysfunction, reflex_ankle_loss, reflex_knee_loss, weak_leg, weak_ankle_dorsiflexion, weak_great_toe_extension, weak_foot_eversion, spinothalamic, anal_wink_loss |
-| Abnormal movements | rest_tremor, bradykinesia, rigidity, chorea, hemiballismus, dystonia, intention_tremor, fasciculations |
+| Face droop (`facial_weakness`) | forehead spared, forehead weak too, loud sounds uncomfortable, taste loss, dry eye |
+| Vertigo (`cn8_vertigo`) | peripheral-type nystagmus, gaze-evoked nystagmus, abnormal head impulse, skew deviation, positional nystagmus (posterior canal), positional nystagmus (horizontal canal) |
+| Drooping eyelid (`ptosis`) | small pupil, fixed dilated pupil, fatigable ptosis and double vision |
+| Small pupil (`miosis`) | facial anhidrosis |
+| Homonymous hemianopia | macular sparing |
+| Monocular visual loss (`optic_neuropathy`) | central scotoma, altitudinal defect, RAPD |
+| Limb ataxia | dysmetria, dysdiadochokinesis, intention tremor |
+| Slurred speech (`dysarthria`) | ataxic (scanning) dysarthria |
+| Non-fluent speech | impaired repetition, anomia |
+| Impaired comprehension | impaired repetition, anomia |
+| Saddle anaesthesia | absent anal wink, absent bulbocavernosus reflex |
+| Reduced consciousness | extensor posturing |
 
-Every finding not listed stays reachable through the search and the Full examination tree. The draft covers 88
-of the 234 findings and every finding in the four worked examples (big-toe extension and foot eversion sit
-under *Back pain with leg symptoms* for the Foot drop example — they are the root-level discriminators of a
-sciatica exam). Four of the 13 cross-site archetypes use findings outside every complaint; those show as chips
-only, which is correct for a picture loaded rather than entered.
+**Rules:**
+- **Side.** A follow-up takes its parent's side when that side is offered for it (a left face droop → left
+  forehead); a finding with a single offer of its own keeps it (the nystagmus types and skew take no side).
+  The follow-up's own side buttons still override.
+- **A follow-up keeps its home row.** RAPD must stay reachable on its own — an optic TRACT lesion gives an RAPD
+  with no monocular visual loss — so nesting never removes a finding from its group. It is not shown twice in
+  one view: while it is displayed under a ticked parent in the SAME group, its home row is hidden.
+- A follow-up shared by two entered parents (anomia under both aphasia rows) shows under the first.
+- A follow-up that is itself a parent (small pupil → facial anhidrosis) shows its own follow-ups when entered.
+  The map is acyclic (asserted).
+- An entered follow-up stays visible even if its parent is later removed.
 
-### 5.3 Onset — "When did it start?"
+### 5.4 Onset and side — the row above the tree
 
-One optional row: *Seconds–minutes · Hours–days · Days–weeks · Weeks–years*, writing the SAME `S.onset`
-(`hyperacute` / `acute` / `subacute` / `chronic`) the What card uses. The What card's control stays, and the
-two stay in step. It already travels in the case URL as `o=`.
-
-### 5.4 Side — "Which side are the symptoms?"
-
-*Left · Right · Both*, worded as the BODY side so nobody enters the lesion side. It sets a default: tapping a
-row adds the finding on that side; the row's side buttons still override it (a crossed picture needs left face
-and right body). A pure `tokensForRow(finding, defaultSide)` in `app/sides.js` maps the default through
-`offersFor()`:
-- a finding whose only offer is "Both" or "none" gets that offer whatever the default;
-- "Both" adds both sides where both are offered;
-- **it never returns a token the panel does not offer** — the accuracy-round invariant (no offered option
-  returns nothing) extends to the new control.
-
-With no default set, a row behaves exactly as today. The default is view state and never enters the URL.
+- **When did it start?** *Seconds–minutes · Hours–days · Days–weeks · Weeks–years*, optional, writing the SAME
+  `S.onset` (`hyperacute` / `acute` / `subacute` / `chronic`) the What card uses. The What card's control stays
+  and the two stay in step. It already travels in the case URL as `o=`.
+- **Symptoms on:** *Left · Right · Both*, worded as the BODY side so nobody enters the lesion side. It sets a
+  default: tapping a row's label adds the finding on that side, and the row's side buttons still override it
+  (a crossed picture needs left face and right body). A pure `tokensForRow(finding, defaultSide)` in
+  `app/sides.js` maps the default through `offersFor()`: a finding whose only offer is "Both" or "none" gets
+  that offer whatever the default; "Both" adds both sides where both are offered; and **it never returns a
+  token the panel does not offer** — the accuracy-round invariant (no offered option returns nothing) extends
+  to the new control. With no default set, a row behaves exactly as today. The default is view state and never
+  enters the URL.
 
 ### 5.5 Search — `app/synonyms.js` (content, owner review round 3)
 
 The box matches the finding id, the long description, the plain label and a bedside-phrase table
 (`SYNONYMS[phrase] → [findingId]`: "foot drop", "slurred speech", "droopy eyelid", "can't find words",
 "wrist drop", "numb saddle"…). Today it matches only the id and description, so "slurred speech" and
-"foot drop" find nothing. While a query is non-empty the matches show as one flat list of rows in place of
-the complaint rows; clearing it restores them.
+"foot drop" find nothing. Filtering the tree in place, as today, is unchanged.
 
 ### 5.6 Unchanged
 
-The Full examination tree (today's `EXAM_TREE`, behind a disclosure), the sensory-level and distal-reach
-inputs for cord findings, the dominant-hemisphere control, Code stroke and Atlas modes.
+The tree's groups and order (`EXAM_TREE`), the sensory-level and distal-reach inputs for cord findings, the
+dominant-hemisphere control, the worked examples, Code stroke and Atlas modes. Nothing new enters the URL:
+follow-ups are derived from the entered findings, so a restored case shows them as they were.
 
-### 5.7 Examples and shared links
-
-The chosen complaints are DERIVED from the findings: loading a worked example or restoring a case URL selects
-every complaint containing any entered finding, so its rows show as entered. Loading Wallenberg selects
-Dizziness, Numbness, Double vision or droopy eyelid, and Speech or swallowing. Nothing new enters the URL.
+**Considered and declined (2026-09-27):** start-from-the-complaint input (reversed in favour of the tree); a
+body map; and moving the compare panel's "examine next" suggestions to the top of the exam panel.
 
 ---
 
@@ -252,12 +281,12 @@ Dizziness, Numbness, Double vision or droopy eyelid, and Speech or swallowing. N
 | File | Kind | Purpose |
 |---|---|---|
 | `src/engine/why.js` | engine, extended | `whyClues(chain, observed, opts)` |
-| `app/plain-labels.js` | content | `PLAIN` for all 234 findings |
-| `app/complaints.js` | content | `COMPLAINTS` + `complaintsFor(tokens)` |
+| `app/plain-labels.js` | content | `PLAIN` — label + less-common tag for all 234 findings |
+| `app/follow-ups.js` | content | `FOLLOW_UPS` + `visibleFollowUps(entered)` |
 | `app/synonyms.js` | content | `SYNONYMS` + `searchFindings(query)` |
 | `app/answer.js` | pure | `answerSummary(...)` → the five lines |
 | `app/sides.js` | pure, extended | `tokensForRow(finding, defaultSide)` |
-| `app/app.js`, `app/index.html` | DOM | the panel, the card, the closed detail, the strip |
+| `app/app.js`, `app/index.html` | DOM | the rows, the card, the closed detail, the strip |
 
 Content files import no UI; the pure modules are DOM-free; only `app.js` touches the DOM — the split the app
 already uses.
@@ -265,10 +294,12 @@ already uses.
 ## 7. Tests (TDD, one standalone suite per new unit)
 
 - **`test/plain-labels.test.js`** — every `FINDINGS` id has a label; no underscores; short enough to sit
-  mid-sentence; no two findings share a label (the chips would be ambiguous).
-- **`test/complaints.test.js`** — every id is real and has at least one side offer; each complaint has 8–13
-  findings with no duplicates; every finding in the four worked examples (`EXAMPLES`) sits under some complaint;
-  `complaintsFor()` returns the four for Wallenberg.
+  mid-sentence; no two findings share a label (the chips would be ambiguous); every leaf group of `EXAM_TREE`
+  keeps at least one finding NOT tagged less common, so no group opens empty.
+- **`test/follow-ups.test.js`** — every parent and follow-up id is real; the map is acyclic; each follow-up
+  either offers every side its parent offers or has a single offer of its own; `visibleFollowUps()` shows a
+  follow-up once when two parents share it, keeps an entered follow-up after its parent is removed, and hides
+  the home row only within the parent's own group; RAPD stays reachable without monocular visual loss.
 - **`test/synonyms.test.js`** — every phrase resolves to real ids; "foot drop" → `weak_ankle_dorsiflexion`,
   "slurred speech" → `dysarthria`.
 - **`test/why.test.js`** (extended) — the §4 table's cases; for every non-empty site's own picture and every
@@ -281,19 +312,21 @@ already uses.
 - **`test/side-offers.test.js`** (extended) — `tokensForRow()` never returns an unoffered token, for every
   finding × default side.
 - **Unchanged and must stay green:** the case-URL round trip, `examples.test.js`, `contrast.test.js`,
-  `brand.test.js`. **The answer card's accent is terracotta** — it IS the answer — so it needs a justified
-  entry on the `--terra` allowlist.
+  `brand.test.js`, and `app-smoke.test.js`'s full-coverage check of `EXAM_TREE`. **The answer card's accent is
+  terracotta** — it IS the answer — so it needs a justified entry on the `--terra` allowlist.
 - `test/app-smoke.test.js` parse-checks every new `app/*.js` automatically.
 - **Browser:** the four worked examples and a crossed case, desktop and 375px, light and dark; the strip
-  appears and hides; a nav link opens its section without rewriting the hash.
+  appears and hides; a nav link opens its section without rewriting the hash; ticking face droop shows its
+  follow-ups on the same side, and unticking it leaves an entered follow-up in place.
 
 ## 8. Rollout
 
 1. `whyClues()`, TDD.
-2. **Review round 1:** the 234 plain labels.
-3. **Review round 2:** the complaint table (§5.2).
+2. **Review round 1:** the 234 plain labels and their common/less-common tags.
+3. **Review round 2:** the follow-up map (§5.3).
 4. **Review round 3:** the search phrases.
-5. The answer card and the closed detail; then the input panel; then the phone strip.
+5. The answer card and the closed detail; then the exam rows, follow-ups and the onset/side row; then the
+   phone strip.
 6. Browser verification, then merge. Version **v0.9.0 → v0.10.0** so a feedback email names the new build.
    A push to `main` auto-deploys.
 
