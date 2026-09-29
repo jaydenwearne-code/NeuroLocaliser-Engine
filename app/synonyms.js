@@ -6,7 +6,7 @@
 import { FINDINGS } from "../src/model/findings.js";
 import { PLAIN } from "./plain-labels.js";
 //
-// REVIEW STATUS: ⚠ AWAITING CLINICAL REVIEW (round 3 of 3, spec 2026-09-27 §8).
+// REVIEW STATUS: ✅ SIGNED OFF by the owner (a clinician), 2026-09-29 — review round 3 of 3, approved as drafted.
 export const SYNONYMS = {
   "drooping eyelid": ["ptosis"],
   "can't find words": ["naming_impaired"],
