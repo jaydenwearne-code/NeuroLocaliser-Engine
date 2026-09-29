@@ -21,12 +21,14 @@ import { combinedSites } from "./combined-sites.js";
 import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
 import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { togetherGuardState } from "./together-guard.js";
-import { plainSiteName, shortFindingLabel } from "./labels.js";
+import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
-import { displayLabel } from "./plain-labels.js";
-import { offersFor } from "./sides.js";
+import { offersFor, tokensForRow } from "./sides.js";
 import { answerFor, resolveNext } from "./answer.js";
+import { PLAIN, displayLabel } from "./plain-labels.js";
+import { followUpLayout } from "./follow-ups.js";
+import { searchFindings } from "./synonyms.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -103,8 +105,9 @@ function renderLocalise() {
   <div class="grid">
     <div class="pane">
       <h3>Examination findings</h3>
-      <input class="search" id="search" placeholder="Search findings… (e.g. Horner, ataxia, gaze)">
       <div class="chips" id="chips"></div>
+      <div class="setup" id="setup">${setupRow()}</div>
+      <input class="search" id="search" placeholder="Search findings… (e.g. droopy eyelid, dizzy, foot drop)">
       <div class="ctrls ctrls-inline" id="levelctrls"${hasCord ? "" : " hidden"}>
         <label>Sensory level <input type="text" id="slevel" placeholder="e.g. T10" size="6"></label>
         <label>Distal reach <input type="text" id="reach" placeholder="e.g. knees" size="7"></label>
@@ -116,21 +119,43 @@ function renderLocalise() {
   const sl = document.getElementById("slevel"); if (sl) sl.value = S.sensoryLevel;
   const dr = document.getElementById("reach"); if (dr) dr.value = S.distalReach;
   wireLocalise();
-  renderChips(); renderResults();
+  renderChips(); renderResults(); syncTree();
+}
+
+// Onset and the symptoms' side, asked up front (spec 2026-09-27 §5.4). Onset writes the SAME S.onset the What
+// card's select does. The side is a DEFAULT for row taps and lives in VIEW — it is how the reader enters findings,
+// not a fact about the patient, so it never reaches the case URL. Worded as the BODY side, so nobody enters the
+// side of the brain.
+const ONSET_CHOICES = [["hyperacute", "Seconds–minutes"], ["acute", "Hours–days"], ["subacute", "Days–weeks"], ["chronic", "Weeks–years"]];
+const SIDE_CHOICES = [["left", "Left"], ["right", "Right"], ["both", "Both"]];
+function setupRow() {
+  const btn = (attr, val, label, on) => `<button class="set${on ? " on" : ""}" ${attr}="${val}" aria-pressed="${on}">${label}</button>`;
+  return `<div class="setup-row"><span class="setup-k">Started</span>${ONSET_CHOICES.map(([v, l]) => btn("data-onset", v, l, S.onset === v)).join("")}</div>
+    <div class="setup-row"><span class="setup-k">Symptoms on</span>${SIDE_CHOICES.map(([v, l]) => btn("data-dside", v, l, VIEW.defaultSide === v)).join("")}</div>`;
 }
 
 function countFindings(node) {
   if (node.findings) return node.findings.filter(f => FINDINGS[f]).length;
   return (node.groups || []).reduce((n, g) => n + countFindings(g), 0);
 }
+// A group header says how many of its findings are ENTERED, so a closed group still shows it holds part of the
+// case (spec 2026-09-27 §5.2); syncTree() fills the count in.
+const groupHead = (node, cnt) => `<summary>${esc(node.label)}<span class="c-in" data-in></span><span class="c">${cnt}</span></summary>`;
 function renderNode(node, depth) {
   const cnt = countFindings(node);
   if (node.findings) {
-    const rows = node.findings.filter(f => FINDINGS[f]).map(f => frow(f)).join("");
-    return `<details data-step="${esc(node.id)}" class="nx-lvl nx-lvl${depth}"><summary>${esc(node.label)}<span class="c">${cnt}</span></summary>${rows}</details>`;
+    // Common findings show; the rest sit behind "Less common (n)", named in its summary so nothing is hidden
+    // without a trace. Each home row carries a slot its follow-ups render into (spec 2026-09-27 §5.3).
+    const all = node.findings.filter(f => FINDINGS[f]);
+    const less = all.filter(f => PLAIN[f] && PLAIN[f].less);
+    const home = f => frow(f) + `<div class="fu-slot" data-slot="${f}"></div>`;
+    const more = less.length
+      ? `<details class="less"><summary><span class="less-k">Less common</span> <span class="c">${less.length}</span><span class="less-names">${less.map(f => esc(displayLabel(f))).join(", ")}</span></summary>${less.map(home).join("")}</details>`
+      : "";
+    return `<details data-step="${esc(node.id)}" class="nx-lvl nx-lvl${depth}">${groupHead(node, cnt)}${all.filter(f => !less.includes(f)).map(home).join("")}${more}</details>`;
   }
   const kids = (node.groups || []).map(g => renderNode(g, depth + 1)).join("");
-  return `<details data-gid="${esc(node.id)}" class="nx-lvl nx-lvl${depth}"><summary>${esc(node.label)}<span class="c">${cnt}</span></summary><div class="nx-children">${kids}</div></details>`;
+  return `<details data-gid="${esc(node.id)}" class="nx-lvl nx-lvl${depth}">${groupHead(node, cnt)}<div class="nx-children">${kids}</div></details>`;
 }
 function examAccordion() {
   const used = new Set(flattenFindings(EXAM_TREE));
@@ -138,12 +163,51 @@ function examAccordion() {
   const tree = other.length ? [...EXAM_TREE, { id: "other", label: "Other findings", findings: other }] : EXAM_TREE;
   return tree.map(n => renderNode(n, 0)).join("");
 }
-function frow(f) {
+// A row leads with plain words and keeps the textbook description beneath it, so the tree still teaches the name
+// (spec 2026-09-27 §5.2). The label is a button: a tap enters the finding on the default side — "Symptoms on", or
+// for a follow-up its parent's side (`def`). The side buttons still override.
+function frow(f, def = null) {
   // data-t carries the token(s) a button toggles: "Both" enters two at once (app/sides.js explains why).
   const label = o => o.key === "none" ? "add" : o.key === "both" ? "Both" : sideTag(o.key);
   const btns = offersFor(f).map(o => `<button data-f="${f}" data-s="${o.key}" data-t="${o.tokens.join(" ")}">${label(o)}</button>`).join("");
+  const p = PLAIN[f] || {};
+  const note = p.note ? ` <span class="fnote">— ${esc(p.note)}</span>` : "";
   // The id stays in the title attribute — reachable for a bug report, off the screen for a clinician.
-  return `<div class="frow" data-fid="${f}" title="${esc(f)} — ${esc(desc(f))}"><div class="nm"><span class="fd-primary">${esc(desc(f))}</span></div><div class="sides">${btns}</div></div>`;
+  return `<div class="frow${def !== null ? " fu" : ""}" data-fid="${f}" title="${esc(f)} — ${esc(desc(f))}"><button type="button" class="nm" data-row="${f}"${def !== null ? ` data-def="${def}"` : ""}><span class="fd-primary">${esc(capFirst(displayLabel(f)))}${note}</span><span class="fd-tech">${esc(desc(f))}</span></button><div class="sides">${btns}</div></div>`;
+}
+
+// Follow-ups render into the slot under an ENTERED parent's row (spec 2026-09-27 §5.3). The tree is rendered once
+// — its open groups and scroll survive a toggle — so this refills the slots, hides home rows the layout shows
+// under a parent in the same group, keeps each "Less common" block honest about what is still in it, and writes
+// each group's entered count.
+const sidesOf = f => {
+  const s = [...S.tokens].filter(t => fid(t) === f).map(t => t.split("@")[1]);
+  return s.includes("left") && s.includes("right") ? "both" : s.includes("left") ? "left" : s.includes("right") ? "right" : s.includes("midline") ? "midline" : "";
+};
+function syncTree() {
+  const acc = document.getElementById("acc"); if (!acc) return;
+  const entered = new Set([...S.tokens].map(fid));
+  const { under, hideHome } = followUpLayout(entered);
+  // Recursive, because a follow-up can be a parent too (small pupil -> facial anhidrosis); the map is acyclic.
+  const nested = parent => (under.get(parent) || []).map(k => frow(k, sidesOf(parent)) + nested(k)).join("");
+  acc.querySelectorAll(".fu-slot").forEach(slot => { slot.innerHTML = nested(slot.dataset.slot); });
+  acc.querySelectorAll(".frow:not(.fu)").forEach(r => { r.hidden = hideHome.has(r.dataset.fid); });
+  acc.querySelectorAll("details.less").forEach(d => {
+    const rows = [...d.querySelectorAll(":scope > .frow")];
+    if (rows.some(r => entered.has(r.dataset.fid))) d.open = true;
+    // A less-common finding shown under its parent is not in this block any more — its summary must not name it.
+    const shown = rows.filter(r => !r.hidden);
+    d.hidden = !shown.length;
+    d.querySelector(":scope > summary .c").textContent = shown.length;
+    d.querySelector(":scope > summary .less-names").textContent = shown.map(r => displayLabel(r.dataset.fid)).join(", ");
+  });
+  acc.querySelectorAll("details[data-step], details[data-gid]").forEach(d => {
+    const ids = new Set([...d.querySelectorAll(".frow")].map(r => r.dataset.fid));
+    const n = [...ids].filter(f => entered.has(f)).length;
+    const el = d.querySelector(":scope > summary [data-in]");
+    if (el) el.textContent = n ? `${n} entered` : "";
+  });
+  markSides();
 }
 
 function wireLocalise() {
@@ -154,8 +218,24 @@ function wireLocalise() {
   on("slevel", "oninput", e => { S.sensoryLevel = e.target.value.trim(); renderResults(); });
   on("reach", "oninput", e => { S.distalReach = e.target.value.trim(); renderResults(); });
   on("search", "oninput", e => filterFindings(e.target.value.toLowerCase()));
-  on("acc", "onclick", e => { const b = e.target.closest("button[data-t]"); if (!b) return;
-    toggleTokens(b.dataset.t.split(" ")); });
+  on("setup", "onclick", e => {
+    const o = e.target.closest("[data-onset]"), d = e.target.closest("[data-dside]");
+    if (o) { S.onset = S.onset === o.dataset.onset ? "" : o.dataset.onset; renderResults(); }
+    else if (d) { VIEW.defaultSide = VIEW.defaultSide === d.dataset.dside ? "" : d.dataset.dside; document.getElementById("setup").innerHTML = setupRow(); }
+  });
+  on("acc", "onclick", e => {
+    const b = e.target.closest("button[data-t]");
+    if (b) { toggleTokens(b.dataset.t.split(" ")); return; }
+    const row = e.target.closest("button[data-row]");
+    if (!row) return;
+    // A follow-up takes its parent's side; any other row takes "Symptoms on".
+    const toks = tokensForRow(row.dataset.row, row.dataset.def || VIEW.defaultSide);
+    if (toks) { toggleTokens(toks); return; }
+    // No default decides it: point at the side buttons rather than guess a side.
+    const fr = row.closest(".frow");
+    fr.classList.add("need-side");
+    setTimeout(() => fr.classList.remove("need-side"), 900);
+  });
   markSides();
 }
 
@@ -188,19 +268,21 @@ function wireCardControls() {
 }
 function filterFindings(q) {
   const acc = document.getElementById("acc");
+  const hits = searchFindings(q);   // the whole search, pure and tested (app/synonyms.js), spec 2026-09-27 §5.5
   acc.querySelectorAll(".frow").forEach(r => {
-    const f = r.dataset.fid; const hit = !q || f.includes(q) || desc(f).toLowerCase().includes(q);
+    const f = r.dataset.fid;
+    const hit = !q || hits.has(f);
     r.style.display = hit ? "" : "none";
     if (hit && q) { let el = r.parentElement; while (el && el !== acc) { if (el.tagName === "DETAILS") el.open = true; el = el.parentElement; } }
   });
-  if (!q) acc.querySelectorAll("details").forEach(d => { d.open = false; });
+  if (!q) { acc.querySelectorAll("details").forEach(d => { d.open = false; }); syncTree(); }
 }
-function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); markSides(); syncLevelCtrls(); }
+function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); syncTree(); syncLevelCtrls(); }
 // A panel button may carry several tokens ("Both"): all on → all off, otherwise all on.
 function toggleTokens(toks) {
   const allOn = toks.every(t => S.tokens.has(t));
   for (const t of toks) allOn ? S.tokens.delete(t) : S.tokens.add(t);
-  renderChips(); renderResults(); markSides(); syncLevelCtrls();
+  renderChips(); renderResults(); syncTree(); syncLevelCtrls();
 }
 // Show the level inputs the moment a cord / length-dependent finding appears. Toggling visibility rather
 // than re-rendering renderLocalise() keeps the accordion's open sections and scroll position intact.
@@ -252,12 +334,13 @@ function renderChips() {
     return;
   }
   el.innerHTML = [...S.tokens].map(t => { const [f,s]=t.split("@");
-    return `<span class="chip" title="${esc(f)} — ${esc(desc(f))}"><span class="sd">${sideTag(s)}</span>${esc(shortFindingLabel(f))}<span class="x" data-t="${t}">×</span></span>`; }).join("");
+    return `<span class="chip" title="${esc(f)} — ${esc(desc(f))}"><span class="sd">${sideTag(s)}</span>${esc(capFirst(displayLabel(f)))}<span class="x" data-t="${t}">×</span></span>`; }).join("");
   el.onclick = e => { const t = e.target.dataset.t; if (t) toggleToken(t); };
 }
 
 function renderResults() {
   const el = document.getElementById("results");
+  const su = document.getElementById("setup"); if (su) su.innerHTML = setupRow();
   if (!S.tokens.size) {
     // THE HASH IS THE SHAREABLE CASE: once the last finding is removed it must say so, or a reload, a copied
     // link or the feedback button brings back findings the user has cleared (found by driving the app,
@@ -502,7 +585,10 @@ function wireAnswerStrip() {
   const strip = document.getElementById("ans-strip"), card = document.getElementById("answer");
   if (!strip || !card) return;
   strip.onclick = () => card.scrollIntoView({ behavior: "auto", block: "start" });
-  _stripUpdate = () => { const r = card.getBoundingClientRect(); strip.hidden = r.top < innerHeight && r.bottom > 0; };
+  // Keyed on the answer LINES, not the card's frame, with the safety bar's height kept clear: measured at 375px,
+  // "the card intersects the viewport" hid the strip while only the card's top border peeked out behind the bar.
+  const lines = card.querySelector(".ans") || card;
+  _stripUpdate = () => { const r = lines.getBoundingClientRect(); strip.hidden = r.top < innerHeight - 60 && r.bottom > 0; };
   addEventListener("scroll", _stripUpdate, { passive: true });
   addEventListener("resize", _stripUpdate);
   _stripUpdate();
@@ -739,7 +825,7 @@ function comparePanel(list) {
 function tokenLabel(t) {
   const [f, side] = t.split("@");
   const sd = sideTag(side);
-  return `<span class="t" title="${esc(t)}">${sd !== "•" ? `<span class="sd">${sd}</span> ` : ""}${esc(shortFindingLabel(f))}</span>`;
+  return `<span class="t" title="${esc(t)}">${sd !== "•" ? `<span class="sd">${sd}</span> ` : ""}${esc(capFirst(displayLabel(f)))}</span>`;
 }
 
 // ② Why — the integrated reasoning chain (spec 2026-09-26): for each finding, what carries it HERE and why it
@@ -752,7 +838,7 @@ function meetSentence(w) {
   const at = st => side === "left" || side === "right" ? `the ${side} ${st}` : side === "bilateral" ? `the ${st} (both sides)` : `the ${st}`;
   if (w.verdict === "none") return "No single place carries all of these findings — together they need more than one lesion, or a finding needs re-checking.";
   if (w.verdict === "one") return n === 1 ? `This finding arises only in ${at(w.meet.stations[0])}.` : `Only ${at(w.meet.stations[0])} carries all ${n} findings.`;
-  if (n === 1) return `${shortFindingLabel(w.steps[0].finding)} alone does not localise: it can arise at ${w.steps[0].where}.`;
+  if (n === 1) return `${capFirst(displayLabel(w.steps[0].finding))} alone does not localise: it can arise at ${w.steps[0].where}.`;
   return `These findings fit ${w.meet.stations.map(at).join(" or ")} — see what separates them below.`;
 }
 const capFirst = s => s ? s[0].toUpperCase() + s.slice(1) : s;

@@ -357,6 +357,29 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   details.out-card>summary.out-cap::after{content:"\203A";margin-left:auto;font-size:var(--fs-body);color:var(--faint);transition:transform .15s ease;}
   details.out-card[open]>summary.out-cap::after{transform:rotate(90deg);}
   .out-hint{font-size:var(--fs-meta);letter-spacing:0;text-transform:none;font-weight:400;color:var(--muted);}
+  /* exam rows: plain words first, the textbook name beneath; the label is a button (a tap enters the default side) */
+  .frow .nm{flex:1;min-width:0;display:block;text-align:left;font:inherit;background:none;border:0;padding:0;color:inherit;cursor:pointer;}
+  .frow .nm .fd-primary{display:block;}
+  .frow .nm .fnote{font-weight:400;color:var(--muted);}
+  /* one line: the full description stays in the row's title; three lines of it per row made the list dense again */
+  .frow .nm .fd-tech{display:block;font-size:var(--fs-cap);color:var(--faint);line-height:1.35;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* .frow sets display:flex, which beats the UA's [hidden]{display:none} — without this a follow-up showed twice */
+  .frow[hidden]{display:none;}
+  .frow.fu{margin-left:14px;padding-left:10px;border-left:2px solid var(--line);}
+  .frow.need-side .sides{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px;}
+  details.less{border-bottom:0;margin:2px 0 4px 10px;}
+  details.less>summary{font-size:var(--fs-meta);font-weight:600;color:var(--muted);padding:5px 2px;justify-content:flex-start;gap:6px;}
+  details.less .less-k{white-space:nowrap;}
+  details.less[hidden]{display:none;}
+  details.less .less-names{font-weight:400;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .c-in{margin-left:auto;margin-right:8px;font-size:var(--fs-cap);font-weight:700;color:var(--ipsi);}
+  .c-in:empty{display:none;}
+  /* onset + symptoms side, above the tree */
+  .setup{display:flex;flex-direction:column;gap:6px;margin:0 0 10px;}
+  .setup-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:var(--fs-meta);color:var(--muted);}
+  .setup-k{min-width:84px;font-weight:700;}
+  .set{font:inherit;font-size:var(--fs-meta);border:1px solid var(--line);background:var(--paper);color:var(--muted);border-radius:999px;padding:3px 10px;cursor:pointer;}
+  .set.on{background:var(--sel-bg);color:var(--ink);border-color:var(--navy-2);}
   /* the phone strip: only below the single-column breakpoint, only while the answer card is out of view */
   .ans-strip{display:none;}
   @media (max-width:860px){
