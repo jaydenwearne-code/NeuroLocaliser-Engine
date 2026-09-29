@@ -32,8 +32,9 @@ const baseOf = (lvl, part) => STRUCTURES.filter(s => s.level === lvl && s.part =
 const eq = (a, b) => JSON.stringify([...(a || [])].sort()) === JSON.stringify([...(b || [])].sort());
 ok("olfactory_groove -> anosmia", eq(baseOf("olfactory", "olfactory_groove"), ["anosmia"]));
 ok("insula -> dysarthria + gustatory_loss", eq(baseOf("cortex", "insula"), ["dysarthria", "gustatory_loss"]));
-ok("basis_pontis -> hemiparesis+facial_umn+dysarthria+limb_ataxia",
-   eq(baseOf("pons", "basis_pontis"), ["weak_arm","weak_leg", "facial_weakness","forehead_spared", "dysarthria", "limb_ataxia"]));
+// + the UMN signs every corticospinal site carries (owner ruling 2026-09-29: it had been the one without them)
+ok("basis_pontis -> hemiparesis+facial_umn+dysarthria+limb_ataxia+up-going plantar+brisk reflexes",
+   eq(baseOf("pons", "basis_pontis"), ["weak_arm","weak_leg", "facial_weakness","forehead_spared", "dysarthria", "limb_ataxia", "babinski", "hyperreflexia"]));
 ok("bp_pcf has crosses:true", STRUCTURES.find(s => s.id === "bp_pcf")?.crosses === true);
 for (const id of ["left_olfactory_olfactory_groove", "left_cortex_insula", "left_pons_basis_pontis"])
   ok(`${id} site exists`, !!SITE_BY_ID[id]);
@@ -53,7 +54,9 @@ ok("isolated gustatory_loss -> insula", win(S("gustatory_loss@left")) === "left_
 ok("dysarthria + gustatory -> insula", win(S("dysarthria@none", "gustatory_loss@left")) === "left_cortex_insula");
 // basis pontis
 ok("ataxic hemiparesis -> basis pontis", win(S("weak_arm@right","weak_leg@right", "limb_ataxia@right")) === "left_pons_basis_pontis");
-ok("dysarthria-clumsy-hand -> basis pontis", win(S("dysarthria@none", "facial_weakness@right","forehead_spared@right")) === "left_pons_basis_pontis");
+// The DISPLAYED answer: the scored path does not apply the known-negative rule, so since the basis pontis gained
+// its UMN signs (2026-09-29) it prefers the bilateral pseudobulbar site, which the un-entered left face excludes.
+ok("dysarthria-clumsy-hand -> basis pontis", solve(S("dysarthria@none", "facial_weakness@right","forehead_spared@right")).display[0].site.id === "left_pons_basis_pontis");
 ok("right basis pontis mirrors", win(S("weak_arm@left","weak_leg@left", "limb_ataxia@left")) === "right_pons_basis_pontis");
 ok("basis pontis phonebook names the lacune", /pontine|basis pontis|ataxic|lacun/i.test(nameOf(S("weak_arm@right","weak_leg@right", "limb_ataxia@right"))));
 

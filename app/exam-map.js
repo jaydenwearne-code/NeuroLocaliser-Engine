@@ -63,12 +63,12 @@ export const EXAM_TREE = [
   ] },
   { id: "tone", label: "Tone", findings: [ "spasticity","rigidity","hypotonia" ] },
   { id: "reflexes", label: "Reflexes", findings: [
-    "babinski","hoffmann","umn_signs","reflex_biceps_loss","reflex_brachioradialis_loss","reflex_triceps_loss",
+    "babinski","plantar_flexor","hoffmann","hyperreflexia","reflex_biceps_loss","reflex_brachioradialis_loss","reflex_triceps_loss",
     "reflex_knee_loss","reflex_ankle_loss","grasp_reflex","palmomental","anal_wink_loss","bulbocavernosus_loss" ] },
   { id: "wasting", label: "Wasting & fasciculations", findings: [ "wasting","fasciculations" ] },
   { id: "sensation", label: "Sensation", groups: [
     { id: "sens_limb", label: "Limb / hemibody", groups: [
-      { id: "sens_paintemp", label: "Pain & temperature", findings: [ "spinothalamic","thalamic_pain" ] },
+      { id: "sens_paintemp", label: "Pain & temperature", findings: [ "spinothalamic" ] },
       { id: "sens_vibration", label: "Vibration & proprioception", findings: [ "dorsal_sensory","sensory_ataxia" ] },
       { id: "sens_cortical", label: "Cortical / discriminative", findings: [ "cortical_sensory_arm","cortical_sensory_leg","cortical_sensory_hand" ] },
     ] },
@@ -87,9 +87,11 @@ export const EXAM_TREE = [
   { id: "movement_dis", label: "Movement disorders", findings: [
     "bradykinesia","rest_tremor","chorea","dystonia","hemiballismus","thalamic_tremor" ] },
   { id: "fatiguability", label: "Fatiguability / augmentation", findings: [
-    "fatigable_weakness","fatigable_ocular","facilitating_weakness","autonomic_features" ] },
+    "fatigable_weakness","fatigable_ocular","facilitating_weakness" ] },
   { id: "autonomic", label: "Autonomic, sphincter & hypothalamic", findings: [
-    "sphincter_dysfunction","urinary_incontinence","diabetes_insipidus","thermodysregulation",
+    "sphincter_dysfunction","urinary_incontinence",
+    "dry_mouth","constipation","erectile_dysfunction","labile_blood_pressure","arrhythmia", // autonomic failure (LEMS / GBS)
+    "diabetes_insipidus","thermodysregulation",
     "hyperphagia","narcolepsy","circadian_disruption","endocrine_dysfunction" ] },
   { id: "functional", label: "Functional signs (positive)", findings: [
     "hoovers_sign","give_way_weakness","entrainment","exam_inconsistency" ] },

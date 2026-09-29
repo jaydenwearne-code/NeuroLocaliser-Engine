@@ -1,5 +1,5 @@
 // app.js — NeuroLocaliser prototype UI. Pure consumer of the engine + causes layer (no model changes).
-import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse.js";
+import { solve, candidateSites, raisedPressureAxis, isNormalToken } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
@@ -21,10 +21,14 @@ import { combinedSites } from "./combined-sites.js";
 import { unifyingDiagnoses, forcingFindings } from "../src/engine/multifocal.js";
 import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { togetherGuardState } from "./together-guard.js";
-import { plainSiteName, shortFindingLabel } from "./labels.js";
+import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
-import { offersFor } from "./sides.js";
+import { offersFor, tokensForRow } from "./sides.js";
+import { answerFor, resolveNext } from "./answer.js";
+import { PLAIN, displayLabel } from "./plain-labels.js";
+import { followUpLayout } from "./follow-ups.js";
+import { searchFindings } from "./synonyms.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -48,6 +52,11 @@ const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), compare:undefined, selectedPathology:undefined, selectedEntity:undefined, scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
+// VIEW STATE — how the reader is looking, never a fact about the case. It is deliberately NOT in S, so
+// encodeCase() cannot serialise it: the same rule that keeps the theme out of the case URL.
+//   open        — the detail sections the reader opened (they are closed by default, spec 2026-09-27 §3.2)
+//   defaultSide — "Symptoms on", the side a row tap enters (spec 2026-09-27 §5.4)
+const VIEW = { open: new Set(), defaultSide: "" };
 
 // ---- shareable case URLs: hydrate S from the URL hash on boot, keep the hash live on every change ----
 const VALID_FINDINGS = new Set(Object.keys(FINDINGS));
@@ -96,8 +105,9 @@ function renderLocalise() {
   <div class="grid">
     <div class="pane">
       <h3>Examination findings</h3>
-      <input class="search" id="search" placeholder="Search findings… (e.g. Horner, ataxia, gaze)">
       <div class="chips" id="chips"></div>
+      <div class="setup" id="setup">${setupRow()}</div>
+      <input class="search" id="search" placeholder="Search findings… (e.g. droopy eyelid, dizzy, foot drop)">
       <div class="ctrls ctrls-inline" id="levelctrls"${hasCord ? "" : " hidden"}>
         <label>Sensory level <input type="text" id="slevel" placeholder="e.g. T10" size="6"></label>
         <label>Distal reach <input type="text" id="reach" placeholder="e.g. knees" size="7"></label>
@@ -109,21 +119,43 @@ function renderLocalise() {
   const sl = document.getElementById("slevel"); if (sl) sl.value = S.sensoryLevel;
   const dr = document.getElementById("reach"); if (dr) dr.value = S.distalReach;
   wireLocalise();
-  renderChips(); renderResults();
+  renderChips(); renderResults(); syncTree();
+}
+
+// Onset and the symptoms' side, asked up front (spec 2026-09-27 §5.4). Onset writes the SAME S.onset the What
+// card's select does. The side is a DEFAULT for row taps and lives in VIEW — it is how the reader enters findings,
+// not a fact about the patient, so it never reaches the case URL. Worded as the BODY side, so nobody enters the
+// side of the brain.
+const ONSET_CHOICES = [["hyperacute", "Seconds–minutes"], ["acute", "Hours–days"], ["subacute", "Days–weeks"], ["chronic", "Weeks–years"]];
+const SIDE_CHOICES = [["left", "Left"], ["right", "Right"], ["both", "Both"]];
+function setupRow() {
+  const btn = (attr, val, label, on) => `<button class="set${on ? " on" : ""}" ${attr}="${val}" aria-pressed="${on}">${label}</button>`;
+  return `<div class="setup-row"><span class="setup-k">Started</span>${ONSET_CHOICES.map(([v, l]) => btn("data-onset", v, l, S.onset === v)).join("")}</div>
+    <div class="setup-row"><span class="setup-k">Symptoms on</span>${SIDE_CHOICES.map(([v, l]) => btn("data-dside", v, l, VIEW.defaultSide === v)).join("")}</div>`;
 }
 
 function countFindings(node) {
   if (node.findings) return node.findings.filter(f => FINDINGS[f]).length;
   return (node.groups || []).reduce((n, g) => n + countFindings(g), 0);
 }
+// A group header says how many of its findings are ENTERED, so a closed group still shows it holds part of the
+// case (spec 2026-09-27 §5.2); syncTree() fills the count in.
+const groupHead = (node, cnt) => `<summary>${esc(node.label)}<span class="c-in" data-in></span><span class="c">${cnt}</span></summary>`;
 function renderNode(node, depth) {
   const cnt = countFindings(node);
   if (node.findings) {
-    const rows = node.findings.filter(f => FINDINGS[f]).map(f => frow(f)).join("");
-    return `<details data-step="${esc(node.id)}" class="nx-lvl nx-lvl${depth}"><summary>${esc(node.label)}<span class="c">${cnt}</span></summary>${rows}</details>`;
+    // Common findings show; the rest sit behind "Less common (n)", named in its summary so nothing is hidden
+    // without a trace. Each home row carries a slot its follow-ups render into (spec 2026-09-27 §5.3).
+    const all = node.findings.filter(f => FINDINGS[f]);
+    const less = all.filter(f => PLAIN[f] && PLAIN[f].less);
+    const home = f => frow(f) + `<div class="fu-slot" data-slot="${f}"></div>`;
+    const more = less.length
+      ? `<details class="less"><summary><span class="less-k">Less common</span> <span class="c">${less.length}</span><span class="less-names">${less.map(f => esc(displayLabel(f))).join(", ")}</span></summary>${less.map(home).join("")}</details>`
+      : "";
+    return `<details data-step="${esc(node.id)}" class="nx-lvl nx-lvl${depth}">${groupHead(node, cnt)}${all.filter(f => !less.includes(f)).map(home).join("")}${more}</details>`;
   }
   const kids = (node.groups || []).map(g => renderNode(g, depth + 1)).join("");
-  return `<details data-gid="${esc(node.id)}" class="nx-lvl nx-lvl${depth}"><summary>${esc(node.label)}<span class="c">${cnt}</span></summary><div class="nx-children">${kids}</div></details>`;
+  return `<details data-gid="${esc(node.id)}" class="nx-lvl nx-lvl${depth}">${groupHead(node, cnt)}<div class="nx-children">${kids}</div></details>`;
 }
 function examAccordion() {
   const used = new Set(flattenFindings(EXAM_TREE));
@@ -131,12 +163,51 @@ function examAccordion() {
   const tree = other.length ? [...EXAM_TREE, { id: "other", label: "Other findings", findings: other }] : EXAM_TREE;
   return tree.map(n => renderNode(n, 0)).join("");
 }
-function frow(f) {
+// A row leads with plain words and keeps the textbook description beneath it, so the tree still teaches the name
+// (spec 2026-09-27 §5.2). The label is a button: a tap enters the finding on the default side — "Symptoms on", or
+// for a follow-up its parent's side (`def`). The side buttons still override.
+function frow(f, def = null) {
   // data-t carries the token(s) a button toggles: "Both" enters two at once (app/sides.js explains why).
   const label = o => o.key === "none" ? "add" : o.key === "both" ? "Both" : sideTag(o.key);
   const btns = offersFor(f).map(o => `<button data-f="${f}" data-s="${o.key}" data-t="${o.tokens.join(" ")}">${label(o)}</button>`).join("");
+  const p = PLAIN[f] || {};
+  const note = p.note ? ` <span class="fnote">— ${esc(p.note)}</span>` : "";
   // The id stays in the title attribute — reachable for a bug report, off the screen for a clinician.
-  return `<div class="frow" data-fid="${f}" title="${esc(f)} — ${esc(desc(f))}"><div class="nm"><span class="fd-primary">${esc(desc(f))}</span></div><div class="sides">${btns}</div></div>`;
+  return `<div class="frow${def !== null ? " fu" : ""}" data-fid="${f}" title="${esc(f)} — ${esc(desc(f))}"><button type="button" class="nm" data-row="${f}"${def !== null ? ` data-def="${def}"` : ""}><span class="fd-primary">${esc(capFirst(displayLabel(f)))}${note}</span><span class="fd-tech">${esc(desc(f))}</span></button><div class="sides">${btns}</div></div>`;
+}
+
+// Follow-ups render into the slot under an ENTERED parent's row (spec 2026-09-27 §5.3). The tree is rendered once
+// — its open groups and scroll survive a toggle — so this refills the slots, hides home rows the layout shows
+// under a parent in the same group, keeps each "Less common" block honest about what is still in it, and writes
+// each group's entered count.
+const sidesOf = f => {
+  const s = [...S.tokens].filter(t => fid(t) === f).map(t => t.split("@")[1]);
+  return s.includes("left") && s.includes("right") ? "both" : s.includes("left") ? "left" : s.includes("right") ? "right" : s.includes("midline") ? "midline" : "";
+};
+function syncTree() {
+  const acc = document.getElementById("acc"); if (!acc) return;
+  const entered = new Set([...S.tokens].map(fid));
+  const { under, hideHome } = followUpLayout(entered);
+  // Recursive, because a follow-up can be a parent too (small pupil -> facial anhidrosis); the map is acyclic.
+  const nested = parent => (under.get(parent) || []).map(k => frow(k, sidesOf(parent)) + nested(k)).join("");
+  acc.querySelectorAll(".fu-slot").forEach(slot => { slot.innerHTML = nested(slot.dataset.slot); });
+  acc.querySelectorAll(".frow:not(.fu)").forEach(r => { r.hidden = hideHome.has(r.dataset.fid); });
+  acc.querySelectorAll("details.less").forEach(d => {
+    const rows = [...d.querySelectorAll(":scope > .frow")];
+    if (rows.some(r => entered.has(r.dataset.fid))) d.open = true;
+    // A less-common finding shown under its parent is not in this block any more — its summary must not name it.
+    const shown = rows.filter(r => !r.hidden);
+    d.hidden = !shown.length;
+    d.querySelector(":scope > summary .c").textContent = shown.length;
+    d.querySelector(":scope > summary .less-names").textContent = shown.map(r => displayLabel(r.dataset.fid)).join(", ");
+  });
+  acc.querySelectorAll("details[data-step], details[data-gid]").forEach(d => {
+    const ids = new Set([...d.querySelectorAll(".frow")].map(r => r.dataset.fid));
+    const n = [...ids].filter(f => entered.has(f)).length;
+    const el = d.querySelector(":scope > summary [data-in]");
+    if (el) el.textContent = n ? `${n} entered` : "";
+  });
+  markSides();
 }
 
 function wireLocalise() {
@@ -147,8 +218,24 @@ function wireLocalise() {
   on("slevel", "oninput", e => { S.sensoryLevel = e.target.value.trim(); renderResults(); });
   on("reach", "oninput", e => { S.distalReach = e.target.value.trim(); renderResults(); });
   on("search", "oninput", e => filterFindings(e.target.value.toLowerCase()));
-  on("acc", "onclick", e => { const b = e.target.closest("button[data-t]"); if (!b) return;
-    toggleTokens(b.dataset.t.split(" ")); });
+  on("setup", "onclick", e => {
+    const o = e.target.closest("[data-onset]"), d = e.target.closest("[data-dside]");
+    if (o) { S.onset = S.onset === o.dataset.onset ? "" : o.dataset.onset; renderResults(); }
+    else if (d) { VIEW.defaultSide = VIEW.defaultSide === d.dataset.dside ? "" : d.dataset.dside; document.getElementById("setup").innerHTML = setupRow(); }
+  });
+  on("acc", "onclick", e => {
+    const b = e.target.closest("button[data-t]");
+    if (b) { toggleTokens(b.dataset.t.split(" ")); return; }
+    const row = e.target.closest("button[data-row]");
+    if (!row) return;
+    // A follow-up takes its parent's side; any other row takes "Symptoms on".
+    const toks = tokensForRow(row.dataset.row, row.dataset.def || VIEW.defaultSide);
+    if (toks) { toggleTokens(toks); return; }
+    // No default decides it: point at the side buttons rather than guess a side.
+    const fr = row.closest(".frow");
+    fr.classList.add("need-side");
+    setTimeout(() => fr.classList.remove("need-side"), 900);
+  });
   markSides();
 }
 
@@ -163,7 +250,10 @@ function wireJumpLinks(root) {
       const target = document.getElementById(a.getAttribute("href").slice(1));
       // behavior:"auto", not "smooth" — smooth was measured as a no-op in the in-app browser (scrollY never
       // moved), and an instant jump is the better behaviour anyway for "get me to Next Steps now".
-      if (target) target.scrollIntoView({ behavior: "auto", block: "start" });
+      if (!target) return;
+      // A section is closed by default now, so a jump must open it as well as reach it.
+      if (target.tagName === "DETAILS" && target.dataset.secCard) { target.open = true; VIEW.open.add(target.dataset.secCard); }
+      target.scrollIntoView({ behavior: "auto", block: "start" });
     };
   });
 }
@@ -178,19 +268,21 @@ function wireCardControls() {
 }
 function filterFindings(q) {
   const acc = document.getElementById("acc");
+  const hits = searchFindings(q);   // the whole search, pure and tested (app/synonyms.js), spec 2026-09-27 §5.5
   acc.querySelectorAll(".frow").forEach(r => {
-    const f = r.dataset.fid; const hit = !q || f.includes(q) || desc(f).toLowerCase().includes(q);
+    const f = r.dataset.fid;
+    const hit = !q || hits.has(f);
     r.style.display = hit ? "" : "none";
     if (hit && q) { let el = r.parentElement; while (el && el !== acc) { if (el.tagName === "DETAILS") el.open = true; el = el.parentElement; } }
   });
-  if (!q) acc.querySelectorAll("details").forEach(d => { d.open = false; });
+  if (!q) { acc.querySelectorAll("details").forEach(d => { d.open = false; }); syncTree(); }
 }
-function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); markSides(); syncLevelCtrls(); }
+function toggleToken(tok) { S.tokens.has(tok) ? S.tokens.delete(tok) : S.tokens.add(tok); renderChips(); renderResults(); syncTree(); syncLevelCtrls(); }
 // A panel button may carry several tokens ("Both"): all on → all off, otherwise all on.
 function toggleTokens(toks) {
   const allOn = toks.every(t => S.tokens.has(t));
   for (const t of toks) allOn ? S.tokens.delete(t) : S.tokens.add(t);
-  renderChips(); renderResults(); markSides(); syncLevelCtrls();
+  renderChips(); renderResults(); syncTree(); syncLevelCtrls();
 }
 // Show the level inputs the moment a cord / length-dependent finding appears. Toggling visibility rather
 // than re-rendering renderLocalise() keeps the accordion's open sections and scroll position intact.
@@ -242,12 +334,13 @@ function renderChips() {
     return;
   }
   el.innerHTML = [...S.tokens].map(t => { const [f,s]=t.split("@");
-    return `<span class="chip" title="${esc(f)} — ${esc(desc(f))}"><span class="sd">${sideTag(s)}</span>${esc(shortFindingLabel(f))}<span class="x" data-t="${t}">×</span></span>`; }).join("");
+    return `<span class="chip" title="${esc(f)} — ${esc(desc(f))}"><span class="sd">${sideTag(s)}</span>${esc(capFirst(displayLabel(f)))}<span class="x" data-t="${t}">×</span></span>`; }).join("");
   el.onclick = e => { const t = e.target.dataset.t; if (t) toggleToken(t); };
 }
 
 function renderResults() {
   const el = document.getElementById("results");
+  const su = document.getElementById("setup"); if (su) su.innerHTML = setupRow();
   if (!S.tokens.size) {
     // THE HASH IS THE SHAREABLE CASE: once the last finding is removed it must say so, or a reload, a copied
     // link or the feedback button brings back findings the user has cleared (found by driving the app,
@@ -256,13 +349,15 @@ function renderResults() {
     S.selected = undefined; S.selectedPathology = undefined; S.selectedEntity = undefined;
     syncURL();
     el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`;
+    wireAnswerStrip();   // no card now — this unbinds the last case's scroll listener
     return;
   }
   try {
   // Papilloedema is an AXIS, not a site finding (see raisedPressureAxis): no site's expected findings
   // contain it, so it must not be counted in the "explains n/total" denominator or every intracranial site
   // would look as if it had failed to account for it. The full token set still drives the flags below.
-  const total = [...S.tokens].filter(t => !t.startsWith("papilloedema@")).length;
+  // An explicit normal (a down-going plantar) is not a finding to explain either — it only rules sites out.
+  const total = [...S.tokens].filter(t => !t.startsWith("papilloedema@") && !isNormalToken(t)).length;
   // solve() still receives the FULL set — differential() needs the pressure token to apply the compartment
   // filter, and strips it internally before matching.
   const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
@@ -273,6 +368,10 @@ function renderResults() {
   const press = raisedPressureAxis(S.tokens);
   const pmsg = press.present
     ? `<div class="multi" style="border-color:var(--red);background:var(--red-bg)"><b>⚑ Raised intracranial pressure.</b> ${esc(press.note)}</div>` : "";
+  if (!cands.length && [...S.tokens].every(isNormalToken)) {
+    el.innerHTML = `<h3>Possible lesions</h3><div class="empty">A normal finding narrows a picture but localises nothing on its own — add an abnormal finding.</div>`;
+    return;
+  }
   if (!cands.length) {
     const fnd = functionalFlag(S.tokens);
     const fmsg = fnd.functional
@@ -292,16 +391,21 @@ function renderResults() {
   syncURL();
   const has = new Set(["where", "why", "what", "next"]);
   if (together) has.add("together");
-  el.innerHTML = resultHeader(sel, list, total, r)
+  const ans = answerFor({ r, sel, total, tokens: S.tokens, onset: S.onset, course: S.course, dominant: S.dominant,
+    sensoryLevel: S.sensoryLevel, pinned: S.pinned, scope: S.scope, selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity });
+  el.innerHTML = answerCard(sel, list, r, ans)
     + sectionNav(has)
     + pmsg + rmsg
     + whereCard(list, cands, total, r)
     + together
     + whyCard(tf, sel, list)
     + whatCard(sel.site, r, list)
-    + nextCard(sel.site, r, list);
+    + nextCard(sel.site, r, list)
+    + answerStrip(sel, list, total, ans.nx);
   wireCardControls();
   wireJumpLinks(el);
+  wireSectionToggles(el);
+  wireAnswerStrip();
   // Bound on the WRAP, not the <svg>: the numbered index lives beside the figure and its rows carry the
   // same data-k, so one handler serves both.
   // Selecting a cause narrows the Next card to that pathology; clicking the selected one clears it.
@@ -384,8 +488,20 @@ function siteRaw(site){ return plainSiteName(site, { dominantSide: S.dominant })
 
 // cap is trusted HTML (literal labels we control, e.g. "Why" or `Where <span…>(N)</span>`) — not user input.
 // `anchor` gives the section nav a jump target.
-function card(capHTML, body, anchor) {
-  return `<section class="out-card"${anchor ? ` id="sec-${anchor}"` : ""}><div class="out-cap">${capHTML}</div>${body}</section>`;
+// The detail sections are CLOSED by default (spec 2026-09-27 §3.2): the answer card above carries the short
+// version of each, and a section opens on a tap or from the section nav. The order is unchanged and nothing is
+// tabbed, so the 2026-08-16 ruling (a trainee must not be able to skip Why) still holds — Why's gist is on the
+// answer card. A section the reader opened stays open across re-renders until they close it. `hint` is trusted
+// literal copy.
+function card(capHTML, body, anchor, hint = "") {
+  const open = anchor && VIEW.open.has(anchor) ? " open" : "";
+  return `<details class="out-card"${anchor ? ` id="sec-${anchor}" data-sec-card="${anchor}"` : ""}${open}><summary class="out-cap">${capHTML}${hint ? `<span class="out-hint">${hint}</span>` : ""}</summary>${body}</details>`;
+}
+// The toggle event does not bubble, so each section is bound after every render.
+function wireSectionToggles(root) {
+  root.querySelectorAll("details[data-sec-card]").forEach(d => {
+    d.ontoggle = () => { d.open ? VIEW.open.add(d.dataset.secCard) : VIEW.open.delete(d.dataset.secCard); };
+  });
 }
 
 // The reasoning chain stays in ONE scroll in a fixed order — a trainee must not be able to skip Why, which
@@ -420,37 +536,62 @@ function errorPanel(err) {
   </div>`;
 }
 
-// compact header: the leading/selected lesion + status + functional flag (safety — kept prominent)
-function resultHeader(sel, list, total, r) {
-  const nAll = r.explainAll.length;
-  const status = nAll
-    ? `<b>${nAll}</b> lesion${nAll>1?"s":""} explain${nAll>1?"":"s"} all ${total} finding${total>1?"s":""}${nAll>1?" — click one to narrow":""}.`
-    : `<b>No single lesion</b> explains all ${total} findings — best explains ${list[0].n}/${total}.`;
+// The answer card (spec 2026-09-27 §3.1): the site, the urgency, then one line each for Where / Why / What / Next
+// and the site's red-flag sentence. The lines come from app/answer.js — derived, never authored per site. It keeps
+// .out-head, the allowlisted terracotta rule: this card IS the answer. The functional flag stays here (safety).
+function answerCard(sel, list, r, ans) {
   const fnd = functionalFlag(S.tokens);
   const funcFlag = fnd.functional
     ? `<div class="multi" style="border-color:var(--gold);background:var(--gold-bg,transparent)"><b>⚠ Consider functional.</b> ${esc(fnd.note)}</div>`
     : fnd.suppressed
     ? `<div class="annot"><b>Functional sign noted:</b> ${esc(fnd.note)}</div>`
     : "";
-  // Urgency already exists in the workup layer but was only visible four screens down — it is the one signal
-  // a time-poor reader needs before anything else, so it sits in the header and links to the Next card.
-  let urg = "";
-  try {
-    const u = nextStepsFor(sel.site, { onset: S.onset || undefined }).urgency;
-    const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
-    const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
-    const emerg = u === "emergency" ? " urg-emergency" : "";
-    urg = `<a class="urg-pill${emerg}" href="#sec-next"${emerg ? "" : ` style="color:var(${tint});border-color:var(${tint})"`}>${lab}</a>`;
-  } catch { urg = ""; }
-  // ONE scope control, here, governing both the What and the Next cards — they used to render a copy each
-  // off the same S.scope, which is two controls for one decision.
+  // The badge follows the RESOLVED plan — the same one the Next line and the Next card show — so a selected cause
+  // moves all three together (urgency follows the selection: owner rulings 2026-08-18 and 2026-08-21).
+  const u = ans.nx.urgency;
+  const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
+  const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
+  const emerg = u === "emergency" ? " urg-emergency" : "";
+  const urg = `<a class="urg-pill${emerg}" href="#sec-next"${emerg ? "" : ` style="color:var(${tint});border-color:var(${tint})"`}>${lab}</a>`;
+  // ONE scope control, here, governing both the What and the Next cards.
   const { sites: scopeSites } = combinedSites(r, list, S.pinned);
   const scope = scopeSites.length >= 2 ? scopeToggle(scopeSites.length) : "";
-  return `<div class="out-head">
-    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b>${siteSub(sel.site)?`<span class="oh-loc">${esc(siteSub(sel.site))}</span>`:""}
+  const L = ans.lines;
+  const row = (k, v) => v ? `<div class="ans-row"><span class="ans-k">${k}</span><span class="ans-v">${esc(v)}</span></div>` : "";
+  const red = L.red ? `<div class="ans-row ans-red"><span class="ans-k">⚑</span><span class="ans-v">${esc(L.red)}</span></div>` : "";
+  return `<div class="out-head" id="answer">
+    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b>
       <details class="oh-raw"><summary>site id</summary><code>${esc(siteRaw(sel.site))} · ${esc(sel.site.id)}</code></details>
     </div>${urg}${feedbackButton(list)}</div>
-    <p class="oh-status">${status}</p>${scope}${funcFlag}</div>`;
+    <div class="ans">${row("Where", L.where)}${row("Why", L.why)}${row("What", L.what)}${row("Next", L.next)}${red}</div>
+    ${scope}${funcFlag}</div>`;
+}
+
+// The phone strip (spec 2026-09-27 §3.3). Below the single-column breakpoint the answer card sits under the whole
+// exam, so a slim bar pins the answer to the bottom of the screen while the card is out of view. A <button>, not
+// a link: THE HASH IS THE CASE, and an href would rewrite it.
+function answerStrip(sel, list, total, nx) {
+  const n = list.filter(c => c.n === total).length;
+  const u = nx.urgency === "emergency" ? "Emergency" : nx.urgency === "urgent" ? "Urgent" : "Routine";
+  // Urgency FIRST: on a narrow screen the line truncates, and the name is what may be cut, never the urgency.
+  return `<button class="ans-strip" id="ans-strip" type="button" hidden><span class="ans-strip-t">${u}${n > 1 ? ` · ${n} fit` : ""} · ${esc(siteName(sel.site))}</span><span class="ans-strip-go">View</span></button>`;
+}
+// Visibility is measured on scroll and resize, not with an IntersectionObserver: its callbacks were measured NOT
+// to arrive in a throttled tab (the strip never appeared), and a strip that silently never shows is the failure
+// this exists to prevent. getBoundingClientRect is synchronous, and one rect per scroll event is cheap.
+let _stripUpdate = null;
+function wireAnswerStrip() {
+  if (_stripUpdate) { removeEventListener("scroll", _stripUpdate); removeEventListener("resize", _stripUpdate); _stripUpdate = null; }
+  const strip = document.getElementById("ans-strip"), card = document.getElementById("answer");
+  if (!strip || !card) return;
+  strip.onclick = () => card.scrollIntoView({ behavior: "auto", block: "start" });
+  // Keyed on the answer LINES, not the card's frame, with the safety bar's height kept clear: measured at 375px,
+  // "the card intersects the viewport" hid the strip while only the card's top border peeked out behind the bar.
+  const lines = card.querySelector(".ans") || card;
+  _stripUpdate = () => { const r = lines.getBoundingClientRect(); strip.hidden = r.top < innerHeight - 60 && r.bottom > 0; };
+  addEventListener("scroll", _stripUpdate, { passive: true });
+  addEventListener("resize", _stripUpdate);
+  _stripUpdate();
 }
 
 // Five places tell the reader "the engine considered this and set it aside" — in five phrasings and five
@@ -498,7 +639,7 @@ function whereCard(list, cands, total, r) {
     // TWO CONTROLS, TWO CLAIMS. The checkbox says "I am choosing between these" (one lesion, which one?);
     // the pin says "these are both real" (two lesions). Opposite claims, so they cannot share a control.
     const cmpOn = compareSet(idsOf(list)).has(c.site.id) ? " checked" : "";
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span>${c.against ? `<span class="dagainst">less likely — would give ${esc(displayLabel(fid(c.against)))} on the ${esc(c.against.split("@")[1])}</span>` : ""}</div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? setAside("contradicted by a normal finding", r.ruledOut.length,
@@ -508,7 +649,7 @@ function whereCard(list, cands, total, r) {
         }).join("")}</div>`)
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
-  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where");
+  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where", "— every place that fits");
 }
 
 // A `spread`/`motor` clause has no single site — it is satisfied by the SET of sites, or by the observed
@@ -649,7 +790,7 @@ function togetherCard(r, list) {
         <option value="">all</option>
         ${COURSES.map(c=>`<option value="${c.id}"${S.course===c.id?" selected":""}>${esc(c.label)}</option>`).join("")}
       </select></label></div>`;
-  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc, "together");
+  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc, "together", "— one disease, several places");
 }
 
 // THE INPUT CONTRACT: candidates come from solve() (`list` is r.display), not from tractsFor(). Harvesting
@@ -684,7 +825,7 @@ function comparePanel(list) {
 function tokenLabel(t) {
   const [f, side] = t.split("@");
   const sd = sideTag(side);
-  return `<span class="t" title="${esc(t)}">${sd !== "•" ? `<span class="sd">${sd}</span> ` : ""}${esc(shortFindingLabel(f))}</span>`;
+  return `<span class="t" title="${esc(t)}">${sd !== "•" ? `<span class="sd">${sd}</span> ` : ""}${esc(capFirst(displayLabel(f)))}</span>`;
 }
 
 // ② Why — the integrated reasoning chain (spec 2026-09-26): for each finding, what carries it HERE and why it
@@ -697,7 +838,7 @@ function meetSentence(w) {
   const at = st => side === "left" || side === "right" ? `the ${side} ${st}` : side === "bilateral" ? `the ${st} (both sides)` : `the ${st}`;
   if (w.verdict === "none") return "No single place carries all of these findings — together they need more than one lesion, or a finding needs re-checking.";
   if (w.verdict === "one") return n === 1 ? `This finding arises only in ${at(w.meet.stations[0])}.` : `Only ${at(w.meet.stations[0])} carries all ${n} findings.`;
-  if (n === 1) return `${shortFindingLabel(w.steps[0].finding)} alone does not localise: it can arise at ${w.steps[0].where}.`;
+  if (n === 1) return `${capFirst(displayLabel(w.steps[0].finding))} alone does not localise: it can arise at ${w.steps[0].where}.`;
   return `These findings fit ${w.meet.stations.map(at).join(" or ")} — see what separates them below.`;
 }
 const capFirst = s => s ? s[0].toUpperCase() + s.slice(1) : s;
@@ -726,7 +867,7 @@ function whyCard(tf, sel, list) {
   const anatomy = tf.length
     ? `<details class="nx-toggle" style="margin-top:6px"><summary>Pathway anatomy</summary>${tf.map(t => `<p class="synth"><b>${esc(capFirst(t.tract.label))}.</b> ${esc(tractNarrative(t.tract))}</p>`).join("")}</details>`
     : "";
-  return card("Why", `${umnlmn}${chain}${compare}${expected}${anatomy}`, "why");
+  return card("Why", `${umnlmn}${chain}${compare}${expected}${anatomy}`, "why", "— finding by finding, and what separates the places");
 }
 
 // Merged causes/workup render through the cards that already OWN that presentation, rather than a third
@@ -803,9 +944,9 @@ function whatCard(site, r, list) {
            ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}`)
       : "";
     const remainder = perSiteRemainderHTML(cc, sites);
-    return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what");
+    return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what", "— every cause, by onset");
   }
-  return card("What", whatBlock(site), "what");
+  return card("What", whatBlock(site), "what", "— every cause, by onset");
 }
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
@@ -870,18 +1011,12 @@ function whatBlock(site) {
 // returns the same field names/types as nextStepsFor() (minus `curated`) precisely so this works without a
 // second four-tier renderer.
 function nextCard(site, r, list) {
-  // S.pinned MUST be passed — see the note in whatCard().
-  const { sites } = combinedSites(r, list, S.pinned);
-  const combined = sites.length >= 2 && S.scope === "all";
-  // Per-site selection is single-site only; the CROSS-SITE selection is the combined view's answer to
-  // "whose pathology?" — the disease the Together card named as spanning these sites (spec 2026-08-21).
-  // The onset is threaded through so a hyperacute stroke badges EMERGENCY (accuracy round 1, A4/B16).
-  const onsetOpt = { onset: S.onset || undefined };
-  const nx = combined
-    ? combinedNextSteps(sites, S.selectedEntity || null, onsetOpt)
-    : pathologyNextStepsFor(site, S.selectedPathology || null, onsetOpt);
+  // The SAME resolution the answer card uses (app/answer.js), so the badge, the Next line and this card can never
+  // describe different plans. S.pinned is passed through — see the note in whatCard().
+  const { nx, combined } = resolveNext({ site, r, pinned: S.pinned, scope: S.scope,
+    selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity, onset: S.onset });
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
-  return card(cap, nextBlock(nx, combined), "next");
+  return card(cap, nextBlock(nx, combined), "next", "— the full workup");
 }
 
 // `combined` distinguishes the two shapes nextBlock is fed: nextStepsFor()'s single-site plan (which carries

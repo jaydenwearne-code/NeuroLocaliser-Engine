@@ -17,6 +17,7 @@ import { normaliseLevel, regionOf, landmarkOf } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
 import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS } from "../model/compartments.js";
+import { EXPLICIT_NORMAL } from "../model/findings.js";
 
 // One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
 // the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
@@ -55,15 +56,38 @@ export function rankSingle(observedSet, opts = {}) {
 // a KNOWN NEGATIVE. Any site that predicts a known-negative would produce a sign the patient demonstrably
 // lacks, so it is not a candidate. Only left↔right have a homolog; midline / bilateral / none are skipped.
 const OPPOSITE_SIDE = { left: "right", right: "left" };
+// An EXPLICIT NORMAL (a down-going plantar — EXPLICIT_NORMAL in findings.js) is never a known negative: it does
+// not exclude. It COUNTS AGAINST the lesions that predict the abnormal finding on that side — see normalNegatives()
+// and the `against` demotion in differential(). Built first as an exclusion; driving it showed leg weakness + a
+// down-going plantar leaving a single candidate, and a flexor plantar is common early in a stroke (owner ruling
+// 2026-09-29: demote, not exclude).
+export const isNormalToken = t => Object.prototype.hasOwnProperty.call(EXPLICIT_NORMAL, t.split("@")[0]);
 export function knownNegatives(observedSet) {
   const neg = new Set();
   for (const tok of observedSet) {
+    if (isNormalToken(tok)) continue;       // a normal implies nothing about the other side either
     const [f, side] = tok.split("@");
     const other = OPPOSITE_SIDE[side];
     if (!other) continue;
     const homolog = `${f}@${other}`;
     if (!observedSet.has(homolog)) neg.add(homolog);
   }
+  return neg;
+}
+// The abnormal tokens the explicit normals count against: that finding on that side, and its midline form once
+// the normal is recorded on BOTH sides (the conus emits its UMN signs @midline). A normal that contradicts an
+// entered abnormal finding is ignored.
+export function normalNegatives(observedSet) {
+  const neg = new Set(), sides = {};
+  for (const tok of observedSet) {
+    if (!isNormalToken(tok)) continue;
+    const [f, side] = tok.split("@");
+    const abn = EXPLICIT_NORMAL[f];
+    if (!observedSet.has(`${abn}@${side}`)) neg.add(`${abn}@${side}`);
+    (sides[abn] ??= new Set()).add(side);
+  }
+  for (const [abn, s] of Object.entries(sides))
+    if (s.has("left") && s.has("right") && !observedSet.has(`${abn}@midline`)) neg.add(`${abn}@midline`);
   return neg;
 }
 
@@ -111,9 +135,11 @@ export const rankKey = c => c.over - PREVALENCE_ALLOWANCE * c.prevalence;
 export function differential(observedSet, opts = {}) {
   // The pressure token is stripped before matching: no site's expectedFindings contain it, so leaving it in
   // would make every site fail to explain it and collapse the differential to nothing.
-  const observed = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t));
+  // Explicit normals are stripped too: they act only through knownNegatives(), never as a finding to explain.
+  const observed = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
   const pressure = raisedPressureAxis(observedSet);
   const negatives = knownNegatives(observedSet);
+  const againstNormal = normalNegatives(observedSet);
   const cands = [];
   for (const site of candidateSites()) {
     if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
@@ -127,11 +153,14 @@ export function differential(observedSet, opts = {}) {
     // Papilloedema on its own explains nothing site-specific, but it is still informative: every
     // intracranial site stays in play rather than the list collapsing to empty.
     if (!explained.length && !(pressure.present && !observed.length)) continue;
+    // `against`: the first abnormal token an entered normal counts against — the site stays a candidate, demoted.
+    const against = [...againstNormal].find(t => exp.has(t)) || null;
     cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
-                 n: explained.length, prevalence: prevalenceOf(site) });
+                 n: explained.length, prevalence: prevalenceOf(site), against });
   }
-  // coverage first (localisation), then fit weighed against prior (rankKey), then prevalence, tightness, id.
-  cands.sort((a, b) => b.n - a.n || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence
+  // coverage first (localisation), then anything a recorded normal counts against goes below the rest, then fit
+  // weighed against prior (rankKey), then prevalence, tightness, id.
+  cands.sort((a, b) => b.n - a.n || (!!a.against - !!b.against) || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence
     || a.over - b.over || a.site.id.localeCompare(b.site.id));
   return cands;
 }
@@ -311,9 +340,9 @@ export function solve(observedSet, options = {}) {
   // report "no single lesion explains all"), while `differential` below still receives the full set so it can
   // apply the compartment filter. `pressure` is returned so the caller can annotate.
   const pressure = raisedPressureAxis(observedSet);
-  const localising = pressure.present
-    ? new Set([...observedSet].filter(t => !PRESSURE_TOKEN.test(t)))
-    : observedSet;
+  // Explicit normals (a down-going plantar) are stripped from the scored paths for the same reason: no site
+  // produces them. They act through the differential's known negatives, which receives the full set.
+  const localising = new Set([...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t)));
   const single = rankSingle(localising, opts);
   const best = single[0] || null;
 

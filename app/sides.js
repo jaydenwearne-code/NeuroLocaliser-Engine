@@ -7,7 +7,7 @@
 // Such a finding now gets a single "Both" button that enters the two sides together (accuracy round 1, A5).
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
-import { NON_LATERALISED } from "../src/model/findings.js";
+import { NON_LATERALISED, EXPLICIT_NORMAL } from "../src/model/findings.js";
 
 export function buildSideOffers(sites) {
   const sides = {};        // finding -> Set of body sides some site emits it on
@@ -30,8 +30,31 @@ export function buildSideOffers(sites) {
     if (set.has("midline")) offers.push({ key: "midline", tokens: [`${f}@midline`] });
     out[f] = offers;
   }
+  // An explicit normal (a down-going plantar) is produced by no site, so it borrows the SIDES its abnormal
+  // counterpart is offered on — left and right only: a normal has no midline form (owner ruling 2026-09-29).
+  for (const [normal, abn] of Object.entries(EXPLICIT_NORMAL)) {
+    out[normal] = ["left", "right"].filter(s => (out[abn] || []).some(o => o.tokens.includes(`${abn}@${s}`)))
+      .map(s => ({ key: s, tokens: [`${normal}@${s}`] }));
+  }
   return out;
 }
 
 const OFFERS = buildSideOffers(candidateSites());
 export const offersFor = f => OFFERS[f] || [{ key: "none", tokens: [`${f}@none`] }];
+
+// A row TAP enters the finding on the reader's default side (spec 2026-09-27 §5.4): "Symptoms on" above the tree,
+// or a follow-up's parent side. It maps that default through the SAME offers the buttons show, so a tap can never
+// enter a token the panel does not offer. A finding with one fixed offer (none / both / midline) takes it whatever
+// the default. Returns null when the default does not decide it — the row's side buttons are then the only way in.
+export function tokensForRow(f, defaultSide = "") {
+  const offers = offersFor(f);
+  if (offers.length === 1 && offers[0].key !== "left" && offers[0].key !== "right") return offers[0].tokens;
+  if (!defaultSide) return null;
+  const exact = offers.find(o => o.key === defaultSide);
+  if (exact) return exact.tokens;
+  if (defaultSide === "both") {
+    const lr = offers.filter(o => o.key === "left" || o.key === "right");
+    if (lr.length === 2) return lr.flatMap(o => o.tokens);
+  }
+  return null;
+}

@@ -12,7 +12,9 @@ const log = [];
 function ok(label, cond) { log.push({ label, ok: !!cond }); cond ? pass++ : fail++; }
 
 // --- Task 1: vocabulary (6 new findings) ---
-const NEW = ["fatigable_weakness","fatigable_ocular","facilitating_weakness","autonomic_features","fasciculations","proximal_weakness"];
+// "autonomic_features" was split on 2026-09-29 (owner ruling) into five autonomic findings shared with acute GBS —
+// see test/vocab-rulings.test.js.
+const NEW = ["fatigable_weakness","fatigable_ocular","facilitating_weakness","fasciculations","proximal_weakness"];
 for (const id of NEW) {
   ok(`finding ${id} exists`, isFinding(id));
   ok(`${id} is ipsilateral/bilateral (CROSSES false)`, CROSSES[id] === false);
@@ -21,7 +23,7 @@ for (const id of NEW) {
 
 // --- Task 2: localising policy (the two anatomical calls, made testable) ---
 import { LOCALISING } from "../src/engine/score.js";
-for (const id of ["fatigable_weakness","fatigable_ocular","facilitating_weakness","autonomic_features"])
+for (const id of ["fatigable_weakness","fatigable_ocular","facilitating_weakness"])
   ok(`${id} IS localising (pins the diagnosis)`, LOCALISING.has(id));
 ok("fasciculations is NOT localising (general LMN sign — any level)", !LOCALISING.has("fasciculations"));
 ok("proximal_weakness is NOT localising (shared → myopathy emerges by parsimony)", !LOCALISING.has("proximal_weakness"));
@@ -33,13 +35,13 @@ const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 ok("anterior_horn -> lmn_weakness + fasciculations + bulbar (dysphagia+dysarthria) + hypotonia + wasting (PURE LMN)",
    eq(muOf("anterior_horn"), ["dysphagia","dysarthria","fasciculations","hypotonia","lmn_weakness","wasting"].sort()));
-ok("anterior_horn does NOT produce umn_signs (ALS is not a site — pathology layer)",
-   !muOf("anterior_horn").includes("umn_signs"));
+ok("anterior_horn produces no UMN sign (ALS is not a site — pathology layer)",
+   !muOf("anterior_horn").some(f => ["hyperreflexia", "babinski", "hoffmann", "spasticity"].includes(f)));
 // + ptosis since 2026-09-26 (accuracy round 1 follow-up): the commonest presenting sign of myasthenia.
 ok("nmj_postsynaptic -> fatigable weakness + ocular + ptosis + bulbar (dysphagia+dysarthria) + proximal",
    eq(muOf("nmj_postsynaptic"), ["dysphagia","dysarthria","fatigable_ocular","fatigable_weakness","proximal_weakness","ptosis"].sort()));
-ok("nmj_presynaptic -> facilitating + autonomic + proximal",
-   eq(muOf("nmj_presynaptic"), ["autonomic_features","facilitating_weakness","proximal_weakness"].sort()));
+ok("nmj_presynaptic -> facilitating + the five autonomic signs + proximal",
+   eq(muOf("nmj_presynaptic"), ["arrhythmia","constipation","dry_mouth","erectile_dysfunction","facilitating_weakness","labile_blood_pressure","proximal_weakness"].sort()));
 ok("muscle -> proximal weakness only", eq(muOf("muscle"), ["proximal_weakness"]));
 {
   const mu = STRUCTURES.filter(s => s.level === "motor_unit");
@@ -83,7 +85,7 @@ const bilat = (...ids) => new Set(ids.flatMap(f => [`${f}@left`, `${f}@right`]))
 }
 // Lambert-Eaton — facilitation + autonomic.
 {
-  const { best } = solve(bilat("facilitating_weakness", "autonomic_features", "proximal_weakness"));
+  const { best } = solve(new Set([...bilat("facilitating_weakness", "proximal_weakness"), "dry_mouth@none", "constipation@none"]));
   ok("facilitation + autonomic -> Lambert-Eaton (nmj_presynaptic)", best && best.site.id === "motor_unit_nmj_presynaptic");
 }
 // Myopathy — bare bilateral proximal weakness, by parsimony (MG/LEMS over-predict).
@@ -110,7 +112,7 @@ import { nameForSite } from "../src/data/syndromes.js";
   ok("anterior horn names lower motor neurone / anterior horn disease", /anterior horn|lower motor/i.test(ah));
   ok("...and does NOT claim ALS (that's the pathology layer)", !/amyotrophic lateral/i.test(ah));
   ok("MG names myasthenia", /myasthenia/i.test(name(bilat("fatigable_weakness", "fatigable_ocular", "proximal_weakness", "dysphagia"))));
-  ok("LEMS names Lambert-Eaton", /lambert|eaton/i.test(name(bilat("facilitating_weakness", "autonomic_features", "proximal_weakness"))));
+  ok("LEMS names Lambert-Eaton", /lambert|eaton/i.test(name(new Set([...bilat("facilitating_weakness", "proximal_weakness"), "dry_mouth@none"]))));
   ok("muscle names myopathy", /myopath/i.test(name(bilat("proximal_weakness"))));
 }
 

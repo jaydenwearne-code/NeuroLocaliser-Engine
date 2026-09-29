@@ -1,7 +1,8 @@
 // why.test.js — the integrated Why (spec 2026-09-26): stations, side reasons, and the reasoning chain.
 import { candidateSites, solve } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
-import { whyChain, renderWhere } from "../src/engine/why.js";
+import { whyChain, renderWhere, whyClues } from "../src/engine/why.js";
+import { readFileSync } from "node:fs";
 import { EXAMPLES } from "../app/examples.js";
 import { STATIONS, STATION_ORDER, STATION_GROUP, AXIS, stationOf } from "../src/model/stations.js";
 
@@ -99,6 +100,67 @@ const stepOf = (w, tok) => w.steps.find(s => s.token === tok);
   ok("every site's complete picture meets at that site's own station", noSelf.length === 0, noSelf.join(", "));
   ok("every explained step names its carrier", noCarrier.length === 0, noCarrier.join(", "));
   ok("the Why agrees with the Where (the first-ranked site's station is in the meet)", disagree.length === 0, disagree.join(", "));
+}
+
+// ---- 4: the Why line's key clues (spec 2026-09-27 §4) ----
+// The vignettes are the owner-reviewed bedside cases; they are read from their own suite rather than copied.
+const VIGNETTES = [...readFileSync(new URL("./clinical-vignettes.test.js", import.meta.url), "utf8")
+  .matchAll(/^\s*\["([^"]+)",\s*"([^"]+)"/gm)].map(m => ({ label: m[1], tokens: m[2].split(/\s+/) }));
+const cluesOf = toks => {
+  const obs = new Set(toks), opts = { dominantSide: "left" };
+  const site = solve(obs, opts).display[0].site;
+  return whyClues(whyChain(obs, site, opts), obs, opts);
+};
+const said = w => w.clues.map(c => (c.side ? c.side + " " : "") + c.finding).join(" + ");
+const vig = label => VIGNETTES.find(v => v.label === label).tokens;
+{
+  ok(`the vignettes were read (${VIGNETTES.length})`, VIGNETTES.length >= 80, String(VIGNETTES.length));
+  const expect = {
+    "Weber": "left weak_adduction + right weak_arm",
+    "Wallenberg (with dysphagia)": "left face_pain_loss + left dysphagia + right spinothalamic",
+    "Medial medullary (Dejerine)": "left cn12_palsy + right weak_arm",
+    "Brown-Sequard": "left weak_leg + right spinothalamic",
+    "Complete dominant MCA": "speech_nonfluent + right homonymous_hemianopia",
+    "CN III compressive (pupil involved)": "left fixed_dilated_pupil + left ptosis",
+    "Guillain-Barré (symmetric LMN + areflexia)": "bilateral lmn_weakness + bilateral reflex_knee_loss",
+    "L5 radiculopathy": "left sensory_l5",
+  };
+  for (const [label, want] of Object.entries(expect)) ok(`clues — ${label}: ${want}`, said(cluesOf(vig(label))) === want, said(cluesOf(vig(label))));
+  const gbs = cluesOf(vig("Guillain-Barré (symmetric LMN + areflexia)"));
+  ok("a finding entered on both sides is one clue, with no side relation", gbs.clues.every(c => c.side === "bilateral" && c.relation === "both"));
+  ok("L5 alone: several places, and the clue says so", cluesOf(vig("L5 radiculopathy")).verdict === "several");
+  const none = whyClues({ verdict: "none", steps: [], meet: { stations: [], sides: [] } }, new Set());
+  ok("no single place: no clues", none.verdict === "none" && none.clues.length === 0);
+}
+{
+  const bad = [], tooMany = [], notEntered = [];
+  for (const v of VIGNETTES) {
+    const w = cluesOf(v.tokens);
+    if (!w.reached) bad.push(v.label);
+    if (w.clues.length > 3) tooMany.push(v.label);
+    if (w.clues.some(c => c.tokens.some(t => !v.tokens.includes(t)))) notEntered.push(v.label);
+  }
+  ok("every vignette's clues narrow to the answer's place", bad.length === 0, bad.join(", "));
+  ok("never more than 3 clues shown", tooMany.length === 0, tooMany.join(", "));
+  ok("every clue is a finding the clinician entered", notEntered.length === 0, notEntered.join(", "));
+}
+{
+  // Every site's own complete picture: the clues reach that place, and a one-sided clue set never hides the
+  // crossed half. 365 pictures; about three seconds.
+  const bad = [], halfCrossed = [];
+  for (const s of cs) {
+    let E; try { E = new Set(expectedFindings(s, { dominantSide: "left" })); } catch { continue; }
+    if (!E.size) continue;
+    const chain = whyChain(E, s, { dominantSide: "left" });
+    const w = whyClues(chain, E, { dominantSide: "left" });
+    if (!w.reached) bad.push(s.id);
+    const oneSided = chain.steps.filter(x => !(E.has(`${x.finding}@left`) && E.has(`${x.finding}@right`)));
+    const crossed = oneSided.some(x => x.relation === "same") && oneSided.some(x => x.relation === "opposite");
+    const kinds = ["same", "opposite"].filter(k => w.clues.some(c => c.relation === k)).length;
+    if (crossed && kinds === 1 && w.clues.length < 3) halfCrossed.push(s.id);
+  }
+  ok("every site's own picture: the clues reach its place", bad.length === 0, bad.slice(0, 8).join(", "));
+  ok("a crossed picture never shows only one side in its clues", halfCrossed.length === 0, halfCrossed.slice(0, 8).join(", "));
 }
 
 console.log(`\nintegrated why: ${pass} passed, ${fail} failed`);

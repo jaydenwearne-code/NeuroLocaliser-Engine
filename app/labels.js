@@ -269,7 +269,9 @@ export function plainSiteName(site, opts = {}) {
   const sub = territoryAdds(terr, `${name} ${label}`)
     ? (hasEponym(site) ? `${plain} — ${terr}` : terr)
     : (hasEponym(site) ? plain : "");
-  return { name, sub, raw };
+  // `place` is the plain anatomical phrase on its own ("Left lateral medulla") — the answer card's Where line
+  // names the place, while `name` may be the eponym already in the card's title (spec 2026-09-27 §3.1).
+  return { name, sub, raw, place: plain };
 }
 
 // A finding `desc` is a teaching sentence (papilloedema's runs to 130 characters), so the chip takes its

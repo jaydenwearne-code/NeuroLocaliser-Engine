@@ -4,7 +4,7 @@
 //
 // `meet` is the differential's explain-all set mapped to (station, side), not a raw intersection of possible
 // places: it applies the known-negative rule, so the Why and the Where cannot disagree.
-import { candidateSites, differential } from "./inverse.js";
+import { candidateSites, differential, isNormalToken } from "./inverse.js";
 import { expectedFindings, explain } from "./forward.js";
 import { STRUCTURE_BY_ID } from "../model/structures.js";
 import { TRACTS } from "../model/tracts.js";
@@ -103,7 +103,10 @@ export function whyChain(observedSet, site, opts = {}) {
       stations, where: renderWhere(stations), order,
     };
   }).sort((a, b) => a.stations.length - b.stations.length || a.order - b.order);
-  const all = toks.length ? differential(new Set(toks), opts).filter(c => c.n === toks.length) : [];
+  // Explicit normals ride along into the differential (they are never steps), so the meet honours them and the
+  // Why cannot disagree with the Where.
+  const normals = [...observedSet].filter(isNormalToken);
+  const all = toks.length ? differential(new Set([...toks, ...normals]), opts).filter(c => c.n === toks.length) : [];
   const pairs = [...new Set(all.map(c => `${stationOf(c.site)}|${c.site.side}`))];
   const meet = {
     stations: [...new Set(pairs.map(p => p.split("|")[0]))].sort(byOrder),
@@ -111,4 +114,75 @@ export function whyChain(observedSet, site, opts = {}) {
   };
   const verdict = !pairs.length ? "none" : meet.stations.length === 1 ? "one" : "several";
   return { steps, meet, verdict, station };
+}
+
+// ---- the Why line's key clues (spec 2026-09-27 §4) ----
+// The fewest entered findings that, ON THEIR OWN, narrow the differential to the place the whole picture meets
+// at. Chosen against the SAME explain-all differential the Where card uses — not against each finding's "could
+// arise at" stations, which stalled on 12 of 249 single-place answers (a brachial-plexus cord: each finding
+// could be plexus or nerve, but no single nerve carries both, and only the differential sees that).
+// Returns data, not prose: app/answer.js words it with the plain labels.
+export function whyClues(chain, observedSet, opts = {}) {
+  if (chain.verdict === "none") return { verdict: "none", clues: [], more: 0, reached: true, meet: chain.meet, where: "" };
+  // One unit per FINDING. Entered on both sides it is ONE "bilateral" clue with no side relation — split, the
+  // known-negative rule would read one side alone as the other side confirmed normal.
+  const units = [];
+  for (const s of chain.steps) {
+    const u = units.find(x => x.finding === s.finding);
+    if (u) {
+      u.tokens.push(s.token);
+      if (u.tokens.some(t => t.endsWith("@left")) && u.tokens.some(t => t.endsWith("@right"))) { u.side = "bilateral"; u.relation = "both"; }
+      continue;
+    }
+    units.push({ finding: s.finding, tokens: [s.token], order: s.order, relation: s.relation,
+      side: s.bodySide === "left" || s.bodySide === "right" ? s.bodySide : null });
+  }
+  const memo = new Map();
+  const normals = [...observedSet].filter(isNormalToken);   // as in whyChain: they narrow, they are never clues
+  const placesOf = toks => {
+    const key = [...toks].sort().join(" ");
+    if (!memo.has(key)) {
+      const fit = differential(new Set([...toks, ...normals]), opts).filter(c => c.n === toks.length);
+      memo.set(key, [...new Set(fit.map(c => `${stationOf(c.site)}|${c.site.side}`))]);
+    }
+    return memo.get(key);
+  };
+  const target = placesOf(units.flatMap(u => u.tokens));
+  const within = p => p.length > 0 && p.every(x => target.includes(x));
+  // Ties go first to a side relation the chosen clues do not show yet (so a crossed picture shows both halves),
+  // then to the finding the clinician entered first — measured against station count, entry order gave the more
+  // natural clue (Weber: arm weakness, not forehead sparing; compressive CN III: ptosis, not weak elevation).
+  const fresh = (u, chosen) => chosen.length > 0 && !chosen.some(c => c.relation === u.relation);
+  const better = (u, p, b, bp, chosen) => {
+    if (p.length !== bp.length) return p.length < bp.length;
+    if (fresh(u, chosen) !== fresh(b, chosen)) return fresh(u, chosen);
+    return u.order < b.order;
+  };
+  const chosen = [], pool = [...units];
+  let cur = [];
+  while (pool.length) {
+    let best = null, bp = null;
+    for (const u of pool) {
+      const p = placesOf([...chosen, u].flatMap(x => x.tokens));
+      if (p.length && (!best || better(u, p, best, bp, chosen))) { best = u; bp = p; }
+    }
+    if (!best) break;
+    chosen.push(best); cur = bp; pool.splice(pool.indexOf(best), 1);
+    if (within(cur)) break;
+  }
+  const reached = within(cur);
+  // Crossed completion: clues that show ONE side get the other side's first finding, so Wallenberg reads
+  // "… + right body pain loss". Clues that show no side at all are left alone — a whole-MCA picture is pinned by
+  // "impaired repetition" by itself, and adding sides to it would be noise.
+  const kinds = ["same", "opposite"].filter(k => chosen.some(c => c.relation === k));
+  if (kinds.length === 1 && chosen.length < 3) {
+    const other = units.find(u => u.relation === (kinds[0] === "same" ? "opposite" : "same"));
+    if (other) chosen.push(other);
+  }
+  const shown = chosen.slice(0, 3);
+  return {
+    verdict: chain.verdict, reached, more: chosen.length - shown.length,
+    clues: shown.map(u => ({ finding: u.finding, side: u.side, relation: u.relation, tokens: u.tokens })),
+    meet: chain.meet, where: renderWhere(chain.meet.stations),
+  };
 }

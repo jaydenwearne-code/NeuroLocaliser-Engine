@@ -8,7 +8,7 @@
 const idOf = t => t.split("@")[0];
 
 // UMN release / tone signs vs LMN denervation / lower-arc signs.
-const UMN = new Set(["spasticity", "babinski", "hoffmann", "umn_signs", "grasp_reflex"]);
+const UMN = new Set(["spasticity", "babinski", "hoffmann", "hyperreflexia", "grasp_reflex"]);
 const LMN = new Set(["wasting", "fasciculations", "hypotonia", "lmn_weakness",
   "reflex_biceps_loss", "reflex_brachioradialis_loss", "reflex_triceps_loss",
   "reflex_knee_loss", "reflex_ankle_loss"]);
@@ -52,7 +52,7 @@ const SUBJECTIVE = new Set([
   "weak_knee_extension", "weak_knee_flexion", "weak_ankle_dorsiflexion", "weak_great_toe_extension",
   "weak_foot_eversion", "weak_foot_inversion", "weak_ankle_plantarflexion", "weak_toe_flexion",
   // sensation (subjective report)
-  "dorsal_sensory", "spinothalamic", "suspended_sensory", "sensory_ataxia", "thalamic_pain", "radicular_pain",
+  "dorsal_sensory", "spinothalamic", "suspended_sensory", "sensory_ataxia", "radicular_pain",
   "cortical_sensory_arm", "cortical_sensory_leg", "cortical_sensory_hand", "distal_sensory_loss", "saddle_anaesthesia",
   "sensory_c3", "sensory_c4", "sensory_c5", "sensory_c6", "sensory_c7", "sensory_c8", "sensory_t1", "sensory_t4",
   "sensory_t10", "sensory_l1", "sensory_l2", "sensory_l3", "sensory_l4", "sensory_l5", "sensory_s1", "sensory_s2", "sensory_s3",

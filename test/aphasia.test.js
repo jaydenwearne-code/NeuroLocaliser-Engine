@@ -46,10 +46,12 @@ T(["speech_nonfluent@none", "weak_arm@right", "weak_leg@right", "facial_weakness
 
 // Regressions: pure sensory thalamus / pure motor capsule are NOT stolen by the subcortical-aphasia sites
 {
-  // Déjerine-Roussy (sensory + central pain) -> plain VPL thalamus; thalamic aphasia must NOT steal it.
-  const { best } = solve(new Set(["dorsal_sensory@right", "spinothalamic@right", "thalamic_pain@right"]));
-  ok("sensory + thalamic pain -> plain VPL thalamus (not thalamic aphasia)",
-     best && best.site.id === "left_subcortex_thalamus");
+  // The pure sensory lacune (face, arm, leg) -> plain VPL thalamus; thalamic aphasia must NOT steal it. Central
+  // post-stroke pain used to pin this and was removed on 2026-09-29; the DISPLAYED answer is asserted, because the
+  // scored path ties the thalamus with the (rare) lateral midbrain.
+  const { display } = solve(new Set(["dorsal_sensory@right", "spinothalamic@right", "face_sensory_loss@right"]));
+  ok("pure sensory (face, arm, leg) -> plain VPL thalamus (not thalamic aphasia)",
+     display[0].site.id === "left_subcortex_thalamus", display[0].site.id);
 }
 {
   const { best } = solve(new Set(["weak_arm@right", "weak_leg@right", "facial_weakness@right","forehead_spared@right",

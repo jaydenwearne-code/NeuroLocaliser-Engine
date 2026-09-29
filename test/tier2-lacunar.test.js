@@ -18,7 +18,7 @@ const eq = (a, b) => JSON.stringify([...(a || [])].sort()) === JSON.stringify([.
 
 ok("corona radiata site exists", !!SITE_BY_ID["left_subcortex_corona_radiata"]);
 ok("corona radiata = pure-motor set (mirrors internal capsule)",
-   eq(producedAt("subcortex", "corona_radiata"), ["weak_arm", "weak_leg", "facial_weakness","forehead_spared", "babinski", "hoffmann", "spasticity"]));
+   eq(producedAt("subcortex", "corona_radiata"), ["weak_arm", "weak_leg", "facial_weakness","forehead_spared", "babinski", "hoffmann", "hyperreflexia", "spasticity"]));
 // pure-motor lacune localises to a pure-motor white-matter/capsular site (IC or corona radiata — they tie; either is correct)
 {
   const w = win(S("weak_arm@right", "weak_leg@right", "facial_weakness@right","forehead_spared@right", "babinski@right", "hoffmann@right", "spasticity@right"));

@@ -31,8 +31,8 @@ const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // motor cortex now also carries the corticospinal UMN companions — the release signs (Babinski leg /
 // Hoffmann arm, reflexes increment) and increased tone (spasticity, tone increment)
-ok("motor_leg -> weak_leg + Babinski + spasticity", eq(cortexOf("motor_leg"), ["babinski","spasticity","weak_leg"].sort()));
-ok("motor_facearm -> face+arm + Hoffmann + spasticity", eq(cortexOf("motor_facearm"), ["facial_weakness","forehead_spared","hoffmann","spasticity","weak_arm"].sort()));
+ok("motor_leg -> weak_leg + Babinski + brisk reflexes + spasticity", eq(cortexOf("motor_leg"), ["babinski","hyperreflexia","spasticity","weak_leg"].sort()));
+ok("motor_facearm -> face+arm + Hoffmann + brisk reflexes + spasticity", eq(cortexOf("motor_facearm"), ["facial_weakness","forehead_spared","hoffmann","hyperreflexia","spasticity","weak_arm"].sort()));
 // + anomia since accuracy round 1 (B9, 2026-09-26): naming is impaired in every aphasia.
 ok("operculum -> broca features + anomia + dysprosody", eq(cortexOf("operculum"), ["speech_nonfluent","repetition_impaired","naming_impaired","motor_dysprosody"].sort()));
 ok("frontal_eye_field -> gaze", eq(cortexOf("frontal_eye_field"), ["gaze_deviation"]));

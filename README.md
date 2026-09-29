@@ -117,7 +117,7 @@ notes and the roadmap. Every increment has a dated spec and plan under `docs/sup
 
 ## Status
 
-**Beta (v0.9.0), deployed, and in clinician stress-testing.** The engine is complete across the
+**Beta (v0.10.0), deployed, and in clinician stress-testing.** The engine is complete across the
 neuraxis and the clinical layers are complete and reviewed:
 
 - ✅ **The anatomy model is clinically reviewed** — all 528 structures, 16 regions (2026-08-21). This was

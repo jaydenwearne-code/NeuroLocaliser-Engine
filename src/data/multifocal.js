@@ -15,7 +15,7 @@
 export const FINDING_CLASSES = {
   sensory: ["spinothalamic", "dorsal_sensory", "distal_sensory_loss", "suspended_sensory", "sensory_ataxia",
     "cortical_sensory_arm", "cortical_sensory_leg", "cortical_sensory_hand", "saddle_anaesthesia",
-    "face_sensory_loss", "face_pain_loss", "thalamic_pain"],
+    "face_sensory_loss", "face_pain_loss"],
   visual: ["homonymous_hemianopia", "superior_quadrantanopia", "inferior_quadrantanopia",
     "bitemporal_hemianopia", "optic_neuropathy", "rapd", "optic_atrophy", "central_scotoma",
     "altitudinal_defect", "cortical_blindness"],

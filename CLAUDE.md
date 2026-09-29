@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**76 test suites / 6907 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**81 test suites / 7048 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1079,6 +1079,51 @@ play); the Course narratives live on behind "Pathway anatomy".
 
 Spec/plan: `docs/superpowers/specs/2026-09-26-integrated-why-design.md`,
 `docs/superpowers/plans/2026-09-26-integrated-why.md`.
+
+## ED first glance (DONE 2026-09-29) — ✅ owner-reviewed content (three rounds)
+
+Sub-project 3 of the 2026-09-25 request. **Testers said the app was "too advanced and going over their heads"**
+(owner, 2026-09-25); asked which part, the owner named the AMOUNT OF OUTPUT. v0.10.0.
+
+**The results open on ONE ANSWER CARD** — Where / Why / What / Next + the site's red-flag sentence — every line
+DERIVED by `app/answer.js` (`answerFor`), never authored per site. The Next line is the REFERRAL VERBATIM (first steps
+run to ~190 chars and cannot be cut safely); the badge follows the RESOLVED plan (`resolveNext`, shared with the Next
+card). The four detail cards are `<details>`, CLOSED below in the same order — the 2026-08-16 no-tabs ruling holds,
+because Why's gist is on the card. Open sections live in `VIEW`, never in the case URL. Phones get a strip pinned to
+the bottom while the answer lines are off screen — scroll-measured, because an IntersectionObserver never fired in a
+throttled tab, and keyed on the LINES because the card's border alone peeked out behind the safety bar.
+
+**The Why line is `whyClues()`** (`src/engine/why.js`): the fewest entered findings that, ON THEIR OWN, narrow the
+DIFFERENTIAL to the answer's place — chosen against the differential, not station overlap (which stalled on 12/249
+sites: a plexus cord). A both-sides finding is one clue with no side relation; ties go to the other side, then entry
+order; one-sided clues get the crossed half appended. 365/365 site pictures and all vignettes reach their place.
+
+**The input stays the examination tree** (owner reversed a complaint-first design the same day) but reads in plain
+words: `app/plain-labels.js` — every finding's `label` + proper name in brackets (`term`, `displayLabel()`), a row-only
+`note` for the strict vocabulary, and `less` for the "Less common (n)" block; `app/follow-ups.js` — TRUE REFINEMENTS
+ONLY appear under a ticked finding, on its side, keeping their own rows (RAPD without monocular loss = optic tract);
+`app/synonyms.js` — `searchFindings()` is the whole search. Onset and "Symptoms on" sit above the tree
+(`tokensForRow` maps a row tap through the same offers as the buttons).
+
+**REVIEW ROUND 1 CHANGED THE MODEL, not just labels** (`test/vocab-rulings.test.js` pins each ruling):
+- **Brisk reflexes (`hyperreflexia`) replaced `umn_signs`** — which was produced ONLY at the conus, so a stroke with
+  brisk reflexes pointed at the conus. Now tract-wide (wherever an up-going plantar or Hoffmann is), NOT in Friedreich's
+  or SCD (reflexes lost, plantars up); the conus and the basis pontis predict both UMN signs.
+- **`plantar_flexor` is the engine's first EXPLICIT NORMAL** (`EXPLICIT_NORMAL`, `normalNegatives()`). It DEMOTES —
+  the `against` key sorts it below undemoted fits of the same coverage, and Where says "less likely — would give …".
+  Built first as an exclusion: leg weakness + a down-going plantar left ONE candidate, and a flexor plantar is common
+  early in stroke. It is stripped before matching; a normal alone localises nothing.
+- **Central post-stroke pain removed** — not an examination finding. **The autonomic features are five findings**
+  (dry mouth, constipation, erectile dysfunction, labile BP, arrhythmia), each predicted by LEMS AND acute GBS.
+- **The hand-listed composite trap struck again**: the striatocapsular composite needed `ic_hyper` (as the thalamic one
+  needed `thal_face`). Several scored-path assertions moved to the DISPLAYED answer where the tie is broken by the
+  prevalence prior or the known-negative rule — the accuracy round's precedent.
+
+**Known and deliberately left:** at chronic onset the What line can name a tumour while Next still reads the site's
+stroke plan — the tier split (site-level until a cause is selected) is the owner's rule, but on one card it reads
+oddly; raised with the owner.
+
+Spec/plan: `docs/superpowers/specs/2026-09-27-ed-first-glance-design.md`, `docs/superpowers/plans/2026-09-27-ed-first-glance.md`.
 
 ## Commands
 

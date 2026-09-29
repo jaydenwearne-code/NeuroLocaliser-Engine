@@ -735,8 +735,9 @@ export function composeAphasiaSites() {
   const bothWatersheds = ["ctx_tcma", "ctx_tcma_naming", "ctx_tcsa", "ctx_tcsa_naming"];
   // thal_face keeps this composite in step with the VPL site (B11): without it the NON-dominant composite —
   // whose dominant-only rows emit nothing — is a VPL lesion missing the face, and out-ranks the real one.
-  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face", "thal_pain"];
-  const striatocapsular = ["sc_aphasia_nonfluent", "sc_aphasia_naming", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_spast"];
+  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face"];
+  // ic_hyper keeps this composite in step with the capsule (brisk reflexes, 2026-09-29) — the same trap as thal_face.
+  const striatocapsular = ["sc_aphasia_nonfluent", "sc_aphasia_naming", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_hyper", "ic_spast"];
   const out = [];
   for (const side of SIDES) {
     out.push({ id: `aphasia_global_${side}`, side, level: "cortex", part: "aphasia_global",
