@@ -1033,11 +1033,17 @@ function nextBlock(nx, combined) {
     ? `<div class="ns-tier"><h4 class="ns-h">${esc(title)}${scope ? `<span class="ns-scope">— ${esc(scope)}</span>` : ""}</h4><ul class="nextlist">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>` : "";
   const px = !combined && nx.pathology;
   const ux = combined && nx.entity;
+  // The onset rule (spec 2026-09-29): with nothing selected, a slow onset that rules out the site's infarct makes
+  // the plan follow the most likely cause. Said in one line, so it never reads as a selection the clinician did
+  // not make; the tiers carry the same scope tags a selection gives them.
+  const fx = !combined && !px && nx.followed;
   const pxHead = px
     ? `<div class="px-line">Plan for: <button class="px-chip" data-px="${esc(nx.pathology)}" title="Clear the selected pathology">${esc(nx.pathology)} <span class="px-x" aria-hidden="true">×</span></button></div>`
     : ux
     ? `<div class="px-line">Plan for: <button class="px-chip" data-ux="${esc(nx.entity)}" title="Clear the selected cross-site diagnosis">${esc(nx.entity)} <span class="px-x" aria-hidden="true">×</span></button></div>`
     : "";
+  const fxHead = fx
+    ? `<p class="derived">Following the most likely cause, ${esc(fx.cause)}. A ${esc(fx.onset)} onset rules out ${esc(fx.setAside)}, which this site's usual plan is written for.</p>` : "";
   // The honest fallback (spec 2026-08-18): an uncurated pathology shows the SITE plan and says so, rather
   // than deriving generic content to fill the gap. There is deliberately NO cross-site equivalent — every
   // entity has an authored plan (the gate in test/multifocal-next-steps.test.js), so `ux` never falls back.
@@ -1051,13 +1057,13 @@ function nextBlock(nx, combined) {
   return `<p class="what-cap"><span class="derived">Educational teaching prompts — not clinical advice.</span></p>
     <div class="multi" style="border-style:solid;border-color:var(${urgTint})"><b>Urgency:</b> ${esc(urgLabel)} · <b>Referral:</b> ${esc(nx.referral)}</div>
     ${ux && nx.entityBecause ? `<p class="derived ns-because"><b>Why this urgency:</b> ${esc(nx.entityBecause)}</p>` : ""}
-    ${pxHead}
-    ${tier("Immediate / bedside", nx.immediate, px || ux ? "site" : "")}
-    ${tier("First-line investigations", nx.investigations, px || ux ? "site" : "")}
+    ${pxHead}${fxHead}
+    ${tier("Immediate / bedside", nx.immediate, px || ux || fx ? "site" : "")}
+    ${tier("First-line investigations", nx.investigations, px || ux || fx ? "site" : "")}
     ${ux ? tier("First-line investigations", nx.entityFirstLine, nx.entity) : ""}
     ${pxFallback}
-    ${tier("Confirmatory / specialist", nx.confirmatory, px && nx.pathologyCurated ? nx.pathology : ux ? nx.entity : "")}
-    ${tier("Monitoring / safety-netting", nx.monitoring, px && nx.pathologyCurated ? nx.pathology : ux ? nx.entity : "")}
+    ${tier("Confirmatory / specialist", nx.confirmatory, px && nx.pathologyCurated ? nx.pathology : ux ? nx.entity : fx ? fx.cause : "")}
+    ${tier("Monitoring / safety-netting", nx.monitoring, px && nx.pathologyCurated ? nx.pathology : ux ? nx.entity : fx ? fx.cause : "")}
     ${provenance}`;
 }
 
