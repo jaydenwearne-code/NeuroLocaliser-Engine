@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: PLANNED (2026-09-29).** Spec: `docs/superpowers/specs/2026-09-29-onset-follows-cause-design.md` (approved).
+**Status: IMPLEMENTED (2026-09-29).** Spec: `docs/superpowers/specs/2026-09-29-onset-follows-cause-design.md` (approved).
 
 **Goal:** At a slow onset that rules out a stroke-window site's infarct, the Next steps (and the answer card's Next line
 and badge) follow the authored plan of the cause the What line names, instead of the site's stroke plan.

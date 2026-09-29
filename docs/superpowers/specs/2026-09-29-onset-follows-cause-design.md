@@ -1,6 +1,6 @@
 # The onset follows the cause: a stroke plan stops at a slow onset (design, 2026-09-29)
 
-**Status: APPROVED (2026-09-29); review-round rulings 4–6 recorded in §2 the same day.** Branch:
+**Status: IMPLEMENTED (2026-09-29); review-round rulings 4–6 recorded in §2 the same day.** Branch:
 `fix/onset-follows-cause` (off `main` at `65278f8`). Ships as v0.10.1.
 
 This closes the first of the two items left open by the ED first-glance release (PR #13). It was recorded there

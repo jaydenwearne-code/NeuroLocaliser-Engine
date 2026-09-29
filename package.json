@@ -1,6 +1,6 @@
 {
   "name": "neurolocaliser-engine",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Anatomical lesion-localisation engine (brainstem proof of concept)",
   "type": "module",
   "scripts": {
