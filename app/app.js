@@ -24,7 +24,7 @@ import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
-import { offersFor, tokensForRow } from "./sides.js";
+import { offersFor, tokensForRow, currentTokens } from "./sides.js";
 import { answerFor, resolveNext } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
@@ -70,7 +70,7 @@ const VALID_ENTITIES = new Set(MULTIFOCAL.map(e => e.name));
 
 function restoreFromURL() {
   const st = decodeCase(location.hash, { validFindings: VALID_FINDINGS, validSites: VALID_SITES, validPathologies: VALID_PATHOLOGIES, validEntities: VALID_ENTITIES });
-  if (st.tokens) S.tokens = st.tokens;
+  if (st.tokens) S.tokens = new Set(currentTokens([...st.tokens]));
   if (st.onset) S.onset = st.onset;
   if (st.course) S.course = st.course;
   if (st.mode) S.mode = st.mode;

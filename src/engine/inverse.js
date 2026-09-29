@@ -74,20 +74,17 @@ export function knownNegatives(observedSet) {
   }
   return neg;
 }
-// The abnormal tokens the explicit normals count against: that finding on that side, and its midline form once
-// the normal is recorded on BOTH sides (the conus emits its UMN signs @midline). A normal that contradicts an
-// entered abnormal finding is ignored.
+// The abnormal tokens the explicit normals count against: that finding on that side. (A both-sides -> midline rule
+// lived here while the conus emitted its UMN signs @midline; it emits them on both sides now, so the per-side rule
+// covers it.) A normal that contradicts an entered abnormal finding is ignored.
 export function normalNegatives(observedSet) {
-  const neg = new Set(), sides = {};
+  const neg = new Set();
   for (const tok of observedSet) {
     if (!isNormalToken(tok)) continue;
     const [f, side] = tok.split("@");
     const abn = EXPLICIT_NORMAL[f];
     if (!observedSet.has(`${abn}@${side}`)) neg.add(`${abn}@${side}`);
-    (sides[abn] ??= new Set()).add(side);
   }
-  for (const [abn, s] of Object.entries(sides))
-    if (s.has("left") && s.has("right") && !observedSet.has(`${abn}@midline`)) neg.add(`${abn}@midline`);
   return neg;
 }
 

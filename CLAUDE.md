@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**82 test suites / 7087 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**82 test suites / 7104 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1166,6 +1166,48 @@ stands at every onset; the rule for NON-stroke sites (up to 99 site kinds) is it
 the optic nerve (AION) has NO cause fitting the onset, so nothing is followed.
 
 Spec/plan: `docs/superpowers/specs/2026-09-29-onset-follows-cause-design.md`, `docs/superpowers/plans/2026-09-29-onset-follows-cause.md`.
+
+## Conus and cauda signs on both sides (DONE 2026-09-29, v0.10.2) — ✅ owner-approved model change
+
+**The defect** (found behind the ED first-glance open item "the cauda Why line leads with sciatica-type root pain").
+The conus and cauda emitted their LIMB signs @midline, while a clinician enters limb signs with L, R or "Both" (L+R).
+Saddle numbness + sphincter dysfunction with any of the following said **"needs more than one lesion"** — the
+accuracy round's most serious class of error:
+- sciatica on both sides, or on one;
+- both plantars up + brisk reflexes (the conus);
+- both legs flaccid-weak + wasting, or one leg flaccid-weak + floppy (the cauda).
+
+Only the easily missed "M" button fitted. The Why line then dropped the midline qualifier, so it read "Sciatica-type
+root pain → only the cauda equina".
+
+**Owner rulings:**
+- **Seven structures emit `bilateral`**: `ls_roots_pain`, `ls_roots_motor`, `cauda_hypotonia`, `cauda_wasting`,
+  `conus_bab`, `conus_cst`, `conus_spast`. This follows the `cauda_ankle_reflex` precedent (accuracy round B7).
+- Saddle numbness and anal wink stay midline. The cauda stays `asymmetric`; the conus stays symmetric (ruling
+  2026-09-25), so saddle + sphincter + ONE up-going plantar still says two lesions, by design.
+- **The pudendal nerve's sphincter dysfunction is midline too** (`pud_sphincter` `emit: "midline"`). The browser
+  check found that a row tap with "Symptoms on" set to Both or Left entered sphincter dysfunction on a side, because
+  the pudendal nerve emitted it one-sidedly. The cauda picture then became "cauda + pudendal nerves". This had been
+  live since v0.10.0's row taps, and the engine tests could not see it because they enter tokens, not taps.
+- Now **no finding is offered on both midline and a side**.
+
+**Mechanics:**
+- The side offers follow automatically. The seven rows offer L / R; sphincter offers M only.
+- `currentTokens()` (`app/sides.js`, applied in `restoreFromURL`) converts saved links: midline → L+R where both are
+  offered, a side → midline where only midline is offered, and drops anything else unoffered.
+- The both-sides → midline rule in `normalNegatives` is gone. It was dead once the conus stopped emitting @midline.
+- Three notes read "both legs" instead of "midline".
+- The cauda worked example enters bilateral sciatica. Its Why line now reads *"Bilateral sciatica-type root pain
+  (radicular pain) → only the cauda equina."*, and the site's red flag already names bilateral sciatica.
+- For left sciatica alone, the cauda is now a candidate (23rd of 24).
+
+**Traps:**
+- `cauda-conus.test.js`'s conus picture still used `umn_signs`, removed in v0.10.0. It passed without the conus
+  explaining anything, and has been replaced.
+- `app-smoke`'s "multifocal case" was itself the cauda + pudendal trap.
+- A test of what the engine says is not a test of what a TAP enters. Browser-drive the row taps.
+
+Spec/plan: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md`, `docs/superpowers/plans/2026-09-29-conus-cauda-bilateral.md`.
 
 ## Commands
 

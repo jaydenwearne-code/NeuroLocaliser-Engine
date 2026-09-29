@@ -8,7 +8,7 @@
 // Pure — returns strings, never touches the DOM. app.js injects.
 
 // Kept in step with package.json by test/brand.test.js, so a bug report always names a real build.
-export const VERSION = "0.10.1";
+export const VERSION = "0.10.2";
 
 export const PRODUCT_NAME = "Wearne's NeuroLocaliser";
 

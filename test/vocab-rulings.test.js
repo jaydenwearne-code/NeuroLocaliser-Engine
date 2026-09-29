@@ -36,7 +36,8 @@ const inTree = new Set(flattenFindings(EXAM_TREE));
   ok("a hemiparesis with brisk reflexes no longer points at the conus",
      stroke.explainAll.length > 0 && !stroke.explainAll.some(c => c.site.id === "conus_medullaris"),
      stroke.display.slice(0, 3).map(c => c.site.id).join(", "));
-  const conus = solve(new Set(["saddle_anaesthesia@midline", "sphincter_dysfunction@midline", "hyperreflexia@midline", "babinski@midline"]), opts);
+  const conus = solve(new Set(["saddle_anaesthesia@midline", "sphincter_dysfunction@midline",
+                               "hyperreflexia@left", "hyperreflexia@right", "babinski@left", "babinski@right"]), opts);
   ok("the conus picture still localises to the conus", conus.display[0].site.id === "conus_medullaris", conus.display[0].site.id);
 }
 
@@ -53,8 +54,11 @@ const inTree = new Set(flattenFindings(EXAM_TREE));
   const one = normalNegatives(new Set(["plantar_flexor@left"]));
   ok("a left down-going plantar counts against a left up-going plantar", one.has("babinski@left"));
   ok("…and says nothing about the other side", !one.has("babinski@right"));
-  ok("down-going plantars on BOTH sides also count against a midline up-going plantar (the conus)",
-     normalNegatives(new Set(["plantar_flexor@left", "plantar_flexor@right"])).has("babinski@midline"));
+  // The conus predicts an up-going plantar on BOTH sides (spec 2026-09-29-conus-cauda-bilateral), so the per-side
+  // rule reaches it; the old both-sides -> midline rule is gone.
+  const both = normalNegatives(new Set(["plantar_flexor@left", "plantar_flexor@right"]));
+  ok("down-going plantars on BOTH sides count against both up-going plantars (so against the conus)",
+     both.has("babinski@left") && both.has("babinski@right") && !both.has("babinski@midline"));
   ok("it is NOT a known negative — it never excludes", !knownNegatives(new Set(["plantar_flexor@left"])).has("babinski@left"));
 
   ok("the basis pontis now predicts an up-going plantar and brisk reflexes, like every corticospinal site",

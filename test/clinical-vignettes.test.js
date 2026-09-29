@@ -108,9 +108,9 @@ const CASES = [
   ["Subacute combined degeneration", "dorsal_sensory@left dorsal_sensory@right sensory_ataxia@none babinski@left babinski@right reflex_ankle_loss@left reflex_ankle_loss@right", { first: /^combined_degeneration_scd$/, single: true }],
   // Saddle + sphincter alone: conus and cauda are both correct until the reflexes or the pain decide.
   ["Saddle anaesthesia + sphincter", "saddle_anaesthesia@midline sphincter_dysfunction@midline", { top: [2, /^(cauda_equina|conus_medullaris)$/] }],
-  ["Cauda equina, asymmetric ankle jerk", "saddle_anaesthesia@midline sphincter_dysfunction@midline reflex_ankle_loss@right radicular_pain@midline", { first: /^cauda_equina$/, single: true }],
+  ["Cauda equina, asymmetric ankle jerk", "saddle_anaesthesia@midline sphincter_dysfunction@midline reflex_ankle_loss@right radicular_pain@left radicular_pain@right", { first: /^cauda_equina$/, single: true }],
   // UMN signs split into brisk reflexes + up-going plantar (owner ruling 2026-09-29).
-  ["Conus", "saddle_anaesthesia@midline sphincter_dysfunction@midline hyperreflexia@midline babinski@midline", { first: /^conus_medullaris$/, single: true }],
+  ["Conus", "saddle_anaesthesia@midline sphincter_dysfunction@midline hyperreflexia@left hyperreflexia@right babinski@left babinski@right", { first: /^conus_medullaris$/, single: true }],
 
   // ---- roots, plexus, nerves ----
   ["L5 radiculopathy", "weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_hip_abduction@left sensory_l5@left", { first: /^left_root_l5$/, single: true }],

@@ -74,7 +74,8 @@ ok("UMN has NO wasting — spasticity levels and wasting levels are disjoint",
 
   const cc = Object.fromEntries(composeCaudaConusSites().map(s => [s.id, s]));
   const caudaExp = expectedFindings(cc.cauda_equina);
-  ok("cauda equina -> hypotonia@midline + wasting@midline", caudaExp.has("hypotonia@midline") && caudaExp.has("wasting@midline"));
+  ok("cauda equina -> hypotonia + wasting on both legs",
+     ["hypotonia@left", "hypotonia@right", "wasting@left", "wasting@right"].every(t => caudaExp.has(t)));
 }
 
 // --- 4: tone is a NON-localising annotation (never moves the winner) ---

@@ -64,7 +64,9 @@ ok("Tone is its own top-level leaf", EXAM_TREE.some(n => n.id === "tone") && !!t
 // threw and the error boundary swallowed the ENTIRE results pane on every genuinely multifocal case.
 // r.nearFit IS a {site,missing} wrapper, which is exactly why the mismatch was easy to miss.
 {
-  const multiCase = new Set(["saddle_anaesthesia@midline","sphincter_dysfunction@left","radicular_pain@left","anal_wink_loss@midline"]);
+  // Any genuinely two-lesion case will do. (It used to be a cauda picture with a one-sided sphincter token — the very
+  // trap the 2026-09-29 conus/cauda fix removed, which now resolves to the cauda alone.)
+  const multiCase = new Set(["weak_arm@right","weak_leg@left"]);
   const r = solve(multiCase);
   ok("multifocal case still yields a multi cover", !!r.multi && Array.isArray(r.multi.sites) && r.multi.sites.length >= 2);
   ok("r.multi.sites elements are RAW sites (have .id, not .site)",

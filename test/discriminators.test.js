@@ -89,7 +89,7 @@ const build = toks => { const obs = new Set(toks); return { obs, r: solve(obs, {
 // ---- A SINGLE CANDIDATE HAS NOTHING TO DISCRIMINATE ----
 {
   const { obs, r } = build(["saddle_anaesthesia@midline", "sphincter_dysfunction@midline",
-                            "radicular_pain@midline", "anal_wink_loss@midline"]);
+                            "radicular_pain@left", "radicular_pain@right", "anal_wink_loss@midline"]);
   ok(`cauda equina resolves to one (${r.display.length})`, r.display.length === 1);
   ok("a single candidate offers no discriminators", discriminators(r.display, obs).length === 0);
 }
