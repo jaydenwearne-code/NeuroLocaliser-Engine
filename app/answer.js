@@ -45,7 +45,9 @@ export function whySentence(w) {
 
 // ---- What ----
 // `causes` are the concordant causes (causesFor().all); a cause set aside by the onset is only counted.
-export function whatLine({ causes = [], demotedCount = 0, selected = null, entity = null, twoLesions = false }) {
+// `oldStroke`: a chronic onset set the site's infarct aside and the plan follows another cause — but a deficit present
+// for months is often a residual OLD stroke, so the line says so (owner, 2026-09-29).
+export function whatLine({ causes = [], demotedCount = 0, selected = null, entity = null, twoLesions = false, oldStroke = false }) {
   if (selected) return `Selected: ${selected}.`;
   if (twoLesions) return entity ? `Together: ${entity}.` : "No catalogued disease spans these places — see Together.";
   // rankCauses/leadingCause are the ranking the Next steps' onset rule reads too, so What and Next name the same
@@ -56,7 +58,8 @@ export function whatLine({ causes = [], demotedCount = 0, selected = null, entit
   const top = leadingCause(causes), mustNot = ranked.find(c => c.red && c !== top && !c.after);
   const sq = ranked.find(c => c.after), sequel = sq ? `After a previous ${sq.after} here: ${sq.name}.` : "";
   if (!top) return sequel;
-  return `Most likely ${top.name}${top.red ? " (must not miss)" : ""}.${mustNot ? ` Must not miss: ${mustNot.name}.` : ""}${sequel ? ` ${sequel}` : ""}`;
+  return `Most likely ${top.name}${top.red ? " (must not miss)" : ""}.${mustNot ? ` Must not miss: ${mustNot.name}.` : ""}`
+    + `${oldStroke ? " Could represent an old stroke." : ""}${sequel ? ` ${sequel}` : ""}`;
 }
 
 // ---- which workup is on screen ----
@@ -100,6 +103,7 @@ export function answerFor(st) {
     what: whatLine({
       causes: res.all, demotedCount: (res.demoted || []).length,
       selected: (twoLesions ? st.selectedEntity : st.selectedPathology) || null, entity, twoLesions,
+      oldStroke: !!(nx.followed && nx.followed.onset === "chronic"),
     }),
     next: nx.referral || "",
     red: entityRed || nameForSite(st.sel.site).red || null,

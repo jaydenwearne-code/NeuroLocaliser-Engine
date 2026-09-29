@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**82 test suites / 7082 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**82 test suites / 7087 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1148,8 +1148,10 @@ the same day: "it can be mimics if the chronicity is specified as chronic" — a
 follows ulnar/median neuropathy, the vestibular nuclei vestibular migraine. (5) **central post-stroke pain is a SEQUEL**,
 tagged `after: "stroke"` on its two cause entries (thalamus VPL, VPM): `leadingCause` skips a sequel, so it never
 leads the What line or the Next steps, and the What line names it in its own clause — "After a previous stroke here:
-…" — while it stays listed and selectable. (6) the optic nerve (AION) follow at hyperacute onset is kept. Net reach:
-**37 site kinds at subacute, 42 at chronic, 1 at hyperacute, 0 at acute.**
+…" — while it stays listed and selectable. (6) the optic nerve (AION) follow at hyperacute onset is kept. (7) at
+every CHRONIC follow the What line adds "Could represent an old stroke." (a deficit present for months is often a
+residual old stroke; `whatLine({ oldStroke })`, chronic only). Net reach: **37 site kinds at subacute, 42 at chronic,
+1 at hyperacute, 0 at acute.**
 
 **Mechanics worth knowing:** `nextStepsFor` = `sitePlan` (the old body) + the follow, with NO added key where the
 rule does not fire — so no onset / acute onset is byte-identical. A SELECTION builds on `sitePlan`, never on the

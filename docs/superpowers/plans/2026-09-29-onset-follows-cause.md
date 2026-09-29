@@ -662,3 +662,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   The null condition became `cause.cat === "mimic" && onset !== "chronic"`, so at chronic onset five site kinds
   follow a mimic again. The ratchet is now **37/42**, section 9 pins both halves, and the canary exempts mimic leads
   only below chronic. Full suite: **82 suites / 7082 green**.
+- **Ruling 7** (owner: *"maybe add a clause saying could represent old stroke"*; scope chosen: every chronic
+  follow). `whatLine` takes `oldStroke`, and `answerFor` sets it from `nx.followed.onset === "chronic"`. The clause
+  goes after the must-not-miss and before any sequel clause. Browser-checked on the chronic hand knob. Full suite:
+  **82 suites / 7087 green**.

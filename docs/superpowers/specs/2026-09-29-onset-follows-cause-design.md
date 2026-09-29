@@ -1,6 +1,6 @@
 # The onset follows the cause: a stroke plan stops at a slow onset (design, 2026-09-29)
 
-**Status: IMPLEMENTED (2026-09-29); review-round rulings 4–6 recorded in §2 the same day.** Branch:
+**Status: IMPLEMENTED (2026-09-29); review-round rulings 4–7 recorded in §2 the same day.** Branch:
 `fix/onset-follows-cause` (off `main` at `65278f8`). Ships as v0.10.1.
 
 This closes the first of the two items left open by the ED first-glance release (PR #13). It was recorded there
@@ -73,6 +73,11 @@ a non-vascular What line: **chronic 26 → 0, subacute 23 → 1** (the retina, �
    What card with its own plan. Chosen over deleting the entries, listing them on the What card only, or letting
    them lead with the stroke plan kept.
 6. **The optic nerve (AION) at hyperacute onset follows perioperative ischaemic optic neuropathy** — agreed as built.
+7. **At chronic onset the What line adds "Could represent an old stroke."** (owner, after ruling 4's revision:
+   *"maybe add a clause saying could represent old stroke"*). Wherever a chronic onset set the site's infarct aside
+   and the plan follows another cause — all 42 site kinds, mimic or not — because a deficit present for months is
+   often a residual old stroke. Chosen over adding it only where a mimic is followed. Chronic only: at subacute
+   onset the plan follows too, but the clause does not appear.
 
 ## 3. The rule — `src/data/nextSteps.js`
 
@@ -163,7 +168,14 @@ disease's plan overrides as today.
 follow. The What line ranks with the shared functions, and gains one clause for a sequel (ruling 5), after the
 must-not-miss: `After a previous {after} here: {name}.` — e.g. *"Most likely Small metastasis / glioma. After a
 previous stroke here: Déjerine-Roussy (central post-stroke pain)."* A sequel is never the must-not-miss; if only a
-sequel fits, the clause is the whole line.
+sequel fits, the clause is the whole line. At a chronic follow (ruling 7) the line also says *"Could represent an old
+stroke."*, after the must-not-miss and before any sequel clause — `whatLine({ oldStroke })`, set by `answerFor`
+from `nx.followed.onset === "chronic"`:
+
+```
+Right arm weak + brisk reflexes · onset CHRONIC
+What   Most likely Glioma / metastasis. Could represent an old stroke.
+```
 
 ```
 Right arm weak + brisk reflexes · onset CHRONIC
@@ -220,8 +232,8 @@ note disappears.
     cause at any site or onset; the thalamus (VPL) and VPM follow Demyelination at subacute and a small
     metastasis / glioma at chronic; the What line carries the clause; the sequel stays selectable with its plan.
 
-`test/answer.test.js` gains the chronic motor-cortex card (What, Next, badge) and three `whatLine` cases for the
-sequel clause. The existing four worked examples must pass unedited — none is at subacute or chronic onset.
+`test/answer.test.js` gains the chronic motor-cortex card (What with the old-stroke clause, Next, badge; subacute and
+hyperacute without it), three `whatLine` cases for the sequel clause and three for the old-stroke clause. The existing four worked examples must pass unedited — none is at subacute or chronic onset.
 
 ## 8. Rollout
 
