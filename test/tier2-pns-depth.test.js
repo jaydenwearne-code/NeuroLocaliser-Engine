@@ -35,7 +35,8 @@ for (const p of ["phrenic", "pudendal", "saphenous", "sural"]) ok(`left_nerve_${
 ok("isolated diaphragm weakness -> phrenic nerve (lean pure-motor)", win(S("weak_diaphragm@left")) === "left_nerve_phrenic");
 ok("C4 dermatome + diaphragm + radicular pain -> C4 root", win(S("sensory_c4@left", "weak_diaphragm@left", "radicular_pain@left")) === "left_root_c4");
 ok("T10 dermatome band -> T10 root", win(S("sensory_t10@left", "radicular_pain@left")) === "left_root_t10");
-ok("perineal sensory + sphincter -> pudendal nerve", win(S("sensory_s3@left", "sphincter_dysfunction@left")) === "left_nerve_pudendal");
+// Sphincter dysfunction is midline wherever it arises, the pudendal nerve's included (owner ruling 2026-09-29).
+ok("perineal sensory + sphincter -> pudendal nerve", win(S("sensory_s3@left", "sphincter_dysfunction@midline")) === "left_nerve_pudendal");
 ok("saphenous territory -> saphenous nerve", win(S("saphenous_sensory@left")) === "left_nerve_saphenous");
 ok("sural territory -> sural nerve", win(S("sural_sensory@left")) === "left_nerve_sural");
 

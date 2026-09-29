@@ -7,7 +7,7 @@
 
 import { solve } from "../src/engine/inverse.js";
 import { nameForSite } from "../src/data/syndromes.js";
-import { offersFor, currentTokens } from "../app/sides.js";
+import { offersFor, currentTokens, tokensForRow } from "../app/sides.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -74,7 +74,7 @@ const conus = [...B("babinski"), ...B("hyperreflexia"), "saddle_anaesthesia@midl
   ok("legacy midline sciatica becomes both sides",
      currentTokens(["radicular_pain@midline"]).join() === "radicular_pain@left,radicular_pain@right");
   ok("  an offered token passes through untouched", currentTokens(["saddle_anaesthesia@midline"]).join() === "saddle_anaesthesia@midline");
-  ok("  a token on a side never offered is dropped", currentTokens(["saddle_anaesthesia@left"]).length === 0);
+  ok("  a token that cannot be converted is dropped", currentTokens(["weak_arm@none"]).length === 0);
   const legacy = ["saddle_anaesthesia@midline", "sphincter_dysfunction@midline", "radicular_pain@midline", "anal_wink_loss@midline"];
   const r = solve(new Set(currentTokens(legacy)), { dominantSide: "left" });
   ok("  the old worked-example link loads the cauda, one lesion", r.explainAll.length === 1 && r.display[0].site.id === "cauda_equina");
@@ -86,6 +86,21 @@ const conus = [...B("babinski"), ...B("hyperreflexia"), "saddle_anaesthesia@midl
                            "plantar_flexor@left", "plantar_flexor@right"]), { dominantSide: "left" });
   const c = r.differential.find(x => x.site.id === "conus_medullaris");
   ok("both plantars down demote the conus", !!c && !!c.against);
+}
+
+// 9. Bladder or bowel dysfunction is midline wherever it arises — the pudendal nerve's included (owner ruling
+//    2026-09-29) — so a row tap enters it on midline whatever "Symptoms on" says. Found by the browser check: with
+//    "Both" set, the tap entered it left + right and the cauda picture became "cauda + both pudendal nerves".
+{
+  ok("sphincter dysfunction is offered on midline only", offersFor("sphincter_dysfunction").map(o => o.key).join() === "midline");
+  ok("  a row tap enters midline, whatever the side setting",
+     ["both", "left", "right", ""].every(d => (tokensForRow("sphincter_dysfunction", d) || []).join() === "sphincter_dysfunction@midline"));
+  const tapped = ["saddle_anaesthesia", "sphincter_dysfunction", "radicular_pain"].flatMap(f => tokensForRow(f, "both"));
+  const r = solve(new Set(tapped), { dominantSide: "left" });
+  ok("  the cauda picture entered by row taps on 'Both' is one lesion, the cauda",
+     r.explainAll.length === 1 && r.display[0].site.id === "cauda_equina");
+  ok("  a legacy one-sided sphincter token becomes midline",
+     currentTokens(["sphincter_dysfunction@left"]).join() === "sphincter_dysfunction@midline");
 }
 
 // ---- report ----

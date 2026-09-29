@@ -45,6 +45,14 @@ a patient with one lesion has two. It fixed the same thing for the cauda's ankle
    The cauda stays `asymmetric` and the conus symmetric (owner ruling 2026-09-25: the conus is "early and symmetric
    by its own description"). So saddle numbness + sphincter + ONE up-going plantar still says two lesions; that is
    the symmetric-conus ruling working as intended, and it is not reopened here.
+3. **Bladder or bowel dysfunction is midline wherever it arises, the pudendal nerve's included** (review round).
+   The browser check found the last trap. Sphincter dysfunction was still offered on a side, because the pudendal
+   nerve emitted it one-sidedly. So a row tap with "Symptoms on" set to Both or Left entered it on a side, and the
+   cauda picture became "cauda + left and right pudendal nerves". This has been live since v0.10.0 introduced row
+   taps. `pud_sphincter` gets `emit: "midline"`. Sphincter dysfunction is then offered on midline only, and every
+   tap enters midline. Chosen over a tap rule that prefers midline, and over leaving it.
+4. **The three reworded notes are approved as built** (review round), including "cauda equina — flaccid,
+   hypotonic, both legs".
 
 ## 3. The model — `src/model/structures.js`
 
@@ -95,7 +103,8 @@ urgent MRI and decompression"). Its What and Next lines are unchanged.
 
 A link saved before this change can carry one of the seven on midline. Nothing emits that token any more, so the
 link would now load a false two-lesion answer. When a case loads, a token on a side its finding is no longer offered
-on is converted: **midline → left + right**, where both are offered. Anything else unoffered is dropped. This is one
+on is converted: **midline → left + right**, where both are offered, and **a side → midline** where only midline is
+offered (sphincter dysfunction, ruling 3). Anything else unoffered is dropped. This is one
 small generic function in `app/sides.js` (`currentTokens(tokens)`), applied where `app.js` decodes the hash. It also
 covers any future side change.
 
@@ -127,7 +136,13 @@ Each is a change of representation. None of them may loosen what the test assert
 - none of the seven findings is offered on midline, and all seven are offered left and right;
 - `currentTokens` converts a legacy `radicular_pain@midline` to left + right and drops an unoffered token, and a
   legacy cauda link loads the cauda;
-- both down-going plantars demote the conus.
+- both down-going plantars demote the conus;
+- ruling 3: sphincter dysfunction is offered on midline only; a row tap enters midline whatever the side setting;
+  the cauda picture entered by row taps on "Both" is one lesion; a legacy one-sided sphincter token becomes midline.
+
+Two more fixtures move with ruling 3. `tier2-pns-depth`'s pudendal picture enters sphincter dysfunction on midline.
+`app-smoke`'s shape-contract "multifocal case" was itself the cauda + pudendal trap, so it becomes the "Two lesions"
+worked example (right arm, left leg).
 
 ## 9. Anatomy sheet and rollout
 
@@ -141,5 +156,5 @@ Each is a change of representation. None of them may loosen what the test assert
 ## 10. Out of scope
 
 - **Making the conus asymmetric** — ruled symmetric on 2026-09-25.
-- **Other midline sites.** The sweep found only these seven limb findings offered on midline AND on a side (plus
-  sphincter dysfunction, which is midline by nature and correctly offered both ways).
+- **Other midline sites.** The sweep found only these seven limb findings offered on midline AND on a side, plus
+  sphincter dysfunction (ruling 3). After this change, no finding is offered on both midline and a side.

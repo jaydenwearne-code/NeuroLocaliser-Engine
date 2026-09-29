@@ -1049,7 +1049,10 @@ export const STRUCTURES = [
   // PNS-depth named nerves: phrenic (diaphragm), pudendal (perineum/sphincter), saphenous + sural (pure sensory)
   { id: "phr_diaphragm", level: "nerve", part: "phrenic", produces: "weak_diaphragm", note: "phrenic (C3-5) — diaphragm; the pure-motor localiser for hemidiaphragm palsy" },
   { id: "pud_sens",  level: "nerve", part: "pudendal", produces: "sensory_s3", note: "pudendal (S2-4) — perineal / genital sensation" },
-  { id: "pud_sphincter", level: "nerve", part: "pudendal", produces: "sphincter_dysfunction", note: "pudendal — external anal / urethral sphincter" },
+  // Bladder or bowel dysfunction is not a lateralised bedside finding, so it is MIDLINE here as everywhere else
+  // (owner ruling 2026-09-29) — one-sided, a row tap on "Both" or "Left" entered it on a side and a cauda picture
+  // became "cauda + pudendal nerves".
+  { id: "pud_sphincter", level: "nerve", part: "pudendal", produces: "sphincter_dysfunction", emit: "midline", note: "pudendal — external anal / urethral sphincter" },
   { id: "saph_sens", level: "nerve", part: "saphenous", produces: "saphenous_sensory", note: "saphenous (femoral branch) — medial leg / malleolus (pure sensory)" },
   { id: "sural_sens", level: "nerve", part: "sural", produces: "sural_sensory", note: "sural — lateral foot / heel (pure sensory; the biopsy nerve)" },
 

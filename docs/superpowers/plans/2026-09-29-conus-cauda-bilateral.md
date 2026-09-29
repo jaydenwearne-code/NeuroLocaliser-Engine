@@ -467,3 +467,32 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   targets `fix/onset-follows-cause` (stacked). If PR #14 is already merged by then, it targets `main`. Bind it with the
   ccd_pr tools. **Republish the anatomy sheet** in place (the URL in `docs/artifacts/README.md`) once the owner has
   reviewed it.
+
+---
+
+## Execution log
+
+**2026-09-29, inline (owner's choice).**
+
+- **Tasks 1–2** — as written. Committed as `c230f70`. All 11 files were byte-identical to the prototype, and the full
+  suite was 82 suites / 7100 green.
+- **Task 3** — the sheet rows went in as written, committed as `d401024` (594/594). Browser checks: the worked
+  example ✓, the side buttons ✓, the legacy link ✓ (the URL is rewritten to left + right), no console errors. **Check 2
+  (a "Both" entry through row taps) FAILED.** The tap entered sphincter dysfunction left + right, because it was still
+  offered on a side through the pudendal nerve. The picture became "cauda + left and right pudendal nerves"; with
+  "Left" set it failed the same way. This has been live since v0.10.0's row taps. The engine tests could not see it,
+  because they enter tokens, not taps.
+- **Task 4, owner review:** the notes were approved as built, and the owner ruled **the pudendal nerve's sphincter
+  dysfunction is midline too** (spec §2, ruling 3). Done TDD:
+  - `pud_sphincter` got `emit: "midline"`;
+  - `currentTokens` converts a one-sided token to midline where only midline is offered;
+  - the sheet's `pud_sphincter` row changed IPSI → MIDLINE;
+  - `cauda-conus` gained section 9 (4 assertions);
+  - `tier2-pns-depth`'s pudendal fixture moved to midline;
+  - `app-smoke`'s "multifocal case" (itself the trap) became the "Two lesions" example;
+  - one section 7 assertion now uses `weak_arm@none`, because `saddle_anaesthesia@left` is now correctly converted
+    to midline.
+
+  Browser re-check: "Both" + row taps → the cauda, one lesion; "Left" + row taps → the cauda, *"Saddle numbness +
+  left sciatica-type root pain → only the cauda equina."* No finding is offered on both midline and a side any
+  more. Full suite: **82 suites / 7104 green**, so Task 5 uses 7104, not 7100.
