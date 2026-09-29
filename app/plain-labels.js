@@ -10,7 +10,9 @@
 // `less`  — less common in ED: the row sits behind its group's "Less common (n)" disclosure. Search still finds
 //   it, and an entered one is always shown.
 //
-// REVIEW STATUS: ⚠ AWAITING CLINICAL REVIEW (round 1 of 3, spec 2026-09-27 §8).
+// REVIEW STATUS: ✅ SIGNED OFF by the owner (a clinician), 2026-09-29 — review round 1 of 3, in two passes: the
+// first produced eight rulings (proper names in brackets; Klüver-Bucy; anterior 2/3; hypotonia; brisk reflexes apart
+// from the plantar; a down-going plantar; central post-stroke pain removed; the autonomic split), the second approved.
 export const PLAIN = {
   // ---- Higher function › Frontal ----
   executive_dysfunction: { label: "poor planning and sequencing", term: "executive dysfunction" },
