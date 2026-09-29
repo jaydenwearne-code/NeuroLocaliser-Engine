@@ -2125,3 +2125,29 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 Also caught: `hyperreflexia` was redundant with its own description (the synonyms suite rejects that class); labels with commas read as two findings in the "Less common" summary (labels are now comma-free, asserted).
 
 **One output for the owner to judge in review:** the cauda equina worked example's Why line is *"Sciatica-type root pain → only the cauda equina."* It is derived — in the model only the cauda produces MIDLINE (bilateral) root pain — but a reader may expect saddle anaesthesia or sphincter dysfunction as the clue. If the owner wants that changed, it is a question about the model's midline radicular pain, not about this plan.
+
+---
+
+## Execution log — deviations from the plan above
+
+**Review round 1 (2026-09-29) changed the model, not just the labels** — recorded here because Tasks 5–8 below were
+written before it. Commits `8952bd9`, `bf91b3e`; suite `test/vocab-rulings.test.js` pins every ruling.
+
+1. **`app/plain-labels.js` gained `term`** (the proper name) and **`displayLabel(f)`** = `"plain (proper)"`. The owner
+   ruled every label carries its proper name in brackets. **Wherever Tasks 6–8 use `plainLabel()` for something SHOWN
+   (rows, chips, the "Less common" names, the Why line), use `displayLabel()`**; keep `plainLabel()` only inside search
+   matching (search also matches `term`). Task 6's expected Why strings change accordingly — recompute them from the
+   real output rather than hand-editing.
+2. **Brisk reflexes (`hyperreflexia`) replace `umn_signs`** and are produced along the corticospinal tract (not the
+   combined degenerations); the conus and the basis pontis predict brisk reflexes and an up-going plantar.
+3. **`plantar_flexor` (down-going plantar) is the engine's first EXPLICIT NORMAL** (`EXPLICIT_NORMAL` in
+   `findings.js`). It DEMOTES — `normalNegatives()` + the `against` key in `differential()` — and never excludes. It is
+   stripped before matching; `isNormalToken()` is exported from `inverse.js`; `app.js` already excludes it from
+   `total` and shows a message when only normals are entered; the Where rows show "less likely — would give …".
+   **Task 5:** in the new `tokensForRow` block of `test/side-offers.test.js`, skip `EXPLICIT_NORMAL` findings in the
+   "returns nothing" check (a normal alone localises nothing by design) — `EXPLICIT_NORMAL` is already imported there.
+4. **`thalamic_pain` is removed; `autonomic_features` is five findings** (dry mouth, constipation, erectile
+   dysfunction, labile blood pressure, arrhythmia), each predicted by Lambert-Eaton and acute GBS, in the Autonomic group.
+5. **`app.js` already imports `displayLabel`** (for the Where rows). Task 8 Step 1 adds `PLAIN` and the rest — import
+   `displayLabel` there once, not twice.
+6. The anatomy sheet is at 594/594 rows (hand-edited, id-verified).
