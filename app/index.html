@@ -340,6 +340,32 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .cs-handover{width:100%;min-height:120px;font-family:var(--mono);font-size:var(--fs-meta);padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--band);color:var(--ink);}
   .cs-consider{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;} .cs-consider .cs-summary{font-size:var(--fs-meta);color:var(--ink);margin:5px 0;}
   .cs-crit .cite,.cs-summary .cite,.cs-consider .cite{display:block;font-size:var(--fs-cap);color:var(--faint);margin-top:1px;}
+  /* ===== ED first glance (spec 2026-09-27) ===== */
+  /* the answer card: one line each, a key column keeps the lines scannable */
+  .ans{margin-top:10px;}
+  .ans-row{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:var(--fs-body);line-height:1.45;}
+  .ans-k{font-size:var(--fs-cap);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding-top:2px;}
+  .ans-v{color:var(--ink);min-width:0;}
+  .ans-red{background:var(--red-bg);color:var(--ink);border-top-color:transparent;border-radius:8px;padding:7px 9px;margin-top:4px;}
+  .ans-red .ans-k{color:var(--contra);font-size:var(--fs-body);letter-spacing:0;padding-top:0;}
+  /* the detail sections are <details>, closed by default — undo the exam accordion's global details/summary rules */
+  details.out-card{border:1px solid var(--line);}
+  details.out-card:not([open]){padding-top:10px;padding-bottom:10px;}
+  details.out-card>summary.out-cap{display:flex;align-items:baseline;gap:8px;padding:0;margin:0;cursor:pointer;list-style:none;}
+  details.out-card[open]>summary.out-cap{margin-bottom:8px;}
+  details.out-card>summary.out-cap::-webkit-details-marker{display:none;}
+  details.out-card>summary.out-cap::after{content:"\203A";margin-left:auto;font-size:var(--fs-body);color:var(--faint);transition:transform .15s ease;}
+  details.out-card[open]>summary.out-cap::after{transform:rotate(90deg);}
+  .out-hint{font-size:var(--fs-meta);letter-spacing:0;text-transform:none;font-weight:400;color:var(--muted);}
+  /* the phone strip: only below the single-column breakpoint, only while the answer card is out of view */
+  .ans-strip{display:none;}
+  @media (max-width:860px){
+    .ans-strip:not([hidden]){display:flex;align-items:center;justify-content:space-between;gap:10px;position:fixed;left:12px;right:12px;
+      bottom:calc(44px + env(safe-area-inset-bottom));z-index:20;font:inherit;font-size:var(--fs-body);font-weight:700;
+      background:var(--navy);color:var(--paper);border:0;border-radius:12px;padding:10px 14px;box-shadow:var(--shadow-lift);cursor:pointer;text-align:left;}
+    .ans-strip-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .ans-strip-go{flex:none;font-size:var(--fs-meta);text-decoration:underline;}
+  }
 </style>
 </head>
 <body>

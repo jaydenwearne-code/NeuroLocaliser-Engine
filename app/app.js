@@ -26,6 +26,7 @@ import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { displayLabel } from "./plain-labels.js";
 import { offersFor } from "./sides.js";
+import { answerFor, resolveNext } from "./answer.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -49,6 +50,11 @@ const desc = f => (FINDINGS[f] && FINDINGS[f].desc) || f;
 const S = { mode:"localise", tokens:new Set(), dominant:"left", onset:"", course:"", sensoryLevel:"", distalReach:"", atlas:null, pinned:new Set(), compare:undefined, selectedPathology:undefined, selectedEntity:undefined, scope:"site",
   stroke:{ age:"", lkw:"", mrs:"", sbp:"", dbp:"", glucose:"", affectedSide:"", nihss:{}, thrombolysisTicks:new Set(), thrombectomyTicks:new Set() } };
 const app = document.getElementById("app");
+// VIEW STATE — how the reader is looking, never a fact about the case. It is deliberately NOT in S, so
+// encodeCase() cannot serialise it: the same rule that keeps the theme out of the case URL.
+//   open        — the detail sections the reader opened (they are closed by default, spec 2026-09-27 §3.2)
+//   defaultSide — "Symptoms on", the side a row tap enters (spec 2026-09-27 §5.4)
+const VIEW = { open: new Set(), defaultSide: "" };
 
 // ---- shareable case URLs: hydrate S from the URL hash on boot, keep the hash live on every change ----
 const VALID_FINDINGS = new Set(Object.keys(FINDINGS));
@@ -164,7 +170,10 @@ function wireJumpLinks(root) {
       const target = document.getElementById(a.getAttribute("href").slice(1));
       // behavior:"auto", not "smooth" — smooth was measured as a no-op in the in-app browser (scrollY never
       // moved), and an instant jump is the better behaviour anyway for "get me to Next Steps now".
-      if (target) target.scrollIntoView({ behavior: "auto", block: "start" });
+      if (!target) return;
+      // A section is closed by default now, so a jump must open it as well as reach it.
+      if (target.tagName === "DETAILS" && target.dataset.secCard) { target.open = true; VIEW.open.add(target.dataset.secCard); }
+      target.scrollIntoView({ behavior: "auto", block: "start" });
     };
   });
 }
@@ -257,6 +266,7 @@ function renderResults() {
     S.selected = undefined; S.selectedPathology = undefined; S.selectedEntity = undefined;
     syncURL();
     el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`;
+    wireAnswerStrip();   // no card now — this unbinds the last case's scroll listener
     return;
   }
   try {
@@ -298,16 +308,21 @@ function renderResults() {
   syncURL();
   const has = new Set(["where", "why", "what", "next"]);
   if (together) has.add("together");
-  el.innerHTML = resultHeader(sel, list, total, r)
+  const ans = answerFor({ r, sel, total, tokens: S.tokens, onset: S.onset, course: S.course, dominant: S.dominant,
+    sensoryLevel: S.sensoryLevel, pinned: S.pinned, scope: S.scope, selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity });
+  el.innerHTML = answerCard(sel, list, r, ans)
     + sectionNav(has)
     + pmsg + rmsg
     + whereCard(list, cands, total, r)
     + together
     + whyCard(tf, sel, list)
     + whatCard(sel.site, r, list)
-    + nextCard(sel.site, r, list);
+    + nextCard(sel.site, r, list)
+    + answerStrip(sel, list, total, ans.nx);
   wireCardControls();
   wireJumpLinks(el);
+  wireSectionToggles(el);
+  wireAnswerStrip();
   // Bound on the WRAP, not the <svg>: the numbered index lives beside the figure and its rows carry the
   // same data-k, so one handler serves both.
   // Selecting a cause narrows the Next card to that pathology; clicking the selected one clears it.
@@ -390,8 +405,20 @@ function siteRaw(site){ return plainSiteName(site, { dominantSide: S.dominant })
 
 // cap is trusted HTML (literal labels we control, e.g. "Why" or `Where <span…>(N)</span>`) — not user input.
 // `anchor` gives the section nav a jump target.
-function card(capHTML, body, anchor) {
-  return `<section class="out-card"${anchor ? ` id="sec-${anchor}"` : ""}><div class="out-cap">${capHTML}</div>${body}</section>`;
+// The detail sections are CLOSED by default (spec 2026-09-27 §3.2): the answer card above carries the short
+// version of each, and a section opens on a tap or from the section nav. The order is unchanged and nothing is
+// tabbed, so the 2026-08-16 ruling (a trainee must not be able to skip Why) still holds — Why's gist is on the
+// answer card. A section the reader opened stays open across re-renders until they close it. `hint` is trusted
+// literal copy.
+function card(capHTML, body, anchor, hint = "") {
+  const open = anchor && VIEW.open.has(anchor) ? " open" : "";
+  return `<details class="out-card"${anchor ? ` id="sec-${anchor}" data-sec-card="${anchor}"` : ""}${open}><summary class="out-cap">${capHTML}${hint ? `<span class="out-hint">${hint}</span>` : ""}</summary>${body}</details>`;
+}
+// The toggle event does not bubble, so each section is bound after every render.
+function wireSectionToggles(root) {
+  root.querySelectorAll("details[data-sec-card]").forEach(d => {
+    d.ontoggle = () => { d.open ? VIEW.open.add(d.dataset.secCard) : VIEW.open.delete(d.dataset.secCard); };
+  });
 }
 
 // The reasoning chain stays in ONE scroll in a fixed order — a trainee must not be able to skip Why, which
@@ -426,37 +453,59 @@ function errorPanel(err) {
   </div>`;
 }
 
-// compact header: the leading/selected lesion + status + functional flag (safety — kept prominent)
-function resultHeader(sel, list, total, r) {
-  const nAll = r.explainAll.length;
-  const status = nAll
-    ? `<b>${nAll}</b> lesion${nAll>1?"s":""} explain${nAll>1?"":"s"} all ${total} finding${total>1?"s":""}${nAll>1?" — click one to narrow":""}.`
-    : `<b>No single lesion</b> explains all ${total} findings — best explains ${list[0].n}/${total}.`;
+// The answer card (spec 2026-09-27 §3.1): the site, the urgency, then one line each for Where / Why / What / Next
+// and the site's red-flag sentence. The lines come from app/answer.js — derived, never authored per site. It keeps
+// .out-head, the allowlisted terracotta rule: this card IS the answer. The functional flag stays here (safety).
+function answerCard(sel, list, r, ans) {
   const fnd = functionalFlag(S.tokens);
   const funcFlag = fnd.functional
     ? `<div class="multi" style="border-color:var(--gold);background:var(--gold-bg,transparent)"><b>⚠ Consider functional.</b> ${esc(fnd.note)}</div>`
     : fnd.suppressed
     ? `<div class="annot"><b>Functional sign noted:</b> ${esc(fnd.note)}</div>`
     : "";
-  // Urgency already exists in the workup layer but was only visible four screens down — it is the one signal
-  // a time-poor reader needs before anything else, so it sits in the header and links to the Next card.
-  let urg = "";
-  try {
-    const u = nextStepsFor(sel.site, { onset: S.onset || undefined }).urgency;
-    const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
-    const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
-    const emerg = u === "emergency" ? " urg-emergency" : "";
-    urg = `<a class="urg-pill${emerg}" href="#sec-next"${emerg ? "" : ` style="color:var(${tint});border-color:var(${tint})"`}>${lab}</a>`;
-  } catch { urg = ""; }
-  // ONE scope control, here, governing both the What and the Next cards — they used to render a copy each
-  // off the same S.scope, which is two controls for one decision.
+  // The badge follows the RESOLVED plan — the same one the Next line and the Next card show — so a selected cause
+  // moves all three together (urgency follows the selection: owner rulings 2026-08-18 and 2026-08-21).
+  const u = ans.nx.urgency;
+  const tint = u === "emergency" ? "--red" : u === "urgent" ? "--gold" : "--faint";
+  const lab = u === "emergency" ? "EMERGENCY" : u === "urgent" ? "URGENT" : "routine";
+  const emerg = u === "emergency" ? " urg-emergency" : "";
+  const urg = `<a class="urg-pill${emerg}" href="#sec-next"${emerg ? "" : ` style="color:var(${tint});border-color:var(${tint})"`}>${lab}</a>`;
+  // ONE scope control, here, governing both the What and the Next cards.
   const { sites: scopeSites } = combinedSites(r, list, S.pinned);
   const scope = scopeSites.length >= 2 ? scopeToggle(scopeSites.length) : "";
-  return `<div class="out-head">
-    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b>${siteSub(sel.site)?`<span class="oh-loc">${esc(siteSub(sel.site))}</span>`:""}
+  const L = ans.lines;
+  const row = (k, v) => v ? `<div class="ans-row"><span class="ans-k">${k}</span><span class="ans-v">${esc(v)}</span></div>` : "";
+  const red = L.red ? `<div class="ans-row ans-red"><span class="ans-k">⚑</span><span class="ans-v">${esc(L.red)}</span></div>` : "";
+  return `<div class="out-head" id="answer">
+    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b>
       <details class="oh-raw"><summary>site id</summary><code>${esc(siteRaw(sel.site))} · ${esc(sel.site.id)}</code></details>
     </div>${urg}${feedbackButton(list)}</div>
-    <p class="oh-status">${status}</p>${scope}${funcFlag}</div>`;
+    <div class="ans">${row("Where", L.where)}${row("Why", L.why)}${row("What", L.what)}${row("Next", L.next)}${red}</div>
+    ${scope}${funcFlag}</div>`;
+}
+
+// The phone strip (spec 2026-09-27 §3.3). Below the single-column breakpoint the answer card sits under the whole
+// exam, so a slim bar pins the answer to the bottom of the screen while the card is out of view. A <button>, not
+// a link: THE HASH IS THE CASE, and an href would rewrite it.
+function answerStrip(sel, list, total, nx) {
+  const n = list.filter(c => c.n === total).length;
+  const u = nx.urgency === "emergency" ? "Emergency" : nx.urgency === "urgent" ? "Urgent" : "Routine";
+  // Urgency FIRST: on a narrow screen the line truncates, and the name is what may be cut, never the urgency.
+  return `<button class="ans-strip" id="ans-strip" type="button" hidden><span class="ans-strip-t">${u}${n > 1 ? ` · ${n} fit` : ""} · ${esc(siteName(sel.site))}</span><span class="ans-strip-go">View</span></button>`;
+}
+// Visibility is measured on scroll and resize, not with an IntersectionObserver: its callbacks were measured NOT
+// to arrive in a throttled tab (the strip never appeared), and a strip that silently never shows is the failure
+// this exists to prevent. getBoundingClientRect is synchronous, and one rect per scroll event is cheap.
+let _stripUpdate = null;
+function wireAnswerStrip() {
+  if (_stripUpdate) { removeEventListener("scroll", _stripUpdate); removeEventListener("resize", _stripUpdate); _stripUpdate = null; }
+  const strip = document.getElementById("ans-strip"), card = document.getElementById("answer");
+  if (!strip || !card) return;
+  strip.onclick = () => card.scrollIntoView({ behavior: "auto", block: "start" });
+  _stripUpdate = () => { const r = card.getBoundingClientRect(); strip.hidden = r.top < innerHeight && r.bottom > 0; };
+  addEventListener("scroll", _stripUpdate, { passive: true });
+  addEventListener("resize", _stripUpdate);
+  _stripUpdate();
 }
 
 // Five places tell the reader "the engine considered this and set it aside" — in five phrasings and five
@@ -514,7 +563,7 @@ function whereCard(list, cands, total, r) {
         }).join("")}</div>`)
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
-  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where");
+  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where", "— every place that fits");
 }
 
 // A `spread`/`motor` clause has no single site — it is satisfied by the SET of sites, or by the observed
@@ -655,7 +704,7 @@ function togetherCard(r, list) {
         <option value="">all</option>
         ${COURSES.map(c=>`<option value="${c.id}"${S.course===c.id?" selected":""}>${esc(c.label)}</option>`).join("")}
       </select></label></div>`;
-  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc, "together");
+  return card(`Together <span class="oc-n">(${sites.length} sites)</span>`, courseCtrl + guard + srcLine + fits + disc, "together", "— one disease, several places");
 }
 
 // THE INPUT CONTRACT: candidates come from solve() (`list` is r.display), not from tractsFor(). Harvesting
@@ -732,7 +781,7 @@ function whyCard(tf, sel, list) {
   const anatomy = tf.length
     ? `<details class="nx-toggle" style="margin-top:6px"><summary>Pathway anatomy</summary>${tf.map(t => `<p class="synth"><b>${esc(capFirst(t.tract.label))}.</b> ${esc(tractNarrative(t.tract))}</p>`).join("")}</details>`
     : "";
-  return card("Why", `${umnlmn}${chain}${compare}${expected}${anatomy}`, "why");
+  return card("Why", `${umnlmn}${chain}${compare}${expected}${anatomy}`, "why", "— finding by finding, and what separates the places");
 }
 
 // Merged causes/workup render through the cards that already OWN that presentation, rather than a third
@@ -809,9 +858,9 @@ function whatCard(site, r, list) {
            ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}`)
       : "";
     const remainder = perSiteRemainderHTML(cc, sites);
-    return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what");
+    return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what", "— every cause, by onset");
   }
-  return card("What", whatBlock(site), "what");
+  return card("What", whatBlock(site), "what", "— every cause, by onset");
 }
 
 // One cause: the row (name · tempo · likelihood · red) plus an optional discriminating-feature line.
@@ -876,18 +925,12 @@ function whatBlock(site) {
 // returns the same field names/types as nextStepsFor() (minus `curated`) precisely so this works without a
 // second four-tier renderer.
 function nextCard(site, r, list) {
-  // S.pinned MUST be passed — see the note in whatCard().
-  const { sites } = combinedSites(r, list, S.pinned);
-  const combined = sites.length >= 2 && S.scope === "all";
-  // Per-site selection is single-site only; the CROSS-SITE selection is the combined view's answer to
-  // "whose pathology?" — the disease the Together card named as spanning these sites (spec 2026-08-21).
-  // The onset is threaded through so a hyperacute stroke badges EMERGENCY (accuracy round 1, A4/B16).
-  const onsetOpt = { onset: S.onset || undefined };
-  const nx = combined
-    ? combinedNextSteps(sites, S.selectedEntity || null, onsetOpt)
-    : pathologyNextStepsFor(site, S.selectedPathology || null, onsetOpt);
+  // The SAME resolution the answer card uses (app/answer.js), so the badge, the Next line and this card can never
+  // describe different plans. S.pinned is passed through — see the note in whatCard().
+  const { nx, combined } = resolveNext({ site, r, pinned: S.pinned, scope: S.scope,
+    selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity, onset: S.onset });
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
-  return card(cap, nextBlock(nx, combined), "next");
+  return card(cap, nextBlock(nx, combined), "next", "— the full workup");
 }
 
 // `combined` distinguishes the two shapes nextBlock is fed: nextStepsFor()'s single-site plan (which carries
