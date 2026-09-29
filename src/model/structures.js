@@ -642,6 +642,10 @@ export const STRUCTURES = [
   { id: "bp_cst_leg", level: "pons", part: "basis_pontis", produces: "weak_leg", crosses: true, note: "corticospinal in the basis pontis — contra leg weakness" },
   { id: "bp_cbt",     level: "pons", part: "basis_pontis", produces: "facial_weakness", crosses: true, note: "corticobulbar in the basis pontis — contra facial UMN" },
   { id: "bp_cbt_forehead", level: "pons", part: "basis_pontis", produces: "forehead_spared", crosses: true, note: "basis pontis corticobulbar — forehead spared (UMN)" },
+  // The basis pontis carries the corticospinal tract like every other such site, so it gives the same UMN signs
+  // (owner ruling 2026-09-29) — it had been the one corticospinal site with neither.
+  { id: "bp_bab",   level: "pons", part: "basis_pontis", produces: "babinski",      crosses: true, note: "corticospinal in the basis pontis — extensor plantar, contra" },
+  { id: "bp_hyper", level: "pons", part: "basis_pontis", produces: "hyperreflexia", crosses: true, note: "corticospinal in the basis pontis — brisk reflexes, contra" },
   { id: "bp_cbt_dys", level: "pons", part: "basis_pontis", produces: "dysarthria",                     note: "corticobulbar → dysarthria (@none)" },
   { id: "bp_pcf",     level: "pons", part: "basis_pontis", produces: "limb_ataxia",     crosses: true, note: "pontocerebellar fibres (cross) — ataxia CONTRA, same side as the weakness (ataxic hemiparesis)" },
 

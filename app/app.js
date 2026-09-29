@@ -24,6 +24,7 @@ import { togetherGuardState } from "./together-guard.js";
 import { plainSiteName, shortFindingLabel } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
+import { displayLabel } from "./plain-labels.js";
 import { offersFor } from "./sides.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
@@ -503,7 +504,7 @@ function whereCard(list, cands, total, r) {
     // TWO CONTROLS, TWO CLAIMS. The checkbox says "I am choosing between these" (one lesion, which one?);
     // the pin says "these are both real" (two lesions). Opposite claims, so they cannot share a control.
     const cmpOn = compareSet(idsOf(list)).has(c.site.id) ? " checked" : "";
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span></div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span>${c.against ? `<span class="dagainst">less likely — would give ${esc(displayLabel(fid(c.against)))} on the ${esc(c.against.split("@")[1])}</span>` : ""}</div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? setAside("contradicted by a normal finding", r.ruledOut.length,

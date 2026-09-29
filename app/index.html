@@ -214,6 +214,8 @@ if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}<
   .drow{padding:8px 11px;transition:background .12s ease;}
   .drow.on{box-shadow:inset 3px 0 0 var(--navy-2);}
   .drow .dn b{letter-spacing:-.005em;}
+  /* a lesion a recorded normal counts against (a down-going plantar) — demoted, not removed */
+  .drow .dagainst{display:block;font-size:var(--fs-cap);color:var(--contra);margin-top:1px;}
   /* restrained motion: results/cards ease in; disclosures feel intentional */
   @media (prefers-reduced-motion:no-preference){
     .out-head,.out-card{animation:nlrise .28s ease both;}
