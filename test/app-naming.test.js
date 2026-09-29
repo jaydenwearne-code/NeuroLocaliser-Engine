@@ -153,6 +153,16 @@ ok("every PART_LABEL key is `level|part`",
   ok(`no site yields an empty or schema name (${SITES.length} sites)`, !bad.length,
      bad.slice(0, 5).map(s => s.id).join(" | "));
 }
+// ---- place: the plain anatomical phrase, whatever the headline (spec 2026-09-27 §3.1) ----
+{
+  const cs2 = candidateSites();
+  const pl = id => plainSiteName(cs2.find(s => s.id === id), { dominantSide: "left" }).place;
+  ok("an eponymous site's place is its plain location (Wallenberg -> Left lateral medulla)", pl("left_medulla_lateral") === "Left lateral medulla", pl("left_medulla_lateral"));
+  ok("a plain-named site's place equals its name", pl("left_cortex_motor_facearm") === plainSiteName(cs2.find(s => s.id === "left_cortex_motor_facearm"), { dominantSide: "left" }).name);
+  const noPlace = cs2.filter(s => !plainSiteName(s, { dominantSide: "left" }).place).map(s => s.id);
+  ok("every candidate site has a place", noPlace.length === 0, noPlace.slice(0, 5).join(", "));
+}
+
 // ---- shortFindingLabel: chip-sized, never empty, for every finding ----
 {
   const ids = Object.keys(FINDINGS);
