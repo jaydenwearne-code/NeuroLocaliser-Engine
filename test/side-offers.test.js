@@ -1,7 +1,7 @@
 // side-offers.test.js — the finding panel must never offer a side that returns nothing (accuracy round 1, A5).
 // Before this, eleven real findings entered on one side returned ZERO candidates and the app suggested the
 // picture "may be non-organic" — unilateral fasciculations, fatigable ptosis, LMN weakness among them.
-import { offersFor, buildSideOffers } from "../app/sides.js";
+import { offersFor, buildSideOffers, tokensForRow } from "../app/sides.js";
 import { candidateSites, solve } from "../src/engine/inverse.js";
 import { FINDINGS, EXPLICIT_NORMAL } from "../src/model/findings.js";
 
@@ -34,6 +34,27 @@ ok("an ordinary lateralised finding offers left and right (arm weakness)", keys(
 ok("a non-lateralised finding offers one 'none' button", keys("naming_impaired") === "none", keys("naming_impaired"));
 ok("a midline finding offers midline (saddle anaesthesia)", keys("saddle_anaesthesia").includes("midline"), keys("saddle_anaesthesia"));
 ok("an unknown finding degrades to a single 'none' button", keys("zz_not_a_finding") === "none");
+
+// ---- a row tap on the default side (spec 2026-09-27 §5.4) ----
+{
+  const offered = f => new Set(offersFor(f).flatMap(o => o.tokens));
+  const stray = [], dead = [];
+  for (const f of Object.keys(FINDINGS)) for (const d of ["", "left", "right", "both", "midline"]) {
+    const toks = tokensForRow(f, d);
+    if (!toks) continue;
+    if (toks.some(t => !offered(f).has(t))) stray.push(`${f}:${d}`);
+    // The axis/flag findings (pinned above as unproduced) and the explicit normals localise nothing by design.
+    else if (map[f] && !EXPLICIT_NORMAL[f] && !solve(new Set(toks), { dominantSide: "left" }).differential.length) dead.push(`${f}:${d}`);
+  }
+  ok("a row tap never enters a side the panel does not offer", stray.length === 0, stray.slice(0, 8).join(", "));
+  ok("…and never enters a picture that returns nothing", dead.length === 0, dead.slice(0, 8).join(", "));
+  ok("no default: a two-sided finding waits for its buttons", tokensForRow("weak_arm", "") === null);
+  ok("default left enters the left side", JSON.stringify(tokensForRow("weak_arm", "left")) === '["weak_arm@left"]');
+  ok("default both enters left and right", JSON.stringify(tokensForRow("weak_arm", "both")) === '["weak_arm@left","weak_arm@right"]');
+  ok("a symmetric-only finding takes 'Both' whatever the default", JSON.stringify(tokensForRow("distal_sensory_loss", "left")) === JSON.stringify(offersFor("distal_sensory_loss")[0].tokens));
+  ok("a finding with no side takes its single offer", JSON.stringify(tokensForRow("naming_impaired", "right")) === '["naming_impaired@none"]');
+  ok("a midline parent passes midline to its follow-up (saddle -> anal wink)", tokensForRow("anal_wink_loss", "midline")?.every(t => t.endsWith("@midline")));
+}
 
 console.log(`\nside offers: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

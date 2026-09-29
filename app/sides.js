@@ -41,3 +41,20 @@ export function buildSideOffers(sites) {
 
 const OFFERS = buildSideOffers(candidateSites());
 export const offersFor = f => OFFERS[f] || [{ key: "none", tokens: [`${f}@none`] }];
+
+// A row TAP enters the finding on the reader's default side (spec 2026-09-27 §5.4): "Symptoms on" above the tree,
+// or a follow-up's parent side. It maps that default through the SAME offers the buttons show, so a tap can never
+// enter a token the panel does not offer. A finding with one fixed offer (none / both / midline) takes it whatever
+// the default. Returns null when the default does not decide it — the row's side buttons are then the only way in.
+export function tokensForRow(f, defaultSide = "") {
+  const offers = offersFor(f);
+  if (offers.length === 1 && offers[0].key !== "left" && offers[0].key !== "right") return offers[0].tokens;
+  if (!defaultSide) return null;
+  const exact = offers.find(o => o.key === defaultSide);
+  if (exact) return exact.tokens;
+  if (defaultSide === "both") {
+    const lr = offers.filter(o => o.key === "left" || o.key === "right");
+    if (lr.length === 2) return lr.flatMap(o => o.tokens);
+  }
+  return null;
+}
