@@ -3,7 +3,7 @@
 // what the detail cards below already compute. Findings are named as the app shows them — the plain label with
 // its proper name in brackets (displayLabel, owner ruling 2026-09-29).
 import { whyChain, whyClues } from "../src/engine/why.js";
-import { causesFor, rankCauses } from "../src/data/causes.js";
+import { causesFor, rankCauses, leadingCause } from "../src/data/causes.js";
 import { pathologyNextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
@@ -48,11 +48,15 @@ export function whySentence(w) {
 export function whatLine({ causes = [], demotedCount = 0, selected = null, entity = null, twoLesions = false }) {
   if (selected) return `Selected: ${selected}.`;
   if (twoLesions) return entity ? `Together: ${entity}.` : "No catalogued disease spans these places — see Together.";
-  // rankCauses is the ranking the Next steps' onset rule reads too, so What and Next name the same cause.
+  // rankCauses/leadingCause are the ranking the Next steps' onset rule reads too, so What and Next name the same
+  // cause. A SEQUEL (`after`, e.g. central post-stroke pain) never leads and is never the must-not-miss — it is
+  // named in its own clause, as what may follow an earlier event (owner, 2026-09-29).
   const ranked = rankCauses(causes);
   if (!ranked.length) return demotedCount ? `No cause here typically starts this way — ${demotedCount} set aside.` : "";
-  const top = ranked[0], mustNot = ranked.find(c => c.red && c !== top);
-  return `Most likely ${top.name}${top.red ? " (must not miss)" : ""}.${mustNot ? ` Must not miss: ${mustNot.name}.` : ""}`;
+  const top = leadingCause(causes), mustNot = ranked.find(c => c.red && c !== top && !c.after);
+  const sq = ranked.find(c => c.after), sequel = sq ? `After a previous ${sq.after} here: ${sq.name}.` : "";
+  if (!top) return sequel;
+  return `Most likely ${top.name}${top.red ? " (must not miss)" : ""}.${mustNot ? ` Must not miss: ${mustNot.name}.` : ""}${sequel ? ` ${sequel}` : ""}`;
 }
 
 // ---- which workup is on screen ----

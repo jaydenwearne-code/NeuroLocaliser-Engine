@@ -39,6 +39,12 @@ eq("nothing fits the onset", whatLine({ causes: [], demotedCount: 4 }), "No caus
 eq("a selected cause", whatLine({ causes: [c("A", "common")], selected: "Vertebral artery dissection" }), "Selected: Vertebral artery dissection.");
 eq("two lesions: the spanning disease", whatLine({ twoLesions: true, entity: "Multiple sclerosis" }), "Together: Multiple sclerosis.");
 eq("two lesions, nothing catalogued", whatLine({ twoLesions: true }), "No catalogued disease spans these places — see Together.");
+// A SEQUEL (`after`) names what may follow an earlier event — never the most likely cause of a new presentation
+// (owner ruling 2026-09-29): it gets its own clause instead.
+const seq = { name: "S", likelihood: "common", red: false, after: "stroke" };
+eq("a sequel never leads; it gets its own clause", whatLine({ causes: [seq, c("A", "uncommon")] }), "Most likely A. After a previous stroke here: S.");
+eq("…after the must-not-miss", whatLine({ causes: [seq, c("A", "common"), c("B", "rare", true)] }), "Most likely A. Must not miss: B. After a previous stroke here: S.");
+eq("only a sequel fits", whatLine({ causes: [seq] }), "After a previous stroke here: S.");
 
 // ---- the whole card, on the four worked examples ----
 const stateFor = ex => {

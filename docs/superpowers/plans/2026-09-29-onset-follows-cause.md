@@ -632,3 +632,29 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - [ ] **Step 6: Finish the branch** with superpowers:finishing-a-development-branch. The owner picks from its options.
   If they choose a PR: push the branch, open the PR, and bind it with the ccd_pr tools. Do not merge it; the owner
   merges, and merging deploys to testers.
+
+---
+
+## Execution log
+
+**2026-09-29, inline (owner's choice).**
+
+- **Task 1** — as written. Committed as `3829bf4`: 15/15 in the new suite, answer card 35/35, full suite 82 suites /
+  7068 green, no existing test edited. The three source files were byte-identical to the prototype.
+- **Task 2** — as written. Committed as `643796a`. One placement difference from the prototype: `fxHead` sits
+  before the "honest fallback" comment, as the plan says, not after it. Browser-checked: the chronic card (URGENT,
+  neuro-oncology, the note, scope tags); a selection replaces the note with "Plan for:"; hyperacute onset keeps
+  the stroke plan with no note; no console errors; 375px light and dark with no horizontal scroll. Changing only
+  the hash does not re-render; reload after changing it.
+- **Task 3** — the review round changed the RULE. Spec §2 records rulings 4–6:
+  - **4. A mimic is never the default card.** Where a mimic leads, the site's own plan stands. `onsetFollows` adds
+    `cause.cat === "mimic"` to its null conditions; this came from the temporoparietal "potentially missed stroke"
+    ruling.
+  - **5. Central post-stroke pain is a sequel.** The two entries are tagged `after: "stroke"`; `leadingCause`
+    skips sequels; `whatLine` skips them for the lead and the must-not-miss and adds
+    `After a previous {after} here: {name}.`
+  - **6. The AION follow at hyperacute onset** is kept.
+
+  Tests added: suite sections 9 and 10, three `whatLine` cases, and the canary exempting mimic leads. The ratchet
+  moved from 40/42 to **37/37**. Full suite: **82 suites / 7080 green**. Task 4 uses 7080, not 7068. With no onset the
+  thalamus (VPL) and VPM What lines also gain the sequel clause, because post-stroke pain fits then as well.

@@ -57,6 +57,10 @@ export const LIKELIHOOD = ["common", "uncommon", "rare"];
 //   confirms this cause ("if you see X, it's Y"). Shown as a distinct "Confirm on exam" flag. Reserved for
 //   real bedside confirmatory signs (e.g. Ramsay Hunt ear vesicles) — NOT investigations (those are Next steps).
 // The live phonebook categoriser and the derived fallback leave both blank.
+//  `after` (optional, spread onto an entry: `{ ...c(...), after: "stroke" }`) — marks a SEQUEL: what may follow an
+//   earlier event at this site, not a cause of a new presentation (owner, 2026-09-29). leadingCause() skips it, so
+//   it never becomes the What line's "most likely" or the plan the Next steps follow; the answer card names it in
+//   its own "After a previous {after} here" clause, and it stays listed and selectable.
 const c = (name, cat, tempo, likelihood, red = false, feature = "", pathognomonic = "") =>
   ({ name, cat, tempo, likelihood, red, feature, pathognomonic });
 
@@ -813,8 +817,8 @@ export const CAUSES = {
       "Isolated contralateral FACIAL sensory loss, sometimes with the hand in a CHEIRO-ORAL pattern — a tiny VPM lesion, with no weakness and no cortical signs"),
     c("Thalamic haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Abrupt facial numbness with headache and reduced consciousness; hypertensive, and it may rupture into the ventricles"),
-    c("Central post-stroke pain (Déjerine-Roussy)", "vascular", ["subacute","chronic"], "common", false,
-      "Weeks to months after the stroke the numb face becomes spontaneously painful and hypersensitive to light touch — a thalamic sign, not a functional one"),
+    { ...c("Central post-stroke pain (Déjerine-Roussy)", "vascular", ["subacute","chronic"], "common", false,
+      "Weeks to months after the stroke the numb face becomes spontaneously painful and hypersensitive to light touch — a thalamic sign, not a functional one"), after: "stroke" },
     c("Demyelination", "inflammatory", ["subacute"], "uncommon", false,
       "Younger patient with facial sensory symptoms evolving over days and prior demyelinating episodes"),
     c("Small metastasis or glioma", "neoplastic", ["subacute","chronic"], "rare", false,
@@ -2635,8 +2639,8 @@ export const CAUSES = {
   subcortex_thalamus: [ // VPL — pure sensory lacune / Déjerine-Roussy
     c("Thalamic lacunar infarct (VPL)", "vascular", ["hyperacute","acute"], "common", false,
       "Pure hemisensory loss of face, arm and leg with no weakness and no cortical signs; small-vessel risk factors"),
-    c("Déjerine-Roussy (central post-stroke pain)", "vascular", ["subacute","chronic"], "common", false,
-      "Weeks to months AFTER a thalamic stroke, the numb side becomes spontaneously painful and hypersensitive to light touch — it is a thalamic sign, not a functional one, and is often misattributed"),
+    { ...c("Déjerine-Roussy (central post-stroke pain)", "vascular", ["subacute","chronic"], "common", false,
+      "Weeks to months AFTER a thalamic stroke, the numb side becomes spontaneously painful and hypersensitive to light touch — it is a thalamic sign, not a functional one, and is often misattributed"), after: "stroke" },
     c("Thalamic haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Headache and vomiting with rapidly reduced consciousness; hypertensive, and it may rupture into the ventricles causing hydrocephalus"),
     c("Demyelination", "inflammatory", ["subacute"], "uncommon", false,
@@ -3166,13 +3170,14 @@ export function causesFor(site, { onset } = {}) {
 // ---- the cause the What line names (spec 2026-09-29) ----
 // Most likely first, the curated order standing within a likelihood (a stable sort); a cause without a likelihood
 // goes last. ONE ranking, shared by the answer card's What line and the Next steps' onset rule (nextSteps.js
-// onsetFollows), so the two lines of the card can never name different causes.
+// onsetFollows), so the two lines of the card can never name different causes. The LEADING cause skips a sequel
+// (`after`): it names what may follow an earlier event, never the most likely cause of a new presentation.
 const likelihoodRank = c => { const i = LIKELIHOOD.indexOf(c.likelihood); return i < 0 ? LIKELIHOOD.length : i; };
 export function rankCauses(causes) {
   return [...causes].sort((a, b) => likelihoodRank(a) - likelihoodRank(b));
 }
 export function leadingCause(causes) {
-  return rankCauses(causes)[0] || null;
+  return rankCauses(causes).find(c => !c.after) || null;
 }
 
 // ---- CROSS-SITE MERGE (spec 2026-08-14 §6) ----

@@ -34,11 +34,12 @@ const site = id => SITES.find(s => s.id === id);
   const WIN = new Set(["brain", "brainstem", "cerebellum", "cord", "optic"]);
   // …and something still fits the onset: at subacute onset NO cause at the optic nerve (AION) fits, the What line
   // says so ("No cause here typically starts this way"), and there is nothing to follow — the site plan stands.
+  // …and what the What line names is not a MIMIC (owner ruling 4): a mimic in the lead leaves the site plan standing.
   const expected = (s, onset) => {
     const lead = causesFor(s).all.find(c => c.cat !== "mimic");
     if (!WIN.has(compartmentOf(s)) || !lead || lead.cat !== "vascular") return false;
-    const at = causesFor(s, { onset }).all;
-    return at.length > 0 && !at.some(c => c.name === lead.name);
+    const at = causesFor(s, { onset }).all, next = leadingCause(at);
+    return at.length > 0 && !at.some(c => c.name === lead.name) && !!next && next.cat !== "mimic";
   };
   const counts = {}, wrong = [];
   for (const onset of ONSETS) {
@@ -50,8 +51,10 @@ const site = id => SITES.find(s => s.id === id);
     }
   }
   ok("it fires exactly where the onset sets aside a stroke-window site's vascular leading cause", wrong.length === 0, wrong.join(", "));
-  ok("site kinds: hyperacute 1, acute 0, subacute 40, chronic 42",
-     same(counts, { hyperacute: 1, acute: 0, subacute: 40, chronic: 42 }), JSON.stringify(counts));
+  // 40 / 42 as first built; the review round's mimic ruling took out the 3 subacute and 5 chronic cases where a
+  // mimic leads, so the site plan stands there (section 9).
+  ok("site kinds: hyperacute 1, acute 0, subacute 37, chronic 37",
+     same(counts, { hyperacute: 1, acute: 0, subacute: 37, chronic: 37 }), JSON.stringify(counts));
   ok("the one hyperacute case is the optic nerve (AION)",
      KINDS.filter(s => onsetFollows(s, "hyperacute")).map(kind).join() === "skull_base|optic_aion");
 }
@@ -106,13 +109,14 @@ const site = id => SITES.find(s => s.id === id);
 
 // ---- 6: the canary — no stroke referral beside a non-vascular most likely cause ----
 // Referrals conditional by their own wording ("stroke team if acute", "urgent stroke pathway if HINTS is central")
-// are correct at any onset and exempt.
+// are correct at any onset and exempt. So is a MIMIC in the lead: the site's plan stands there on purpose, because
+// it is the plan that warns against the mimic (owner ruling 4) — section 9 pins those.
 {
   const STROKE = /hyperacute|thromboly|thrombectomy|stroke team|stroke pathway|stroke\/TIA service/i;
   const CONDITIONAL = /(stroke|TIA)[^.;]*\bif\b|\bif (acute|HINTS|central)/i;
   const hits = onset => KINDS.filter(s => {
     const top = leadingCause(causesFor(s, { onset }).all), ref = pathologyNextStepsFor(s, null, { onset }).referral || "";
-    return top && top.cat !== "vascular" && STROKE.test(ref) && !CONDITIONAL.test(ref);
+    return top && top.cat !== "vascular" && top.cat !== "mimic" && STROKE.test(ref) && !CONDITIONAL.test(ref);
   }).map(kind);
   ok("chronic onset: no site pairs a stroke referral with a non-vascular most likely cause", hits("chronic").length === 0, hits("chronic").join(", "));
   ok("subacute onset: only the retina, whose leading cause is GCA (spec §4, out of scope)",
@@ -141,6 +145,47 @@ const site = id => SITES.find(s => s.id === id);
      !/thromboly|hyperacute/i.test(slow.referral) && slow.urgency !== "emergency", `${slow.urgency} ${slow.referral}`);
   ok("…and with no onset the union is the two stroke plans, as before",
      /thromboly/i.test(none.referral) && none.urgency === "emergency");
+}
+
+// ---- 9: a mimic is never the default card (owner ruling 4) ----
+// Where the What line names a mimic, the site's own plan stands — it is the plan that warns against the mimic.
+{
+  const tp = site("left_cortex_temporoparietal");
+  const nx = pathologyNextStepsFor(tp, null, { onset: "subacute" });
+  ok("fluent aphasia at subacute onset: the What line names delirium, a mimic",
+     leadingCause(causesFor(tp, { onset: "subacute" }).all).cat === "mimic");
+  ok("…and the Next steps keep the site's stroke plan — a potentially missed stroke",
+     !nx.followed && /do not dismiss as delirium/i.test(nx.referral) && nx.urgency === "emergency", `${nx.urgency} ${nx.referral}`);
+  const bad = [];
+  for (const onset of ONSETS) for (const s of KINDS) {
+    const lead = leadingCause(causesFor(s, { onset }).all);
+    if (lead && lead.cat === "mimic" && !same(nextStepsFor(s, { onset }), sitePlan(s, { onset }))) bad.push(`${kind(s)}@${onset}`);
+  }
+  ok("wherever a mimic leads, the Next steps are the site's own plan", bad.length === 0, bad.join(", "));
+}
+
+// ---- 10: central post-stroke pain is a SEQUEL — a possibility that never leads (owner ruling 5) ----
+{
+  const tagged = [];
+  for (const s of KINDS) for (const c of causesFor(s).all) if (c.after) tagged.push(`${kind(s)}: ${c.name} (after ${c.after})`);
+  ok("exactly the two post-stroke pain entries are sequels of a stroke",
+     tagged.length === 2 && tagged.every(t => /post-stroke pain/i.test(t) && /\(after stroke\)$/.test(t)), tagged.join("; "));
+  const led = [];
+  for (const onset of [undefined, ...ONSETS]) for (const s of KINDS) {
+    const l = leadingCause(causesFor(s, { onset }).all);
+    if (l && l.after) led.push(`${kind(s)}@${onset || "none"}`);
+  }
+  ok("a sequel is never the leading cause, at any site or onset", led.length === 0, led.join(", "));
+  const vpl = site("left_subcortex_thalamus"), vpm = site("left_thalamus_vpm");
+  const f = (s, onset) => (onsetFollows(s, onset) || {}).cause;
+  ok("pure sensory (VPL): subacute follows Demyelination, chronic follows Small metastasis / glioma",
+     f(vpl, "subacute") === "Demyelination" && f(vpl, "chronic") === "Small metastasis / glioma", `${f(vpl, "subacute")} / ${f(vpl, "chronic")}`);
+  ok("facial sensory (VPM): subacute follows Demyelination, chronic follows Small metastasis or glioma",
+     f(vpm, "subacute") === "Demyelination" && f(vpm, "chronic") === "Small metastasis or glioma", `${f(vpm, "subacute")} / ${f(vpm, "chronic")}`);
+  const w = whatLine({ causes: causesFor(vpl, { onset: "chronic" }).all });
+  ok("the What line names it in its own clause", w === "Most likely Small metastasis / glioma. After a previous stroke here: Déjerine-Roussy (central post-stroke pain).", w);
+  ok("…and it stays selectable, with its own authored plan",
+     causesFor(vpl, { onset: "chronic" }).all.some(c => c.after) && !!pathologyPlanFor("Déjerine-Roussy (central post-stroke pain)", vpl));
 }
 
 console.log(`\nonset follows the cause: ${pass} passed, ${fail} failed`);
