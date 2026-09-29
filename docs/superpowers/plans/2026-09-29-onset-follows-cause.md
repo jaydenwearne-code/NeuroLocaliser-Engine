@@ -658,3 +658,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   Tests added: suite sections 9 and 10, three `whatLine` cases, and the canary exempting mimic leads. The ratchet
   moved from 40/42 to **37/37**. Full suite: **82 suites / 7080 green**. Task 4 uses 7080, not 7068. With no onset the
   thalamus (VPL) and VPM What lines also gain the sequel clause, because post-stroke pain fits then as well.
+- **After Task 4, ruling 4 was revised** (owner: *"it can be mimics if the chronicity is specified as chronic"*).
+  The null condition became `cause.cat === "mimic" && onset !== "chronic"`, so at chronic onset five site kinds
+  follow a mimic again. The ratchet is now **37/42**, section 9 pins both halves, and the canary exempts mimic leads
+  only below chronic. Full suite: **82 suites / 7082 green**.

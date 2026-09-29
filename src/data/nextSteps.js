@@ -2395,10 +2395,12 @@ export function sitePlan(site, opts = {}) {
 // writes no clinical text — and it requires the followed cause to have an authored plan, so it can never fall back
 // to the site plan while claiming to follow.
 //
-// A MIMIC IS NEVER THE DEFAULT CARD (owner, review round): where the What line names a mimic, nothing is followed
-// and the site's own plan stands — it is the plan that warns against that mimic. A fluent aphasia presenting
-// subacutely with delirium in the lead is a potentially missed stroke ("do not dismiss as delirium"), not an
-// acute-medicine referral. (leadingCause already skips a sequel such as central post-stroke pain.)
+// A MIMIC IS NOT THE DEFAULT CARD — UNLESS THE ONSET IS CHRONIC (owner, review round, then revised the same day):
+// below chronic onset, where the What line names a mimic, nothing is followed and the site's own plan stands — it
+// is the plan that warns against that mimic. A fluent aphasia presenting subacutely with delirium in the lead is a
+// potentially missed stroke ("do not dismiss as delirium"), not an acute-medicine referral. Once the clinician has
+// said the deficit is CHRONIC, the mimic may lead the plan. (leadingCause already skips a sequel such as central
+// post-stroke pain.)
 export function onsetFollows(site, onset) {
   if (!onset || !STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return null;
   try {
@@ -2407,7 +2409,7 @@ export function onsetFollows(site, onset) {
     const at = causesFor(site, { onset }).all;
     if (at.some(c => c.name === lead.name)) return null;
     const cause = leadingCause(at);
-    if (!cause || cause.cat === "mimic" || !pathologyPlanFor(cause.name, site)) return null;
+    if (!cause || (cause.cat === "mimic" && onset !== "chronic") || !pathologyPlanFor(cause.name, site)) return null;
     return { cause: cause.name, setAside: lead.name, onset };
   } catch { return null; }
 }

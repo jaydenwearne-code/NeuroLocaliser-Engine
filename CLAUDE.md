@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**82 test suites / 7080 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**82 test suites / 7082 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1140,14 +1140,16 @@ follow the most likely cause (not a warning, not 43 authored slow-onset referral
 set aside, not every vascular cause (a cavernoma or a dural fistula is vascular and fits a slow onset, and kept
 the stroke plan beside a tumour).
 
-**Review-round rulings (on the 83-row before/after table):** (4) **a MIMIC is never the default card** — where the
-What line names a mimic the site's own plan stands, because it is the plan that warns against that mimic; decided
-on a fluent aphasia at subacute onset with delirium in the lead ("keep as potentially missed stroke, hence why
-presenting subacutely" — its plan says "do not dismiss as delirium"). (5) **central post-stroke pain is a SEQUEL**,
+**Review-round rulings (on the 83-row before/after table):** (4) **a MIMIC is not the default card — unless the onset
+is CHRONIC** — below chronic, where the What line names a mimic the site's own plan stands, because it is the plan
+that warns against that mimic; decided on a fluent aphasia at subacute onset with delirium in the lead ("keep as
+potentially missed stroke, hence why presenting subacutely" — its plan says "do not dismiss as delirium"). Revised
+the same day: "it can be mimics if the chronicity is specified as chronic" — at chronic onset the hand knob
+follows ulnar/median neuropathy, the vestibular nuclei vestibular migraine. (5) **central post-stroke pain is a SEQUEL**,
 tagged `after: "stroke"` on its two cause entries (thalamus VPL, VPM): `leadingCause` skips a sequel, so it never
 leads the What line or the Next steps, and the What line names it in its own clause — "After a previous stroke here:
 …" — while it stays listed and selectable. (6) the optic nerve (AION) follow at hyperacute onset is kept. Net reach:
-**37 site kinds at subacute, 37 at chronic, 1 at hyperacute, 0 at acute.**
+**37 site kinds at subacute, 42 at chronic, 1 at hyperacute, 0 at acute.**
 
 **Mechanics worth knowing:** `nextStepsFor` = `sitePlan` (the old body) + the follow, with NO added key where the
 rule does not fire — so no onset / acute onset is byte-identical. A SELECTION builds on `sitePlan`, never on the

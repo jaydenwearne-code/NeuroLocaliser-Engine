@@ -56,13 +56,14 @@ a non-vascular What line: **chronic 26 → 0, subacute 23 → 1** (the retina, �
 
 **Review round (owner, 2026-09-29), on the before/after table of all 83 changed cases:**
 
-4. **A mimic is never the default card.** Where the What line's most likely cause is a MIMIC, the Next steps do
-   not follow it: the site's own plan stands, because the site plan is the one that warns against that mimic. The
-   case that decided it: the temporoparietal cortex (fluent aphasia) at subacute onset, where the What line names
-   delirium — owner: *"keep as potentially missed stroke, hence why presenting subacutely"*; the site's plan says
-   "do not dismiss as delirium". The same rule keeps the hand knob's "do not label as a peripheral nerve problem
-   without imaging" and the central vestibular nucleus's "do not discharge as peripheral vertigo". Chosen over
-   following the first non-mimic cause, which would have sent that aphasia to neuro-oncology.
+4. **A mimic is not the default card — unless the onset is chronic.** Below chronic onset, where the What line's
+   most likely cause is a MIMIC, the Next steps do not follow it: the site's own plan stands, because the site plan
+   is the one that warns against that mimic. The case that decided it: the temporoparietal cortex (fluent aphasia)
+   at subacute onset, where the What line names delirium — owner: *"keep as potentially missed stroke, hence why
+   presenting subacutely"*; the site's plan says "do not dismiss as delirium". Chosen over following the first
+   non-mimic cause, which would have sent that aphasia to neuro-oncology. **Revised the same day** (owner: *"it can
+   be mimics if the chronicity is specified as chronic"*): once the clinician has said CHRONIC, the mimic may lead
+   the plan — the hand knob follows ulnar or median neuropathy, the vestibular nuclei follow vestibular migraine.
 5. **Central post-stroke pain stays a possibility, but as a SEQUEL — it never leads.** It is a consequence of a
    previous thalamic stroke, not a cause of new sensory loss, yet it was the What line's "most likely" at the
    thalamus (VPL) and the VPM at subacute and chronic onset, and the Next steps followed it to a routine stroke
@@ -90,7 +91,8 @@ It returns a cause only when ALL hold:
 - `causesFor(site, { onset }).all` no longer contains that cause (the onset set it aside);
 - the What line's cause at that onset exists and has an authored plan (`pathologyPlanFor`). Measured: every
   one does; the condition exists so the rule can never fall back to the site plan while claiming to follow;
-- **that cause is not a mimic** (ruling 4) — a mimic in the lead leaves the site's own plan standing.
+- **that cause is not a mimic, unless the onset is chronic** (ruling 4) — below chronic, a mimic in the lead
+  leaves the site's own plan standing.
 
 `cause` is the cause the What line names; `setAside` is the site's leading cause (for the note, §5).
 
@@ -122,19 +124,22 @@ disease's plan overrides as today.
 
 ## 4. Reach, and the cases worth knowing
 
-- **After the review-round rulings: subacute 37, chronic 37, hyperacute 1, acute 0.** No onset: 0. (As first
-  built: 40 and 42; ruling 4 took out the 3 subacute and 5 chronic cases where a mimic leads.) Badge EMERGENCY
-  among them: subacute 29 → 9, chronic 30 → 3.
+- **After the review-round rulings: subacute 37, chronic 42, hyperacute 1, acute 0.** No onset: 0. (As first
+  built: 40 and 42; ruling 4 took out the 3 subacute cases where a mimic leads.) Badge EMERGENCY among them:
+  subacute 29 → 9, chronic 32 → 3.
 - **One case fires at hyperacute: the optic nerve (AION).** The causes layer does not tag non-arteritic AION
   hyperacute, so a hyperacute onset sets it aside and the What line names perioperative ischaemic optic
   neuropathy. The Next line becomes "Emergency ophthalmology, with the surgical and anaesthetic teams"; the badge
   is EMERGENCY either way. Kept (the rule stays pure), and listed in the review table.
-- **Where the What line names a mimic, the site's own plan stands** (ruling 4) — five site kinds at chronic onset
-  (hand knob, cortical sensory hand, auditory cortex, thalamic VL, central vestibular nucleus) and three at
-  subacute (medial prefrontal, hand knob, temporoparietal). As first built, Next followed the mimic — the
-  temporoparietal cortex at subacute onset went to delirium's plan (acute medicine), though its own referral says
-  "do not dismiss as delirium". The What line still names the mimic, and the card's two lines differ there on
-  purpose: the site plan is the one that warns against it. The canary exempts these rows.
+- **Below chronic onset, where the What line names a mimic, the site's own plan stands** (ruling 4) — three site
+  kinds at subacute (medial prefrontal, hand knob, temporoparietal). As first built, Next followed the mimic — the
+  temporoparietal cortex went to delirium's plan (acute medicine), though its own referral says "do not dismiss
+  as delirium". The What line still names the mimic, and the card's two lines differ there on purpose: the site
+  plan is the one that warns against it. The canary exempts these rows.
+- **At chronic onset a mimic is followed** (ruling 4, revised) — five site kinds: hand knob → ulnar or median
+  neuropathy (routine, neurophysiology); cortical sensory hand → peripheral nerve or root lesion (routine);
+  auditory cortex → cochlear deafness (urgent, ENT / audiology); thalamic VL → essential tremor (routine, movement
+  disorders); vestibular nuclei → vestibular migraine (urgent, neurology).
 - **Where post-stroke pain fits the onset, the What line names it in its own clause** (ruling 5) — the thalamus
   (VPL) and the VPM, at subacute and chronic onset AND with no onset (it fits then too). The lead moves to the
   next cause, and at a slow onset the Next steps follow that: subacute → Demyelination (MS service), chronic →
@@ -146,7 +151,7 @@ disease's plan overrides as today.
 - **The canary.** After the change, at chronic onset no site shows an unconditional hyperacute or stroke-team
   referral beside a non-vascular What line (today: 26). Referrals that are conditional by their own wording
   ("stroke team if acute", "urgent stroke pathway if HINTS is central") are correct and exempt.
-- **Badges after the change, at chronic onset (37):** urgent 25, routine 9, emergency 3 — the three are causes
+- **Badges after the change, at chronic onset (42):** urgent 27, routine 12, emergency 3 — the three are causes
   whose own authored plan is an emergency.
 - **Known and left: the retina.** Its leading cause is giant cell arteritis (inflammatory), so the rule does not
   apply, and its referral ("IMMEDIATE ophthalmology AND acute stroke pathway") stands at every onset. Recorded,
@@ -197,19 +202,20 @@ note disappears.
 
 1. With no onset, and at acute onset, `nextStepsFor` deep-equals `sitePlan` for every site, with no `followed` key.
 2. At subacute and chronic, the rule fires exactly where §3's conditions hold, and the site-kind counts are the
-   measured 37 and 37 (40 and 42 before ruling 4), with 1 at hyperacute and 0 at acute (a ratchet: a content
+   measured 37 and 42 (40 and 42 before ruling 4), with 1 at hyperacute and 0 at acute (a ratchet: a content
    change that moves them must be looked at, not absorbed).
 3. When it fires: `immediate` and `investigations` are the site's; `confirmatory`, `monitoring`, `referral` equal
    the followed cause's `pathologyNextStepsFor` tiers; `urgency` equals `resolveUrgency(site, cause)`.
 4. The followed cause is always the cause `whatLine` names, and always has an authored plan.
 5. A selection wins: `pathologyNextStepsFor(site, name, { onset })` equals today's result (built on `sitePlan`)
    and carries no `followed`.
-6. The canary (§4), over every site, mimic leads exempt: 0 at chronic; at subacute, only the retina.
+6. The canary (§4), over every site, mimic leads below chronic exempt: 0 at chronic; at subacute, only the retina.
 7. The hyperacute escalation is untouched: every hyperacute assertion in `test/accuracy-mechanisms.test.js` and
    `test/next-steps.test.js` still holds unedited.
 8. Two lesions at a slow onset follow site by site; with no onset the union is unchanged.
-9. Ruling 4: wherever a mimic leads, `nextStepsFor` is the site's own plan; the temporoparietal cortex at subacute
-   onset keeps "do not dismiss as delirium", EMERGENCY.
+9. Ruling 4: below chronic onset, wherever a mimic leads, `nextStepsFor` is the site's own plan; the
+   temporoparietal cortex at subacute onset keeps "do not dismiss as delirium", EMERGENCY. At chronic onset exactly
+   five site kinds follow a mimic, the hand knob to ulnar or median neuropathy.
 10. Ruling 5: exactly the two post-stroke pain entries carry `after: "stroke"`; no sequel is ever the leading
     cause at any site or onset; the thalamus (VPL) and VPM follow Demyelination at subacute and a small
     metastasis / glioma at chronic; the What line carries the clause; the sequel stays selectable with its plan.
@@ -222,7 +228,7 @@ sequel clause. The existing four worked examples must pass unedited — none is 
 1. Branch `fix/onset-follows-cause`; TDD per §7; full suite green.
 2. **Owner review, one round:** a before/after table of every changed case (site kind × onset: most likely
    cause, old referral + badge, new referral + badge) — 83 rows as first built; rulings 4–6 (§2) came out of it,
-   leaving 75.
+   leaving 80.
 3. Browser check: the chronic card and the Next card note, desktop and 375px, light and dark.
 4. v0.10.1 (`package.json`, `app/brand.js`, README status); CLAUDE.md section; PR. The owner merges — merging
    deploys to testers.

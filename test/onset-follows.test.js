@@ -34,12 +34,13 @@ const site = id => SITES.find(s => s.id === id);
   const WIN = new Set(["brain", "brainstem", "cerebellum", "cord", "optic"]);
   // …and something still fits the onset: at subacute onset NO cause at the optic nerve (AION) fits, the What line
   // says so ("No cause here typically starts this way"), and there is nothing to follow — the site plan stands.
-  // …and what the What line names is not a MIMIC (owner ruling 4): a mimic in the lead leaves the site plan standing.
+  // …and what the What line names is not a MIMIC unless the onset is CHRONIC (owner ruling 4, revised): below
+  // chronic, a mimic in the lead leaves the site plan standing — a potentially missed stroke.
   const expected = (s, onset) => {
     const lead = causesFor(s).all.find(c => c.cat !== "mimic");
     if (!WIN.has(compartmentOf(s)) || !lead || lead.cat !== "vascular") return false;
     const at = causesFor(s, { onset }).all, next = leadingCause(at);
-    return at.length > 0 && !at.some(c => c.name === lead.name) && !!next && next.cat !== "mimic";
+    return at.length > 0 && !at.some(c => c.name === lead.name) && !!next && (next.cat !== "mimic" || onset === "chronic");
   };
   const counts = {}, wrong = [];
   for (const onset of ONSETS) {
@@ -51,10 +52,10 @@ const site = id => SITES.find(s => s.id === id);
     }
   }
   ok("it fires exactly where the onset sets aside a stroke-window site's vascular leading cause", wrong.length === 0, wrong.join(", "));
-  // 40 / 42 as first built; the review round's mimic ruling took out the 3 subacute and 5 chronic cases where a
-  // mimic leads, so the site plan stands there (section 9).
-  ok("site kinds: hyperacute 1, acute 0, subacute 37, chronic 37",
-     same(counts, { hyperacute: 1, acute: 0, subacute: 37, chronic: 37 }), JSON.stringify(counts));
+  // 40 / 42 as first built; the review round's mimic ruling took out the 3 subacute cases where a mimic leads, so
+  // the site plan stands there (section 9). At chronic onset a mimic is followed (ruling 4, revised), so 42 stands.
+  ok("site kinds: hyperacute 1, acute 0, subacute 37, chronic 42",
+     same(counts, { hyperacute: 1, acute: 0, subacute: 37, chronic: 42 }), JSON.stringify(counts));
   ok("the one hyperacute case is the optic nerve (AION)",
      KINDS.filter(s => onsetFollows(s, "hyperacute")).map(kind).join() === "skull_base|optic_aion");
 }
@@ -109,14 +110,15 @@ const site = id => SITES.find(s => s.id === id);
 
 // ---- 6: the canary — no stroke referral beside a non-vascular most likely cause ----
 // Referrals conditional by their own wording ("stroke team if acute", "urgent stroke pathway if HINTS is central")
-// are correct at any onset and exempt. So is a MIMIC in the lead: the site's plan stands there on purpose, because
-// it is the plan that warns against the mimic (owner ruling 4) — section 9 pins those.
+// are correct at any onset and exempt. So is a MIMIC in the lead below chronic onset: the site's plan stands there
+// on purpose, because it is the plan that warns against the mimic (owner ruling 4) — section 9 pins those. At
+// chronic onset a mimic is followed, so it is NOT exempt there.
 {
   const STROKE = /hyperacute|thromboly|thrombectomy|stroke team|stroke pathway|stroke\/TIA service/i;
   const CONDITIONAL = /(stroke|TIA)[^.;]*\bif\b|\bif (acute|HINTS|central)/i;
   const hits = onset => KINDS.filter(s => {
     const top = leadingCause(causesFor(s, { onset }).all), ref = pathologyNextStepsFor(s, null, { onset }).referral || "";
-    return top && top.cat !== "vascular" && top.cat !== "mimic" && STROKE.test(ref) && !CONDITIONAL.test(ref);
+    return top && top.cat !== "vascular" && !(top.cat === "mimic" && onset !== "chronic") && STROKE.test(ref) && !CONDITIONAL.test(ref);
   }).map(kind);
   ok("chronic onset: no site pairs a stroke referral with a non-vascular most likely cause", hits("chronic").length === 0, hits("chronic").join(", "));
   ok("subacute onset: only the retina, whose leading cause is GCA (spec §4, out of scope)",
@@ -147,8 +149,10 @@ const site = id => SITES.find(s => s.id === id);
      /thromboly/i.test(none.referral) && none.urgency === "emergency");
 }
 
-// ---- 9: a mimic is never the default card (owner ruling 4) ----
-// Where the What line names a mimic, the site's own plan stands — it is the plan that warns against the mimic.
+// ---- 9: a mimic is not the default card — unless the onset is chronic (owner ruling 4, revised) ----
+// Below chronic onset, where the What line names a mimic, the site's own plan stands — it is the plan that warns
+// against the mimic, and a deficit presenting subacutely is a potentially missed stroke. Once the clinician has
+// said CHRONIC, the mimic may lead the plan.
 {
   const tp = site("left_cortex_temporoparietal");
   const nx = pathologyNextStepsFor(tp, null, { onset: "subacute" });
@@ -157,11 +161,18 @@ const site = id => SITES.find(s => s.id === id);
   ok("…and the Next steps keep the site's stroke plan — a potentially missed stroke",
      !nx.followed && /do not dismiss as delirium/i.test(nx.referral) && nx.urgency === "emergency", `${nx.urgency} ${nx.referral}`);
   const bad = [];
-  for (const onset of ONSETS) for (const s of KINDS) {
+  for (const onset of ["hyperacute", "acute", "subacute"]) for (const s of KINDS) {
     const lead = leadingCause(causesFor(s, { onset }).all);
     if (lead && lead.cat === "mimic" && !same(nextStepsFor(s, { onset }), sitePlan(s, { onset }))) bad.push(`${kind(s)}@${onset}`);
   }
-  ok("wherever a mimic leads, the Next steps are the site's own plan", bad.length === 0, bad.join(", "));
+  ok("below chronic onset, wherever a mimic leads, the Next steps are the site's own plan", bad.length === 0, bad.join(", "));
+  const knob = site("left_cortex_hand_knob"), chronic = pathologyNextStepsFor(knob, null, { onset: "chronic" });
+  ok("at chronic onset a mimic may lead: the hand knob follows ulnar or median neuropathy",
+     !!chronic.followed && chronic.followed.cause === "Ulnar or median neuropathy (the mimic)" && !/stroke/i.test(chronic.referral),
+     `${JSON.stringify(chronic.followed)} ${chronic.referral}`);
+  const mimicFollows = KINDS.filter(s => { const f = onsetFollows(s, "chronic"); return f && leadingCause(causesFor(s, { onset: "chronic" }).all).cat === "mimic"; }).map(kind);
+  ok("…five site kinds follow a mimic at chronic onset",
+     mimicFollows.join() === "cortex|hand_knob,cortex|sensory_hand,cortex|auditory,thalamus|vl,central_vestibular|nucleus", mimicFollows.join(", "));
 }
 
 // ---- 10: central post-stroke pain is a SEQUEL — a possibility that never leads (owner ruling 5) ----
