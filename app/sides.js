@@ -42,6 +42,21 @@ export function buildSideOffers(sites) {
 const OFFERS = buildSideOffers(candidateSites());
 export const offersFor = f => OFFERS[f] || [{ key: "none", tokens: [`${f}@none`] }];
 
+// A SAVED LINK can carry a token on a side its finding is no longer offered on — the conus and cauda limb signs moved
+// from midline to both sides (spec 2026-09-29-conus-cauda-bilateral), and a stale @midline would match nothing and
+// load a false two-lesion answer. Midline becomes left + right where both are offered; anything else unoffered is
+// dropped. Offered tokens pass through untouched, in order.
+export function currentTokens(tokens) {
+  const out = [];
+  for (const tok of tokens) {
+    const [f, side] = tok.split("@");
+    const offered = offersFor(f).flatMap(o => o.tokens);
+    if (offered.includes(tok)) out.push(tok);
+    else if (side === "midline" && offered.includes(`${f}@left`) && offered.includes(`${f}@right`)) out.push(`${f}@left`, `${f}@right`);
+  }
+  return [...new Set(out)];
+}
+
 // A row TAP enters the finding on the reader's default side (spec 2026-09-27 §5.4): "Symptoms on" above the tree,
 // or a follow-up's parent side. It maps that default through the SAME offers the buttons show, so a tap can never
 // enter a token the panel does not offer. A finding with one fixed offer (none / both / midline) takes it whatever

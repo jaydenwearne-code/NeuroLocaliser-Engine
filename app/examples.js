@@ -32,8 +32,10 @@ export const EXAMPLES = [
     id: "cauda",
     label: "Cauda equina",
     teaches: "an emergency",
+    // Sciatica on BOTH sides — bilateral sciatica is the red flag, and it is what the Why line names (the cauda's
+    // limb signs are emitted on both sides, spec 2026-09-29-conus-cauda-bilateral).
     tokens: ["saddle_anaesthesia@midline", "sphincter_dysfunction@midline",
-             "radicular_pain@midline", "anal_wink_loss@midline"],
+             "radicular_pain@left", "radicular_pain@right", "anal_wink_loss@midline"],
     onset: "acute",
   },
   {

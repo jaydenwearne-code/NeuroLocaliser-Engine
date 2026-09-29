@@ -199,20 +199,20 @@ export const STRUCTURES = [
     note: "central cord Horner — hemibody anhidrosis (≥ ~T1)" },
 
   // ---- CAUDA EQUINA (lumbosacral nerve roots, below the conus) ----
-  { id: "ls_roots_motor",       level: "cauda", part: "equina", produces: "lmn_weakness",         crosses: false,
+  { id: "ls_roots_motor",       level: "cauda", part: "equina", produces: "lmn_weakness",         crosses: false, emit: "bilateral",
     note: "lumbosacral motor roots — flaccid, areflexic (LMN) leg weakness" },
   { id: "sacral_roots_sensory", level: "cauda", part: "equina", produces: "saddle_anaesthesia",    crosses: false,
     note: "S2–S5 sensory roots — saddle anaesthesia" },
   { id: "sacral_roots_autonom", level: "cauda", part: "equina", produces: "sphincter_dysfunction", crosses: false,
     note: "sacral parasympathetic roots — bladder/bowel/sphincter dysfunction" },
-  { id: "ls_roots_pain",        level: "cauda", part: "equina", produces: "radicular_pain",         crosses: false,
+  { id: "ls_roots_pain",        level: "cauda", part: "equina", produces: "radicular_pain",         crosses: false, emit: "bilateral",
     note: "compressed lumbosacral roots — radicular pain (sciatica), often asymmetric" },
 
   // ---- CONUS MEDULLARIS (sacral cord tip, ~T12–L1 vertebral) ----
   // The conus's UMN half, split into its two signs (owner ruling 2026-09-29): brisk reflexes AND an up-going plantar.
-  { id: "conus_cst",            level: "conus", part: "medullaris", produces: "hyperreflexia",        crosses: false,
+  { id: "conus_cst",            level: "conus", part: "medullaris", produces: "hyperreflexia",        crosses: false, emit: "bilateral",
     note: "corticospinal fibres at the conus — brisk reflexes (UMN)" },
-  { id: "conus_bab",            level: "conus", part: "medullaris", produces: "babinski",             crosses: false,
+  { id: "conus_bab",            level: "conus", part: "medullaris", produces: "babinski",             crosses: false, emit: "bilateral",
     note: "corticospinal fibres at the conus — extensor plantar (UMN)" },
   { id: "conus_sacral_sensory", level: "conus", part: "medullaris", produces: "saddle_anaesthesia",    crosses: false,
     note: "sacral cord segments — early symmetric saddle anaesthesia" },
@@ -1102,18 +1102,18 @@ export const STRUCTURES = [
   { id: "ic_spast", level: "subcortex", part: "internal_capsule", produces: "spasticity", note: "corticospinal (internal capsule) — increased tone, contra" },
   { id: "ctx_spast_leg", level: "cortex", part: "motor_leg", produces: "spasticity", note: "corticospinal (leg motor cortex) — increased tone, contra" },
   { id: "ctx_spast_arm", level: "cortex", part: "motor_facearm", produces: "spasticity", note: "corticospinal (arm motor cortex) — increased tone, contra" },
-  { id: "conus_spast", level: "conus", part: "medullaris", produces: "spasticity", crosses: false, note: "corticospinal fibres at the conus — increased tone (UMN), midline" },
+  { id: "conus_spast", level: "conus", part: "medullaris", produces: "spasticity", crosses: false, emit: "bilateral", note: "corticospinal fibres at the conus — increased tone (UMN), both legs" },
 
   // hypotonia: reduced tone — GENERALISED-flaccid LMN only (anterior horn, cauda, polyneuropathy).
   // NOT at individual roots/nerves (focal LMN has clinically normal limb tone), NMJ, or muscle.
   { id: "ah_hypotonia", level: "motor_unit", part: "anterior_horn", produces: "hypotonia", note: "anterior horn — flaccid, hypotonic (generalised LMN)" },
-  { id: "cauda_hypotonia", level: "cauda", part: "equina", produces: "hypotonia", crosses: false, note: "cauda equina — flaccid, hypotonic legs, midline" },
+  { id: "cauda_hypotonia", level: "cauda", part: "equina", produces: "hypotonia", crosses: false, emit: "bilateral", note: "cauda equina — flaccid, hypotonic, both legs" },
   { id: "poly_hypotonia", level: "polyneuropathy", part: "length_dependent", produces: "hypotonia", note: "length-dependent polyneuropathy — distal hypotonia (generalised LMN)" },
 
   // wasting: muscle atrophy — the broad LMN set. Requires innervated muscle, so it EXCLUDES pure-sensory
   // lat_fem_cutaneous, and (already LMN-excluded) NMJ + muscle. Non-localising, like fasciculations.
   { id: "ah_wasting", level: "motor_unit", part: "anterior_horn", produces: "wasting", note: "anterior horn — denervation wasting (generalised LMN)" },
-  { id: "cauda_wasting", level: "cauda", part: "equina", produces: "wasting", crosses: false, note: "cauda equina — denervation wasting, midline" },
+  { id: "cauda_wasting", level: "cauda", part: "equina", produces: "wasting", crosses: false, emit: "bilateral", note: "cauda equina — denervation wasting, both legs" },
   { id: "poly_wasting", level: "polyneuropathy", part: "length_dependent", produces: "wasting", note: "polyneuropathy — distal denervation wasting" },
   { id: "root_c5_wasting", level: "root", part: "c5", produces: "wasting", note: "C5 — segmental wasting (deltoid/biceps)" },
   { id: "root_c6_wasting", level: "root", part: "c6", produces: "wasting", note: "C6 — segmental wasting" },

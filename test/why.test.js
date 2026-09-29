@@ -65,8 +65,10 @@ const stepOf = (w, tok) => w.steps.find(s => s.token === tok);
 }
 {
   const { w } = chainFor(["babinski@left"]);
-  ok("an isolated Babinski does not localise: several places, cortex → cord",
-     w.verdict === "several" && w.steps[0].where === "cerebral cortex → spinal cord", w.steps[0].where);
+  // "Could arise at" lists every producer: the conus makes a left up-going plantar too (with the right — its limb
+  // signs are on both sides), though the differential rules it out here by the known-negative rule.
+  ok("an isolated Babinski does not localise: several places, cortex → cord (and the conus)",
+     w.verdict === "several" && w.steps[0].where === "cerebral cortex → spinal cord, conus", w.steps[0].where);
 }
 {
   const two = EXAMPLES.find(e => e.id === "twolesions");
@@ -122,7 +124,8 @@ const vig = label => VIGNETTES.find(v => v.label === label).tokens;
     "Brown-Sequard": "left weak_leg + right spinothalamic",
     "Complete dominant MCA": "speech_nonfluent + right homonymous_hemianopia",
     "CN III compressive (pupil involved)": "left fixed_dilated_pupil + left ptosis",
-    "Guillain-Barré (symmetric LMN + areflexia)": "bilateral lmn_weakness + bilateral reflex_knee_loss",
+    // Bilateral flaccid weakness now also fits the cauda (its limb signs are on both sides), so the knee jerks lead.
+    "Guillain-Barré (symmetric LMN + areflexia)": "bilateral reflex_knee_loss + bilateral lmn_weakness",
     "L5 radiculopathy": "left sensory_l5",
   };
   for (const [label, want] of Object.entries(expect)) ok(`clues — ${label}: ${want}`, said(cluesOf(vig(label))) === want, said(cluesOf(vig(label))));
