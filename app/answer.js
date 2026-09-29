@@ -3,7 +3,7 @@
 // what the detail cards below already compute. Findings are named as the app shows them — the plain label with
 // its proper name in brackets (displayLabel, owner ruling 2026-09-29).
 import { whyChain, whyClues } from "../src/engine/why.js";
-import { causesFor } from "../src/data/causes.js";
+import { causesFor, rankCauses, leadingCause } from "../src/data/causes.js";
 import { pathologyNextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
@@ -15,7 +15,6 @@ import { displayLabel } from "./plain-labels.js";
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const andList = xs => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 const orList = xs => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} or ${xs[xs.length - 1]}`);
-const RANK = { common: 0, uncommon: 1, rare: 2 };
 
 // ---- Where ----
 export function whereLine({ place, others = [], cover = null, fit = null }) {
@@ -46,14 +45,21 @@ export function whySentence(w) {
 
 // ---- What ----
 // `causes` are the concordant causes (causesFor().all); a cause set aside by the onset is only counted.
-export function whatLine({ causes = [], demotedCount = 0, selected = null, entity = null, twoLesions = false }) {
+// `oldStroke`: a chronic onset set the site's infarct aside and the plan follows another cause — but a deficit present
+// for months is often a residual OLD stroke, so the line says so (owner, 2026-09-29).
+export function whatLine({ causes = [], demotedCount = 0, selected = null, entity = null, twoLesions = false, oldStroke = false }) {
   if (selected) return `Selected: ${selected}.`;
   if (twoLesions) return entity ? `Together: ${entity}.` : "No catalogued disease spans these places — see Together.";
-  // Stable sort: within a likelihood the curated list order stands.
-  const ranked = [...causes].sort((a, b) => (RANK[a.likelihood] ?? 3) - (RANK[b.likelihood] ?? 3));
+  // rankCauses/leadingCause are the ranking the Next steps' onset rule reads too, so What and Next name the same
+  // cause. A SEQUEL (`after`, e.g. central post-stroke pain) never leads and is never the must-not-miss — it is
+  // named in its own clause, as what may follow an earlier event (owner, 2026-09-29).
+  const ranked = rankCauses(causes);
   if (!ranked.length) return demotedCount ? `No cause here typically starts this way — ${demotedCount} set aside.` : "";
-  const top = ranked[0], mustNot = ranked.find(c => c.red && c !== top);
-  return `Most likely ${top.name}${top.red ? " (must not miss)" : ""}.${mustNot ? ` Must not miss: ${mustNot.name}.` : ""}`;
+  const top = leadingCause(causes), mustNot = ranked.find(c => c.red && c !== top && !c.after);
+  const sq = ranked.find(c => c.after), sequel = sq ? `After a previous ${sq.after} here: ${sq.name}.` : "";
+  if (!top) return sequel;
+  return `Most likely ${top.name}${top.red ? " (must not miss)" : ""}.${mustNot ? ` Must not miss: ${mustNot.name}.` : ""}`
+    + `${oldStroke ? " Could represent an old stroke." : ""}${sequel ? ` ${sequel}` : ""}`;
 }
 
 // ---- which workup is on screen ----
@@ -97,6 +103,7 @@ export function answerFor(st) {
     what: whatLine({
       causes: res.all, demotedCount: (res.demoted || []).length,
       selected: (twoLesions ? st.selectedEntity : st.selectedPathology) || null, entity, twoLesions,
+      oldStroke: !!(nx.followed && nx.followed.onset === "chronic"),
     }),
     next: nx.referral || "",
     red: entityRed || nameForSite(st.sel.site).red || null,

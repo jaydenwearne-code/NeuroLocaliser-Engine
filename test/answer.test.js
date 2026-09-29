@@ -39,6 +39,18 @@ eq("nothing fits the onset", whatLine({ causes: [], demotedCount: 4 }), "No caus
 eq("a selected cause", whatLine({ causes: [c("A", "common")], selected: "Vertebral artery dissection" }), "Selected: Vertebral artery dissection.");
 eq("two lesions: the spanning disease", whatLine({ twoLesions: true, entity: "Multiple sclerosis" }), "Together: Multiple sclerosis.");
 eq("two lesions, nothing catalogued", whatLine({ twoLesions: true }), "No catalogued disease spans these places — see Together.");
+// A SEQUEL (`after`) names what may follow an earlier event — never the most likely cause of a new presentation
+// (owner ruling 2026-09-29): it gets its own clause instead.
+const seq = { name: "S", likelihood: "common", red: false, after: "stroke" };
+eq("a sequel never leads; it gets its own clause", whatLine({ causes: [seq, c("A", "uncommon")] }), "Most likely A. After a previous stroke here: S.");
+eq("…after the must-not-miss", whatLine({ causes: [seq, c("A", "common"), c("B", "rare", true)] }), "Most likely A. Must not miss: B. After a previous stroke here: S.");
+eq("only a sequel fits", whatLine({ causes: [seq] }), "After a previous stroke here: S.");
+// A chronic onset set the site's infarct aside, but a deficit present for months is often a residual OLD stroke
+// (owner, 2026-09-29): the clause sits after the must-not-miss and before any sequel.
+eq("an old stroke is possible", whatLine({ causes: [c("A", "common")], oldStroke: true }), "Most likely A. Could represent an old stroke.");
+eq("…before the sequel clause", whatLine({ causes: [seq, c("A", "common"), c("B", "rare", true)], oldStroke: true }),
+   "Most likely A. Must not miss: B. Could represent an old stroke. After a previous stroke here: S.");
+eq("…and a selection says only what was selected", whatLine({ causes: [c("A", "common")], selected: "A", oldStroke: true }), "Selected: A.");
 
 // ---- the whole card, on the four worked examples ----
 const stateFor = ex => {
@@ -91,6 +103,23 @@ const ex = id => EXAMPLES.find(e => e.id === id);
   eq("a selected cause — What", out.lines.what, "Selected: Vertebral artery dissection.");
   eq("a selected cause — Next follows its plan",
      out.lines.next, pathologyNextStepsFor(st.sel.site, "Vertebral artery dissection", { onset: st.onset }).referral);
+}
+
+{
+  // A slow onset no longer reads the stroke plan beside a tumour (spec 2026-09-29): the Next line and the badge
+  // follow the cause the What line names.
+  const st = stateFor({ tokens: ["weak_arm@right", "hyperreflexia@right"], onset: "chronic" });
+  const out = answerFor(st);
+  eq("chronic — the answer is the motor cortex", st.sel.site.id, "left_cortex_motor_facearm");
+  eq("chronic — What names the tumour, and that it could be an old stroke", out.lines.what, "Most likely Glioma / metastasis. Could represent an old stroke.");
+  eq("chronic — Next follows it", out.lines.next, "Neuro-oncology multidisciplinary team, with neurosurgery");
+  eq("chronic — the badge follows it", out.nx.urgency, "urgent");
+  const sub = answerFor(stateFor({ tokens: ["weak_arm@right", "hyperreflexia@right"], onset: "subacute" }));
+  ok("subacute — the plan follows too, but the old-stroke clause is chronic-only",
+     !!sub.nx.followed && !/old stroke/.test(sub.lines.what), sub.lines.what);
+  const hyper = answerFor(stateFor({ tokens: ["weak_arm@right", "hyperreflexia@right"], onset: "hyperacute" }));
+  eq("hyperacute — still the stroke plan", hyper.lines.next, "Hyperacute stroke pathway — assess for thrombolysis / thrombectomy within the window.");
+  ok("…and no old-stroke clause", !/old stroke/.test(hyper.lines.what), hyper.lines.what);
 }
 
 console.log(`\nanswer card: ${pass} passed, ${fail} failed`);

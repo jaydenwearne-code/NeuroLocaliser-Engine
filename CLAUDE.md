@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**81 test suites / 7048 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**82 test suites / 7087 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1119,11 +1119,53 @@ ONLY appear under a ticked finding, on its side, keeping their own rows (RAPD wi
   needed `thal_face`). Several scored-path assertions moved to the DISPLAYED answer where the tie is broken by the
   prevalence prior or the known-negative rule — the accuracy round's precedent.
 
-**Known and deliberately left:** at chronic onset the What line can name a tumour while Next still reads the site's
-stroke plan — the tier split (site-level until a cause is selected) is the owner's rule, but on one card it reads
-oddly; raised with the owner.
+**Closed 2026-09-29 (v0.10.1):** the chronic-onset tumour-plus-stroke-plan pairing was a clinical-safety defect,
+not an oddity — see "Onset follows the cause" below.
 
 Spec/plan: `docs/superpowers/specs/2026-09-27-ed-first-glance-design.md`, `docs/superpowers/plans/2026-09-27-ed-first-glance.md`.
+
+## Onset follows the cause (DONE 2026-09-29, v0.10.1) — ✅ owner-approved rule + review-round rulings
+
+**The defect.** At a chronic onset the What line named a glioma while the Next line read "Hyperacute stroke pathway
+— assess for thrombolysis / thrombectomy within the window", EMERGENCY. The causes layer already set the infarct
+aside; the Next steps layer never asked — its only onset rule was the hyperacute ESCALATION, and nothing
+de-escalated. 42 stroke-site kinds at chronic onset, 40 at subacute.
+
+**The rule** (`onsetFollows()` in `src/data/nextSteps.js`, the mirror of `hyperacuteVascular()`): a stroke-window
+site whose leading cause is vascular, at an onset that sets THAT cause aside, FOLLOWS the cause the What line
+names. Confirmatory, monitoring, referral and urgency become that cause's authored plan (urgency resolved as a
+selection would be, the must-not-miss floor included); immediate and first-line stay the site's — THE TIER
+SPLIT is unchanged. It only chooses between signed-off plans and writes no clinical text. **Owner rulings:**
+follow the most likely cause (not a warning, not 43 authored slow-onset referrals); trigger on the INFARCT being
+set aside, not every vascular cause (a cavernoma or a dural fistula is vascular and fits a slow onset, and kept
+the stroke plan beside a tumour).
+
+**Review-round rulings (on the 83-row before/after table):** (4) **a MIMIC is not the default card — unless the onset
+is CHRONIC** — below chronic, where the What line names a mimic the site's own plan stands, because it is the plan
+that warns against that mimic; decided on a fluent aphasia at subacute onset with delirium in the lead ("keep as
+potentially missed stroke, hence why presenting subacutely" — its plan says "do not dismiss as delirium"). Revised
+the same day: "it can be mimics if the chronicity is specified as chronic" — at chronic onset the hand knob
+follows ulnar/median neuropathy, the vestibular nuclei vestibular migraine. (5) **central post-stroke pain is a SEQUEL**,
+tagged `after: "stroke"` on its two cause entries (thalamus VPL, VPM): `leadingCause` skips a sequel, so it never
+leads the What line or the Next steps, and the What line names it in its own clause — "After a previous stroke here:
+…" — while it stays listed and selectable. (6) the optic nerve (AION) follow at hyperacute onset is kept. (7) at
+every CHRONIC follow the What line adds "Could represent an old stroke." (a deficit present for months is often a
+residual old stroke; `whatLine({ oldStroke })`, chronic only). Net reach: **37 site kinds at subacute, 42 at chronic,
+1 at hyperacute, 0 at acute.**
+
+**Mechanics worth knowing:** `nextStepsFor` = `sitePlan` (the old body) + the follow, with NO added key where the
+rule does not fire — so no onset / acute onset is byte-identical. A SELECTION builds on `sitePlan`, never on the
+followed plan, and `resolveUrgency` must read `sitePlan` (reading `nextStepsFor` recurses forever). The What line
+and the rule share `rankCauses`/`leadingCause` (`causes.js`). The Next card says why in one derived line
+("Following the most likely cause, X. A chronic onset rules out Y, which this site's usual plan is written for.").
+The Together card follows automatically (it unions per-site `nextStepsFor`). The What line's sequel clause also
+shows with NO onset (post-stroke pain fits then too).
+
+**Known and left:** the retina — its leading cause is GCA, so the rule does not apply and "acute stroke pathway"
+stands at every onset; the rule for NON-stroke sites (up to 99 site kinds) is its own decision; at subacute onset
+the optic nerve (AION) has NO cause fitting the onset, so nothing is followed.
+
+Spec/plan: `docs/superpowers/specs/2026-09-29-onset-follows-cause-design.md`, `docs/superpowers/plans/2026-09-29-onset-follows-cause.md`.
 
 ## Commands
 
