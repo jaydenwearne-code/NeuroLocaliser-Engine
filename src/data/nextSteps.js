@@ -3,14 +3,14 @@
 // These are TEACHING PROMPTS, not clinical directives — no drug doses, no definitive management. The app
 // pairs them with an explicit "not clinical advice" disclaimer.
 //
-//   nextStepsFor(site, { onset }) -> { immediate, investigations, confirmatory, monitoring, urgency, referral, curated }
+//   nextStepsFor(site, { onset }) -> { immediate, investigations, confirmatory, monitoring, urgency, referral, curated[, followed] }
 //
 // Curated per-site entries (by site.id, else level_part) carry the site-specific first-line investigations
 // and referral; the immediate / confirmatory / monitoring tiers are DERIVED from urgency + region so EVERY
 // site gets a full, structured plan (derive-don't-store spirit). A curated entry may override any tier via
 // its optional `extra` ({ immediate, confirmatory, monitoring }).
 import { expectedFindings } from "../engine/forward.js";
-import { CAUSES, causesFor } from "./causes.js";
+import { CAUSES, causesFor, leadingCause } from "./causes.js";
 import { compartmentOf } from "../model/compartments.js";
 import { pathologyPlanFor } from "./pathologyNextSteps.js";
 import { multifocalPlanFor } from "./multifocalNextSteps.js";
@@ -2335,7 +2335,7 @@ function causeEntry(site, causeName) {
 }
 
 export function resolveUrgency(site, causeName, opts = {}) {
-  const siteUrgency = nextStepsFor(site, opts).urgency || "routine";
+  const siteUrgency = sitePlan(site, opts).urgency || "routine";
   if (!causeName) return siteUrgency;
   const plan = pathologyPlanFor(causeName, site);
   const chosen = (plan && plan.urgency) || siteUrgency;
@@ -2363,7 +2363,10 @@ export function hyperacuteVascular(site, onset) {
 }
 
 // ---- public API ----
-export function nextStepsFor(site, opts = {}) {
+// The site's OWN plan — curated, else derived — with the hyperacute escalation. A selected cause builds on this
+// (pathologyNextStepsFor, resolveUrgency), never on a followed plan, so a selection behaves exactly as it did
+// before the onset rule below existed.
+export function sitePlan(site, opts = {}) {
   const key = NEXT[site.id] ? site.id : `${site.level}_${site.part}`;
   const base = NEXT[key] ? { ...NEXT[key], curated: true } : { ...derive(site), curated: false };
   // The ophthalmic prompt is appended (never spliced into the curated array in place, which would mutate
@@ -2379,6 +2382,50 @@ export function nextStepsFor(site, opts = {}) {
   };
 }
 
+// ---- the onset follows the cause (spec 2026-09-29, owner rulings) ----
+// hyperacuteVascular()'s mirror: that rule ESCALATES a stroke-window site inside the window; nothing ever
+// de-escalated, so a site's stroke plan was shown at every onset — "Hyperacute stroke pathway — assess for
+// thrombolysis", EMERGENCY, beside a What line that had already named a glioma for a chronic onset.
+//
+// A stroke-window site's plan is written for its LEADING cause, the infarct (the first non-mimic, as
+// hyperacuteVascular reads it). When the entered onset sets that cause aside, the plan no longer applies, and the
+// Next steps FOLLOW the cause the What line names (leadingCause — the same ranking). The trigger is the infarct
+// being set aside, NOT every vascular cause (owner): a cavernoma or a dural fistula is vascular, fits a slow
+// onset, and would otherwise keep the stroke plan beside a tumour. It only CHOOSES between signed-off plans — it
+// writes no clinical text — and it requires the followed cause to have an authored plan, so it can never fall back
+// to the site plan while claiming to follow.
+export function onsetFollows(site, onset) {
+  if (!onset || !STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return null;
+  try {
+    const lead = causesFor(site).all.find(c => c.cat !== "mimic");
+    if (!lead || lead.cat !== "vascular") return null;
+    const at = causesFor(site, { onset }).all;
+    if (at.some(c => c.name === lead.name)) return null;
+    const cause = leadingCause(at);
+    if (!cause || !pathologyPlanFor(cause.name, site)) return null;
+    return { cause: cause.name, setAside: lead.name, onset };
+  } catch { return null; }
+}
+
+// The plan the Next card shows with nothing selected. THE TIER SPLIT holds: immediate and first-line stay the
+// site's — done before the cause is known, and what identifies it. Confirmatory, monitoring, referral and urgency
+// become the followed cause's, resolved exactly as a selection of it would be. Where the rule does not fire this
+// is sitePlan() with no added key, so with no onset, or at acute onset, nothing changes.
+export function nextStepsFor(site, opts = {}) {
+  const base = sitePlan(site, opts);
+  const followed = onsetFollows(site, opts.onset);
+  if (!followed) return base;
+  const plan = pathologyPlanFor(followed.cause, site);
+  return {
+    ...base,
+    confirmatory: plan.confirmatory,
+    monitoring: plan.monitoring,
+    urgency: resolveUrgency(site, followed.cause, opts),
+    referral: plan.referral || base.referral,
+    followed,
+  };
+}
+
 // The same plan, narrowed to ONE pathology (spec 2026-08-18). Immediate and first-line stay site-level —
 // they are performed before the cause is known, and are what identify it. Confirmatory, monitoring,
 // urgency and referral become pathology-level where a plan is authored.
@@ -2391,8 +2438,8 @@ export function nextStepsFor(site, opts = {}) {
 // `causeName: null` returns exactly what nextStepsFor() returns, so the card has ONE code path and the
 // no-selection view cannot drift from the pre-2026-08-18 behaviour.
 export function pathologyNextStepsFor(site, causeName, opts = {}) {
-  const base = nextStepsFor(site, opts);
-  if (!causeName) return { ...base, pathology: null, pathologyCurated: false };
+  if (!causeName) return { ...nextStepsFor(site, opts), pathology: null, pathologyCurated: false };
+  const base = sitePlan(site, opts);
   const plan = pathologyPlanFor(causeName, site);
   return {
     ...base,

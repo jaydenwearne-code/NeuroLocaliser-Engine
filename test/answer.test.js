@@ -93,5 +93,18 @@ const ex = id => EXAMPLES.find(e => e.id === id);
      out.lines.next, pathologyNextStepsFor(st.sel.site, "Vertebral artery dissection", { onset: st.onset }).referral);
 }
 
+{
+  // A slow onset no longer reads the stroke plan beside a tumour (spec 2026-09-29): the Next line and the badge
+  // follow the cause the What line names.
+  const st = stateFor({ tokens: ["weak_arm@right", "hyperreflexia@right"], onset: "chronic" });
+  const out = answerFor(st);
+  eq("chronic — the answer is the motor cortex", st.sel.site.id, "left_cortex_motor_facearm");
+  eq("chronic — What names the tumour", out.lines.what, "Most likely Glioma / metastasis.");
+  eq("chronic — Next follows it", out.lines.next, "Neuro-oncology multidisciplinary team, with neurosurgery");
+  eq("chronic — the badge follows it", out.nx.urgency, "urgent");
+  const hyper = answerFor(stateFor({ tokens: ["weak_arm@right", "hyperreflexia@right"], onset: "hyperacute" }));
+  eq("hyperacute — still the stroke plan", hyper.lines.next, "Hyperacute stroke pathway — assess for thrombolysis / thrombectomy within the window.");
+}
+
 console.log(`\nanswer card: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

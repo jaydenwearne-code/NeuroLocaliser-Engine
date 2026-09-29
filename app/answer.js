@@ -3,7 +3,7 @@
 // what the detail cards below already compute. Findings are named as the app shows them — the plain label with
 // its proper name in brackets (displayLabel, owner ruling 2026-09-29).
 import { whyChain, whyClues } from "../src/engine/why.js";
-import { causesFor } from "../src/data/causes.js";
+import { causesFor, rankCauses } from "../src/data/causes.js";
 import { pathologyNextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
@@ -15,7 +15,6 @@ import { displayLabel } from "./plain-labels.js";
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const andList = xs => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 const orList = xs => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} or ${xs[xs.length - 1]}`);
-const RANK = { common: 0, uncommon: 1, rare: 2 };
 
 // ---- Where ----
 export function whereLine({ place, others = [], cover = null, fit = null }) {
@@ -49,8 +48,8 @@ export function whySentence(w) {
 export function whatLine({ causes = [], demotedCount = 0, selected = null, entity = null, twoLesions = false }) {
   if (selected) return `Selected: ${selected}.`;
   if (twoLesions) return entity ? `Together: ${entity}.` : "No catalogued disease spans these places — see Together.";
-  // Stable sort: within a likelihood the curated list order stands.
-  const ranked = [...causes].sort((a, b) => (RANK[a.likelihood] ?? 3) - (RANK[b.likelihood] ?? 3));
+  // rankCauses is the ranking the Next steps' onset rule reads too, so What and Next name the same cause.
+  const ranked = rankCauses(causes);
   if (!ranked.length) return demotedCount ? `No cause here typically starts this way — ${demotedCount} set aside.` : "";
   const top = ranked[0], mustNot = ranked.find(c => c.red && c !== top);
   return `Most likely ${top.name}${top.red ? " (must not miss)" : ""}.${mustNot ? ` Must not miss: ${mustNot.name}.` : ""}`;

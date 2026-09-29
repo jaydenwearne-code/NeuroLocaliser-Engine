@@ -3163,6 +3163,18 @@ export function causesFor(site, { onset } = {}) {
   return { byCategory, demoted, all: concordant, onset: onset || null, derived, source };
 }
 
+// ---- the cause the What line names (spec 2026-09-29) ----
+// Most likely first, the curated order standing within a likelihood (a stable sort); a cause without a likelihood
+// goes last. ONE ranking, shared by the answer card's What line and the Next steps' onset rule (nextSteps.js
+// onsetFollows), so the two lines of the card can never name different causes.
+const likelihoodRank = c => { const i = LIKELIHOOD.indexOf(c.likelihood); return i < 0 ? LIKELIHOOD.length : i; };
+export function rankCauses(causes) {
+  return [...causes].sort((a, b) => likelihoodRank(a) - likelihoodRank(b));
+}
+export function leadingCause(causes) {
+  return rankCauses(causes)[0] || null;
+}
+
 // ---- CROSS-SITE MERGE (spec 2026-08-14 §6) ----
 // Which causes are plausible at MORE THAN ONE of these sites? Measured before designing: 856 distinct
 // cause names, only 147 repeat verbatim. The family builders (sbSpine/nvSpine/rtSpine) produce identical
