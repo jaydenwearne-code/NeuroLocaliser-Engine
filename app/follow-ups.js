@@ -5,7 +5,7 @@
 // 2026-09-27). Ticking the parent ENTERS it, so a different kind of finding must never nest here: myotomes under
 // "leg weakness" would hand a peroneal foot drop a pyramidal finding it does not have.
 //
-// REVIEW STATUS: ⚠ AWAITING CLINICAL REVIEW (round 2 of 3, spec 2026-09-27 §8).
+// REVIEW STATUS: ✅ SIGNED OFF by the owner (a clinician), 2026-09-29 — review round 2 of 3, approved as drafted.
 import { EXAM_TREE } from "./exam-map.js";
 
 // Key order is display priority: a follow-up shared by two entered parents shows under the first listed here.
