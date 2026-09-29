@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: NOT STARTED.** Spec: `docs/superpowers/specs/2026-09-27-ed-first-glance-design.md` (owner-approved 2026-09-27).
+**Status: IMPLEMENTED (2026-09-29)** — see the execution log at the end. Spec: `docs/superpowers/specs/2026-09-27-ed-first-glance-design.md` (owner-approved 2026-09-27).
 
 **Goal:** make the first glance usable for ED testers — one answer card (Where / Why / What / Next + red flag) with the detail closed below, and an examination tree that leads with plain words, shows common findings first, and opens follow-ups under a ticked finding.
 

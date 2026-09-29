@@ -1,7 +1,7 @@
 # ED first glance: the answer card and a friendlier examination (design, 2026-09-27)
 
-**Status: DESIGN — approved section by section by the owner on 2026-09-27; revised the same day after the owner
-kept the examination tree as the input (§5); awaiting review of this written spec.**
+**Status: IMPLEMENTED (2026-09-29) on `feat/ed-first-glance`.** Review round 1 changed the model as well as the labels —
+see the plan's execution log.
 Branch: `feat/ed-first-glance` (off `main` at `ca4c164`).
 
 This is sub-project 3 of 3 from the 2026-09-25 request. Sub-project 1 (accuracy) is PR #11, sub-project 2
