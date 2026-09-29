@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: PLANNED (2026-09-29).** Spec: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md` (approved).
+**Status: IMPLEMENTED (2026-09-29).** Spec: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md` (approved).
 
 **Goal:** The classic conus and cauda pictures, entered with "Both" or one side, resolve to one lesion instead of
 "needs more than one lesion". This is done by emitting the seven conus and cauda limb signs on both sides.

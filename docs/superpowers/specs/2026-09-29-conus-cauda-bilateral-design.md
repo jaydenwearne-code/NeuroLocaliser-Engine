@@ -1,6 +1,6 @@
 # The conus and cauda signs are on both sides (design, 2026-09-29)
 
-**Status: APPROVED (2026-09-29).** Branch: `fix/conus-cauda-bilateral`, stacked on `fix/onset-follows-cause` (PR #14)
+**Status: IMPLEMENTED (2026-09-29).** Branch: `fix/conus-cauda-bilateral`, stacked on `fix/onset-follows-cause` (PR #14)
 at `49441eb`. Ships as v0.10.2, after PR #14.
 
 This closes the second of the two items left open by the ED first-glance release (PR #13), recorded there as "the
