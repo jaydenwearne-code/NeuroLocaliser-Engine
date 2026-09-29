@@ -209,8 +209,11 @@ export const STRUCTURES = [
     note: "compressed lumbosacral roots — radicular pain (sciatica), often asymmetric" },
 
   // ---- CONUS MEDULLARIS (sacral cord tip, ~T12–L1 vertebral) ----
-  { id: "conus_cst",            level: "conus", part: "medullaris", produces: "umn_signs",            crosses: false,
-    note: "corticospinal fibres at the conus — UMN signs (hyperreflexia, extensor plantar)" },
+  // The conus's UMN half, split into its two signs (owner ruling 2026-09-29): brisk reflexes AND an up-going plantar.
+  { id: "conus_cst",            level: "conus", part: "medullaris", produces: "hyperreflexia",        crosses: false,
+    note: "corticospinal fibres at the conus — brisk reflexes (UMN)" },
+  { id: "conus_bab",            level: "conus", part: "medullaris", produces: "babinski",             crosses: false,
+    note: "corticospinal fibres at the conus — extensor plantar (UMN)" },
   { id: "conus_sacral_sensory", level: "conus", part: "medullaris", produces: "saddle_anaesthesia",    crosses: false,
     note: "sacral cord segments — early symmetric saddle anaesthesia" },
   { id: "conus_sacral_autonom", level: "conus", part: "medullaris", produces: "sphincter_dysfunction", crosses: false,
@@ -372,8 +375,6 @@ export const STRUCTURES = [
     note: "VPL thalamus — the relay for the (already crossed) medial lemniscus" },
   { id: "thal_stt",  level: "subcortex", part: "thalamus", produces: "spinothalamic",
     note: "VPL thalamus — the relay for the (already crossed) spinothalamic tract" },
-  { id: "thal_pain", level: "subcortex", part: "thalamus", produces: "thalamic_pain",
-    note: "VPL thalamus — central post-stroke pain (Déjerine–Roussy), the same lesion delayed" },
   // ADDED 2026-09-26 (B11): VPM sits beside VPL, and the pure-sensory lacune is face, arm AND leg — as this
   // site's own phonebook note says. Without it a pure sensory stroke localised to the lateral midbrain.
   { id: "thal_face", level: "subcortex", part: "thalamus", produces: "face_sensory_loss",
@@ -576,6 +577,7 @@ export const STRUCTURES = [
   // territory. weak_hand is produced ONLY here, so it localises by parsimony; babinski marks the UMN nature.
   { id: "ctx_hand_knob", level: "cortex", part: "hand_knob", produces: "weak_hand", note: "precentral hand knob — isolated contralateral hand weakness (cortical hand)" },
   { id: "ctx_hand_bab",  level: "cortex", part: "hand_knob", produces: "babinski",   note: "hand-knob stroke — extensor plantar (UMN; separates it from a peripheral hand lesion)" },
+  { id: "ctx_hand_hyper", level: "cortex", part: "hand_knob", produces: "hyperreflexia", note: "hand-knob stroke — brisk reflexes (UMN)" },
   // POSTCENTRAL sensory hand — the sensory analogue: isolated cortical hand sensory loss (pseudo-peripheral;
   // with perioral loss = cheiro-oral syndrome, the hand↔mouth homuncular adjacency).
   { id: "ctx_sens_hand", level: "cortex", part: "sensory_hand", produces: "cortical_sensory_hand", note: "postcentral hand — isolated contralateral hand sensory loss (cortical / pseudo-peripheral)" },
@@ -590,6 +592,7 @@ export const STRUCTURES = [
   { id: "cr_forehead", level: "subcortex", part: "corona_radiata", produces: "forehead_spared", note: "corona radiata — forehead spared (UMN)" },
   { id: "cr_bab",  level: "subcortex", part: "corona_radiata", produces: "babinski",         note: "corona radiata — extensor plantar" },
   { id: "cr_hof",  level: "subcortex", part: "corona_radiata", produces: "hoffmann",         note: "corona radiata — Hoffmann" },
+  { id: "cr_hyper", level: "subcortex", part: "corona_radiata", produces: "hyperreflexia",     note: "corona radiata — brisk reflexes" },
   { id: "cr_spast",level: "subcortex", part: "corona_radiata", produces: "spasticity",       note: "corona radiata — increased tone" },
 
   // ---- PSEUDOBULBAR PALSY (bilateral corticobulbar) — composer-only BILATERAL level ----
@@ -791,7 +794,7 @@ export const STRUCTURES = [
 
   // ---- MOTOR UNIT (pure-motor endings: anterior horn / NMJ / muscle) ----
   // Generalized, symmetric conditions → each part is one BILATERAL site (see composeMotorUnitSites).
-  // The anterior horn is modelled as PURE LOWER MOTOR NEURONE: it carries NO umn_signs. ALS's UMN
+  // The anterior horn is modelled as PURE LOWER MOTOR NEURONE: it carries NO upper-motor-neurone signs. ALS's UMN
   // component comes from the corticospinal tract (above the motor unit); ALS is a PATHOLOGY that fires
   // on UMN+LMN co-occurrence across two sites — the future pathology layer, not a site here.
   // Fasciculations are a GENERAL LMN sign (any LMN level) and are non-localising in score.js.
@@ -820,8 +823,12 @@ export const STRUCTURES = [
     note: "myasthenic proximal/limb-girdle weakness" },
   { id: "lems_facil",level: "motor_unit", part: "nmj_presynaptic", produces: "facilitating_weakness",
     note: "pre-synaptic NMJ (VGCC) — post-exercise facilitation (Lambert-Eaton)" },
-  { id: "lems_auto", level: "motor_unit", part: "nmj_presynaptic", produces: "autonomic_features",
-    note: "Lambert-Eaton autonomic features — dry mouth, constipation" },
+  // Autonomic failure, one finding per sign (owner ruling 2026-09-29) — the same five as acute Guillain–Barré.
+  { id: "lems_dry_mouth",   level: "motor_unit", part: "nmj_presynaptic", produces: "dry_mouth",             note: "Lambert-Eaton autonomic — dry mouth" },
+  { id: "lems_constipation", level: "motor_unit", part: "nmj_presynaptic", produces: "constipation",         note: "Lambert-Eaton autonomic — constipation" },
+  { id: "lems_erectile",    level: "motor_unit", part: "nmj_presynaptic", produces: "erectile_dysfunction",  note: "Lambert-Eaton autonomic — erectile dysfunction" },
+  { id: "lems_bp",          level: "motor_unit", part: "nmj_presynaptic", produces: "labile_blood_pressure", note: "Lambert-Eaton autonomic — postural hypotension" },
+  { id: "lems_arrhythmia",  level: "motor_unit", part: "nmj_presynaptic", produces: "arrhythmia",            note: "Lambert-Eaton autonomic — heart-rate instability" },
   { id: "lems_prox", level: "motor_unit", part: "nmj_presynaptic", produces: "proximal_weakness",
     note: "Lambert-Eaton proximal/limb-girdle weakness" },
   { id: "myo_prox",  level: "motor_unit", part: "muscle", produces: "proximal_weakness",
@@ -933,7 +940,12 @@ export const STRUCTURES = [
   { id: "gbs_forehead",        level: "polyradiculoneuropathy", part: "acute", produces: "forehead_involved",          note: "LMN, so the forehead is weak too" },
   { id: "gbs_bulbar",          level: "polyradiculoneuropathy", part: "acute", produces: "dysphagia",                  note: "bulbar weakness — swallow and cough" },
   { id: "gbs_resp",            level: "polyradiculoneuropathy", part: "acute", produces: "weak_diaphragm",             note: "diaphragm weakness — measure the vital capacity, not the saturation" },
-  { id: "gbs_autonomic",       level: "polyradiculoneuropathy", part: "acute", produces: "autonomic_features",         note: "dysautonomia — arrhythmia and labile blood pressure" },
+  // Dysautonomia, one finding per sign (owner ruling 2026-09-29) — the same five as Lambert-Eaton.
+  { id: "gbs_dry_mouth",       level: "polyradiculoneuropathy", part: "acute", produces: "dry_mouth",             note: "dysautonomia — dry mouth" },
+  { id: "gbs_constipation",    level: "polyradiculoneuropathy", part: "acute", produces: "constipation",          note: "dysautonomia — constipation / ileus" },
+  { id: "gbs_erectile",        level: "polyradiculoneuropathy", part: "acute", produces: "erectile_dysfunction",  note: "dysautonomia — erectile dysfunction" },
+  { id: "gbs_bp",              level: "polyradiculoneuropathy", part: "acute", produces: "labile_blood_pressure", note: "dysautonomia — labile blood pressure" },
+  { id: "gbs_arrhythmia",      level: "polyradiculoneuropathy", part: "acute", produces: "arrhythmia",            note: "dysautonomia — arrhythmia" },
 
   // ---- NAMED PERIPHERAL NERVES (mononeuropathy; part = nerve) ----
   // Each nerve is a territory site: its cutaneous sensory territory + the movements it supplies. It
@@ -1044,16 +1056,23 @@ export const STRUCTURES = [
   // contralateral by default; the CORD structures override crosses:false (ipsilateral, below the level).
   { id: "cst_midbrain_bab", level: "midbrain", part: "medial", produces: "babinski", note: "corticospinal (midbrain) — extensor plantar, contra" },
   { id: "cst_midbrain_hof", level: "midbrain", part: "medial", produces: "hoffmann", note: "corticospinal (midbrain) — Hoffmann, contra" },
+  { id: "cst_midbrain_hyper", level: "midbrain", part: "medial", produces: "hyperreflexia", note: "corticospinal (midbrain) — brisk reflexes, contra" },
   { id: "cst_pons_bab", level: "pons", part: "medial", produces: "babinski", note: "corticospinal (pons) — extensor plantar, contra" },
   { id: "cst_pons_hof", level: "pons", part: "medial", produces: "hoffmann", note: "corticospinal (pons) — Hoffmann, contra" },
+  { id: "cst_pons_hyper", level: "pons", part: "medial", produces: "hyperreflexia", note: "corticospinal (pons) — brisk reflexes, contra" },
   { id: "pyr_bab", level: "medulla", part: "medial", produces: "babinski", note: "corticospinal (medullary pyramid) — extensor plantar, contra" },
   { id: "pyr_hof", level: "medulla", part: "medial", produces: "hoffmann", note: "corticospinal (medullary pyramid) — Hoffmann, contra" },
+  { id: "pyr_hyper", level: "medulla", part: "medial", produces: "hyperreflexia", note: "corticospinal (medullary pyramid) — brisk reflexes, contra" },
   { id: "cst_cord_bab", level: "cord", part: "anterior", produces: "babinski", crosses: false, note: "corticospinal (cord) — extensor plantar IPSI, below the level" },
   { id: "cst_cord_hof", level: "cord", part: "anterior", produces: "hoffmann", crosses: false, note: "corticospinal (cord) — Hoffmann IPSI (cervical myelopathy; generic-cord simplification)" },
+  { id: "cst_cord_hyper", level: "cord", part: "anterior", produces: "hyperreflexia", crosses: false, note: "corticospinal (cord) — brisk reflexes IPSI, below the level" },
   { id: "ic_bab", level: "subcortex", part: "internal_capsule", produces: "babinski", note: "corticospinal (internal capsule) — extensor plantar, contra" },
   { id: "ic_hof", level: "subcortex", part: "internal_capsule", produces: "hoffmann", note: "corticospinal (internal capsule) — Hoffmann, contra" },
+  { id: "ic_hyper", level: "subcortex", part: "internal_capsule", produces: "hyperreflexia", note: "corticospinal (internal capsule) — brisk reflexes, contra" },
   { id: "ctx_bab", level: "cortex", part: "motor_leg", produces: "babinski", note: "corticospinal (leg motor cortex) — extensor plantar, contra" },
   { id: "ctx_hof", level: "cortex", part: "motor_facearm", produces: "hoffmann", note: "corticospinal (arm motor cortex) — Hoffmann, contra" },
+  { id: "ctx_hyper_leg", level: "cortex", part: "motor_leg", produces: "hyperreflexia", note: "corticospinal (leg motor cortex) — brisk reflexes, contra" },
+  { id: "ctx_hyper_arm", level: "cortex", part: "motor_facearm", produces: "hyperreflexia", note: "corticospinal (arm motor cortex) — brisk reflexes, contra" },
   // Sacral superficial reflexes (S2–4 arc) — lost in a conus OR cauda lesion; @midline. Localising.
   { id: "conus_anal", level: "conus", part: "medullaris", produces: "anal_wink_loss", crosses: false, note: "S2–4 sacral arc — anal wink lost" },
   { id: "conus_bulbo", level: "conus", part: "medullaris", produces: "bulbocavernosus_loss", crosses: false, note: "S2–4 sacral arc — bulbocavernosus lost" },

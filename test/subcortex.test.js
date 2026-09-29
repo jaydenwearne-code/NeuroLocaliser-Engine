@@ -10,9 +10,9 @@ const log = [];
 function ok(label, cond) { log.push({ label, ok: !!cond }); cond ? pass++ : fail++; }
 
 // --- Task 1: vocabulary (2 new findings; the rest are reused) ---
-ok("thalamic_pain exists", isFinding("thalamic_pain"));
-ok("thalamic_pain crosses (contra)", CROSSES.thalamic_pain === true);
-ok("thalamic_pain is NOT non-lateralised", !NON_LATERALISED.has("thalamic_pain"));
+// thalamic_pain was REMOVED 2026-09-29 (owner ruling): central post-stroke pain cannot be told apart on
+// examination alone, so it is not an examination finding.
+ok("thalamic_pain is no longer a finding", !isFinding("thalamic_pain"));
 // reused findings — the capsule/thalamus/radiation do NOT invent new tokens (Approach A)
 for (const id of ["weak_arm","weak_leg","facial_weakness","forehead_spared","dorsal_sensory","spinothalamic","homonymous_hemianopia"])
   ok(`reused finding ${id} still exists`, isFinding(id));
@@ -24,11 +24,11 @@ const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // the capsule now also carries the UMN release signs (Babinski + Hoffmann) — the reflexes increment; a
 // capsular lacune is UMN, so this is clinically correct and keeps the pure-motor picture an exact match.
-ok("internal_capsule -> face+arm+leg (dense hemiparesis) + Babinski + Hoffmann + spasticity",
-   eq(subOf("internal_capsule"), ["babinski","facial_weakness","forehead_spared","hoffmann","spasticity","weak_arm","weak_leg"].sort()));
+ok("internal_capsule -> face+arm+leg (dense hemiparesis) + Babinski + Hoffmann + brisk reflexes + spasticity",
+   eq(subOf("internal_capsule"), ["babinski","facial_weakness","forehead_spared","hoffmann","hyperreflexia","spasticity","weak_arm","weak_leg"].sort()));
 // + VPM face since accuracy round 1 (B11, 2026-09-26): the pure-sensory lacune is face, arm and leg.
-ok("thalamus -> dorsal+spinothalamic+face+thalamic_pain",
-   eq(subOf("thalamus"), ["dorsal_sensory","face_sensory_loss","spinothalamic","thalamic_pain"].sort()));
+ok("thalamus -> dorsal+spinothalamic+face",
+   eq(subOf("thalamus"), ["dorsal_sensory","face_sensory_loss","spinothalamic"].sort()));
 ok("optic_radiation -> homonymous_hemianopia", eq(subOf("optic_radiation"), ["homonymous_hemianopia"]));
 // Approach A invariant: no bespoke dense-hemiparesis token; reuse the somatotopic findings.
 ok("no dense_hemiparesis finding invented", !isFinding("dense_hemiparesis"));
@@ -66,7 +66,6 @@ import { expectedFindings } from "../src/engine/forward.js";
   const th = expectedFindings(SITE_BY_ID.left_subcortex_thalamus);
   ok("left thalamus -> dorsal_sensory@right (contra)", th.has("dorsal_sensory@right"));
   ok("left thalamus -> spinothalamic@right (contra)", th.has("spinothalamic@right"));
-  ok("left thalamus -> thalamic_pain@right (contra)", th.has("thalamic_pain@right"));
   const orad = expectedFindings(SITE_BY_ID.left_subcortex_optic_radiation);
   ok("left optic radiation -> homonymous_hemianopia@right (contra)", orad.has("homonymous_hemianopia@right"));
 }
@@ -93,7 +92,7 @@ import { solve } from "../src/engine/inverse.js";
 // THE HEADLINE: pure motor lacune. Face+arm+leg + the UMN release signs (a capsular lacune is UMN,
 // so also spastic), nothing cortical -> the compact capsule, which beats any cortical explanation by parsimony.
 {
-  const { best } = solve(new Set(["weak_arm@right","weak_leg@right","facial_weakness@right","forehead_spared@right","babinski@right","hoffmann@right","spasticity@right"]));
+  const { best } = solve(new Set(["weak_arm@right","weak_leg@right","facial_weakness@right","forehead_spared@right","babinski@right","hoffmann@right","hyperreflexia@right","spasticity@right"]));
   ok("pure motor -> left_subcortex_internal_capsule", best && best.site.id === "left_subcortex_internal_capsule");
   ok("pure motor beats every cortex site", best && best.site.level === "subcortex");
   ok("pure motor over-predicts nothing", best && best.missedByPatient.length === 0);
@@ -109,8 +108,8 @@ import { solve } from "../src/engine/inverse.js";
 // Pure sensory: both body modalities, same side, no motor. This is the medial-lemniscus +
 // spinothalamic CONVERGENCE, which the VPL thalamus shares with the lateral (lemniscal/spinothalamic)
 // midbrain tegmentum — a genuine ddx the engine SURFACES rather than hides. It must not be a cord or
-// cortical pattern, and the thalamus must be a leading deep candidate; thalamic_pain (below) is what
-// uniquely pins it to the thalamus (Déjerine–Roussy).
+// cortical pattern, and the thalamus must be a leading deep candidate; the face (VPM, below) is what pins it
+// to the thalamus.
 {
   const { best, single } = solve(new Set(["dorsal_sensory@right","spinothalamic@right"]));
   ok("pure sensory is an ML+STT convergence (VPL thalamus or lateral midbrain tegmentum)",
@@ -121,11 +120,15 @@ import { solve } from "../src/engine/inverse.js";
   ok("VPL thalamus is a ranked candidate for pure sensory loss",
      single.some(r => r.site.id === "left_subcortex_thalamus"));
 }
-// Déjerine–Roussy: the same thalamus site, now with central pain — face, arm and leg (B11, 2026-09-26).
+// The pure sensory lacune — face, arm and leg (B11, 2026-09-26). Central post-stroke pain used to pin it here and
+// was removed from the model on 2026-09-29; the VPM face does the job on its own.
 {
-  const res = solve(new Set(["dorsal_sensory@right","spinothalamic@right","face_sensory_loss@right","thalamic_pain@right"]));
-  ok("thalamic pain -> left_subcortex_thalamus (exact)", res.best && res.best.site.id === "left_subcortex_thalamus");
-  ok("Déjerine–Roussy over-predicts nothing", res.best && res.best.missedByPatient.length === 0);
+  // The scored path ties the thalamus with the lateral midbrain (the same three findings, both via the trigeminal
+  // lemniscus); the DISPLAYED first answer breaks it on prevalence — the lateral midbrain is RARE (owner ruling
+  // 2026-09-26) — so it is the displayed answer that is asserted, as the accuracy round did for the same tie.
+  const res = solve(new Set(["dorsal_sensory@right","spinothalamic@right","face_sensory_loss@right"]));
+  ok("face + arm + leg sensory loss -> left_subcortex_thalamus first", res.display[0].site.id === "left_subcortex_thalamus", res.display[0].site.id);
+  ok("the pure sensory lacune over-predicts nothing", res.display[0].over === 0, String(res.display[0].over));
 }
 // Sensorimotor lacune: weakness AND hemisensory loss, no cortical signs -> the composite,
 // outranking capsule-alone and thalamus-alone.
@@ -171,7 +174,7 @@ import { nameForSite } from "../src/data/syndromes.js";
 {
   const capsule = nameForSite(SITE_BY_ID.left_subcortex_internal_capsule);
   ok("capsule names a pure motor lacune", /pure motor|lacun/i.test(capsule.name));
-  const thal = solve(new Set(["dorsal_sensory@right","spinothalamic@right","thalamic_pain@right"])).best;
+  const thal = solve(new Set(["dorsal_sensory@right","spinothalamic@right","face_sensory_loss@right"])).display[0];
   ok("thalamus names a sensory lacune / Déjerine–Roussy",
      /sensory|roussy|d[eé]jerine/i.test(nameForSite(thal.site).name));
   const achor = solve(new Set(["weak_arm@right","weak_leg@right","facial_weakness@right","forehead_spared@right",

@@ -4,7 +4,7 @@
 //
 // `meet` is the differential's explain-all set mapped to (station, side), not a raw intersection of possible
 // places: it applies the known-negative rule, so the Why and the Where cannot disagree.
-import { candidateSites, differential } from "./inverse.js";
+import { candidateSites, differential, isNormalToken } from "./inverse.js";
 import { expectedFindings, explain } from "./forward.js";
 import { STRUCTURE_BY_ID } from "../model/structures.js";
 import { TRACTS } from "../model/tracts.js";
@@ -103,7 +103,10 @@ export function whyChain(observedSet, site, opts = {}) {
       stations, where: renderWhere(stations), order,
     };
   }).sort((a, b) => a.stations.length - b.stations.length || a.order - b.order);
-  const all = toks.length ? differential(new Set(toks), opts).filter(c => c.n === toks.length) : [];
+  // Explicit normals ride along into the differential (they are never steps), so the meet honours them and the
+  // Why cannot disagree with the Where.
+  const normals = [...observedSet].filter(isNormalToken);
+  const all = toks.length ? differential(new Set([...toks, ...normals]), opts).filter(c => c.n === toks.length) : [];
   const pairs = [...new Set(all.map(c => `${stationOf(c.site)}|${c.site.side}`))];
   const meet = {
     stations: [...new Set(pairs.map(p => p.split("|")[0]))].sort(byOrder),
@@ -135,10 +138,11 @@ export function whyClues(chain, observedSet, opts = {}) {
       side: s.bodySide === "left" || s.bodySide === "right" ? s.bodySide : null });
   }
   const memo = new Map();
+  const normals = [...observedSet].filter(isNormalToken);   // as in whyChain: they narrow, they are never clues
   const placesOf = toks => {
     const key = [...toks].sort().join(" ");
     if (!memo.has(key)) {
-      const fit = differential(new Set(toks), opts).filter(c => c.n === toks.length);
+      const fit = differential(new Set([...toks, ...normals]), opts).filter(c => c.n === toks.length);
       memo.set(key, [...new Set(fit.map(c => `${stationOf(c.site)}|${c.site.side}`))]);
     }
     return memo.get(key);

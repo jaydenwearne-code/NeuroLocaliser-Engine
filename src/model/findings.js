@@ -79,7 +79,6 @@ export const FINDINGS = {
   fatigable_weakness:    { desc: "Fatigable weakness — worsens with sustained/repeated effort (post-synaptic NMJ, myasthenia)", group: "Motor unit" },
   fatigable_ocular:      { desc: "Fatigable ptosis and diplopia (ocular myasthenia)", group: "Motor unit" },
   facilitating_weakness: { desc: "Weakness that transiently improves with brief exercise (pre-synaptic NMJ, Lambert-Eaton)", group: "Motor unit" },
-  autonomic_features:    { desc: "Autonomic features — dry mouth, constipation, impotence (Lambert-Eaton / autonomic)", group: "Motor unit" },
   fasciculations:        { desc: "Muscle fasciculations — lower-motor-neurone irritability (NOT localising: anterior horn, root, plexus or nerve)", group: "Motor unit" },
   proximal_weakness:     { desc: "Symmetric proximal (limb-girdle) weakness", group: "Motor unit" },
 
@@ -149,9 +148,16 @@ export const FINDINGS = {
 
   // Root / lower-motor-neurone and below-cord findings
   lmn_weakness:   { desc: "Flaccid, areflexic (lower motor neurone) weakness", group: "Root / LMN" },
-  umn_signs:      { desc: "Upper motor neurone signs (hyperreflexia, extensor plantar)", group: "Root / LMN" },
   saddle_anaesthesia:{ desc: "Saddle anaesthesia (S2–S5 perineal sensory loss)", group: "Root / LMN" },
   sphincter_dysfunction:{ desc: "Bladder / bowel dysfunction (retention, incontinence, lax anal tone)", group: "Root / LMN" },
+  // Autonomic failure — five separate findings (owner ruling 2026-09-29), each predicted by BOTH Lambert-Eaton
+  // and acute Guillain–Barré: they suggest an autonomic problem, and both diseases cause one. They replace a
+  // single "autonomic features" finding that meant dry mouth for one disease and arrhythmia for the other.
+  dry_mouth:             { desc: "Dry mouth (xerostomia) — autonomic", group: "Autonomic" },
+  constipation:          { desc: "Constipation — autonomic", group: "Autonomic" },
+  erectile_dysfunction:  { desc: "Erectile dysfunction — autonomic", group: "Autonomic" },
+  labile_blood_pressure: { desc: "Labile blood pressure / postural hypotension — autonomic", group: "Autonomic" },
+  arrhythmia:            { desc: "Arrhythmia — tachy- or bradycardia, autonomic", group: "Autonomic" },
   radicular_pain: { desc: "Radicular pain (sciatica), often asymmetric", group: "Root / LMN" },
 
   // Cerebellar / connections
@@ -185,6 +191,13 @@ export const FINDINGS = {
 
   // Non-muscle reflexes — UMN release, sacral superficial, frontal release (anatomy-layer signs)
   babinski:       { desc: "Extensor plantar response", group: "Reflex" },
+  // Split from the up-going plantar and produced along the whole corticospinal tract (owner ruling 2026-09-29):
+  // it used to be a combined "UMN signs" finding produced ONLY at the conus, so a stroke with brisk reflexes
+  // pointed at the conus.
+  hyperreflexia:  { desc: "Brisk reflexes (hyperreflexia)", group: "Reflex" },
+  // The engine's first explicit NORMAL (owner ruling 2026-09-29): no structure produces it; it rules out a lesion
+  // that would give an up-going plantar on that side. See EXPLICIT_NORMAL below and knownNegatives() in inverse.js.
+  plantar_flexor: { desc: "Down-going (flexor) plantar response — normal", group: "Reflex" },
   hoffmann:       { desc: "Hoffmann's sign", group: "Reflex" },
   anal_wink_loss: { desc: "Absent anal wink (S2–4 reflex arc)", group: "Reflex" },
   bulbocavernosus_loss: { desc: "Absent bulbocavernosus reflex (S2–4 reflex arc)", group: "Reflex" },
@@ -293,7 +306,6 @@ export const FINDINGS = {
   preserved_vertical_gaze: { desc: "Preserved vertical eye movements / blink-to-command with quadriplegia + anarthria (locked-in hallmark)", group: "Consciousness" },
   extensor_posturing:      { desc: "Decerebrate (extensor) posturing — structural upper-brainstem coma", group: "Consciousness" },
   // Subcortical / deep grey (all contralateral, above every decussation)
-  thalamic_pain:  { desc: "Contralateral central post-stroke pain (Déjerine–Roussy, thalamic VPL)", group: "Subcortical" },
   hemiballismus:  { desc: "Contralateral hemiballismus / violent proximal flinging (subthalamic nucleus)", group: "Basal ganglia / movement" },
 
   // Functional (non-organic) POSITIVE signs — they do NOT localise (no producing structure, not in LOCALISING);
@@ -319,7 +331,8 @@ export const CROSSES = {
   dorsal_sensory: true,    // medial lemniscus has crossed in the medulla
   spinothalamic: true,     // spinothalamic crossed in the cord
   suspended_sensory: false,// bilateral by nature (commissural); crossing is moot for the bilateral central site
-  lmn_weakness: false, umn_signs: false, saddle_anaesthesia: false,
+  lmn_weakness: false, saddle_anaesthesia: false,
+  hyperreflexia: true,     // follows the corticospinal tract like babinski; cord + conus structures override crosses:false
   sphincter_dysfunction: false, radicular_pain: false, // midline / local — never cross
   tremor_rubral: true,     // red nucleus lesion -> contralateral tremor
   bradykinesia: true, rest_tremor: true, chorea: true, dystonia: true, rigidity: true, // basal ganglia — contralateral to a focal nucleus lesion
@@ -363,7 +376,7 @@ export const CROSSES = {
   anosmia: false, gustatory_loss: false, dysarthria: false, emotional_lability: false, sensory_ataxia: false,
   // motor-unit pure-motor findings — generalized/symmetric (bilateral), never cross
   fatigable_weakness: false, fatigable_ocular: false, facilitating_weakness: false,
-  autonomic_features: false, fasciculations: false, proximal_weakness: false,
+  fasciculations: false, proximal_weakness: false,
   // nerve-root (radiculopathy) findings — ipsilateral, never cross
   weak_diaphragm: false,
   sensory_c3: false, sensory_c4: false, sensory_t4: false, sensory_t10: false, sensory_l1: false,
@@ -411,7 +424,7 @@ export const CROSSES = {
   mood_change: false, verbal_memory_impairment: false, nonverbal_memory_impairment: false,
   cortical_blindness: false, optic_ataxia: false, oculomotor_apraxia: false, simultanagnosia: false,
   // subcortical deep grey — contralateral (above all decussations)
-  thalamic_pain: true, hemiballismus: true,
+  hemiballismus: true,
   // tone & wasting — spasticity follows the corticospinal tract (contra by default; cord + conus
   // structures override crosses:false → ipsi/local); hypotonia & wasting are LMN, local, never cross
   spasticity: true, hypotonia: false, wasting: false,
@@ -444,7 +457,14 @@ export const NON_LATERALISED = new Set([
   "dysarthria", // general articulation sign — no side (many sources; combinations localise)
   "emotional_lability", // pseudobulbar affect — no side
   "sensory_ataxia", // proprioceptive / Romberg-positive gait ataxia — no side
-  "hoovers_sign","give_way_weakness","entrainment","exam_inconsistency" // functional signs — no side
+  "hoovers_sign","give_way_weakness","entrainment","exam_inconsistency", // functional signs — no side
+  "dry_mouth","constipation","erectile_dysfunction","labile_blood_pressure","arrhythmia" // autonomic failure — no side
 ]);
+
+// EXPLICIT NORMALS (owner ruling 2026-09-29): a finding that records something as NORMAL, mapped to the abnormal
+// finding it negates. No structure produces a normal; entering one on a side makes the abnormal finding on that
+// side a KNOWN NEGATIVE (knownNegatives() in inverse.js), exactly as the un-entered side of a lateralised finding
+// already is. It is stripped before matching, so it is never "explained" or "unexplained".
+export const EXPLICIT_NORMAL = { plantar_flexor: "babinski" };
 
 export function isFinding(id) { return Object.prototype.hasOwnProperty.call(FINDINGS, id); }

@@ -17,6 +17,7 @@ import { normaliseLevel, regionOf, landmarkOf } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
 import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS } from "../model/compartments.js";
+import { EXPLICIT_NORMAL } from "../model/findings.js";
 
 // One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
 // the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
@@ -55,15 +56,29 @@ export function rankSingle(observedSet, opts = {}) {
 // a KNOWN NEGATIVE. Any site that predicts a known-negative would produce a sign the patient demonstrably
 // lacks, so it is not a candidate. Only left↔right have a homolog; midline / bilateral / none are skipped.
 const OPPOSITE_SIDE = { left: "right", right: "left" };
+// An EXPLICIT NORMAL (a down-going plantar — see EXPLICIT_NORMAL in findings.js, owner ruling 2026-09-29) is the
+// same claim made directly: the abnormal finding on THAT side is absent. It implies nothing about the other side,
+// and a normal on both sides also rules out the midline form (the conus emits its UMN signs @midline). A normal
+// that contradicts an entered abnormal finding is ignored rather than allowed to exclude the finding's own sites.
+export const isNormalToken = t => Object.prototype.hasOwnProperty.call(EXPLICIT_NORMAL, t.split("@")[0]);
 export function knownNegatives(observedSet) {
   const neg = new Set();
+  const normalSides = {};
   for (const tok of observedSet) {
     const [f, side] = tok.split("@");
+    if (isNormalToken(tok)) {
+      const abn = EXPLICIT_NORMAL[f];
+      if (!observedSet.has(`${abn}@${side}`)) neg.add(`${abn}@${side}`);
+      (normalSides[abn] ??= new Set()).add(side);
+      continue;
+    }
     const other = OPPOSITE_SIDE[side];
     if (!other) continue;
     const homolog = `${f}@${other}`;
     if (!observedSet.has(homolog)) neg.add(homolog);
   }
+  for (const [abn, sides] of Object.entries(normalSides))
+    if (sides.has("left") && sides.has("right") && !observedSet.has(`${abn}@midline`)) neg.add(`${abn}@midline`);
   return neg;
 }
 
@@ -111,7 +126,8 @@ export const rankKey = c => c.over - PREVALENCE_ALLOWANCE * c.prevalence;
 export function differential(observedSet, opts = {}) {
   // The pressure token is stripped before matching: no site's expectedFindings contain it, so leaving it in
   // would make every site fail to explain it and collapse the differential to nothing.
-  const observed = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t));
+  // Explicit normals are stripped too: they act only through knownNegatives(), never as a finding to explain.
+  const observed = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
   const pressure = raisedPressureAxis(observedSet);
   const negatives = knownNegatives(observedSet);
   const cands = [];
@@ -311,9 +327,9 @@ export function solve(observedSet, options = {}) {
   // report "no single lesion explains all"), while `differential` below still receives the full set so it can
   // apply the compartment filter. `pressure` is returned so the caller can annotate.
   const pressure = raisedPressureAxis(observedSet);
-  const localising = pressure.present
-    ? new Set([...observedSet].filter(t => !PRESSURE_TOKEN.test(t)))
-    : observedSet;
+  // Explicit normals (a down-going plantar) are stripped from the scored paths for the same reason: no site
+  // produces them. They act through the differential's known negatives, which receives the full set.
+  const localising = new Set([...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t)));
   const single = rankSingle(localising, opts);
   const best = single[0] || null;
 
@@ -348,7 +364,8 @@ export function solve(observedSet, options = {}) {
   const length = describeLength(best, options.distalReach);
   const display = explainAll.length ? explainAll : diff;
   const defaultSite = display[0]?.site.id ?? null;
-  const ruledOut = ruledOutSites(localising, opts);
+  // The full set, so a site excluded by an explicit normal is listed too ("…which is normal here").
+  const ruledOut = ruledOutSites(observedSet, opts);
   return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,
            differential: diff, explainAll, display, defaultSite, ruledOut, pressure };
 }

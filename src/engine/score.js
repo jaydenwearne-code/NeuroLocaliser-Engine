@@ -30,7 +30,7 @@ const LOCALISING = new Set([
   "nystagmus_positional_posterior","nystagmus_positional_horizontal","nystagmus_positional_anterior", // BPPV canal-specific
   "palatal_tremor", // Guillain-Mollaret triangle (dentato-rubro-olivary)
   "suspended_sensory", // cape-like dissociated loss strongly pins the central/intramedullary cord
-  "saddle_anaesthesia","sphincter_dysfunction","umn_signs", // pin the below-cord region + CES/conus
+  "saddle_anaesthesia","sphincter_dysfunction", // pin the below-cord region + CES/conus (brisk reflexes are tract-wide since 2026-09-29, so no longer here)
   // NOTE: `lmn_weakness` was demoted (PNS increment) — it is a GENERAL lower-motor-neurone sign (anterior
   // horn, root, plexus, nerve all cause flaccid areflexic weakness), so it marks LMN-ness, not level. The
   // level-localisers are the specific sensory/pattern findings; cauda/conus keep saddle + sphincter (+ umn).
@@ -53,7 +53,7 @@ const LOCALISING = new Set([
   "cortical_blindness","optic_ataxia","oculomotor_apraxia","simultanagnosia","abulia",
   // subcortical deep-grey localisers (the reused somatotopic motor/sensory findings stay
   // NON-localising on purpose — pure-motor/pure-sensory localisation emerges from parsimony)
-  "thalamic_pain","hemiballismus","bradykinesia","rest_tremor","chorea","dystonia",
+  "hemiballismus","bradykinesia","rest_tremor","chorea","dystonia",
   // olfactory (CN I) + insular gustatory — each pins its structure (dysarthria stays NON-localising)
   "anosmia","gustatory_loss",
   "emotional_lability", // pseudobulbar affect — pins the bilateral corticobulbar site
@@ -65,7 +65,7 @@ const LOCALISING = new Set([
   "gag_afferent_loss","taste_posterior","palatal_weakness","vocal_cord_palsy","weak_scm","weak_trapezius",
   // motor-unit diagnostic hallmarks (NMJ). NOTE deliberately NOT here: `fasciculations` (a general LMN
   // sign at any level) and `proximal_weakness` (shared by MG/LEMS/muscle → myopathy emerges by parsimony)
-  "fatigable_weakness","fatigable_ocular","facilitating_weakness","autonomic_features",
+  "fatigable_weakness","fatigable_ocular","facilitating_weakness", // (the autonomic signs are shared with acute GBS since 2026-09-29, so they pin nothing)
   // nerve-root localisers — each dermatome/myotome/reflex pins a segment (the segment emerges from these)
   "sensory_c5","sensory_c6","sensory_c7","sensory_c8","sensory_t1","sensory_l2","sensory_l3","sensory_l4","sensory_l5","sensory_s1",
   "sensory_c3","sensory_c4","sensory_t4","sensory_t10","sensory_l1","sensory_s2","sensory_s3", // PNS-depth dermatomes

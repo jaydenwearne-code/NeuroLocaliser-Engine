@@ -44,7 +44,6 @@ const CASES = [
   ["Pure motor hemiparesis", "facial_weakness@right forehead_spared@right weak_arm@right weak_leg@right", { first: /^left_(subcortex_(internal_capsule|corona_radiata)|pons_basis_pontis)$/, single: true }],
   ["Pure sensory stroke (face, arm, leg)", "spinothalamic@right dorsal_sensory@right face_sensory_loss@right", { first: /^left_subcortex_thalamus$/, single: true }],
   ["Hemibody pain-temperature loss alone", "spinothalamic@left", { first: /^right_subcortex_thalamus$/ }],
-  ["Thalamic pain", "thalamic_pain@left", { first: /^right_subcortex_thalamus$/ }],
   ["Sensorimotor stroke", "weak_arm@right weak_leg@right spinothalamic@right dorsal_sensory@right", { first: /^left_subcortex_sensorimotor$/, single: true }],
   ["Anterior choroidal triad", "weak_arm@right weak_leg@right spinothalamic@right homonymous_hemianopia@right", { first: /^left_subcortex_anterior_choroidal$/, single: true }],
   ["Complete dominant MCA", "speech_nonfluent@none comprehension_impaired@none weak_arm@right facial_weakness@right forehead_spared@right homonymous_hemianopia@right", { first: /^left_cortex_mca$/, single: true }],
@@ -110,7 +109,8 @@ const CASES = [
   // Saddle + sphincter alone: conus and cauda are both correct until the reflexes or the pain decide.
   ["Saddle anaesthesia + sphincter", "saddle_anaesthesia@midline sphincter_dysfunction@midline", { top: [2, /^(cauda_equina|conus_medullaris)$/] }],
   ["Cauda equina, asymmetric ankle jerk", "saddle_anaesthesia@midline sphincter_dysfunction@midline reflex_ankle_loss@right radicular_pain@midline", { first: /^cauda_equina$/, single: true }],
-  ["Conus", "saddle_anaesthesia@midline sphincter_dysfunction@midline umn_signs@midline", { first: /^conus_medullaris$/, single: true }],
+  // UMN signs split into brisk reflexes + up-going plantar (owner ruling 2026-09-29).
+  ["Conus", "saddle_anaesthesia@midline sphincter_dysfunction@midline hyperreflexia@midline babinski@midline", { first: /^conus_medullaris$/, single: true }],
 
   // ---- roots, plexus, nerves ----
   ["L5 radiculopathy", "weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_hip_abduction@left sensory_l5@left", { first: /^left_root_l5$/, single: true }],
@@ -133,7 +133,8 @@ const CASES = [
   // ---- motor unit ----
   ["Ocular myasthenia, one side", "fatigable_ocular@left", { first: /^motor_unit_nmj_postsynaptic$/ }],
   ["Unilateral fasciculations", "fasciculations@left", { first: /^motor_unit_anterior_horn$/ }],
-  ["Lambert-Eaton", "facilitating_weakness@left facilitating_weakness@right proximal_weakness@left proximal_weakness@right autonomic_features@left autonomic_features@right", { first: /^motor_unit_nmj_presynaptic$/, single: true }],
+  // The autonomic features split into five findings shared with GBS (owner ruling 2026-09-29).
+  ["Lambert-Eaton", "facilitating_weakness@left facilitating_weakness@right proximal_weakness@left proximal_weakness@right dry_mouth@none constipation@none", { first: /^motor_unit_nmj_presynaptic$/, single: true }],
 ];
 
 for (const [label, toks, want] of CASES) {

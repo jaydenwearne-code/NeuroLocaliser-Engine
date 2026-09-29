@@ -7,7 +7,7 @@
 // Such a finding now gets a single "Both" button that enters the two sides together (accuracy round 1, A5).
 import { candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
-import { NON_LATERALISED } from "../src/model/findings.js";
+import { NON_LATERALISED, EXPLICIT_NORMAL } from "../src/model/findings.js";
 
 export function buildSideOffers(sites) {
   const sides = {};        // finding -> Set of body sides some site emits it on
@@ -29,6 +29,12 @@ export function buildSideOffers(sites) {
     else for (const s of lr) offers.push({ key: s, tokens: [`${f}@${s}`] });
     if (set.has("midline")) offers.push({ key: "midline", tokens: [`${f}@midline`] });
     out[f] = offers;
+  }
+  // An explicit normal (a down-going plantar) is produced by no site, so it borrows the SIDES its abnormal
+  // counterpart is offered on — left and right only: a normal has no midline form (owner ruling 2026-09-29).
+  for (const [normal, abn] of Object.entries(EXPLICIT_NORMAL)) {
+    out[normal] = ["left", "right"].filter(s => (out[abn] || []).some(o => o.tokens.includes(`${abn}@${s}`)))
+      .map(s => ({ key: s, tokens: [`${normal}@${s}`] }));
   }
   return out;
 }

@@ -61,10 +61,11 @@ hy("narcolepsy@none", "lateral");
 hy("circadian_disruption@none", "suprachiasmatic");
 hy("endocrine_dysfunction@none", "tuberal");
 
-// Regression: pure body sensory still the VPL thalamus (thalamic_pain discriminates Dejerine-Roussy)
+// Regression: pure sensory (face, arm, leg) still shows the VPL thalamus first. Central post-stroke pain used to
+// discriminate it and was removed on 2026-09-29 (not an examination finding); the displayed answer is asserted.
 {
-  const b = B("dorsal_sensory@right", "spinothalamic@right", "thalamic_pain@right");
-  ok("pure body sensory + central pain -> VPL thalamus", b && b.site.id === "left_subcortex_thalamus");
+  const d = solve(new Set(["dorsal_sensory@right", "spinothalamic@right", "face_sensory_loss@right"])).display[0];
+  ok("pure sensory (face, arm, leg) -> VPL thalamus first", d && d.site.id === "left_subcortex_thalamus");
 }
 
 console.log("====================================================");

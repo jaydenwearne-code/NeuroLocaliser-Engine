@@ -77,8 +77,8 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   }
   ok(`the differential is a total order under the documented key (${d.length} candidates)`, consistent);
   const first = toks => solve(new Set(toks), { dominantSide: "left" }).display[0]?.site.id;
-  ok("thalamic pain → the thalamus, not the sensorimotor stroke that predicts 7 unreported signs",
-     first(["thalamic_pain@left"]) === "right_subcortex_thalamus", first(["thalamic_pain@left"]));
+  ok("hemibody pain loss → the thalamus, not the sensorimotor stroke that predicts unreported signs",
+     first(["spinothalamic@left"]) === "right_subcortex_thalamus", first(["spinothalamic@left"]));
 }
 
 // ---- A6: prevalence ordering ----
@@ -165,7 +165,7 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   const want = ["lmn_weakness@left", "proximal_weakness@right", "distal_motor_weakness@left", "hypotonia@left",
                 "reflex_biceps_loss@left", "reflex_brachioradialis_loss@left", "reflex_triceps_loss@left", "reflex_knee_loss@right",
                 "reflex_ankle_loss@left", "facial_weakness@left", "forehead_involved@right", "dysphagia@left", "weak_diaphragm@right",
-                "autonomic_features@left"];
+                "dry_mouth@none", "constipation@none", "erectile_dysfunction@none", "labile_blood_pressure@none", "arrhythmia@none"];
   ok("it predicts motor, areflexia, LMN face, bulbar, respiratory and autonomic failure", want.every(t => e.has(t)), want.filter(t => !e.has(t)).join(", "));
   ok("it predicts NO sensory loss (owner: motor-predominant)", ![...e].some(t => /sensory/.test(t)));
   ok("compartment root, RARE", !!gbs && compartmentOf(gbs) === "root" && prevalenceOf(gbs) === RARE);

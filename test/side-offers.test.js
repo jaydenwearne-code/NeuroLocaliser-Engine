@@ -3,7 +3,7 @@
 // picture "may be non-organic" — unilateral fasciculations, fatigable ptosis, LMN weakness among them.
 import { offersFor, buildSideOffers } from "../app/sides.js";
 import { candidateSites, solve } from "../src/engine/inverse.js";
-import { FINDINGS } from "../src/model/findings.js";
+import { FINDINGS, EXPLICIT_NORMAL } from "../src/model/findings.js";
 
 let pass = 0, fail = 0;
 const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : "FAIL  ") + l + (c ? "" : `  ${d}`)); };
@@ -11,7 +11,9 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
 const map = buildSideOffers(candidateSites());
 const dead = [];
 let options = 0;
+// An explicit normal (a down-going plantar) localises nothing on its own by design — it only narrows.
 for (const [f, offers] of Object.entries(map)) for (const o of offers) {
+  if (EXPLICIT_NORMAL[f]) continue;
   options++;
   if (!solve(new Set(o.tokens), { dominantSide: "left" }).differential.length) dead.push(`${f}:${o.key}`);
 }

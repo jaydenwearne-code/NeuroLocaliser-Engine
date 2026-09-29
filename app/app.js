@@ -1,5 +1,5 @@
 // app.js — NeuroLocaliser prototype UI. Pure consumer of the engine + causes layer (no model changes).
-import { solve, candidateSites, raisedPressureAxis } from "../src/engine/inverse.js";
+import { solve, candidateSites, raisedPressureAxis, isNormalToken } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { FINDINGS } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
@@ -262,7 +262,8 @@ function renderResults() {
   // Papilloedema is an AXIS, not a site finding (see raisedPressureAxis): no site's expected findings
   // contain it, so it must not be counted in the "explains n/total" denominator or every intracranial site
   // would look as if it had failed to account for it. The full token set still drives the flags below.
-  const total = [...S.tokens].filter(t => !t.startsWith("papilloedema@")).length;
+  // An explicit normal (a down-going plantar) is not a finding to explain either — it only rules sites out.
+  const total = [...S.tokens].filter(t => !t.startsWith("papilloedema@") && !isNormalToken(t)).length;
   // solve() still receives the FULL set — differential() needs the pressure token to apply the compartment
   // filter, and strips it internally before matching.
   const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
@@ -273,6 +274,10 @@ function renderResults() {
   const press = raisedPressureAxis(S.tokens);
   const pmsg = press.present
     ? `<div class="multi" style="border-color:var(--red);background:var(--red-bg)"><b>⚑ Raised intracranial pressure.</b> ${esc(press.note)}</div>` : "";
+  if (!cands.length && [...S.tokens].every(isNormalToken)) {
+    el.innerHTML = `<h3>Possible lesions</h3><div class="empty">A normal finding narrows a picture but localises nothing on its own — add an abnormal finding.</div>`;
+    return;
+  }
   if (!cands.length) {
     const fnd = functionalFlag(S.tokens);
     const fmsg = fnd.functional

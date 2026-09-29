@@ -1,6 +1,6 @@
 // plain-labels.test.js — every finding in plain words (spec 2026-09-27 §5.1). The labels are clinical content
 // for the owner's review; this suite holds the mechanical floor under them.
-import { PLAIN, plainLabel } from "../app/plain-labels.js";
+import { PLAIN, plainLabel, displayLabel } from "../app/plain-labels.js";
 import { FINDINGS } from "../src/model/findings.js";
 import { EXAM_TREE } from "../app/exam-map.js";
 
@@ -21,6 +21,12 @@ const bad = Object.entries(PLAIN).filter(([, p]) =>
 ok(`every label is plain, comma-free, unpunctuated and at most ${CAP} characters`, bad.length === 0, bad.map(([f, p]) => `${f}: "${p.label}"`).join(" | "));
 const badNote = Object.entries(PLAIN).filter(([, p]) => p.note !== undefined && (typeof p.note !== "string" || !p.note.trim() || p.note.includes("_") || p.note.length > CAP));
 ok("every note is plain and short", badNote.length === 0, badNote.map(([f]) => f).join(", "));
+// The proper name travels in brackets wherever the label shows — including the comma-separated "Less common" list.
+const badTerm = Object.entries(PLAIN).filter(([, p]) => p.term !== undefined && (typeof p.term !== "string" || !p.term.trim()
+  || p.term.includes("_") || p.term.includes(",") || p.term.includes("(") || p.term.length > CAP || p.term.toLowerCase() === p.label.toLowerCase()));
+ok("every proper name is plain, comma-free, short and not a repeat of its label", badTerm.length === 0, badTerm.map(([f, p]) => `${f}: "${p.term}"`).join(" | "));
+ok("displayLabel brackets the proper name (owner ruling 2026-09-29)", displayLabel("acalculia") === "can't calculate (acalculia)", displayLabel("acalculia"));
+ok("…and shows the label alone where it already is the proper name", displayLabel("chorea") === "chorea");
 ok("less is a boolean where present", Object.values(PLAIN).every(p => p.less === undefined || p.less === true));
 
 // Two findings sharing a label would make two chips read the same.
@@ -44,7 +50,16 @@ ok("arm and leg weakness are marked upper motor neuron on the row",
 ok("floppy weakness is marked lower motor neuron on the row", PLAIN.lmn_weakness.note === "lower motor neuron pattern");
 ok("the Why line's labels stay short (arm weakness, face pain loss, swallowing difficulty)",
    plainLabel("weak_arm") === "arm weakness" && plainLabel("face_pain_loss") === "face pain loss" && plainLabel("dysphagia") === "swallowing difficulty");
-ok("an unlabelled id degrades to readable words", plainLabel("zz_not_a_finding") === "zz not a finding");
+ok("an unlabelled id degrades to readable words", plainLabel("zz_not_a_finding") === "zz not a finding" && displayLabel("zz_not_a_finding") === "zz not a finding");
+
+// ---- the owner's round-1 rulings (2026-09-29), pinned ----
+ok("Klüver-Bucy: the finding first, the eponym in brackets", displayLabel("kluver_bucy") === "hyperorality and hypersexuality (Klüver-Bucy syndrome)");
+ok("taste: anterior 2/3 and posterior 1/3 of the tongue", /anterior 2\/3/.test(plainLabel("taste_loss")) && /posterior 1\/3/.test(plainLabel("taste_posterior")));
+ok("tone: hypotonia, not 'floppy tone'", displayLabel("hypotonia") === "reduced tone (hypotonia)" && !Object.values(PLAIN).some(p => /floppy tone/i.test(p.label)));
+ok("brisk reflexes stand alone — not paired with the plantar", displayLabel("hyperreflexia") === "brisk reflexes (hyperreflexia)" && !/plantar/i.test(displayLabel("hyperreflexia")));
+ok("a down-going plantar can be entered", displayLabel("plantar_flexor") === "down-going plantar (flexor plantar response)");
+ok("central post-stroke pain is gone", !PLAIN.thalamic_pain && !Object.values(PLAIN).some(p => /post-stroke pain/i.test(p.label)));
+ok("dry mouth and constipation are separate findings", !!PLAIN.dry_mouth && !!PLAIN.constipation && !PLAIN.autonomic_features);
 
 console.log(`\nplain labels: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
