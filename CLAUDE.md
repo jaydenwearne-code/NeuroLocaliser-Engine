@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**82 test suites / 7104 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**82 test suites / 7134 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -113,7 +113,7 @@ layer — is on `main`, so the "expand pathologies + workup" work below branches
    picture spans sites, so the motivating case for this item is covered — what remains is anything that would
    fire on a SINGLE site's UMN+LMN co-occurrence alone, which is out of scope for a cross-site layer.
 
-## Pathologies + workup expansion (DONE 2026-08-10) — ⚠ AWAITING CLINICAL REVIEW
+## Pathologies + workup expansion (DONE 2026-08-10) — ✅ CLINICALLY SIGNED OFF (2026-08-11)
 
 **Merged to `main`.** Curated coverage went from ~37 sites to **ALL 201**: every site now has BOTH a
 hand-curated `CAUSES` entry and a curated four-tier `NEXT` workup. **900 cause entries** — 858 with a
@@ -156,7 +156,7 @@ E named nerves/motor unit → F roots/plexus → G remaining cortex → H closin
 - **Base branch:** everything is on `main` — branch off it. The `feat/expand-pathologies-workup` branch that
   built this layer is merged and safe to delete.
 
-## Differential-depth sweep + fundoscopy findings (DONE 2026-08-11) — ⚠ STILL AWAITING CLINICAL REVIEW
+## Differential-depth sweep + fundoscopy findings (DONE 2026-08-11) — ✅ CLINICALLY SIGNED OFF
 
 **The generic sieve gap-fill is GONE.** `SIEVE_GENERICS` / `sieveGenerics()` / the `completion` key are
 deleted; `causesFor()` returns `{byCategory, all, onset, derived, source}`. A sieve category with no
@@ -873,6 +873,13 @@ ids — `install` (localStorage) separates twelve opens by one tester from twelv
 **IT CAN NEVER BREAK THE GATE.** `recordOpen()` never throws, never awaits the network, swallows a rejected
 fetch, and survives storage that throws, a missing `fetch` and an unset endpoint — asserted in §5. A
 counter that could stop a clinician getting into the tool would be a bad trade for a number.
+
+**A LOCAL RUN IS NOT A TESTER (fixed 2026-10-12).** Until then, unlocking the app on `node app/serve.mjs`
+posted a real row, indistinguishable from a tester's open, so every local browser check inflated the
+denominator. `reveal()` now passes `location.hostname` and `recordOpen` sends nothing (and writes no id) when
+`isLocalHost()` says loopback, `*.localhost` or a private LAN address (`serve.mjs` listens on every interface,
+so a phone on the same Wi-Fi counts as local too). The module still never reads `location` itself, and the host
+never enters the payload. Rows from before the fix may include the owner's own local opens.
 
 **SHIPPED INERT AND SWITCHED ON THE SAME DAY**, once the owner deployed the Apps Script sink. One row per
 open lands in the owner's private Sheet. **The /exec URL is in a PUBLIC repo and that is accepted, not

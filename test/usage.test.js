@@ -4,8 +4,10 @@
 // in the URL hash so they never reach a server log (see app/case-url.js), and a usage beacon is precisely
 // the kind of code that undoes that by adding `url: location.href` one afternoon. Section 3 fails if it
 // ever does.
+import { readFileSync } from "node:fs";
 import {
   USAGE, USAGE_INSTALL_KEY, USAGE_SESSION_KEY, PAYLOAD_KEYS, usagePayload, newId, stableId, recordOpen,
+  isLocalHost,
 } from "../app/usage.js";
 import { encodeCase } from "../app/case-url.js";
 import { VERSION } from "../app/brand.js";
@@ -178,6 +180,42 @@ const endpointCfg = { mode: "endpoint", endpoint: "https://script.google.com/mac
   ok("a returning open is not", back.first === false);
   ok("both are the same event type, so the total is simply the row count",
      first.event === "open" && back.event === "open");
+}
+
+// --- 7: a local run is not a tester -----------------------------------------------------------------
+// Found 2026-10-12: unlocking the app on `node app/serve.mjs` posted a real row to the owner's Sheet,
+// indistinguishable from a tester's open — every local browser check inflated the denominator. The host
+// decides whether to SEND; it never enters the payload (section 2 still pins the allowlist).
+{
+  const local = ["localhost", "127.0.0.1", "127.0.1.1", "[::1]", "::1", "app.localhost",
+                 "192.168.1.20", "10.0.0.5", "172.16.4.2", "172.31.255.1"];
+  for (const host of local) {
+    const { calls, f } = capture();
+    const sent = recordOpen({ cfg: endpointCfg, fetchImpl: f, host,
+                              localStore: memStore(), sessionStore: memStore() });
+    ok(`an open on ${host} sends nothing`, sent === null && calls.length === 0, `${calls.length} call(s)`);
+    ok(`isLocalHost("${host}")`, isLocalHost(host));
+  }
+
+  const live = ["jaydenwearne-code.github.io", "neurolocaliser.example.org", "172.32.0.1", "11.0.0.1"];
+  for (const host of live) {
+    const { calls, f } = capture();
+    recordOpen({ cfg: endpointCfg, fetchImpl: f, host, localStore: memStore(), sessionStore: memStore() });
+    ok(`an open on ${host} is counted`, calls.length === 1, `${calls.length} call(s)`);
+    ok(`!isLocalHost("${host}")`, !isLocalHost(host));
+  }
+
+  const store = memStore();
+  recordOpen({ cfg: endpointCfg, fetchImpl: capture().f, host: "localhost",
+               localStore: store, sessionStore: memStore() });
+  ok("a skipped local open leaves no install id behind", !store._map.has(USAGE_INSTALL_KEY),
+     [...store._map.keys()].join(","));
+
+  // The module never reads `location` itself (the header explains why), so the CALLER must pass the host.
+  // Without this the skip is dead code and every local run counts again.
+  const APP = readFileSync(new URL("../app/app.js", import.meta.url), "utf8");
+  ok("app.js passes the page's hostname to recordOpen",
+     /recordOpen\(\{[^}]*host:\s*location\.hostname[^}]*\}\)/.test(APP));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
