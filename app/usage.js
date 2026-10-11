@@ -86,14 +86,30 @@ export function stableId(storage, key, rand = Math.random) {
 }
 
 /**
+ * Is this the owner's own machine rather than a tester's? Loopback, `*.localhost`, and the private LAN
+ * ranges — `serve.mjs` listens on every interface, so a phone on the same Wi-Fi reaches it by LAN address.
+ * Found 2026-10-12: every local browser check had been posting a row indistinguishable from a tester's.
+ */
+export function isLocalHost(host) {
+  if (typeof host !== "string") return false;
+  const h = host.toLowerCase();
+  return h === "localhost" || h.endsWith(".localhost") || h === "::1" || h === "[::1]"
+    || /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+}
+
+/**
  * Record one app open. Returns the payload that was sent, or null when nothing was sent.
  *
  * NEVER THROWS AND NEVER AWAITS THE NETWORK. This runs on the path that reveals the app, so a blocked
  * beacon, an offline browser or a misconfigured endpoint must be invisible to the user — a counter that
  * can stop a clinician getting into the tool would be a bad trade for a number.
+ *
+ * `host` is passed in by the caller (this module never reads `location`) and decides only WHETHER to
+ * send — it never enters the payload. A local host sends nothing and writes no id.
  */
 export function recordOpen({
   first = false,
+  host,
   cfg = USAGE,
   localStore = globalThis.localStorage,
   sessionStore = globalThis.sessionStorage,
@@ -103,6 +119,7 @@ export function recordOpen({
 } = {}) {
   try {
     if (!cfg || cfg.mode !== "endpoint" || !cfg.endpoint) return null;
+    if (isLocalHost(host)) return null;
     const payload = usagePayload({
       event: "open",
       install: stableId(localStore, USAGE_INSTALL_KEY, rand),

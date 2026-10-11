@@ -874,6 +874,13 @@ ids — `install` (localStorage) separates twelve opens by one tester from twelv
 fetch, and survives storage that throws, a missing `fetch` and an unset endpoint — asserted in §5. A
 counter that could stop a clinician getting into the tool would be a bad trade for a number.
 
+**A LOCAL RUN IS NOT A TESTER (fixed 2026-10-12).** Until then, unlocking the app on `node app/serve.mjs`
+posted a real row, indistinguishable from a tester's open, so every local browser check inflated the
+denominator. `reveal()` now passes `location.hostname` and `recordOpen` sends nothing (and writes no id) when
+`isLocalHost()` says loopback, `*.localhost` or a private LAN address (`serve.mjs` listens on every interface,
+so a phone on the same Wi-Fi counts as local too). The module still never reads `location` itself, and the host
+never enters the payload. Rows from before the fix may include the owner's own local opens.
+
 **SHIPPED INERT AND SWITCHED ON THE SAME DAY**, once the owner deployed the Apps Script sink. One row per
 open lands in the owner's private Sheet. **The /exec URL is in a PUBLIC repo and that is accepted, not
 overlooked:** the script only ever appends, returns no data, and the Sheet stays private — the worst a

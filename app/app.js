@@ -1148,9 +1148,9 @@ function boot() {
 // — a different and much less useful number. Counting here, with the flag, gives both.
 //
 // recordOpen never throws and never awaits the network (see app/usage.js), so it cannot delay or block the
-// reveal. It also ships with mode "off", so until an endpoint is configured this line does nothing at all.
+// reveal. The hostname only decides whether to send — a local run (serve.mjs) is not a tester's open.
 function reveal({ first = false } = {}) {
-  recordOpen({ first });
+  recordOpen({ first, host: location.hostname });
   document.getElementById("gate").classList.remove("show");
   document.getElementById("app-shell").classList.add("show");
 }
