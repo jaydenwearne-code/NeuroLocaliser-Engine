@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**82 test suites / 7104 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**82 test suites / 7134 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -113,7 +113,7 @@ layer — is on `main`, so the "expand pathologies + workup" work below branches
    picture spans sites, so the motivating case for this item is covered — what remains is anything that would
    fire on a SINGLE site's UMN+LMN co-occurrence alone, which is out of scope for a cross-site layer.
 
-## Pathologies + workup expansion (DONE 2026-08-10) — ⚠ AWAITING CLINICAL REVIEW
+## Pathologies + workup expansion (DONE 2026-08-10) — ✅ CLINICALLY SIGNED OFF (2026-08-11)
 
 **Merged to `main`.** Curated coverage went from ~37 sites to **ALL 201**: every site now has BOTH a
 hand-curated `CAUSES` entry and a curated four-tier `NEXT` workup. **900 cause entries** — 858 with a
@@ -156,7 +156,7 @@ E named nerves/motor unit → F roots/plexus → G remaining cortex → H closin
 - **Base branch:** everything is on `main` — branch off it. The `feat/expand-pathologies-workup` branch that
   built this layer is merged and safe to delete.
 
-## Differential-depth sweep + fundoscopy findings (DONE 2026-08-11) — ⚠ STILL AWAITING CLINICAL REVIEW
+## Differential-depth sweep + fundoscopy findings (DONE 2026-08-11) — ✅ CLINICALLY SIGNED OFF
 
 **The generic sieve gap-fill is GONE.** `SIEVE_GENERICS` / `sieveGenerics()` / the `completion` key are
 deleted; `causesFor()` returns `{byCategory, all, onset, derived, source}`. A sieve category with no
