@@ -106,13 +106,17 @@ export function isLocalHost(host) {
  *
  * `host` is passed in by the caller (this module never reads `location`) and decides only WHETHER to
  * send — it never enters the payload. A local host sends nothing and writes no id.
+ *
+ * The stores are resolved INSIDE the try, not as default parameters: a default is evaluated before the
+ * body, outside the catch, and Safari throws a SecurityError on the *property access* `localStorage` when
+ * cookies are blocked (the theme.js lesson). Unreachable storage sends nothing and returns null.
  */
 export function recordOpen({
   first = false,
   host,
   cfg = USAGE,
-  localStore = globalThis.localStorage,
-  sessionStore = globalThis.sessionStorage,
+  localStore,
+  sessionStore,
   fetchImpl = globalThis.fetch,
   now = Date.now(),
   rand = Math.random,
@@ -120,10 +124,12 @@ export function recordOpen({
   try {
     if (!cfg || cfg.mode !== "endpoint" || !cfg.endpoint) return null;
     if (isLocalHost(host)) return null;
+    const ls = localStore !== undefined ? localStore : globalThis.localStorage;
+    const ss = sessionStore !== undefined ? sessionStore : globalThis.sessionStorage;
     const payload = usagePayload({
       event: "open",
-      install: stableId(localStore, USAGE_INSTALL_KEY, rand),
-      session: stableId(sessionStore, USAGE_SESSION_KEY, rand),
+      install: stableId(ls, USAGE_INSTALL_KEY, rand),
+      session: stableId(ss, USAGE_SESSION_KEY, rand),
       first, now,
     });
     if (typeof fetchImpl === "function") {

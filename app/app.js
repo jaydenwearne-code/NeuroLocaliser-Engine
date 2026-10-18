@@ -11,7 +11,7 @@ import { whyChain } from "../src/engine/why.js";
 import { COURSES } from "../src/model/course.js";
 import { discriminators, explainedBy } from "./discriminators.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
-import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
+import { checkPassphrase, isUnlocked, rememberUnlock } from "./gate.js";
 import { readTheme, writeTheme, nextTheme, applyTheme, themeGlyph, themeLabel } from "./theme.js";
 import { encodeCase, decodeCase } from "./case-url.js";
 import { feedbackHref } from "./feedback.js";
@@ -1181,7 +1181,7 @@ async function startGate() {
   applyTheme(readTheme());
   paintBrand();
   const gateEl = document.getElementById("gate");
-  if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal({ first: false }); boot(); return; }
+  if (isUnlocked()) { reveal({ first: false }); boot(); return; }
   gateEl.classList.add("show");
   document.getElementById("gate-form").onsubmit = async ev => {
     ev.preventDefault();
@@ -1189,7 +1189,7 @@ async function startGate() {
     if (!document.getElementById("gate-ack").checked) { errEl.textContent = "Please tick the acknowledgment to continue."; return; }
     const okPass = await checkPassphrase(document.getElementById("gate-pass").value);
     if (!okPass) { errEl.textContent = "Incorrect passphrase."; return; }
-    try { localStorage.setItem(GATE_STORAGE_KEY, "ok"); } catch {}
+    rememberUnlock();
     reveal({ first: true }); boot();
   };
 }

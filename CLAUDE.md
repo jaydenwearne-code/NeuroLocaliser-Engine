@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**82 test suites / 7134 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**82 test suites / 7158 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -918,6 +918,14 @@ evaluates BEFORE the function body, so it sits outside the `try/catch` — and S
 on the *property access* when cookies are blocked, which is the exact case the module promises to survive.
 Caught in review, before it shipped; node would never have caught it, because `globalThis.localStorage` is
 simply `undefined` there.
+
+**THE SAME BUG HAD SHIPPED TWICE ELSEWHERE (fixed 2026-10-18).** `startGate()` read the unlock flag with a
+bare `localStorage.getItem` before the gate was shown — `#gate` and `#app-shell` are both `display:none`
+until a class is added, so with cookies blocked the page stayed BLANK. And `recordOpen()` took both stores
+as default parameters, so it threw from `reveal()` even after a correct passphrase. Now `isUnlocked()` /
+`rememberUnlock()` in `gate.js` and `recordOpen()` resolve the store inside the try. **Node CAN test it**:
+define `globalThis.localStorage` with a getter that throws (`test/usage.test.js` §5, `test/gate.test.js`),
+and `gate.test.js` asserts `app.js` never names `localStorage.`/`sessionStorage.` directly.
 
 **`paintFavicon()` split out of `paintBrand()`** — the favicon is the only brand surface that must be
 repainted on toggle, because a data URI cannot inherit `currentColor` so the accent is baked in. A
