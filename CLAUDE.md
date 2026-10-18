@@ -1226,6 +1226,13 @@ Spec/plan: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md`, 
   `solve()`, asserts with a tiny local `ok(label, cond)` helper, prints `PASS`/`FAIL` lines, and
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
+- **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
+  — the 2026-10-18 audit's 101 bedside probes + three metamorphic properties (synonym swap, background
+  comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
+  deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
+  are `T(...)` (textbook, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not counted); the
+  owner approves rulings one round at a time. Baseline + round-1 rulings:
+  `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 
