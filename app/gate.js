@@ -20,3 +20,21 @@ export async function sha256hex(text) {
 export async function checkPassphrase(input, digest = PASSPHRASE_DIGEST) {
   return (await sha256hex(input)) === digest;
 }
+
+// The "already unlocked" flag. NEVER THROWS, and the store is resolved INSIDE the guard rather than as a
+// default parameter — Safari throws a SecurityError on the *property access* `localStorage` when cookies are
+// blocked (the theme.js lesson). startGate() reads this before the gate is shown, so a throw there used to
+// leave a blank page; now unusable storage just means the passphrase screen, every visit.
+export function isUnlocked(store) {
+  try {
+    const s = store === undefined ? globalThis.localStorage : store;
+    return !!s && s.getItem(GATE_STORAGE_KEY) === "ok";
+  } catch { return false; }
+}
+
+export function rememberUnlock(store) {
+  try {
+    const s = store === undefined ? globalThis.localStorage : store;
+    if (s) s.setItem(GATE_STORAGE_KEY, "ok");
+  } catch {}
+}

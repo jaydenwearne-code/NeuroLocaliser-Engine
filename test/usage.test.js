@@ -27,6 +27,16 @@ const memStore = (throws = false) => {
     _map: m,
   };
 };
+// Safari with "Block all cookies": the PROPERTY ACCESS `localStorage` itself throws, before any method is
+// reached. memStore(true) cannot model that — reading the store succeeds and only its methods throw. In
+// node these globals are simply undefined, so the default-parameter bug was invisible until this stand-in.
+const withThrowingGlobals = (names, fn) => {
+  const saved = names.map(n => [n, Object.getOwnPropertyDescriptor(globalThis, n)]);
+  for (const n of names) Object.defineProperty(globalThis, n, { configurable: true,
+    get() { const e = new Error("The operation is insecure."); e.name = "SecurityError"; throw e; } });
+  try { return fn(); }
+  finally { for (const [n, d] of saved) d ? Object.defineProperty(globalThis, n, d) : delete globalThis[n]; }
+};
 const capture = () => {
   const calls = [];
   const f = (url, init) => { calls.push({ url, init }); return Promise.resolve({ ok: true }); };
@@ -165,6 +175,28 @@ const endpointCfg = { mode: "endpoint", endpoint: "https://script.google.com/mac
 
   const id = stableId(memStore(true), "k");
   ok("stableId falls back to a fresh id when storage is unusable", typeof id === "string" && id.length > 0);
+
+  // The accessor itself throwing. recordOpen used to take `globalThis.localStorage` as a DEFAULT PARAMETER,
+  // which is evaluated before the body and so outside its try — the theme-toggle lesson, repeated. It runs
+  // first in reveal(), so a throw here kept the app hidden after a correct passphrase.
+  let fixtureThrew = false;
+  try { withThrowingGlobals(["localStorage"], () => globalThis.localStorage); }
+  catch (e) { fixtureThrew = e.name === "SecurityError"; }
+  ok("the stand-in throws a SecurityError on the property access itself", fixtureThrew);
+  ok("...and is removed again afterwards", globalThis.localStorage === undefined);
+
+  for (const names of [["localStorage"], ["sessionStorage"], ["localStorage", "sessionStorage"]]) {
+    const { calls, f } = capture();
+    let threwHere = false, sentHere;
+    withThrowingGlobals(names, () => {
+      try { sentHere = recordOpen({ cfg: endpointCfg, fetchImpl: f, host: "jaydenwearne-code.github.io" }); }
+      catch { threwHere = true; }
+    });
+    const label = names.map(n => `\`${n}\``).join(" and ");
+    ok(`a THROWING ${label} accessor${names.length > 1 ? "s do" : " does"} not propagate`, !threwHere);
+    ok(`...recordOpen returns null and sends nothing`, !threwHere && sentHere === null && calls.length === 0,
+       `returned ${JSON.stringify(sentHere)}, ${calls.length} call(s)`);
+  }
 }
 
 // --- 6: first-open vs returning -------------------------------------------------------------------
