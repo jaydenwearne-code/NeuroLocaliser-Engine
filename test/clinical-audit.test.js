@@ -13,8 +13,9 @@
 //   ruling  — a clinical judgement still awaiting the owner. It runs and prints as PEND with what it WOULD score, but
 //             does not count until approved. Rulings are asked for and recorded in
 //             docs/superpowers/specs/2026-10-18-clinical-audit-suite.md; approving one = changing R(...) to T(...).
-// Round 1 was ruled on 2026-10-18: all 17 proposed answers approved (each marked "owner-approved" below), and the
-// synonym groups settled as section 2 describes — except arm / hand weakness, whose top-3 check is still pending.
+// Round 1 and its open row 20 were ruled on 2026-10-18: all 17 proposed answers approved (each marked "owner-approved"
+// below) and the synonym groups settled as section 2 describes. The only pending checks are the two cortical-hand
+// swaps (weak arm entered for an ISOLATED weak hand), which the row-20 ruling does not reach.
 //
 // Assertion kinds (the clinical-vignettes shape, plus four):
 //   first    — r.display[0] matches                      top / alsoTop — within the first k
@@ -255,20 +256,26 @@ for (const c of CASES) {
 // ======================================================================================================
 // 2. Metamorphic (a): a bedside-equivalent WORD must not move the lesion, and no single changed word may invent a
 // second lesion. For every lateralised site's own complete picture, swap one finding for another in its group (the
-// audit's perturb.mjs groups). Owner rulings 2026-10-18, round 1 rows 18–21:
+// audit's perturb.mjs groups). Owner rulings 2026-10-18, round 1 rows 18–21 (row 20 answered the same day):
 //   no multifocal claim — counted for EVERY swap: even a word that is not a synonym should give ONE other site,
 //     never two lesions plus "MS".
-//   site stays in the top 3 — counted only where the words ARE equivalent: the cerebellar limb signs, and ataxic →
-//     plain dysarthria (specific → generic). Not asserted for the facial sensory words (pain vs touch is a localising
-//     dissociation, and face_sensory_loss is defined as VPM loss) or plain → ataxic dysarthria (a different claim).
-//     Arm ↔ hand weakness (row 20) has not been ruled on, so its top-3 check is pending.
-// `top3(from, to)` returns the status of that check, or null where there is no expectation.
+//   site stays in the top 3 — counted only where the words ARE equivalent:
+//     · the cerebellar limb signs;
+//     · weak hand and weak arm INSIDE A HEMIPARESIS — the picture has leg or face weakness on that side. Pyramidal
+//       weakness is distal-predominant, so the hand is part of the weak arm. Weak hand ALONE still points to the
+//       hand knob (the 2026-08-15 LOCALISING ruling stands), so weak arm entered for that isolated weak hand is
+//       outside the ruling and its check is pending;
+//     · ataxic → plain dysarthria (specific → generic).
+//     Not asserted for the facial sensory words (pain vs touch is a localising dissociation, and face_sensory_loss
+//     is defined as VPM loss) or plain → ataxic dysarthria (a different claim).
+// `top3(from, to, picture, side)` returns the status of that check, or null where there is no expectation.
 // ======================================================================================================
 console.log("\n== metamorphic (a): synonym swaps (FAIL lines only; --verbose for all)");
+const besideOtherWeakness = (picture, side) => picture.includes(`weak_leg@${side}`) || picture.includes(`facial_weakness@${side}`);
 const SWAP_GROUPS = [
   { name: "cerebellar limb signs", ids: ["limb_ataxia", "dysmetria", "intention_tremor", "dysdiadochokinesis"], top3: () => "counted" },
   { name: "facial sensory loss", ids: ["face_pain_loss", "face_sensory_loss", "face_touch_loss"], top3: () => null },
-  { name: "arm / hand weakness", ids: ["weak_arm", "weak_hand"], top3: () => "ruling" },
+  { name: "arm / hand weakness", ids: ["weak_arm", "weak_hand"], top3: (from, to, picture, side) => besideOtherWeakness(picture, side) ? "counted" : "ruling" },
   { name: "dysarthria", ids: ["dysarthria", "ataxic_dysarthria"], top3: (from, to) => to === "dysarthria" ? "counted" : null },
 ];
 const lateral = candidateSites().filter(s => s.side === "left" || s.side === "right");
@@ -297,7 +304,7 @@ for (const site of lateral) {
         lead = u.concordant[0]?.name || "(none)";
         if (swapStats.examples.length < 8) swapStats.examples.push(`${site.id}: ${f}→${alt} ⇒ ${r.multi.sites.map(s => s.id).join(" + ")} [${lead}]`);
       }
-      const label = `swap ${site.id}: ${f}→${alt}`, top3 = g.top3(f, alt);
+      const label = `swap ${site.id}: ${f}→${alt}`, top3 = g.top3(f, alt, exp, side);
       if (top3) ok("Metamorphic: synonym swap", top3, `${label}: site stays in the top 3`, inTop3, `got ${ids(r).slice(0, 3).join(", ")}`, true);
       ok("Metamorphic: synonym swap", "counted", `${label}: no multifocal claim`, r.multi === null, r.multi ? `multi = ${r.multi.sites.map(s => s.id).join(" + ")} [${lead}]` : "", true);
     }

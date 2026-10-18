@@ -1233,7 +1233,8 @@ Spec/plan: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md`, 
   are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
   counted); the owner approves rulings one round at a time. **Round 1 was RULED 2026-10-18** — all 17 proposed
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
-  groups settled; one item open (row 20: is `weak_hand` the same finding as `weak_arm` inside a hemiparesis?).
+  groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
+  hand knob). Two checks stay pending: weak arm entered for an isolated weak hand, which row 20 does not reach.
   Baseline: 66/101 probes correct. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
