@@ -1230,9 +1230,11 @@ Spec/plan: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md`, 
   — the 2026-10-18 audit's 101 bedside probes + three metamorphic properties (synonym swap, background
   comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
   deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
-  are `T(...)` (textbook, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not counted); the
-  owner approves rulings one round at a time. Baseline + round-1 rulings:
-  `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
+  counted); the owner approves rulings one round at a time. **Round 1 was RULED 2026-10-18** — all 17 proposed
+  answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
+  groups settled; one item open (row 20: is `weak_hand` the same finding as `weak_arm` inside a hemiparesis?).
+  Baseline: 66/101 probes correct. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 

@@ -1,6 +1,9 @@
 # Clinical audit suite — the external accuracy baseline (2026-10-18)
 
-**Status: built, NOT merged, no PR. Review round 1 (below) is waiting for the owner.**
+**Status: built, NOT merged, no PR. Review round 1 was RULED by the owner on 2026-10-18.**
+- All 17 proposed answers were approved.
+- The synonym groups follow my recommendations.
+- **One item is still open: row 20**, below.
 
 ## What it is
 
@@ -12,8 +15,9 @@ the bedside, and it is the baseline the fixes will be measured against.
 
 - **101 probes**: the audit's `c1–c6.json` cases. Each states the answer a neurologist would expect.
 - **Three metamorphic properties**, from the audit's `perturb.mjs`:
-  - **(a)** Swap one finding for a bedside-equivalent word in a site's complete picture. The site should stay in
-    the top 3, and no multifocal claim should appear.
+  - **(a)** Swap one finding for another word in a site's complete picture. The rule depends on the words:
+    - **always:** no multifocal claim may appear;
+    - **only where the words are equivalent:** the site should also stay in the top 3.
   - **(b)** Add a common background finding to a complete brain or brainstem picture. The first answer should not
     change, and vasculitis or MS should never be offered as the unifying cause.
   - **(c)** Mirror every side, and the dominant hemisphere. The answer should mirror too.
@@ -22,33 +26,51 @@ Run it with `npm run test:audit`; add `-- --verbose` to see every metamorphic PA
 `npm test`.** Most of it fails today, and that is the point. Wiring it in would turn the main suite red, and loosening
 an assertion until it passes would destroy the measurement. When a fix lands, the numbers below should move.
 
-Every expectation is either **counted** (a textbook answer, which counts towards the exit code) or **pending** (a
-clinical judgement). A pending expectation runs and prints `PEND (would pass / would FAIL)`, but it does not count
-until you approve it. Approving one means changing `R(...)` to `T(...)` in the suite.
+Every expectation is one of two kinds:
+- **Counted:** a textbook answer, or a judgement you have approved. It counts towards the exit code.
+- **Pending:** a judgement awaiting your ruling. It runs and prints `PEND (would pass / would FAIL)`, but it does not
+  count.
 
-## Baseline (main @ `ac4fad3`, 2026-10-18)
+Approving a pending expectation means changing `R(...)` to `T(...)` in the suite. The 17 approved in round 1 are each
+marked `// owner-approved 2026-10-18 (round 1, row N)`.
+
+## Baseline (main @ `ac4fad3`, 2026-10-18, after the round-1 rulings)
 
 | | today |
 |---|---|
-| Probes with a textbook answer | **62 / 84 correct** (74%) |
-| Probes awaiting your ruling | 4 / 17 would pass |
-| (a) synonym swaps | **114 / 138 called multifocal** (108 offered MS or metastases); 13 lost the site from the top 3 |
+| Probes (all counted) | **66 / 101 correct** (65%). The 84 textbook probes score 62; the 17 approved in round 1 score 4 |
+| (a) synonym swaps | **114 / 138 called multifocal** (108 offered MS or metastases); 13 lost the site from the top 3. Counted checks 72 / 192; pending (row 20) 31 / 34 would pass |
 | (b) + bilateral absent ankle jerks | **73 / 73 multifocal**; leading unifier vasculitis 38, MS 33, MND 2; first answer kept 71/73 (both insulae → Friedreich's) |
 | (b) + diabetic stocking sensory loss | **73 / 73 multifocal**; leading unifier vasculitis 73; first answer kept 73/73 |
 | (c) mirror | 263 / 263 mirror cleanly |
 
-By region (textbook probes correct): spinal cord **6/15**, cauda and conus 2/2, motor neurone and neuromuscular 6/7,
-roots/plexus/nerves 13/16, brainstem **8/12**, cranial nerves and skull base 9/10, vestibular and cerebellar 6/6,
-hemispheres/thalamus/vision **6/10**, consciousness and raised pressure 3/3, robustness and functional 3/3.
+Probes correct by region:
 
-## Review round 1 — expected answers that need your ruling
+| region | correct |
+|---|---|
+| spinal cord | **6/16** |
+| cauda and conus | 2/2 |
+| motor neurone and neuromuscular | 7/9 |
+| roots, plexus and nerves | 13/18 |
+| brainstem | **8/13** |
+| cranial nerves and skull base | 9/12 |
+| vestibular and cerebellar | 6/7 |
+| hemispheres, thalamus and vision | **7/13** |
+| consciousness and raised pressure | **4/7** |
+| robustness and functional | 4/4 |
 
-For each row, please say **approve**, **change the expected answer to …**, or **drop**. "Today" is what the engine
-says now.
+## Review round 1 — RULED 2026-10-18
 
-| # | Probe | Expected answer (proposed) | Today | The judgement |
+> *"For review round 1, i agree with all your expected answers. For synonym groups, I agree with your
+> recommendations."* — the owner
+
+Every "expected answer" below is now counted, exactly as written. Where a row offered an alternative, the expected
+answer was approved, not the alternative. For example, row 1 still requires ONE cord site; the cord + C6-root pair is
+not accepted.
+
+| # | Probe | Expected answer (approved) | Today | The judgement that was asked |
 |---|---|---|---|---|
-| 1 | C5/6 myeloradiculopathy (L biceps + supinator jerks lost, L elbow flexion weak, legs UMN) | a cord site first; no multifocal claim | conus + upper trunk, "vasculitis" | Without a segment axis, "cord + C6 root at one level" can't be one site. Is that pair acceptable as the answer instead? |
+| 1 | C5/6 myeloradiculopathy (L biceps + supinator jerks lost, L elbow flexion weak, legs UMN) | a cord site first; no multifocal claim | conus + upper trunk, "vasculitis" | Without a segment axis, "cord + C6 root at one level" can't be one site. Is that pair acceptable instead? |
 | 2 | ALS: mixed UMN + LMN | multifocal, with MND as the leading unifier | passes (anterior horn + conus, MND) | Is multifocal-with-MND the right form for ALS, rather than a single "motor system" answer? |
 | 3 | Bulbar ALS (bilateral XII, dysphagia, fasciculations) | anterior horn first; no multifocal claim unless MND is named | anterior horn + both medullae, no unifier | as #2 |
 | 4 | Knee extension + hip adduction + knee jerk + L4 dermatome | L4 root first | lumbar plexus | Does a dermatomal sensory loss put the root ahead of the plexus? |
@@ -66,19 +88,45 @@ says now.
 | 16 | Papilloedema + paraparesis + sphincter | a parasagittal site in the top 3; one lesion | passes | Is a parasagittal mass the expected reading? |
 | 17 | Babinski AND a down-going plantar on the same side | no multifocal claim | passes | Or should the engine flag the contradiction? |
 
-**The synonym-swap groups for property (a)** are the same kind of judgement. Only the first group counts today.
+**The synonym-swap groups for property (a), as ruled.**
 
-| # | Group | Counts today? | Swaps | Multifocal today | My recommendation |
-|---|---|---|---|---|---|
-| 18 | limb_ataxia / dysmetria / intention_tremor / dysdiadochokinesis | **yes** (textbook) | 54 | 48 | Dysmetria is how limb ataxia is examined. Object if you disagree. |
-| 19 | face_pain_loss / face_sensory_loss / face_touch_loss | no | 44 | 28 | Pain vs touch is a real localising dissociation (medulla vs pons), so **not** equivalent. `face_sensory_loss` is named by its anatomy (VPM). |
-| 20 | weak_arm / weak_hand | no | 34 | 32 | `weak_hand` means ISOLATED hand weakness, and was made LOCALISING on 2026-08-15. Should it still be a fair word inside a hemiparesis? |
-| 21 | dysarthria / ataxic_dysarthria | no | 6 | 6 | Specific → generic should be safe; generic → specific is a different claim |
+| # | Group | Recommendation (approved) | What counts now |
+|---|---|---|---|
+| 18 | limb_ataxia / dysmetria / intention_tremor / dysdiadochokinesis | Equivalent: dysmetria is how limb ataxia is examined | stays in the top 3 **and** no multifocal claim (54 swaps; 48 multifocal today) |
+| 19 | face_pain_loss / face_sensory_loss / face_touch_loss | **Not** equivalent: pain vs touch is a localising dissociation (medulla vs pons), and `face_sensory_loss` is named by its anatomy (VPM) | no multifocal claim only (44 swaps; 28 multifocal today) |
+| 20 | weak_arm / weak_hand | **— none given; see "Still open" below** | no multifocal claim (2/34 pass); the top-3 check is **pending** (31/34 would pass) |
+| 21 | dysarthria / ataxic_dysarthria | Specific → generic is safe; generic → specific is a different claim | no multifocal claim for all 6 swaps (0/6 pass); top 3 only for ataxic → plain |
 
-Whatever you rule, entering a single non-equivalent word should still give ONE other site, not two lesions plus "MS".
-That is why even the pending swaps print what they would score.
+On row 21: all 6 swaps today go plain → ataxic. Only the midline vermis and the pancerebellar site predict ataxic
+dysarthria, and the swap property covers only lateralised sites. So the ataxic → plain check has no case yet; it is
+wired in for when one appears.
 
-## Counted today, and failing (for information; object to any of them)
+**"No multifocal claim" counts for every swap, including the non-equivalent ones.** It came from the line under the
+round-1 table: *"whatever you rule, entering a single non-equivalent word should still give ONE other site, not two
+lesions plus MS"*. I applied it as part of your blanket approval. Say so if you did not mean it to count.
+
+**How rows 6 and 19 fit together:**
+- Row 19 says `face_sensory_loss` is not a synonym of `face_pain_loss`, so the swap property no longer requires the
+  lateral medulla to survive that one word.
+- Row 6 says that a Wallenberg picture entered with `face_sensory_loss` should still put the lateral medulla FIRST:
+  the rest of the picture is decisive.
+- The probe asserts it and the swap property stays silent. They do not conflict.
+
+## Still open (round 2)
+
+**Row 20 asked a question rather than making a recommendation**, so there was nothing to agree with. The question:
+`weak_hand` is defined as ISOLATED hand weakness and was made LOCALISING on 2026-08-15. Is it still the same finding
+as `weak_arm` inside a hemiparesis?
+
+- **Yes** → its 34 top-3 checks count (31 would pass today).
+- **No** → they are dropped.
+
+Its no-multifocal checks count either way.
+
+## Counted, and failing today
+
+These are the defects the fixes will be measured against. The 13 approved in round 1 that fail today are marked
+(R1 #n).
 
 Spinal cord:
 - asymmetric compression → conus + cortex
@@ -89,27 +137,41 @@ Spinal cord:
 - C5-level compression → + conus
 - spastic legs at T10 → conus, with the level dismissed as "below the cord"
 - spinal shock, both entries → GBS, Friedreich's, + cord
+- C5/6 myeloradiculopathy → conus + upper trunk (R1 #1)
 
-Peripheral:
+Motor neurone and peripheral:
 - GBS → + length-dependent neuropathy, "vasculitis"
+- bulbar ALS → anterior horn + both medullae, no unifier (R1 #3)
 - ulnar at the elbow → two ulnar lesions
 - C6 radiculopathy → upper trunk
 - Erb → C5 + posterior cord
+- L4 → lumbar plexus (R1 #4)
+- UMN foot drop → hand knob + deep peroneal (R1 #5)
 
 Brainstem:
 - Wallenberg entered with dysmetria → + cerebellum, "MS"
+- Wallenberg entered with `face_sensory_loss` → + VPM thalamus (R1 #6)
 - bilateral INO → two trochlear sites, "MS"
 - basilar (coma + quadriparesis + both Babinski) → cord + diffuse cerebrum
 - full locked-in → three sites
 
-Skull base:
+Skull base and vestibular:
 - Horner + XII → Villaret first. The carotid space does not produce XII.
+- bilateral VI, with or without papilloedema → two VI lesions + sarcoid (R1 #7, #8)
+- HINTS-plus → AICA missing from the top 3 (R1 #9)
 
 Hemispheres:
 - alexia without agraphia + hemianopia → two sites
 - wrong-way eyes → corona radiata + left frontal eye field
 - thalamic sensory-ataxic picture → midbrain
 - dysarthria–clumsy hand → pons + hand knob
+- left MCA in a right-dominant patient → two lesions (R1 #10)
+- parasagittal → cord + ACA (R1 #12)
+
+Consciousness:
+- uncal herniation → ARAS + ciliary ganglion (R1 #13)
+- top of the basilar → Percheron + both occipitals, "MS" (R1 #14)
+- bilateral PCA → limbic thalamus + both occipitals, "MS" (R1 #15)
 
 ## Changes made to the audit inputs
 

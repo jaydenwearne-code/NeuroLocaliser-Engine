@@ -8,10 +8,13 @@
 // turn `npm test` red, and loosening an assertion until it passes would destroy the measurement.
 //
 // Every expectation carries a status:
-//   counted — a textbook answer. Counts towards the tally and the exit code.
-//   ruling  — a clinical judgement awaiting the owner (a clinician). It runs and prints as PEND with what it WOULD
-//             score, but does not count until approved. The rulings asked for are listed in
+//   counted — a textbook answer, or a judgement the owner (a clinician) has approved. Counts towards the tally and
+//             the exit code.
+//   ruling  — a clinical judgement still awaiting the owner. It runs and prints as PEND with what it WOULD score, but
+//             does not count until approved. Rulings are asked for and recorded in
 //             docs/superpowers/specs/2026-10-18-clinical-audit-suite.md; approving one = changing R(...) to T(...).
+// Round 1 was ruled on 2026-10-18: all 17 proposed answers approved (each marked "owner-approved" below), and the
+// synonym groups settled as section 2 describes — except arm / hand weakness, whose top-3 check is still pending.
 //
 // Assertion kinds (the clinical-vignettes shape, plus four):
 //   first    — r.display[0] matches                      top / alsoTop — within the first k
@@ -55,13 +58,14 @@ const CORD = /^(bilateral_cord_(transverse|anterior|posterior|central)|(left|rig
 const PONS = /^(locked_in|brainstem_aras|pontomesencephalic_tegmentum|(left|right)_pons_)/;
 const PARASAG = /^(left|right)_cortex_(aca|paracentral|motor_leg)$/;
 
-// ---- the probes: T = counted (textbook), R = awaiting the owner's ruling ----
+// ---- the probes: T = counted (textbook or owner-approved), R = awaiting the owner's ruling ----
 const CASES = [];
 const T = (region, label, toks, want, opts = {}) => CASES.push({ region, label, toks, want, opts, status: "counted" });
 const R = (region, label, toks, want, opts = {}) => CASES.push({ region, label, toks, want, opts, status: "ruling" });
 
 // Spinal cord
-R("Spinal cord", "C5/6 myeloradiculopathy (biceps + supinator lost, legs UMN) → cervical cord, one lesion", "reflex_biceps_loss@left reflex_brachioradialis_loss@left weak_elbow_flexion@left hyperreflexia@left hyperreflexia@right babinski@left babinski@right spasticity@left spasticity@right", { first: CORD, single: true });
+// owner-approved 2026-10-18 (round 1, row 1)
+T("Spinal cord", "C5/6 myeloradiculopathy (biceps + supinator lost, legs UMN) → cervical cord, one lesion", "reflex_biceps_loss@left reflex_brachioradialis_loss@left weak_elbow_flexion@left hyperreflexia@left hyperreflexia@right babinski@left babinski@right spasticity@left spasticity@right", { first: CORD, single: true });
 T("Spinal cord", "asymmetric compression: R leg weak + both Babinski + sphincter → cord", "weak_leg@right babinski@right babinski@left sphincter_dysfunction@midline", { top: [3, CORD], single: true });
 T("Spinal cord", "paraparesis + both Babinski + sphincter + pain loss, level T8 → thoracic cord", "weak_leg@left weak_leg@right babinski@left babinski@right sphincter_dysfunction@midline spinothalamic@left spinothalamic@right", { first: CORD, single: true, level: /T8/ }, { sensoryLevel: "T8" });
 T("Spinal cord", "paraparesis + both Babinski (no sensory) → cord", "weak_leg@left weak_leg@right babinski@left babinski@right", { first: CORD, single: true });
@@ -83,8 +87,10 @@ T("Cauda & conus", "cauda equina", "saddle_anaesthesia@midline sphincter_dysfunc
 T("Cauda & conus", "conus", "saddle_anaesthesia@midline sphincter_dysfunction@midline babinski@left babinski@right", { first: /^conus_medullaris$/, single: true });
 
 // Motor neurone & neuromuscular
-R("Motor neurone & neuromuscular", "ALS: mixed UMN + LMN → motor neurone disease named", "fasciculations@left fasciculations@right wasting@left wasting@right hyperreflexia@left hyperreflexia@right babinski@left babinski@right dysarthria@none", { unify: /Motor neurone/ });
-R("Motor neurone & neuromuscular", "bulbar-onset ALS: tongue + swallow + fasciculations → anterior horn / MND, not two medullas", "cn12_palsy@left cn12_palsy@right dysarthria@none dysphagia@left dysphagia@right fasciculations@left fasciculations@right", { first: /^motor_unit_anterior_horn$/, one: /Motor neurone/ });
+// owner-approved 2026-10-18 (round 1, row 2)
+T("Motor neurone & neuromuscular", "ALS: mixed UMN + LMN → motor neurone disease named", "fasciculations@left fasciculations@right wasting@left wasting@right hyperreflexia@left hyperreflexia@right babinski@left babinski@right dysarthria@none", { unify: /Motor neurone/ });
+// owner-approved 2026-10-18 (round 1, row 3)
+T("Motor neurone & neuromuscular", "bulbar-onset ALS: tongue + swallow + fasciculations → anterior horn / MND, not two medullas", "cn12_palsy@left cn12_palsy@right dysarthria@none dysphagia@left dysphagia@right fasciculations@left fasciculations@right", { first: /^motor_unit_anterior_horn$/, one: /Motor neurone/ });
 T("Motor neurone & neuromuscular", "GBS: ascending areflexic + distal sensory → one peripheral process", "lmn_weakness@left lmn_weakness@right reflex_knee_loss@left reflex_knee_loss@right reflex_ankle_loss@left reflex_ankle_loss@right distal_sensory_loss@left distal_sensory_loss@right", { first: /^(polyradiculoneuropathy_acute|polyneuropathy_length_dependent)$/, single: true });
 T("Motor neurone & neuromuscular", "GBS with facial diplegia", "lmn_weakness@left lmn_weakness@right reflex_ankle_loss@left reflex_ankle_loss@right facial_weakness@left facial_weakness@right forehead_involved@left forehead_involved@right", { first: /^polyradiculoneuropathy_acute$/, single: true });
 // The audit entered fatigable weakness "@none", which the app cannot enter; it offers left / right, so both are entered.
@@ -108,16 +114,19 @@ T("Roots, plexus & nerves", "C6 radiculopathy (dermatome + reflexes + radicular 
 T("Roots, plexus & nerves", "C7 radiculopathy", "sensory_c7@left reflex_triceps_loss@left weak_elbow_extension@left weak_wrist_flexion@left", { first: /^left_root_c7$/, single: true });
 T("Roots, plexus & nerves", "upper trunk (Erb) → upper trunk / C5, one lesion", "weak_shoulder_abduction@left weak_elbow_flexion@left weak_shoulder_external_rotation@left reflex_biceps_loss@left axillary_sensory@left", { first: /^left_(plexus_upper_trunk|root_c5)$/, single: true });
 T("Roots, plexus & nerves", "femoral neuropathy", "weak_knee_extension@left reflex_knee_loss@left femoral_sensory@left", { first: /^left_nerve_femoral$/, single: true });
-R("Roots, plexus & nerves", "knee extension + hip adduction + knee jerk + L4 dermatome → L4 root over lumbar plexus", "weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left sensory_l4@left", { first: /^left_root_l4$/, single: true });
+// owner-approved 2026-10-18 (round 1, row 4)
+T("Roots, plexus & nerves", "knee extension + hip adduction + knee jerk + L4 dermatome → L4 root over lumbar plexus", "weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left sensory_l4@left", { first: /^left_root_l4$/, single: true });
 T("Roots, plexus & nerves", "meralgia paraesthetica", "lat_fem_cutaneous_sensory@left", { first: /^left_nerve_lat_fem_cutaneous$/ });
 T("Roots, plexus & nerves", "S1 radiculopathy", "reflex_ankle_loss@left weak_ankle_plantarflexion@left sensory_s1@left radicular_pain@left", { first: /^left_root_s1$/, single: true });
 T("Roots, plexus & nerves", "mononeuritis multiplex: L peroneal + R ulnar → genuinely two nerves", "peroneal_sensory@left weak_ankle_dorsiflexion@left ulnar_sensory@right weak_finger_abduction@right", { unify: /Mononeuritis multiplex/ });
-R("Roots, plexus & nerves", "UMN foot drop: weak dorsiflexion + Babinski + brisk → right corticospinal (not the hand knob, not a nerve)", "weak_ankle_dorsiflexion@left babinski@left hyperreflexia@left", { first: /^(right_(?!cortex_hand_knob)(cortex|subcortex|pons|midbrain|medulla)_|left_cord_)/, single: true });
+// owner-approved 2026-10-18 (round 1, row 5)
+T("Roots, plexus & nerves", "UMN foot drop: weak dorsiflexion + Babinski + brisk → right corticospinal (not the hand knob, not a nerve)", "weak_ankle_dorsiflexion@left babinski@left hyperreflexia@left", { first: /^(right_(?!cortex_hand_knob)(cortex|subcortex|pons|midbrain|medulla)_|left_cord_)/, single: true });
 
 // Brainstem
 T("Brainstem", "Wallenberg with dysmetria instead of limb ataxia", "face_pain_loss@left spinothalamic@right miosis@left ptosis@left dysmetria@left dysphagia@left cn8_vertigo@left", { first: /^left_medulla_lateral$/, single: true });
 T("Brainstem", "Wallenberg + hoarseness", "face_pain_loss@left spinothalamic@right miosis@left ptosis@left limb_ataxia@left dysphagia@left vocal_cord_palsy@left palatal_weakness@left", { first: /^left_medulla_lateral$/, single: true });
-R("Brainstem", "Wallenberg with facial numbness entered as the VPM token (face_sensory_loss)", "face_sensory_loss@left spinothalamic@right miosis@left ptosis@left limb_ataxia@left dysphagia@left", { first: /^left_medulla_lateral$/, single: true });
+// owner-approved 2026-10-18 (round 1, row 6)
+T("Brainstem", "Wallenberg with facial numbness entered as the VPM token (face_sensory_loss)", "face_sensory_loss@left spinothalamic@right miosis@left ptosis@left limb_ataxia@left dysphagia@left", { first: /^left_medulla_lateral$/, single: true });
 T("Brainstem", "minimal lateral medulla: ipsilateral face + contralateral body pain loss", "face_pain_loss@left spinothalamic@right", { top: [3, /^left_(medulla_lateral|pons_lateral)/] });
 T("Brainstem", "face + body pain loss on the SAME side → contralateral thalamus / upper brainstem", "face_pain_loss@left spinothalamic@left", { first: /^right_(subcortex_(thalamus|sensorimotor)|thalamus_vpm|midbrain_lateral)$/, single: true });
 T("Brainstem", "Claude (III + contralateral ataxia)", "ptosis@left weak_adduction@left weak_elevation@left weak_depression@left limb_ataxia@right", { first: /^left_midbrain_(medial|hemi)$/, single: true });
@@ -134,8 +143,10 @@ T("Cranial nerves & skull base", "orbital apex", "ptosis@left weak_adduction@lef
 T("Cranial nerves & skull base", "Gradenigo (VI + V1)", "weak_abduction@left v1_sensory@left", { first: /^left_skull_base_petrous_apex$/, single: true });
 T("Cranial nerves & skull base", "jugular foramen (Vernet)", "gag_afferent_loss@left palatal_weakness@left vocal_cord_palsy@left weak_scm@left weak_trapezius@left", { first: /^left_skull_base_jugular_foramen$/, single: true });
 T("Cranial nerves & skull base", "Collet-Sicard (IX–XII)", "gag_afferent_loss@left palatal_weakness@left vocal_cord_palsy@left weak_scm@left weak_trapezius@left cn12_palsy@left", { first: /^left_skull_base_collet_sicard$/, single: true });
-R("Cranial nerves & skull base", "bilateral VI + papilloedema → raised pressure (false-localising), not two VI lesions", "weak_abduction@left weak_abduction@right papilloedema@none", { single: true, pressure: true });
-R("Cranial nerves & skull base", "bilateral VI alone → one process, not two VI lesions + sarcoid/NF2", "weak_abduction@left weak_abduction@right", { single: true });
+// owner-approved 2026-10-18 (round 1, row 7)
+T("Cranial nerves & skull base", "bilateral VI + papilloedema → raised pressure (false-localising), not two VI lesions", "weak_abduction@left weak_abduction@right papilloedema@none", { single: true, pressure: true });
+// owner-approved 2026-10-18 (round 1, row 8)
+T("Cranial nerves & skull base", "bilateral VI alone → one process, not two VI lesions + sarcoid/NF2", "weak_abduction@left weak_abduction@right", { single: true });
 T("Cranial nerves & skull base", "complete III, pupil not entered → microvascular first, compressive in the top 3", "ptosis@left weak_adduction@left weak_elevation@left weak_depression@left", { first: /^left_pupil_cn3_ischaemic$/, alsoTop: [3, /^left_pupil_cn3_compressive$/], single: true });
 T("Cranial nerves & skull base", "isolated IV palsy", "weak_depression@left vertical_diplopia@left", { top: [3, /^(left_skull_base_trochlear_cisternal|right_midbrain_trochlear)$/] });
 T("Cranial nerves & skull base", "Horner alone", "miosis@left ptosis@left", { top: [3, /^left_(sympathetic_|medulla_lateral|skull_base_carotid_space)/] });
@@ -145,7 +156,8 @@ T("Cranial nerves & skull base", "Pancoast: Horner + C8/T1 hand + medial arm", "
 
 // Vestibular & cerebellar
 T("Vestibular & cerebellar", "vestibular neuritis, HINTS peripheral", "cn8_vertigo@left nystagmus_peripheral@none head_impulse_abnormal@none", { first: /^left_peripheral_vestibular_/, single: true });
-R("Vestibular & cerebellar", "vertigo + hearing loss + abnormal HIT → labyrinth first, AICA (lateral pons) in the top 3 (HINTS-plus)", "cn8_vertigo@left hearing_loss@left nystagmus_peripheral@none head_impulse_abnormal@none", { first: /^left_peripheral_vestibular_labyrinth$/, top: [3, /^left_pons_lateral$/] });
+// owner-approved 2026-10-18 (round 1, row 9)
+T("Vestibular & cerebellar", "vertigo + hearing loss + abnormal HIT → labyrinth first, AICA (lateral pons) in the top 3 (HINTS-plus)", "cn8_vertigo@left hearing_loss@left nystagmus_peripheral@none head_impulse_abnormal@none", { first: /^left_peripheral_vestibular_labyrinth$/, top: [3, /^left_pons_lateral$/] });
 T("Vestibular & cerebellar", "central AVS: vertigo + gaze-evoked nystagmus + skew → central", "cn8_vertigo@left nystagmus_gaze_evoked@none skew_deviation@none", { first: /^(left_(central_vestibular|medulla|pons|cerebellum)|cerebellum_)/, single: true });
 T("Vestibular & cerebellar", "vertigo alone → peripheral first", "cn8_vertigo@left", { top: [3, /^left_peripheral_vestibular_/] });
 T("Vestibular & cerebellar", "BPPV, posterior canal", "nystagmus_positional_posterior@none", { first: /_peripheral_vestibular_posterior_canal$/ });
@@ -153,8 +165,10 @@ T("Vestibular & cerebellar", "downbeat nystagmus → cervicomedullary junction /
 T("Vestibular & cerebellar", "truncal ataxia + gaze-evoked + ataxic dysarthria (alcohol / vermis)", "truncal_ataxia@none nystagmus_gaze_evoked@none ataxic_dysarthria@none", { first: /^cerebellum_(vermis|pancerebellar)$/, single: true });
 
 // Hemispheres, thalamus & vision
-R("Hemispheres, thalamus & vision", "left MCA in a left-hander set right-dominant → left MCA, one lesion", "speech_nonfluent@none comprehension_impaired@none weak_arm@right facial_weakness@right forehead_spared@right homonymous_hemianopia@right", { first: /^left_cortex_mca$/, single: true }, { dominantSide: "right" });
-R("Hemispheres, thalamus & vision", "aphasia + LEFT hemiparesis in a right-hander → a right-hemisphere lesion offered (crossed aphasia)", "speech_nonfluent@none weak_arm@left facial_weakness@left forehead_spared@left", { top: [3, /^right_(cortex|subcortex)_/] });
+// owner-approved 2026-10-18 (round 1, row 10)
+T("Hemispheres, thalamus & vision", "left MCA in a left-hander set right-dominant → left MCA, one lesion", "speech_nonfluent@none comprehension_impaired@none weak_arm@right facial_weakness@right forehead_spared@right homonymous_hemianopia@right", { first: /^left_cortex_mca$/, single: true }, { dominantSide: "right" });
+// owner-approved 2026-10-18 (round 1, row 11)
+T("Hemispheres, thalamus & vision", "aphasia + LEFT hemiparesis in a right-hander → a right-hemisphere lesion offered (crossed aphasia)", "speech_nonfluent@none weak_arm@left facial_weakness@left forehead_spared@left", { top: [3, /^right_(cortex|subcortex)_/] });
 T("Hemispheres, thalamus & vision", "right hemianopia + alexia without agraphia → left PCA, one lesion", "homonymous_hemianopia@right alexia_without_agraphia@none", { top: [3, /^left_cortex_pca$/], single: true });
 T("Hemispheres, thalamus & vision", "isolated right hemianopia", "homonymous_hemianopia@right", { top: [3, /^left_(cortex_(occipital|pca)|subcortex_optic_radiation|visual_pathway_(optic_tract|lgn))$/], single: true });
 T("Hemispheres, thalamus & vision", "hemianopia + contralateral RAPD → optic tract", "homonymous_hemianopia@right rapd@right", { first: /^left_visual_pathway_optic_tract$/, single: true });
@@ -164,23 +178,29 @@ T("Hemispheres, thalamus & vision", "gaze deviation right + left hemiparesis →
 T("Hemispheres, thalamus & vision", "wrong-way eyes: gaze left + left hemiparesis → right pons / thalamus, one lesion", "gaze_deviation@left weak_arm@left weak_leg@left", { top: [3, /^right_(pons_|subcortex_thalamus|thalamus_)/], single: true });
 T("Hemispheres, thalamus & vision", "thalamus: hemisensory + hemiataxia + face", "spinothalamic@right dorsal_sensory@right face_sensory_loss@right limb_ataxia@right", { first: /^left_(subcortex_thalamus|thalamus_)/, single: true });
 T("Hemispheres, thalamus & vision", "lacunar dysarthria–clumsy hand", "dysarthria@none facial_weakness@right forehead_spared@right weak_hand@right", { first: /^left_(subcortex_(internal_capsule|corona_radiata)|pons_basis_pontis)$/, single: true });
-R("Hemispheres, thalamus & vision", "parasagittal meningioma: both legs UMN + cortical incontinence → parasagittal in the top 3, one lesion", "weak_leg@left weak_leg@right babinski@left babinski@right urinary_incontinence@none", { top: [3, PARASAG], single: true });
+// owner-approved 2026-10-18 (round 1, row 12)
+T("Hemispheres, thalamus & vision", "parasagittal meningioma: both legs UMN + cortical incontinence → parasagittal in the top 3, one lesion", "weak_leg@left weak_leg@right babinski@left babinski@right urinary_incontinence@none", { top: [3, PARASAG], single: true });
 
 // Consciousness & raised pressure
 T("Consciousness & raised pressure", "coma alone", "reduced_consciousness@none", { top: [3, /^(cerebrum_diffuse|brainstem_aras|thalamus_bilateral_percheron)$/] });
-R("Consciousness & raised pressure", "uncal herniation: coma + fixed dilated L pupil + extensor posturing → one process, compressive III in the top 3", "reduced_consciousness@none fixed_dilated_pupil@left extensor_posturing@none", { top: [3, /^left_pupil_cn3_compressive$/], single: true });
-R("Consciousness & raised pressure", "top of the basilar: coma + vertical gaze palsy + cortical blindness → one vascular event", "reduced_consciousness@none vertical_gaze_palsy@none cortical_blindness@none", { one: /Embolic/ });
-R("Consciousness & raised pressure", "bilateral PCA: cortical blindness + amnesia → one vascular event", "cortical_blindness@none amnesia@none", { one: /Embolic/ });
+// owner-approved 2026-10-18 (round 1, row 13)
+T("Consciousness & raised pressure", "uncal herniation: coma + fixed dilated L pupil + extensor posturing → one process, compressive III in the top 3", "reduced_consciousness@none fixed_dilated_pupil@left extensor_posturing@none", { top: [3, /^left_pupil_cn3_compressive$/], single: true });
+// owner-approved 2026-10-18 (round 1, row 14)
+T("Consciousness & raised pressure", "top of the basilar: coma + vertical gaze palsy + cortical blindness → one vascular event", "reduced_consciousness@none vertical_gaze_palsy@none cortical_blindness@none", { one: /Embolic/ });
+// owner-approved 2026-10-18 (round 1, row 15)
+T("Consciousness & raised pressure", "bilateral PCA: cortical blindness + amnesia → one vascular event", "cortical_blindness@none amnesia@none", { one: /Embolic/ });
 T("Consciousness & raised pressure", "papilloedema alone → raised pressure, no localising claim", "papilloedema@none", { pressure: true, single: true });
 T("Consciousness & raised pressure", "papilloedema + right hemiparesis → left hemisphere mass", "papilloedema@none weak_arm@right weak_leg@right", { first: /^left_(cortex|subcortex)_/, single: true, pressure: true });
-R("Consciousness & raised pressure", "papilloedema + paraparesis + sphincter → parasagittal mass in the top 3, one lesion", "papilloedema@none weak_leg@left weak_leg@right babinski@left babinski@right sphincter_dysfunction@midline", { top: [3, PARASAG], single: true });
+// owner-approved 2026-10-18 (round 1, row 16)
+T("Consciousness & raised pressure", "papilloedema + paraparesis + sphincter → parasagittal mass in the top 3, one lesion", "papilloedema@none weak_leg@left weak_leg@right babinski@left babinski@right sphincter_dysfunction@midline", { top: [3, PARASAG], single: true });
 
 // Stroke course and multifocal pictures that ARE multifocal
 T("Hemispheres, thalamus & vision", "hyperacute R arm + L leg → two lesions, embolic shower", "weak_arm@right weak_leg@left", { unify: /Embolic/ }, { onset: "hyperacute" });
 T("Brainstem", "INO + optic neuritis, subacute relapsing → multiple sclerosis", "ino@left central_scotoma@right rapd@right", { unify: /Multiple sclerosis/ }, { onset: "subacute", course: "relapsing" });
 
 // Robustness & functional
-R("Robustness & functional", "Babinski AND a down-going plantar on the same side (contradictory entry) → no multifocal claim", "babinski@left plantar_flexor@left weak_leg@left", { single: true });
+// owner-approved 2026-10-18 (round 1, row 17)
+T("Robustness & functional", "Babinski AND a down-going plantar on the same side (contradictory entry) → no multifocal claim", "babinski@left plantar_flexor@left weak_leg@left", { single: true });
 T("Robustness & functional", "right hemiparesis with a down-going right plantar → still the left hemisphere", "weak_arm@right weak_leg@right plantar_flexor@right", { first: /^left_(cortex|subcortex)_/, single: true });
 T("Robustness & functional", "kitchen sink (7 unrelated findings) → no single site claims all of it", "ptosis@left weak_abduction@right sensory_l5@left neglect@left median_sensory@right truncal_ataxia@none anosmia@left", { none: true });
 T("Robustness & functional", "functional: Hoover + give-way + weak leg → functional flag, no multifocal claim", "weak_leg@left hoovers_sign@none give_way_weakness@none", { functional: true, single: true });
@@ -233,19 +253,23 @@ for (const c of CASES) {
 }
 
 // ======================================================================================================
-// 2. Metamorphic (a): a bedside-equivalent WORD must not move the lesion or create a second one.
-// For every lateralised site's own complete picture, swap one finding for another in its group.
-// The groups are the audit's (perturb.mjs). Only the cerebellar limb signs count today: the other three groups
-// are not equivalent under the engine's own definitions (face_sensory_loss is defined as discriminative VPM loss,
-// face_touch_loss as light touch, weak_hand as ISOLATED hand weakness, ataxic_dysarthria as cerebellar) — whether
-// they should be is the owner's ruling.
+// 2. Metamorphic (a): a bedside-equivalent WORD must not move the lesion, and no single changed word may invent a
+// second lesion. For every lateralised site's own complete picture, swap one finding for another in its group (the
+// audit's perturb.mjs groups). Owner rulings 2026-10-18, round 1 rows 18–21:
+//   no multifocal claim — counted for EVERY swap: even a word that is not a synonym should give ONE other site,
+//     never two lesions plus "MS".
+//   site stays in the top 3 — counted only where the words ARE equivalent: the cerebellar limb signs, and ataxic →
+//     plain dysarthria (specific → generic). Not asserted for the facial sensory words (pain vs touch is a localising
+//     dissociation, and face_sensory_loss is defined as VPM loss) or plain → ataxic dysarthria (a different claim).
+//     Arm ↔ hand weakness (row 20) has not been ruled on, so its top-3 check is pending.
+// `top3(from, to)` returns the status of that check, or null where there is no expectation.
 // ======================================================================================================
 console.log("\n== metamorphic (a): synonym swaps (FAIL lines only; --verbose for all)");
 const SWAP_GROUPS = [
-  { name: "cerebellar limb signs", status: "counted", ids: ["limb_ataxia", "dysmetria", "intention_tremor", "dysdiadochokinesis"] },
-  { name: "facial sensory loss", status: "ruling", ids: ["face_pain_loss", "face_sensory_loss", "face_touch_loss"] },
-  { name: "arm / hand weakness", status: "ruling", ids: ["weak_arm", "weak_hand"] },
-  { name: "dysarthria", status: "ruling", ids: ["dysarthria", "ataxic_dysarthria"] },
+  { name: "cerebellar limb signs", ids: ["limb_ataxia", "dysmetria", "intention_tremor", "dysdiadochokinesis"], top3: () => "counted" },
+  { name: "facial sensory loss", ids: ["face_pain_loss", "face_sensory_loss", "face_touch_loss"], top3: () => null },
+  { name: "arm / hand weakness", ids: ["weak_arm", "weak_hand"], top3: () => "ruling" },
+  { name: "dysarthria", ids: ["dysarthria", "ataxic_dysarthria"], top3: (from, to) => to === "dysarthria" ? "counted" : null },
 ];
 const lateral = candidateSites().filter(s => s.side === "left" || s.side === "right");
 const swapStats = { tried: 0, lostTop3: 0, multi: 0, msMets: 0, byGroup: {}, examples: [] };
@@ -273,9 +297,9 @@ for (const site of lateral) {
         lead = u.concordant[0]?.name || "(none)";
         if (swapStats.examples.length < 8) swapStats.examples.push(`${site.id}: ${f}→${alt} ⇒ ${r.multi.sites.map(s => s.id).join(" + ")} [${lead}]`);
       }
-      const label = `swap ${site.id}: ${f}→${alt}`;
-      ok("Metamorphic: synonym swap", g.status, `${label}: site stays in the top 3`, inTop3, `got ${ids(r).slice(0, 3).join(", ")}`, true);
-      ok("Metamorphic: synonym swap", g.status, `${label}: no multifocal claim`, r.multi === null, r.multi ? `multi = ${r.multi.sites.map(s => s.id).join(" + ")} [${lead}]` : "", true);
+      const label = `swap ${site.id}: ${f}→${alt}`, top3 = g.top3(f, alt);
+      if (top3) ok("Metamorphic: synonym swap", top3, `${label}: site stays in the top 3`, inTop3, `got ${ids(r).slice(0, 3).join(", ")}`, true);
+      ok("Metamorphic: synonym swap", "counted", `${label}: no multifocal claim`, r.multi === null, r.multi ? `multi = ${r.multi.sites.map(s => s.id).join(" + ")} [${lead}]` : "", true);
     }
   }
 }
@@ -354,7 +378,7 @@ for (const m of mirrorCases) {
 // Summary: per region, then the baseline numbers the fixes are measured against.
 // ======================================================================================================
 const pct = ([p, n]) => n ? `${String(p).padStart(3)}/${String(n).padEnd(3)} (${Math.round(100 * p / n)}%)` : "     —        ";
-console.log("\n== summary by region   (counted = textbook expectations; pending = awaiting the owner's ruling, not counted)");
+console.log("\n== summary by region   (counted = textbook or owner-approved; pending = awaiting the owner's ruling, not counted)");
 console.log(`${"region".padEnd(34)}${"probes correct".padEnd(18)}${"checks passed".padEnd(18)}${"pending probes".padEnd(18)}pending checks`);
 const none = { counted: [0, 0], ruling: [0, 0] };
 for (const [region, t] of tally) {
