@@ -3,9 +3,8 @@
 **Status: built, NOT merged, no PR. Review round 1 was RULED by the owner on 2026-10-18.**
 - All 17 proposed answers were approved.
 - The synonym groups follow my recommendations.
-- Row 20, left open by round 1, was ruled the same day.
-- **Two checks are still pending**: weak arm entered for an ISOLATED weak hand, which row 20 does not reach. See
-  "Row 20" below.
+- Row 20, left open by round 1, was ruled the same day, and so were the two checks it did not reach.
+- **Nothing is pending.** Every expectation in the suite now counts.
 
 ## What it is
 
@@ -41,7 +40,7 @@ marked `// owner-approved 2026-10-18 (round 1, row N)`.
 | | today |
 |---|---|
 | Probes (all counted) | **66 / 101 correct** (65%). The 84 textbook probes score 62; the 17 approved in round 1 score 4 |
-| (a) synonym swaps | **114 / 138 called multifocal** (108 offered MS or metastases); 13 lost the site from the top 3. Counted checks 103 / 224; pending (the two cortical-hand swaps) 0 / 2 would pass |
+| (a) synonym swaps | **114 / 138 called multifocal** (108 offered MS or metastases); 13 lost the site from the top 3. Counted checks 103 / 224; nothing pending |
 | (b) + bilateral absent ankle jerks | **73 / 73 multifocal**; leading unifier vasculitis 38, MS 33, MND 2; first answer kept 71/73 (both insulae → Friedreich's) |
 | (b) + diabetic stocking sensory loss | **73 / 73 multifocal**; leading unifier vasculitis 73; first answer kept 73/73 |
 | (c) mirror | 263 / 263 mirror cleanly |
@@ -96,7 +95,7 @@ not accepted.
 |---|---|---|---|
 | 18 | limb_ataxia / dysmetria / intention_tremor / dysdiadochokinesis | Equivalent: dysmetria is how limb ataxia is examined | stays in the top 3 **and** no multifocal claim (54 swaps; 48 multifocal today) |
 | 19 | face_pain_loss / face_sensory_loss / face_touch_loss | **Not** equivalent: pain vs touch is a localising dissociation (medulla vs pons), and `face_sensory_loss` is named by its anatomy (VPM) | no multifocal claim only (44 swaps; 28 multifocal today) |
-| 20 | weak_arm / weak_hand | *(given after round 1, ruled the same day)* Equivalent **inside a hemiparesis**: pyramidal weakness is distal-predominant, so "weak hand" alongside leg or face weakness is the same hemiparesis. Weak hand alone still points to the hand knob | no multifocal claim for all 34 (2 pass); stays in the top 3 for the 32 swaps inside a hemiparesis (31 pass); the 2 cortical-hand swaps are **pending** — see "Row 20" below |
+| 20 | weak_arm / weak_hand | *(given after round 1, ruled the same day)* Equivalent **inside a hemiparesis**: pyramidal weakness is distal-predominant, so "weak hand" alongside leg or face weakness is the same hemiparesis. Weak hand alone still points to the hand knob | no multifocal claim for all 34 (2 pass); stays in the top 3 for the 32 swaps inside a hemiparesis (31 pass); not for the 2 cortical-hand swaps (a different finding) — see "Row 20" below |
 | 21 | dysarthria / ataxic_dysarthria | Specific → generic is safe; generic → specific is a different claim | no multifocal claim for all 6 swaps (0/6 pass); top 3 only for ataxic → plain |
 
 On row 21: all 6 swaps today go plain → ataxic. Only the midline vermis and the pancerebellar site predict ataxic
@@ -129,15 +128,19 @@ followed: weak hand and weak arm are the same finding inside a hemiparesis.
   - The one failure is the right striatocapsular-aphasia composite.
   - The 32 include the four face-and-arm pictures (MCA superior division, cortical face-arm area). The hand is part of
     a pyramidal weak arm there too, and all four pass.
-- **2 swaps, pending:** "weak hand" → "weak arm" in the cortical-hand picture (weak hand + Babinski + brisk reflexes,
-  left and right).
+- **2 swaps, top-3 check dropped:** "weak hand" → "weak arm" in the cortical-hand picture (weak hand + Babinski +
+  brisk reflexes, left and right).
   - That is an ISOLATED weak hand reported as a whole weak arm. It is outside "inside a hemiparesis", and outside the
     recommendation you approved, which kept weak hand alone pointing to the hand knob.
   - Today the hand knob drops out of the top 3 (corona radiata, internal capsule and sensorimotor stroke lead). That
     is arguably correct, because a lesion confined to the hand knob does not weaken the whole arm.
-  - So I have **not** counted these 2. They print as `PEND`.
-  - To count them anyway, change the arm / hand group's `"ruling"` to `"counted"` in the suite. To drop them, change
-    it to `null`.
+  - Ruled the same day:
+
+    > *"Drop the 2 cortical-hand swap checks: weak arm entered for an isolated weak hand is a different finding."* —
+    > the owner
+
+  - Their top-3 check is gone. As for every swap between different findings, their no-multifocal check still counts,
+    and both pass: corona radiata alone explains weak arm + Babinski + brisk reflexes.
 
 **The 2026-08-15 `LOCALISING` ruling on `weak_hand` stands.** Row 20 concerns weak hand alongside other pyramidal
 weakness, not weak hand on its own.
