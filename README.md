@@ -93,6 +93,10 @@ then <http://localhost:8137/app/>. Each test file is a standalone Node script th
 `ok()` helper and exits non-zero on failure; `npm test` runs all 76 in sequence. A new suite goes in
 `test/` and into the `test` script in `package.json`.
 
+`npm run test:audit` is the exception: the clinical audit suite (`test/clinical-audit.test.js`) is an external
+accuracy baseline that is expected to fail until the audit's defects are fixed, so it is kept out of `npm test`.
+See `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+
 > On the original development Mac there is no system Node — see the runtime note at the top of
 > `CLAUDE.md`. In a fresh clone anywhere else, `npm` and `node` work as normal.
 
