@@ -95,6 +95,32 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
   ok("down-going plantars only demote it", first(down)?.level === "cord" && !!down.display[0].against);
 }
 
+// ---- Row 1: a stated level — demote what cannot produce it; the segment must lie at or above it ----
+{
+  const conusT10 = solve(L(`saddle_anaesthesia@midline sphincter_dysfunction@midline ${B("babinski")}`), { sensoryLevel: "T10" });
+  ok("the conus picture with a T10 level → a cord lesion first", first(conusT10)?.level === "cord", ids(conusT10).slice(0, 2).join(", "));
+  const cc = conusT10.display.find(c => c.site.id === "conus_medullaris");
+  ok("…the conus demoted, never excluded", !!cc && cc.levelAgainst === "T10");
+  const c4 = solve(L(`${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`), { sensoryLevel: "C4" });
+  ok("spastic legs + level C4 → a cord lesion first, NOT the arms-spared reading", first(c4)?.level === "cord" && first(c4)?.variant !== "arms-spared", `${ids(c4).slice(0, 2)} ${first(c4)?.variant}`);
+  const weber = solve(L("ptosis@left weak_adduction@left weak_elevation@left weak_depression@left weak_arm@right weak_leg@right facial_weakness@right forehead_spared@right"), { sensoryLevel: "T10" });
+  ok("Weber + T10 → still the midbrain (the only site that explains it), no multifocal claim", first(weber)?.id === "left_midbrain_medial" && weber.multi === null);
+  ok("…and the level says the answer cannot produce it", weber.level.contradicts === true && weber.level.applies === false);
+  ok("with no level stated nothing is demoted", solve(L(`${B("hyperreflexia")} ${B("babinski")}`)).display.every(c => !c.levelAgainst));
+}
+
+// ---- Row 9: the level note names the segment the chosen reading implies ----
+{
+  const p1 = solve(L(`reflex_biceps_loss@left reflex_brachioradialis_loss@left weak_elbow_flexion@left ${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`));
+  ok("no level typed: the at-level reading names its segment", p1.level.fromVariant === true && /C5–6/.test(p1.level.note), p1.level.note);
+  const sp = solve(L(`${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`));
+  ok("no level typed: the arms-spared reading says so, and never says thoracic", sp.level.fromVariant === true && /arms are spared/.test(sp.level.note) && !/thoracic/i.test(sp.level.note), sp.level.note);
+  const cauda = solve(L("saddle_anaesthesia@midline sphincter_dysfunction@midline reflex_ankle_loss@left reflex_ankle_loss@right lmn_weakness@left radicular_pain@left"), { sensoryLevel: "T10" });
+  ok("a level under a cauda answer is flagged as contradicted", first(cauda)?.id === "cauda_equina" && cauda.level.contradicts === true);
+  const bs = solve(L("weak_arm@left weak_leg@left dorsal_sensory@left spinothalamic@right"));
+  ok("a generic cord reading with no level keeps 'level undetermined'", !bs.level.fromVariant && /level undetermined/.test(bs.level.note));
+}
+
 // ---- report ----
 console.log(`\ncord segment: ${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

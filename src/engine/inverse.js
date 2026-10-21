@@ -13,7 +13,7 @@ import * as sitesMod from "../model/sites.js";
 const { SITES } = sitesMod;
 import { scoreSite, LOCALISING, findingIdOf } from "./score.js";
 import { expectedFindings } from "./forward.js";
-import { normaliseLevel, regionOf, landmarkOf } from "../model/levels.js";
+import { normaliseLevel, regionOf, landmarkOf, levelIndex, spanName } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
 import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS } from "../model/compartments.js";
@@ -47,6 +47,8 @@ export function solverSites(opts = {}) {
       // Spinal shock needs a stated level (spinal cord fix, row 1c): the level is the bedside discriminator from GBS,
       // and without it the shock reading takes GBS's own picture (measured: the GBS probe, vignette and Why clue).
       if (v.needsLevel && !level) continue;
+      // A stated level means a lesion at or above it (row 1b): a reading whose highest segment lies below it is out.
+      if (level && v.top && levelIndex(v.top) > levelIndex(level)) continue;
       out.push(variantOf(site, v));
     }
   }
@@ -166,6 +168,7 @@ export function differential(observedSet, opts = {}) {
   const pressure = raisedPressureAxis(observedSet);
   const negatives = knownNegatives(observedSet);
   const againstNormal = normalNegatives(observedSet);
+  const level = normaliseLevel(opts.sensoryLevel);
   const cands = [];
   for (const site of solverSites(opts)) {
     if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
@@ -181,13 +184,17 @@ export function differential(observedSet, opts = {}) {
     if (!explained.length && !(pressure.present && !observed.length)) continue;
     // `against`: the first abnormal token an entered normal counts against — the site stays a candidate, demoted.
     const against = [...againstNormal].find(t => exp.has(t)) || null;
+    // A STATED SENSORY LEVEL means a cord lesion at or above it (spinal cord fix, row 1a). A site that cannot produce
+    // one — anything outside the cord; the conus and cauda lie below every cord level — sorts below every site that
+    // explains as much and can: demoted like a recorded normal, never excluded, so no multifocal claim changes.
+    const levelAgainst = level && site.level !== "cord" ? level : null;
     cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
-                 n: explained.length, prevalence: prevalenceOf(site), against });
+                 n: explained.length, prevalence: prevalenceOf(site), against, levelAgainst });
   }
   // coverage first (localisation), then anything a recorded normal counts against goes below the rest, then fit
   // weighed against prior (rankKey), then prevalence, tightness, id.
-  cands.sort((a, b) => b.n - a.n || (!!a.against - !!b.against) || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence
-    || a.over - b.over || a.site.id.localeCompare(b.site.id));
+  cands.sort((a, b) => b.n - a.n || (!!(a.against || a.levelAgainst) - !!(b.against || b.levelAgainst))
+    || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence || a.over - b.over || a.site.id.localeCompare(b.site.id));
   return firstPerId(cands);
 }
 
@@ -297,20 +304,25 @@ export function nearFit(observedSet, opts = {}) {
   return null;
 }
 
-// ---- SENSORY LEVEL (orthogonal to which site wins) ----
-// The cross-sectional pattern says WHICH syndrome; the sensory level says WHERE along the cord.
-// It never changes the localisation — it annotates it. Reports the segment when the best site is
-// in the cord and a valid level was given; otherwise explains why the level does not apply.
+// ---- SENSORY LEVEL ----
+// The cross-sectional pattern says WHICH syndrome; the sensory level says WHERE along the neuraxis. Since the
+// spinal cord fix (2026-10-22, owner-approved) a stated level is EVIDENCE as well as an annotation: it demotes what
+// cannot produce it (differential), restricts the cord's readings to those at or above it and gates spinal shock
+// (solverSites). This function annotates the DISPLAYED answer: the segment when it is a cord site and a valid level was
+// given; otherwise why the level does not apply, or — with no level typed — the segment the cord reading implies.
 export function describeLevel(best, sensoryLevel) {
   const raw = (typeof sensoryLevel === "string" && sensoryLevel.trim() !== "") ? sensoryLevel : null;
   const isCord = !!best && best.site.level === "cord";
   const segment = normaliseLevel(raw);
-  const base = { given: raw, applies: false, segment: null, region: null, landmark: null, note: "" };
+  // A stated level the answer cannot produce (spinal cord fix, row 9): flagged, so the app can say so in words with
+  // the site's plain name. The engine's own notes below keep their wording.
+  const contradicts = !!segment && !!best && !isCord;
+  const base = { given: raw, applies: false, segment: null, region: null, landmark: null, note: "", contradicts };
 
   // Central (syrinx) lesions cause a SUSPENDED cape, not a below-the-level deficit — the single
   // "below the level" sensory level does not apply. Checked before the generic cord branches.
   if (isCord && best.site.part === "central") {
-    return { given: raw, applies: false, segment,
+    return { given: raw, applies: false, segment, contradicts,
       region: segment ? regionOf(segment) : null, landmark: segment ? landmarkOf(segment) : null,
       note: "suspended (cape-like) distribution — the sensory loss spans the lesion's segments and is spared above and below, so a single below-the-level sensory level does not apply" };
   }
@@ -319,23 +331,30 @@ export function describeLevel(best, sensoryLevel) {
   // distribution is the localiser. Placed before the non-cord "inconsistency" branch so a
   // stated level here is reported gently rather than flagged as contradicting a cord lesion.
   if (best && (best.site.level === "cauda" || best.site.level === "conus")) {
-    return { given: raw, applies: false, segment,
+    return { given: raw, applies: false, segment, contradicts,
       region: segment ? regionOf(segment) : null, landmark: segment ? landmarkOf(segment) : null,
       note: "below the cord — a cauda equina / conus lesion; the saddle (S2–S5) distribution is the localiser, not a single sensory level" };
   }
 
   if (isCord && segment) {
-    return { given: raw, applies: true, segment, region: regionOf(segment), landmark: landmarkOf(segment),
+    return { given: raw, applies: true, segment, region: regionOf(segment), landmark: landmarkOf(segment), contradicts,
       note: `lesion at or just above ${segment} (the sensory level typically sits a segment or two below the lesion)` };
   }
   if (isCord && raw && !segment) {
     return { ...base, note: `unrecognised sensory level '${raw}'; expected a segment such as T10` };
   }
   if (isCord && !raw) {
+    // No level typed, but the chosen READING of the cord can still say where (spinal cord fix, row 9). Never
+    // "thoracic": a legs-only myelopathy can be cervical, and the plans keep the imaging at the whole spine.
+    const s = best.site;
+    if (s.segments) return { ...base, fromVariant: true,
+      note: `the at-level signs (${s.atLevel.sides.join(" and ")}) place the lesion at about ${spanName(s.segments, "–")}; the long-tract signs below it come from the same lesion` };
+    if (s.variant === "arms-spared") return { ...base, fromVariant: true,
+      note: "the arms are spared — the lesion lies below the arm segments, or is cervical and not yet reaching the arm fibres; a sensory level is needed to localise the segment" };
     return { ...base, note: "level undetermined — a sensory level is needed to localise the segment" };
   }
   if (!isCord && raw) {
-    return { given: raw, applies: false, segment, region: segment ? regionOf(segment) : null,
+    return { given: raw, applies: false, segment, region: segment ? regionOf(segment) : null, contradicts,
       landmark: segment ? landmarkOf(segment) : null,
       note: `a sensory level suggests a spinal cord lesion, but the findings localise to ${best ? best.site.id : "(no site)"}` };
   }
