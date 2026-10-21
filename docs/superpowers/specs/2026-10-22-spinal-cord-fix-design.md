@@ -5,6 +5,11 @@
 
 > *"Round 1 of the spinal cord fix: I approve all 13 recommendations as written."* — the owner
 
+**Row 10 was refined the same day, by the owner's choice.** As written, "whenever a cord site is in the list" also
+showed the Sensory level field for a single weak arm or leg (measured while writing the plan). That reverses the
+2026-08-16 rule keeping the field off screen for limb weakness. The field now shows when the **displayed answer** is a
+cord lesion, or when a sensory or bladder finding is ticked.
+
 - Branch: `fix/cord-localisation` (worktree `Code/neurolocaliser-cord/`).
 - Cut from `test/clinical-audit-suite` at `2e6bc30`. That branch is PR #18, which stays open and is not to be merged.
 - Every number below was measured by applying candidate changes to throwaway copies of that branch. Nothing was

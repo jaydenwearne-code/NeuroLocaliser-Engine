@@ -1187,15 +1187,12 @@ git commit -m "fix(cord): the central cord reaches the arm fibres and the anteri
 - Produces `levelLine(level, place: string) → string | null`.
 - Produces `CORD_AXIS_FINDINGS: Set<string>`.
 
-**Decision flagged to the owner before this task:** row 10 says *"whenever a cord site is in the list"*. Measured on
-the prototype, a cord site is in the list for a single weak arm or leg. That reverses the 2026-08-16 rule keeping the
-field off screen for limb weakness. This task implements **"whenever a cord site is the displayed FIRST answer"**:
+**Row 10 as refined by the owner (2026-10-22):** the field shows when the **displayed FIRST answer** is a cord site, not
+when a cord site is anywhere in the list. Measured, "anywhere" shows it for a single weak arm or leg, which reverses the
+2026-08-16 rule. "First" shows it for:
 - 0 of 126 brain/brainstem pictures;
 - 2 of 389 single findings;
 - every cord probe after the fix.
-
-If the owner keeps the literal wording, change `display?.[0]?.site.level === "cord"` in `showLevelField` to
-`display?.some(c => c.site.level === "cord")`. Then remove the two "does not" assertions in the test.
 
 - [ ] **Step 1: Write the failing suite `test/level-axis.test.js`:**
 
