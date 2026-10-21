@@ -1,6 +1,10 @@
 # The spinal cord fix — where along the cord (design, 2026-10-22)
 
-**Status: PROPOSED. Round 1 is awaiting the owner's ruling. No engine code has been written.**
+**Status: ROUND 1 RULED (2026-10-22): all 13 recommendations approved as written. Implementation plan:
+`docs/superpowers/plans/2026-10-22-spinal-cord-fix.md`.**
+
+> *"Round 1 of the spinal cord fix: I approve all 13 recommendations as written."* — the owner
+
 - Branch: `fix/cord-localisation` (worktree `Code/neurolocaliser-cord/`).
 - Cut from `test/clinical-audit-suite` at `2e6bc30`. That branch is PR #18, which stays open and is not to be merged.
 - Every number below was measured by applying candidate changes to throwaway copies of that branch. Nothing was
@@ -102,9 +106,10 @@ FIRST for spastic legs with a C4 level (measured).
 The principle would then read: *the cross-section says WHICH syndrome; the level says WHERE along the neuraxis, and
 it demotes what cannot lie there.*
 
-## 4. Rulings asked for — round 1
+## 4. Rulings — round 1 (all 13 APPROVED as written, 2026-10-22)
 
-Each row is one decision, with my recommendation. Approving the table approves every recommendation as written.
+Each row is one decision, with my recommendation. The owner approved the table as written, so every recommendation
+below is now a ruling.
 
 | # | Decision | Recommendation | Measured effect |
 |---|---|---|---|
