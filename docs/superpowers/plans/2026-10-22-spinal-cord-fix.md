@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: NOT STARTED.** Spec: `docs/superpowers/specs/2026-10-22-spinal-cord-fix-design.md`. All 13 rows were
+**Status: IMPLEMENTED (2026-10-22). All 12 tasks are done. Audit 79/105 (cord 19/20); `npm test` 84 suites / 7195
+green.** Spec: `docs/superpowers/specs/2026-10-22-spinal-cord-fix-design.md`. All 13 rows were
 approved as written on 2026-10-22.
 
 **Goal:** Make the engine localise along the spinal cord. The thirteen approved rulings, in short:
