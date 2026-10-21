@@ -367,6 +367,10 @@ export function composeHemiLevelSites() {
 //   - transverse: the entire cord cross-section (every cord structure), bilaterally
 // The anterior-vs-transverse distinction (does vibration survive?) is exactly what lets the
 // solver tell ASA infarction from a complete transverse lesion — a derived consequence, no rule.
+// The central cord takes more than the commissure: the corticospinal ARM fibres (arms weaker than legs) and the
+// anterior horn cells at its level (wasting) — spinal cord fix, row 8, 2026-10-22. Both rows are reused. Leg signs
+// for an expanding syrinx are deferred to the composite-sites round; bladder stays out (owner ruling 2026-09-26).
+const CENTRAL_REACH = ["cst_cord_arm", "ah_wasting"];
 export function composeBilateralCordSites() {
   const cordParts = ["anterior", "posterior", "central"];
   const structuresForPart = part =>
@@ -379,7 +383,8 @@ export function composeBilateralCordSites() {
   const sacral = structuresForPart("sacral");
   const sites = [];
   for (const part of cordParts) {
-    const structures = [...structuresForPart(part), ...(part === "anterior" ? autonomic : [])];
+    const structures = [...structuresForPart(part), ...(part === "anterior" ? autonomic : []),
+      ...(part === "central" ? CENTRAL_REACH : [])];
     if (structures.length === 0) continue;
     sites.push({
       id: `bilateral_cord_${part}`,

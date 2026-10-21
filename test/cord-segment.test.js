@@ -121,6 +121,16 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
   ok("a generic cord reading with no level keeps 'level undetermined'", !bs.level.fromVariant && /level undetermined/.test(bs.level.note));
 }
 
+// ---- Row 8: the central cord takes the arm fibres and the anterior horn cells at its level ----
+{
+  const e = expectedFindings(site("bilateral_cord_central"));
+  ok("the central cord predicts arm weakness and wasting on both sides", ["weak_arm", "wasting"].every(f => e.has(`${f}@left`) && e.has(`${f}@right`)));
+  ok("…but not leg weakness (deferred) or bladder involvement (owner ruling 2026-09-26)", !e.has("weak_leg@left") && !e.has("sphincter_dysfunction@midline"));
+  const p8 = solve(L(`${B("weak_arm")} ${B("suspended_sensory")}`));
+  ok("both arms weak + cape → the central cord, one lesion", first(p8)?.id === "bilateral_cord_central" && p8.multi === null);
+  ok("a bare cape still → the central cord", first(solve(L(B("suspended_sensory"))))?.id === "bilateral_cord_central");
+}
+
 // ---- report ----
 console.log(`\ncord segment: ${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);
