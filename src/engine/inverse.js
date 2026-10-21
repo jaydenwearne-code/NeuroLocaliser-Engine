@@ -34,16 +34,32 @@ export function candidateSites() {
   return out;
 }
 
+// The SOLVER'S enumeration: every candidate site plus its VARIANTS — the same cord lesion read at another segment or
+// in spinal shock (sites.js cordVariants; spinal cord fix, round 1). A variant keeps its site's id, so content, links
+// and pins are untouched, and every ranked list keeps each site once, as its best variant (firstPerId).
+// candidateSites() stays one site per id for everything that enumerates sites (the atlas, the per-site tests).
+export function solverSites(opts = {}) {
+  const out = [];
+  for (const site of candidateSites()) {
+    out.push(site);
+    for (const v of site.variants || []) out.push(variantOf(site, v));
+  }
+  return out;
+}
+const variantOf = (site, v) => ({ ...site, variant: v.key, structures: v.structures, atLevel: v.atLevel,
+  segments: v.segments, variants: undefined });
+const firstPerId = list => { const seen = new Set(); return list.filter(x => { const id = (x.site || x).id; return !seen.has(id) && !!seen.add(id); }); };
+
 function localisingObserved(observedSet) {
   return [...observedSet].filter(s => LOCALISING.has(findingIdOf(s)));
 }
 
 // ---- SINGLE-LESION RANKING ----
 export function rankSingle(observedSet, opts = {}) {
-  return candidateSites()
+  return firstPerId(solverSites(opts)
     .map(site => scoreSite(site, observedSet, opts))
     .filter(r => r.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score));
 }
 
 // ---- NARROWING DIFFERENTIAL (count / superset) ----
@@ -145,7 +161,7 @@ export function differential(observedSet, opts = {}) {
   const negatives = knownNegatives(observedSet);
   const againstNormal = normalNegatives(observedSet);
   const cands = [];
-  for (const site of candidateSites()) {
+  for (const site of solverSites(opts)) {
     if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
     let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
     let contradicted = false;
@@ -166,7 +182,7 @@ export function differential(observedSet, opts = {}) {
   // weighed against prior (rankKey), then prevalence, tightness, id.
   cands.sort((a, b) => b.n - a.n || (!!a.against - !!b.against) || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence
     || a.over - b.over || a.site.id.localeCompare(b.site.id));
-  return cands;
+  return firstPerId(cands);
 }
 
 // The sites the known-negative filter removed — but only those that WOULD have explained something (so the
@@ -175,8 +191,9 @@ export function differential(observedSet, opts = {}) {
 export function ruledOutSites(observedSet, opts = {}) {
   const negatives = knownNegatives(observedSet);
   if (!negatives.size) return [];
-  const out = [];
-  for (const site of candidateSites()) {
+  // Per site, across its variants: ruled out only when EVERY variant that would explain something is contradicted.
+  const byId = new Map();
+  for (const site of solverSites(opts)) {
     let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
     let explainsSomething = false;
     for (const t of observedSet) if (exp.has(t)) { explainsSomething = true; break; }
@@ -184,9 +201,11 @@ export function ruledOutSites(observedSet, opts = {}) {
     if (site.asymmetric) continue; // never excluded by a known negative, so never "ruled out" by one
     let contradictedBy = null;
     for (const neg of negatives) if (exp.has(neg)) { contradictedBy = neg; break; }
-    if (contradictedBy) out.push({ site, contradictedBy });
+    const seen = byId.get(site.id);
+    if (!seen) byId.set(site.id, { site, contradictedBy });
+    else if (!contradictedBy) seen.contradictedBy = null;
   }
-  return out;
+  return [...byId.values()].filter(e => e.contradictedBy).map(e => ({ site: e.site, contradictedBy: e.contradictedBy }));
 }
 
 // ---- MINIMAL-SET SEARCH (multifocal) ----
@@ -255,7 +274,7 @@ export function minimalSet(observedSet, opts = {}) {
 // relaxed away: it is too specific to ignore. Superset-based, matching the app's "explains all" differential.
 export function nearFit(observedSet, opts = {}) {
   const observed = [...observedSet];
-  const sites = candidateSites();
+  const sites = solverSites(opts);
   const explainsAll = tokens => {
     for (const site of sites) {
       let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
@@ -377,9 +396,11 @@ export function solve(observedSet, options = {}) {
   }
 
   const nf = nearFit(localising, opts);
-  const level = describeLevel(best, options.sensoryLevel);
-  const length = describeLength(best, options.distalReach);
   const display = explainAll.length ? explainAll : diff;
+  // The level note describes the answer the reader SEES (spinal cord fix, row 9). It used to read the scored ranking,
+  // which can disagree with the display — a GBS answer whose note named Friedreich's.
+  const level = describeLevel(display[0] || best, options.sensoryLevel);
+  const length = describeLength(best, options.distalReach);
   const defaultSite = display[0]?.site.id ?? null;
   const ruledOut = ruledOutSites(localising, opts);
   return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,

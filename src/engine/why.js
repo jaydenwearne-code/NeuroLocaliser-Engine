@@ -4,7 +4,7 @@
 //
 // `meet` is the differential's explain-all set mapped to (station, side), not a raw intersection of possible
 // places: it applies the known-negative rule, so the Why and the Where cannot disagree.
-import { candidateSites, differential, isNormalToken } from "./inverse.js";
+import { solverSites, differential, isNormalToken } from "./inverse.js";
 import { expectedFindings, explain } from "./forward.js";
 import { STRUCTURE_BY_ID } from "../model/structures.js";
 import { TRACTS } from "../model/tracts.js";
@@ -24,7 +24,7 @@ function locusIndex(opts) {
   const key = `${opts.dominantSide || "left"}|${opts.sensoryLevel || ""}`;
   if (INDEX.has(key)) return INDEX.get(key);
   const idx = new Map();
-  for (const s of candidateSites()) {
+  for (const s of solverSites(opts)) {
     let E; try { E = expectedFindings(s, opts); } catch { continue; }
     const st = stationOf(s); if (!st) continue;
     for (const t of E) (idx.get(t) ?? idx.set(t, new Set()).get(t)).add(st);

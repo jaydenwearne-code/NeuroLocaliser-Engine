@@ -12,6 +12,7 @@
 // together (Wallenberg) — they share a blood supply, not a lookup-table entry.
 
 import { STRUCTURES } from "./structures.js";
+import { spanName } from "./levels.js";
 
 // subcortex is built AFTER cortex so an isolated-hemianopia tie resolves to the earlier-built
 // occipital cortex site by stable sort (the deep optic radiation stays a co-equal candidate).
@@ -293,6 +294,19 @@ export const DIVISION = {
   sma:            { territory: "ACA" }
 };
 
+// ---- WHERE ALONG THE CORD: variants of one cord lesion (spinal cord fix, round 1 — spec 2026-10-22) ----
+// The cross-section says WHICH cord syndrome; a VARIANT says WHERE along the cord. A variant is the same lesion — the
+// same id, causes, plans and links — read at another segment or in another state, so it predicts a different set of
+// signs. inverse.js solverSites() scores every variant and shows each site once, as its best; candidateSites() still
+// lists one site per id. Everything is DERIVED from the structure catalogue.
+//   arms-spared — below the arm segments, or cervical and not yet reaching the arm fibres: no arm weakness, no
+//                 Hoffmann's. `top` is the highest segment it can occupy, for the sensory-level constraint.
+const CORD_ARM_ROWS = new Set(["cst_cord_arm", "cst_cord_hof"]);
+const armsSpared = structures => ({ key: "arms-spared", top: "T2", structures: structures.filter(id => !CORD_ARM_ROWS.has(id)) });
+function cordVariants(structures) {
+  return [armsSpared(structures)];
+}
+
 // A larger lesion can span medial+lateral at one level/side (a "hemi-level" lesion).
 // We expose these as composite candidate sites so the solver can consider them when a
 // finding set genuinely needs both territories on one side (e.g. hemimedullary syndrome).
@@ -313,7 +327,9 @@ export function composeHemiLevelSites() {
         side, level, part: "hemi",
         territory: `combined territory (${level}, ${side})`,
         structures: parts.flatMap(p => p.structures),
-        composite: true
+        composite: true,
+        // where along the cord: a hemicord below the arm segments spares the arm (spinal cord fix, row 2)
+        ...(level === "cord" ? { variants: [armsSpared(parts.flatMap(p => p.structures))] } : {})
       });
     }
   }
@@ -345,7 +361,8 @@ export function composeBilateralCordSites() {
       id: `bilateral_cord_${part}`,
       side: "bilateral", level: "cord", part,
       territory: TERRITORY[`cord|${part}`],
-      structures, composite: true
+      structures, composite: true,
+      ...(part === "anterior" ? { variants: cordVariants(structures) } : {})
     });
   }
 
@@ -360,7 +377,8 @@ export function composeBilateralCordSites() {
       id: "bilateral_cord_transverse",
       side: "bilateral", level: "cord", part: "transverse",
       territory: "complete cord cross-section (transverse myelopathy)",
-      structures: [...belowLevel, ...autonomic], composite: true
+      structures: [...belowLevel, ...autonomic], composite: true,
+      variants: cordVariants([...belowLevel, ...autonomic])
     });
   }
   return sites;
