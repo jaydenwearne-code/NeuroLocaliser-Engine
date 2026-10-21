@@ -61,7 +61,8 @@ easiest mechanism-fit first. Per-region designs + plans live in `docs/superpower
   dorsal columns are *ipsilateral* in the cord, opposite the brainstem) and **bilateral/midline
   sites** (a central lesion emits each finding on both body sides).
 - **Sensory level** — the orthogonal dermatome axis (`model/levels.js` + `inverse.describeLevel`):
-  it annotates *where along the cord* without changing which cross-sectional pattern wins.
+  it says *where along the cord*; since the spinal cord fix (2026-10-22) it is also evidence — it demotes what
+  cannot produce it, restricts the cord's segment readings and gates spinal shock (CLAUDE.md, "Orthogonal axes").
 - **Central cord / syringomyelia** — the suspended (cape-like) dissociated loss, from a commissural
   spinothalamic structure in a `central` cord part.
 - **Cauda equina / conus medullaris** — the first region below the cord and first with new finding
@@ -105,7 +106,7 @@ easiest mechanism-fit first. Per-region designs + plans live in `docs/superpower
 - **PNS — radiculopathy & length-dependent polyneuropathy** (`docs/superpowers/specs/2026-07-12-pns-root-polyneuropathy-design.md`)
   — the two ends of the sensory-bearing PNS. **Roots are finding-driven SITES** (C5–T1 / L2–S1, the
   segment emerges from dermatome + myotome + reflex — a mismatch surfaces as multifocal), NOT an axis;
-  the cord sensory level is an axis only because its tracts are identical at every segment. **Length-
+  the cord is NOT identical at every segment (the arms, the at-level signs) — since 2026-10-22 its segment is carried by variants of the same cord sites. **Length-
   dependence IS the axis** — a new `model/nerveLength.js` (twin of `levels.js`) with an axon-length RANK
   coordinate where `fingertips == knees`, so **stocking-glove emerges** (the glove appears when the reach
   hits the knees), attached by `inverse.describeLength`. Did the flagged **`lmn_weakness` demotion** to

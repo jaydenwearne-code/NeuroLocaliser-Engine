@@ -1216,6 +1216,41 @@ root pain → only the cauda equina".
 
 Spec/plan: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md`, `docs/superpowers/plans/2026-09-29-conus-cauda-bilateral.md`.
 
+## Spinal cord fix (DONE 2026-10-22, round 1) — ✅ owner-approved rulings (all 13 rows)
+
+The first fix from the 2026-10-18 clinical audit. **The defect:** one generic cord predicted arm signs for every cord
+lesion and had no segment, the conus outranked it, and spinal shock did not exist. So a thoracic paraparesis read as
+"conus", whose plan images T12–L1, while the cord plans image the whole spine.
+
+**Mechanics:**
+- `cordVariants` derives the readings of the bilateral anterior, the transverse and the hemicords:
+  - arms-spared;
+  - at-level spans from the root rows, per side;
+  - spinal shock, with six `cord|shock` rows, Babinski kept, and only with a stated level.
+- `solverSites(opts)` scores them and `firstPerId` keeps each id once.
+- `candidateSites()` is unchanged.
+- The bilateral cord takes the cord's own tier; the conus is RARE.
+- An UMN release sign on a side excuses that side's missing corticospinal signs. Weakness never excuses.
+- The transverse cord takes the saddle (`cord_saddle`).
+- The central cord adds `cst_cord_arm` + `ah_wasting`.
+- A stated level:
+  - demotes non-cord sites (`levelAgainst`);
+  - restricts variants (`top`);
+  - is described from the DISPLAYED answer.
+- `app/level-axis.js` holds when the field shows and what the level line says. The field shows for a cord FIRST
+  answer, not anywhere in the list (owner refinement of row 10, so a single weak limb keeps the field hidden).
+
+**Rulings that are traps:**
+- New site ids FAIL the audit's exact-id regexes (measured: cord 4/16), so variants keep the id.
+- Spinal shock without the level gate steals GBS's picture.
+- Saddle loss on the anterior cord beats the conus for the classic conus picture.
+- The segment constraint without the demotion puts the conus first for spastic legs + C4.
+
+**Deferred:** the syrinx's leg signs and the basilar coma picture go to the composite-sites round. The syrinx's leg
+signs conflict with R1 #12 until a bilateral parasagittal site exists.
+
+Spec/plan: `docs/superpowers/specs/2026-10-22-spinal-cord-fix-design.md`, `docs/superpowers/plans/2026-10-22-spinal-cord-fix.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1257,7 +1292,8 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
   sites.js       SITES derived from structures by (level, part, side); plus composers (hemi,
                  bilateral cord, cauda/conus midline). `buildingBlock` flags composite-only parts
                  (cord anterior/posterior/central) so they feed composers but aren't standalone candidates
-  levels.js      ordered dermatome coordinate C2..S5 — an axis ORTHOGONAL to localisation
+  levels.js      ordered dermatome coordinate C2..S5 (+ spanName) — WHERE along the cord; a stated level is evidence
+                 since 2026-10-22 (it demotes, constrains and gates — see "Orthogonal axes")
   prevalence.js  prevalenceOf(site) -> 2|1|0 (common/uncommon/rare) coarse per-site prior; TIEBREAK only
   tracts.js      the long tracts (corticospinal/spinothalamic/dorsal-column/corticobulbar): findings,
                  rostro-caudal course (level + detail + supply), decussation, direction; + NEURAXIS ordering
@@ -1274,6 +1310,7 @@ src/engine/    generic solver code (rarely changes when adding a region)
                  it's deliberately excused; test/localising-audit.test.js asserts every single-level
                  finding is one or the other)
   inverse.js     THE single localiser. candidateSites() (reflection over compose*, drops buildingBlock);
+                 solverSites() = candidates + their cord VARIANTS, each id kept once by the rankings;
                  differential() = the broad count/superset narrowing list (known-negative exclusion +
                  prevalence tiebreak); solve() returns {differential,explainAll,display,defaultSite,ruledOut}
                  AND the scored single/best/nearFit/multi/level/length; knownNegatives(); ruledOutSites()
@@ -1334,10 +1371,13 @@ app/             zero-build teaching web app (pure consumer of the engine; no mo
   syndrome free. Larger lesions come from **composers** (`composeHemiLevelSites`,
   `composeBilateralCordSites`, `composeCaudaConusSites`) that union parts into composite candidate
   sites; `inverse.candidateSites()` concatenates them all.
-- **Orthogonal axes.** The cross-sectional pattern says *which* syndrome; the sensory level
-  (`levels.js` + `describeLevel`) says *where along the cord* — it annotates the winner, never changes
-  it. New per-region mechanisms follow this shape: add a small, well-contained axis rather than
-  branching the solver.
+- **Orthogonal axes.** The cross-sectional pattern says *which* syndrome; the sensory level says *where along the
+  neuraxis* — and since the spinal cord fix (2026-10-22, owner-approved, overturning "annotates, never changes") it is
+  EVIDENCE: a stated level demotes (never excludes) every site that cannot produce it, restricts the cord's readings
+  to those at or above it, and gates spinal shock. It never adds or removes a candidate or a multifocal claim.
+  The cord's own WHERE is carried by VARIANTS of the same cord sites (`sites.js` `cordVariants`, `inverse.js`
+  `solverSites`): arms-spared, at-level spans (C5–6 … C8–T1, per side) and spinal shock. New per-region mechanisms
+  still follow this shape: a small, well-contained axis rather than a branch in the solver.
 
 ### Extending coverage (the recipe)
 
