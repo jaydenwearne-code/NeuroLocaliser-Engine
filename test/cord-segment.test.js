@@ -68,6 +68,18 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
   ok("the spans are C5–6, C6–7, C7–8 and C8–T1, each left, right and both", site("bilateral_cord_anterior").variants.filter(x => x.atLevel).length === 12);
 }
 
+// ---- Row 6: a complete lesion takes the saddle; the incomplete patterns keep sacral sparing ----
+{
+  const has = id => expectedFindings(site(id)).has("saddle_anaesthesia@midline");
+  ok("the transverse (complete) cord predicts saddle anaesthesia", has("bilateral_cord_transverse"));
+  ok("the anterior, central and hemicord do not", !has("bilateral_cord_anterior") && !has("bilateral_cord_central") && !has("left_cord_hemi"));
+  const t8 = solve(L(`${B("weak_leg")} ${B("babinski")} ${B("spinothalamic")} ${B("dorsal_sensory")} sphincter_dysfunction@midline saddle_anaesthesia@midline`), { sensoryLevel: "T8" });
+  ok("T8 compression examined fully, saddle included → one lesion, the transverse cord", first(t8)?.id === "bilateral_cord_transverse" && t8.multi === null, ids(t8).slice(0, 2).join(", "));
+  const conus = solve(L(`saddle_anaesthesia@midline sphincter_dysfunction@midline ${B("babinski")} ${B("hyperreflexia")}`));
+  ok("the conus picture is still one lesion, the conus first", first(conus)?.id === "conus_medullaris" && conus.multi === null);
+  ok("…with the complete cord listed second (look for a level)", conus.display[1]?.site.id === "bilateral_cord_transverse");
+}
+
 // ---- report ----
 console.log(`\ncord segment: ${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

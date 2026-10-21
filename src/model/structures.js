@@ -198,6 +198,13 @@ export const STRUCTURES = [
   { id: "sym_cord_anhbody", level: "cord", part: "lateral", produces: "anhidrosis_body", crosses: false, emitAtOrAbove: "T1",
     note: "central cord Horner — hemibody anhidrosis (≥ ~T1)" },
 
+  // ADDED 2026-10-22 (spinal cord fix, row 6): a COMPLETE lesion takes every modality below the level, the sacral
+  // dermatomes included. A composite-only part (not in sites.js PARTS, like cord|autonomic), pulled in by the
+  // TRANSVERSE composite only: the anterior, central and hemicord patterns keep sacral sparing. emit:"midline" —
+  // saddle numbness has no side, and must match the token the conus and cauda emit.
+  { id: "cord_saddle", level: "cord", part: "sacral", produces: "saddle_anaesthesia", crosses: false, emit: "midline",
+    note: "complete cord lesion — every modality lost below the level, the saddle included" },
+
   // ---- CAUDA EQUINA (lumbosacral nerve roots, below the conus) ----
   { id: "ls_roots_motor",       level: "cauda", part: "equina", produces: "lmn_weakness",         crosses: false, emit: "bilateral",
     note: "lumbosacral motor roots — flaccid, areflexic (LMN) leg weakness" },
