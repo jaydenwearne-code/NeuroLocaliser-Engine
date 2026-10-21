@@ -54,7 +54,8 @@ spinal shock. App text lives in a new pure module, `app/level-axis.js`.
 
 - `npm run test:audit`: **79 / 105** probes. That is 75/101 plus the four row-13 probes, which pass. Spinal cord
   19 / 20.
-- Every other region and the metamorphic totals are unchanged: swaps 103/224, comorbidity 144/292, mirror 263/263.
+- Every other region and the metamorphic totals are unchanged: swaps 103/224, comorbidity 144/292. The mirror property
+  is 267/267: Task 1's four probes add four mirror checks to 263.
 - `npm test`: green.
 
 If a task's numbers differ from the expectation it states, stop and investigate before the next task.
@@ -1532,7 +1533,7 @@ Expected:
 - `Spinal cord 19/20`.
 - `all probes 79/105`.
 - Every other region identical to the baseline.
-- `synonym swaps … 114 called multifocal`, comorbidity 73/73 + 73/73, `mirror: 263/263 mirror cleanly`.
+- `synonym swaps … 114 called multifocal`, comorbidity 73/73 + 73/73, `mirror: 267/267 mirror cleanly`.
 
 If anything differs from the prototype's numbers, investigate before recording.
 

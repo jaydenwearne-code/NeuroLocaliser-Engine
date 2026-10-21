@@ -14,7 +14,8 @@ the bedside, and it is the baseline the fixes will be measured against.
 
 `test/clinical-audit.test.js` holds:
 
-- **101 probes**: the audit's `c1–c6.json` cases. Each states the answer a neurologist would expect.
+- **105 probes**: the audit's 101 `c1–c6.json` cases, plus 4 added by the spinal cord fix (last section). Each states
+  the answer a neurologist would expect.
 - **Three metamorphic properties**, from the audit's `perturb.mjs`:
   - **(a)** Swap one finding for another word in a site's complete picture. The rule depends on the words:
     - **always:** no multifocal claim may appear;
@@ -206,3 +207,19 @@ Consciousness:
 - The swap and background loops are `perturb.mjs` verbatim, so the 114 / 138 and 73 / 73 figures reproduce exactly.
 - Mirror ties: a fully symmetric picture whose answer is exactly tied with its own mirror image is broken by site id.
   The mirror check accepts the unflipped answer ONLY in that exact-tie case.
+
+## Spinal cord fix, round 1, row 13: four probes added (2026-10-22)
+
+The spinal cord fix's round 1 (`2026-10-22-spinal-cord-fix-design.md`, row 13, approved as written) added four
+counted probes. They cover pictures that the sensory-level options decide and that no probe covered. Each fails on
+the 2026-10-18 baseline:
+
+| Probe | Expected answer (approved) | Baseline |
+|---|---|---|
+| saddle + sphincter + both Babinski, level T10 | a cord site first; the level note names T10 | conus first; "below the cord" |
+| spastic legs, level C4 | a cord site first; the level note names C4 | conus first; "below the cord" |
+| R triceps jerk lost + weak elbow extension + both legs UMN | a cord site first; one lesion | conus + R C7 root, "vasculitis" |
+| flaccid areflexic legs, level T6 (no sphincter or pain loss) | a cord site first | GBS first |
+
+Baseline with them (measured): **66 / 105** probes, spinal cord **6 / 20**. Counted checks are 658 passed and 323
+failed. Each probe is also mirrored, so the mirror property now runs **267** checks, all clean.
