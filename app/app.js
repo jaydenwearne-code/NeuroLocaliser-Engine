@@ -29,6 +29,7 @@ import { answerFor, resolveNext } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
+import { showLevelField, levelLine } from "./level-axis.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -90,17 +91,14 @@ function syncURL() {
 }
 
 // ================= LOCALISE =================
-// The sensory-level and distal-reach inputs annotate a cord / length-dependent picture and mean nothing
-// otherwise, so they only mount once such a finding is present. Onset, course and dominant hemisphere moved
-// into the card they act on (What / Together / the header) — see the 2026-08-16 UI-clarity spec.
-// Deliberately NOT weak_arm / weak_leg: limb weakness is the commonest finding in the app and is usually
-// cortical, so triggering on it put these inputs on screen for almost every case — the noise this pass
-// exists to remove. A sensory level or a length-dependent picture is what makes them mean anything.
-const CORD_AXIS_FINDINGS = new Set(["spinothalamic","dorsal_column","sensory_level","sensory_ataxia",
-  "sphincter_dysfunction","saddle_anaesthesia","glove_stocking","distal_sensory_loss"]);
+// The sensory-level and distal-reach inputs mount for a cord / length-dependent finding, and whenever the displayed
+// answer is a cord lesion — app/level-axis.js holds the rule (spinal cord fix, row 10). Onset, course and dominant
+// hemisphere moved into the card they act on (What / Together / the header) — see the 2026-08-16 UI-clarity spec.
+// The last displayed list, so the field's visibility can follow the answer without re-solving.
+let LAST_DISPLAY = [];
 
 function renderLocalise() {
-  const hasCord = [...S.tokens].some(t => CORD_AXIS_FINDINGS.has(fid(t)));
+  const hasCord = showLevelField(S.tokens, LAST_DISPLAY);
   app.innerHTML = `
   <div class="grid">
     <div class="pane">
@@ -288,7 +286,7 @@ function toggleTokens(toks) {
 // than re-rendering renderLocalise() keeps the accordion's open sections and scroll position intact.
 function syncLevelCtrls() {
   const el = document.getElementById("levelctrls"); if (!el) return;
-  el.hidden = ![...S.tokens].some(t => CORD_AXIS_FINDINGS.has(fid(t)));
+  el.hidden = !showLevelField(S.tokens, LAST_DISPLAY);
 }
 function markSides() {
   const acc = document.getElementById("acc"); if (!acc) return;
@@ -347,6 +345,7 @@ function renderResults() {
     // 2026-09-26). The per-case selections go with them — a chosen lesion or cause means nothing without
     // findings. Settings (onset, dominant hemisphere, scope) are the reader's and are kept.
     S.selected = undefined; S.selectedPathology = undefined; S.selectedEntity = undefined;
+    LAST_DISPLAY = []; syncLevelCtrls();
     syncURL();
     el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`;
     wireAnswerStrip();   // no card now — this unbinds the last case's scroll listener
@@ -361,6 +360,7 @@ function renderResults() {
   // solve() still receives the FULL set — differential() needs the pressure token to apply the compartment
   // filter, and strips it internally before matching.
   const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
+  LAST_DISPLAY = r.display; syncLevelCtrls();
   const cands = r.differential;
   const refr = refractiveFlag(S.tokens);
   const rmsg = refr.refractive
@@ -629,7 +629,8 @@ function whereCard(list, cands, total, r) {
     // NB: minimalSet() yields RAW site objects (unlike r.nearFit, which is a {site,missing} wrapper).
     ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
   let annot = "";
-  if (r.level && r.level.applies) annot += `<div class="annot"><b>Sensory level:</b> ${esc(r.level.note || (r.level.landmark||r.level.segment||""))}</div>`;
+  const ll = levelLine(r.level, list[0] ? siteName(list[0].site) : "");
+  if (ll) annot += `<div class="annot"><b>Sensory level:</b> ${esc(ll)}</div>`;
   if (r.length && r.length.applies) annot += `<div class="annot"><b>Length:</b> ${esc(r.length.note||"")}${r.length.glove?" · stocking-glove":""}</div>`;
   const rows = list.map(c => {
     const on = c.site.id === S.selected ? " on" : "";
@@ -639,7 +640,7 @@ function whereCard(list, cands, total, r) {
     // TWO CONTROLS, TWO CLAIMS. The checkbox says "I am choosing between these" (one lesion, which one?);
     // the pin says "these are both real" (two lesions). Opposite claims, so they cannot share a control.
     const cmpOn = compareSet(idsOf(list)).has(c.site.id) ? " checked" : "";
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span>${c.against ? `<span class="dagainst">less likely — would give ${esc(displayLabel(fid(c.against)))} on the ${esc(c.against.split("@")[1])}</span>` : ""}</div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span>${c.against ? `<span class="dagainst">less likely — would give ${esc(displayLabel(fid(c.against)))} on the ${esc(c.against.split("@")[1])}</span>` : ""}${c.levelAgainst ? `<span class="dagainst">less likely — cannot produce a sensory level at ${esc(c.levelAgainst)}</span>` : ""}</div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? setAside("contradicted by a normal finding", r.ruledOut.length,
@@ -709,17 +710,17 @@ function unifyingRow(e, sites) {
 // event, including each keystroke in the sensory-level and distal-reach fields — and those fields do not
 // change the finding set, so the guard was recomputing an identical answer per keystroke.
 //
-// The memo is keyed on the finding set plus the dominant hemisphere ONLY. `sensoryLevel` and `distalReach`
-// are deliberately excluded: they are ANNOTATION axes (see CLAUDE.md — the sensory level annotates the
-// winner, it never changes it), and this was verified rather than assumed — 7 sensoryLevel variants and a
-// distalReach variant all produce a byte-identical forcingFindings result.
+// The memo is keyed on the finding set, the dominant hemisphere and the sensory level. The level joined the key on
+// 2026-10-22: since the spinal cord fix it changes the answer (it demotes what cannot produce it and gates spinal
+// shock). `distalReach` stays out — it only annotates a polyneuropathy.
 //
 // Kept in the app layer on purpose: the engine function stays simple and cache-free; the repeated
 // identical calls are an app-render concern, so the fix belongs where the repetition is.
 let _ffKey = null, _ffVal = null;
 function forcingFindingsMemo() {
-  const key = [...S.tokens].sort().join("|") + "#" + S.dominant;
-  if (key !== _ffKey) { _ffKey = key; _ffVal = forcingFindings(S.tokens, { dominantSide: S.dominant }); }
+  // The sensory level changes the answer since the spinal cord fix (row 10), so it is passed and memoised on.
+  const key = [...S.tokens].sort().join("|") + "#" + S.dominant + "#" + S.sensoryLevel;
+  if (key !== _ffKey) { _ffKey = key; _ffVal = forcingFindings(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined }); }
   return _ffVal;
 }
 
