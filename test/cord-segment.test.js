@@ -22,6 +22,18 @@ ok("the conus is RARE", prevalenceOf(site("conus_medullaris")) === RARE);
 ok("the cauda is unchanged (UNCOMMON)", prevalenceOf(site("cauda_equina")) === UNCOMMON);
 ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")) === RARE);
 
+// ---- Row 5: upper motor neurone signs come before weakness (known negatives) ----
+{
+  const neg = knownNegatives(L("weak_leg@right babinski@right babinski@left"));
+  ok("a left Babinski means the left corticospinal tract is involved: left leg weakness is NOT a known normal", !neg.has("weak_leg@left"));
+  const emb = knownNegatives(L("weak_arm@right weak_leg@left"));
+  ok("weakness never excuses: R arm + L leg keeps the L arm and the R leg as known normals", emb.has("weak_arm@left") && emb.has("weak_leg@right"));
+  const lone = knownNegatives(L("weak_leg@right babinski@right"));
+  ok("with nothing entered on the left, the left leg and plantar stay known normals", lone.has("weak_leg@left") && lone.has("babinski@left"));
+  const r = solve(L("weak_leg@right babinski@right babinski@left sphincter_dysfunction@midline"));
+  ok("asymmetric compression (R leg weak + both Babinski + sphincter) → a cord lesion first, one lesion", first(r)?.level === "cord" && r.multi === null, ids(r).slice(0, 3).join(", "));
+}
+
 // ---- report ----
 console.log(`\ncord segment: ${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

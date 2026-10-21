@@ -56,6 +56,12 @@ export function rankSingle(observedSet, opts = {}) {
 // a KNOWN NEGATIVE. Any site that predicts a known-negative would produce a sign the patient demonstrably
 // lacks, so it is not a candidate. Only left↔right have a homolog; midline / bilateral / none are skipped.
 const OPPOSITE_SIDE = { left: "right", right: "left" };
+// UPPER MOTOR NEURONE SIGNS COME BEFORE WEAKNESS (spinal cord fix, row 5, 2026-10-22). A Babinski, brisk reflexes,
+// spasticity or Hoffmann's entered on a side means that side's corticospinal tract IS involved, so its other
+// corticospinal signs there are a matter of degree, not a known normal: "right leg weak + both plantars up" no longer
+// rules out every bilateral cord lesion. Weakness never excuses — "right arm + left leg weak" stays two lesions.
+const CORTICOSPINAL_SIGNS = new Set(["weak_arm", "weak_leg", "babinski", "hyperreflexia", "spasticity", "hoffmann"]);
+const UMN_RELEASE_SIGNS = ["babinski", "hyperreflexia", "spasticity", "hoffmann"];
 // An EXPLICIT NORMAL (a down-going plantar — EXPLICIT_NORMAL in findings.js) is never a known negative: it does
 // not exclude. It COUNTS AGAINST the lesions that predict the abnormal finding on that side — see normalNegatives()
 // and the `against` demotion in differential(). Built first as an exclusion; driving it showed leg weakness + a
@@ -69,6 +75,7 @@ export function knownNegatives(observedSet) {
     const [f, side] = tok.split("@");
     const other = OPPOSITE_SIDE[side];
     if (!other) continue;
+    if (CORTICOSPINAL_SIGNS.has(f) && UMN_RELEASE_SIGNS.some(g => observedSet.has(`${g}@${other}`))) continue;
     const homolog = `${f}@${other}`;
     if (!observedSet.has(homolog)) neg.add(homolog);
   }
