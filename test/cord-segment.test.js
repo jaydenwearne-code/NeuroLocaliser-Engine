@@ -54,6 +54,20 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
   ok("Brown-Séquard without arm signs → the right hemicord, arms spared", first(bs)?.id === "right_cord_hemi" && first(bs)?.variant === "arms-spared");
 }
 
+// ---- Row 3: at-level signs — two-segment spans, on one side or both ----
+{
+  const p1 = solve(L(`reflex_biceps_loss@left reflex_brachioradialis_loss@left weak_elbow_flexion@left ${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`));
+  ok("C5/6 myeloradiculopathy → the anterior cord at C5–6 with left root signs, one lesion", first(p1)?.id === "bilateral_cord_anterior" && first(p1)?.variant === "C5-6:left" && p1.multi === null, `${ids(p1).slice(0, 2)} ${first(p1)?.variant}`);
+  const mir = solve(L(`reflex_biceps_loss@right reflex_brachioradialis_loss@right weak_elbow_flexion@right ${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`));
+  ok("…its mirror reads the right side", first(mir)?.variant === "C5-6:right" && mir.multi === null);
+  const c7 = solve(L(`reflex_triceps_loss@right weak_elbow_extension@right ${B("hyperreflexia")} ${B("babinski")}`));
+  ok("R triceps jerk lost + weak elbow extension + both legs UMN → one cord lesion", first(c7)?.level === "cord" && c7.multi === null, ids(c7).slice(0, 2).join(", "));
+  const v = site("bilateral_cord_anterior").variants.find(x => x.key === "C5-6:left");
+  const e = v ? expectedFindings({ ...site("bilateral_cord_anterior"), structures: v.structures, atLevel: v.atLevel }) : new Set();
+  ok("at-level rows are emitted on their own side only", !!v && e.has("reflex_biceps_loss@left") && !e.has("reflex_biceps_loss@right") && e.has("babinski@right"));
+  ok("the spans are C5–6, C6–7, C7–8 and C8–T1, each left, right and both", site("bilateral_cord_anterior").variants.filter(x => x.atLevel).length === 12);
+}
+
 // ---- report ----
 console.log(`\ncord segment: ${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

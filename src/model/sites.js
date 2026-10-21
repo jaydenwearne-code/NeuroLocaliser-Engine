@@ -301,10 +301,24 @@ export const DIVISION = {
 // lists one site per id. Everything is DERIVED from the structure catalogue.
 //   arms-spared — below the arm segments, or cervical and not yet reaching the arm fibres: no arm weakness, no
 //                 Hoffmann's. `top` is the highest segment it can occupy, for the sensory-level constraint.
+//   at-level    — a two-segment span (a disc-level lesion takes two segments: the biceps jerk is a C5 row, the
+//                 supinator jerk a C6 row) whose anterior horn cells and exiting roots are caught: the span's root
+//                 motor, reflex and wasting rows, on the left, the right or both — reused, not duplicated.
 const CORD_ARM_ROWS = new Set(["cst_cord_arm", "cst_cord_hof"]);
+const AT_LEVEL_SPANS = [["C5", "C6"], ["C6", "C7"], ["C7", "C8"], ["C8", "T1"]];
 const armsSpared = structures => ({ key: "arms-spared", top: "T2", structures: structures.filter(id => !CORD_ARM_ROWS.has(id)) });
+const atLevelRows = span => STRUCTURES
+  .filter(s => s.level === "root" && span.includes(s.part.toUpperCase()) && !/_(derm|pain)$/.test(s.id))
+  .map(s => s.id);
 function cordVariants(structures) {
-  return [armsSpared(structures)];
+  const variants = [armsSpared(structures)];
+  for (const span of AT_LEVEL_SPANS) {
+    const rows = atLevelRows(span);
+    for (const sides of [["left"], ["right"], ["left", "right"]])
+      variants.push({ key: `${spanName(span)}:${sides.join("+")}`, top: span[0], segments: span,
+        structures: [...structures, ...rows], atLevel: { structures: rows, sides } });
+  }
+  return variants;
 }
 
 // A larger lesion can span medial+lateral at one level/side (a "hemi-level" lesion).
