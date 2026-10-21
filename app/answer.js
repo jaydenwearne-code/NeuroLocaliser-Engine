@@ -9,7 +9,7 @@ import { nameForSite } from "../src/data/syndromes.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
 import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { combinedSites } from "./combined-sites.js";
-import { plainSiteName } from "./labels.js";
+import { plainSiteName, readingLabel } from "./labels.js";
 import { displayLabel } from "./plain-labels.js";
 
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -94,7 +94,7 @@ export function answerFor(st) {
   const entityRed = st.selectedEntity ? ((MULTIFOCAL.find(e => e.name === st.selectedEntity) || {}).red || null) : null;
   const lines = {
     where: whereLine({
-      place: place(st.sel.site),
+      place: place(st.sel.site) + readingLabel(st.sel.site),
       others: list.filter(c => c.n === st.total && c.site.id !== st.sel.site.id).map(c => place(c.site)),
       cover: twoLesions ? sites.map(place) : null,
       fit: { n: st.sel.n, total: st.total },

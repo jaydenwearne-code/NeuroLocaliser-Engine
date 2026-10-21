@@ -54,8 +54,10 @@ const site = id => SITES.find(s => s.id === id);
   ok("it fires exactly where the onset sets aside a stroke-window site's vascular leading cause", wrong.length === 0, wrong.join(", "));
   // 40 / 42 as first built; the review round's mimic ruling took out the 3 subacute cases where a mimic leads, so
   // the site plan stands there (section 9). At chronic onset a mimic is followed (ruling 4, revised), so 42 stands.
-  ok("site kinds: hyperacute 1, acute 0, subacute 37, chronic 42",
-     same(counts, { hyperacute: 1, acute: 0, subacute: 37, chronic: 42 }), JSON.stringify(counts));
+  // 36 / 41 since the spinal cord fix's content round (owner, 2026-10-22, rows E1–E2): the anterior cord now leads with
+  // compression, not the ASA infarct, so its leading cause is no longer vascular and the rule no longer applies to it.
+  ok("site kinds: hyperacute 1, acute 0, subacute 36, chronic 41",
+     same(counts, { hyperacute: 1, acute: 0, subacute: 36, chronic: 41 }), JSON.stringify(counts));
   ok("the one hyperacute case is the optic nerve (AION)",
      KINDS.filter(s => onsetFollows(s, "hyperacute")).map(kind).join() === "skull_base|optic_aion");
 }

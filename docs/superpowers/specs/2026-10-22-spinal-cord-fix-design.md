@@ -3,8 +3,9 @@
 **Status: IMPLEMENTED (2026-10-22) on `fix/cord-localisation`.**
 - Audit: 79/105 (cord 19/20). Before the fix it was 66/105 with the four row-13 probes; every other region and all
   metamorphic totals are unchanged.
-- `npm test`: 84 suites, 7195 assertions, green.
-- The content round (§8) is pending. Plan: `docs/superpowers/plans/2026-10-22-spinal-cord-fix.md`.
+- `npm test`: 84 suites, 7209 assertions, green.
+- The content round (§10) was ruled and applied the same day: all 22 rows approved as written, and the card was
+  browser-checked. Plan: `docs/superpowers/plans/2026-10-22-spinal-cord-fix.md`.
 - Round 1 was ruled the same day: all 13 recommendations approved as written.
 
 > *"Round 1 of the spinal cord fix: I approve all 13 recommendations as written."* — the owner
@@ -245,7 +246,9 @@ assert these:
 
 The audit's 263 mirror pairs still mirror.
 
-## 10. Content round 1 — the clinical wording (awaiting your ruling)
+## 10. Content round 1 — the clinical wording (RULED 2026-10-22: all 22 approved as written)
+
+> *"Content round 1 of the spinal cord fix: I approve all 22 recommendations as written."* — the owner
 
 This round covers the clinical text the fix introduced, plus what it newly exposed. There are 22 rows. Approving the
 table approves every recommendation as written. "Today" is the branch as built. Every recommended change was

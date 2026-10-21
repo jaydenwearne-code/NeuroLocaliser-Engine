@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**84 test suites / 7195 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**84 test suites / 7209 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1245,6 +1245,23 @@ lesion and had no segment, the conus outranked it, and spinal shock did not exis
 - Spinal shock without the level gate steals GBS's picture.
 - Saddle loss on the anterior cord beats the conus for the classic conus picture.
 - The segment constraint without the demotion puts the conus first for spastic legs + C4.
+
+**Content round 1 (RULED 2026-10-22, all 22 rows, spec §10).** Capturing the real card showed every anterior-cord
+reading leading its What line with "Anterior spinal artery infarct", even a spastic paraparesis. Now:
+- **Compression first.** `cord_anterior` lists "Compressive myelopathy (disc / mass / abscess)" first, with an acute
+  tempo too. The ASA infarct still leads at a hyperacute onset. So the anterior cord leaves the onset-follows rule:
+  re-pinned 36/41, and no more "Could represent an old stroke" for a cord.
+- **New causes.** Cervical spondylotic myelopathy joins the anterior and transverse lists; it reuses its workup and
+  does not lead. The transverse compressive cause is chronic too.
+- **A4.** The anterior cord's red flag reads "compression until whole-spine MRI says otherwise" first.
+- **A1–A2.** The answer's Where line names the reading in brackets (`readingLabel`, app/labels.js); the "also fit"
+  places stay plain.
+- **B3.** The typed-level note no longer says "at or just above": a compression can sit several segments higher, so the
+  level does not replace whole-spine imaging.
+- **C1.** The contradiction sentence leads with the place.
+
+The seven new structure notes and anatomy rows were approved as written. The central cord's "generalised" wasting
+wording is fixed with the syrinx.
 
 **Deferred:** the syrinx's leg signs and the basilar coma picture go to the composite-sites round. The syrinx's leg
 signs conflict with R1 #12 until a bilateral parasagittal site exists.

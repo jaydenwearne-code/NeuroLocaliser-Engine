@@ -550,8 +550,12 @@ export const CAUSES = {
   ],
   // --- cord ---
   cord_anterior: [ // anterior spinal artery
+    // COMPRESSION FIRST (owner, 2026-10-22, spinal cord fix content round E1): every reading of the anterior cord shares
+    // this list — a spastic paraparesis, a myeloradiculopathy and spinal shock as well as the classic ASA picture — so
+    // compression leads, and it can be acute (an acute disc, abscess or haematoma). The ASA infarct still leads at a
+    // hyperacute onset.
+    c("Compressive myelopathy (disc / mass / abscess)", "neoplastic", ["acute","subacute","chronic"], "common", true, "Progressive with a sensory level; MRI shows compression — surgical emergency"),
     c("Anterior spinal artery infarct", "vascular", ["hyperacute","acute"], "common", false, "Sudden para/tetraparesis + pain/temp loss, dorsal columns spared; aortic surgery/hypotension"),
-    c("Compressive myelopathy (disc / mass / abscess)", "neoplastic", ["subacute","chronic"], "common", true, "Progressive with a sensory level; MRI shows compression — surgical emergency"),
     c("Transverse myelitis (demyelinating)", "inflammatory", ["subacute"], "uncommon", false, "Subacute, cord signal change over ≥1 segment; MS/NMO/MOG or para-infectious"),
     c("Epidural abscess", "infective", ["acute","subacute"], "uncommon", true, "Fever, focal spinal pain, raised inflammatory markers; risk factors (IVDU, diabetes)"),
     c("Aortic surgery, dissection or profound hypotension", "vascular", ["hyperacute","acute"], "uncommon", true,
@@ -560,9 +564,15 @@ export const CAUSES = {
       "Progressive weakness and sphincter disturbance WORSENED BY EXERCISE or standing, over months to years, with cord oedema and dorsal flow voids on MRI — treatable, and repeatedly mistaken for degenerative stenosis until the cord signal is noticed"),
     c("Fibrocartilaginous embolism", "vascular", ["hyperacute"], "rare", true,
       "Sudden severe back or neck pain then rapid paraplegia in a YOUNG, healthy person during exertion or minor trauma — disc material embolising into the spinal arteries; a diagnosis of exclusion, but it explains an otherwise inexplicable cord infarct"),
+    // ADDED 2026-10-22 (spinal cord fix content round E3): the commonest myelopathy in older adults. It reuses its
+    // authored workup and does not lead — compression does.
+    c("Cervical spondylotic myelopathy", "degenerative", ["chronic"], "common", false,
+      "Months of clumsy hands and a stiffening gait in an older patient, with Hoffmann's and brisk reflexes BELOW the level but not above — the commonest cause of cord dysfunction in this age group; root signs at the level make it a myeloradiculopathy"),
   ],
   cord_transverse: [ // complete cord cross-section — compression must be excluded FIRST
-    c("Compressive myelopathy (tumour, disc, abscess, haematoma)", "neoplastic", ["acute","subacute"], "common", true,
+    // + chronic (owner, 2026-10-22, content round E4): a slow tumour or spondylosis compresses over months, and with no
+    // chronic cause a chronic transverse picture read "No cause here typically starts this way".
+    c("Compressive myelopathy (tumour, disc, abscess, haematoma)", "neoplastic", ["acute","subacute","chronic"], "common", true,
       "A sensory level with bilateral long-tract signs — this is the diagnosis to EXCLUDE FIRST, because decompression is time-critical and the window closes fast"),
     c("Transverse myelitis (MS / NMOSD / MOG / para-infectious)", "inflammatory", ["subacute"], "common", false,
       "Evolving over days with cord signal change; only label it inflammatory once whole-spine imaging has excluded compression — the two are indistinguishable at the bedside"),
@@ -574,6 +584,9 @@ export const CAUSES = {
       "Clear mechanism; immobilise and image before moving the patient"),
     c("Metastatic spinal cord compression", "neoplastic", ["subacute"], "common", true,
       "Progressive back pain worse at night or on lying flat, preceding the weakness, in a patient with a known primary"),
+    // ADDED 2026-10-22 (spinal cord fix content round E3) — see cord_anterior.
+    c("Cervical spondylotic myelopathy", "degenerative", ["chronic"], "common", false,
+      "Months of clumsy hands and a stiffening gait in an older patient, with Hoffmann's and brisk reflexes BELOW the level but not above — the commonest cause of cord dysfunction in this age group; root signs at the level make it a myeloradiculopathy"),
   ],
   cord_hemi: [ // Brown-Séquard
     c("Penetrating or traumatic cord injury", "traumatic", ["hyperacute","acute"], "common", true,

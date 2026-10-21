@@ -64,7 +64,9 @@ export const BY_SITE = {
     name: "Anterior cord syndrome (anterior spinal artery)",
     note: "Anterior two-thirds of the cord: bilateral weakness + bilateral pain/temperature loss, with vibration/proprioception SPARED (dorsal columns are posterior-spinal territory).",
     ddx: ["Anterior spinal artery infarct", "Aortic disease/surgery (watershed)", "Severe compression", "Demyelination"],
-    red: "Preserved vibration with dense weakness and a dissociated sensory loss points to ASA territory — look for an aortic/vascular cause."
+    // Compression first (owner, 2026-10-22, spinal cord fix content round A4): this line shows under every reading of the
+    // anterior cord — a spastic paraparesis or a myeloradiculopathy too — not only the classic ASA picture.
+    red: "A new bilateral cord picture is compression until whole-spine MRI says otherwise; only then does preserved vibration with a dissociated sensory loss point to ASA territory and an aortic or vascular cause."
   },
   cord_posterior: {
     name: "Posterior column syndrome (SCD pattern)",

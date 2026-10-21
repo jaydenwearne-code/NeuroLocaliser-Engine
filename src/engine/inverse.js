@@ -337,8 +337,10 @@ export function describeLevel(best, sensoryLevel) {
   }
 
   if (isCord && segment) {
+    // "At or just above" could send the scan to the wrong segment — the error the spinal cord fix exists to stop: a
+    // level can sit several segments below a compression (owner, 2026-10-22, content round B3).
     return { given: raw, applies: true, segment, region: regionOf(segment), landmark: landmarkOf(segment), contradicts,
-      note: `lesion at or just above ${segment} (the sensory level typically sits a segment or two below the lesion)` };
+      note: `lesion at or above ${segment} — usually just above it, but a compression can sit several segments higher (a cervical lesion can give a thoracic level), so the level does not replace whole-spine imaging` };
   }
   if (isCord && raw && !segment) {
     return { ...base, note: `unrecognised sensory level '${raw}'; expected a segment such as T10` };
@@ -347,10 +349,11 @@ export function describeLevel(best, sensoryLevel) {
     // No level typed, but the chosen READING of the cord can still say where (spinal cord fix, row 9). Never
     // "thoracic": a legs-only myelopathy can be cervical, and the plans keep the imaging at the whole spine.
     const s = best.site;
+    // Wording approved in the content round (owner, 2026-10-22, B1–B2).
     if (s.segments) return { ...base, fromVariant: true,
-      note: `the at-level signs (${s.atLevel.sides.join(" and ")}) place the lesion at about ${spanName(s.segments, "–")}; the long-tract signs below it come from the same lesion` };
+      note: `root signs ${s.atLevel.sides.length > 1 ? "on both sides" : `on the ${s.atLevel.sides[0]}`} place the lesion at about ${spanName(s.segments, "–")}; the long-tract signs below it come from the same lesion` };
     if (s.variant === "arms-spared") return { ...base, fromVariant: true,
-      note: "the arms are spared — the lesion lies below the arm segments, or is cervical and not yet reaching the arm fibres; a sensory level is needed to localise the segment" };
+      note: "arms spared — the lesion is below the arm segments, or cervical and not yet reaching the arm fibres; a sensory level will narrow it" };
     return { ...base, note: "level undetermined — a sensory level is needed to localise the segment" };
   }
   if (!isCord && raw) {

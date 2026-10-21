@@ -629,7 +629,7 @@ function whereCard(list, cands, total, r) {
     // NB: minimalSet() yields RAW site objects (unlike r.nearFit, which is a {site,missing} wrapper).
     ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
   let annot = "";
-  const ll = levelLine(r.level, list[0] ? siteName(list[0].site) : "");
+  const ll = levelLine(r.level, list[0] ? plainSiteName(list[0].site, { dominantSide: S.dominant }).place : "");
   if (ll) annot += `<div class="annot"><b>Sensory level:</b> ${esc(ll)}</div>`;
   if (r.length && r.length.applies) annot += `<div class="annot"><b>Length:</b> ${esc(r.length.note||"")}${r.length.glove?" · stocking-glove":""}</div>`;
   const rows = list.map(c => {

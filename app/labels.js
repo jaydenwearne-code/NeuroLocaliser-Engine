@@ -3,6 +3,7 @@
 // them into words a clinician reads. Ids still travel in the case URL and the feedback payload untouched.
 import { BY_SITE, nameForSite } from "../src/data/syndromes.js";
 import { FINDINGS } from "../src/model/findings.js";
+import { spanName } from "../src/model/levels.js";
 
 // Word-level expansions applied to every underscore-separated token of a part id. Keys are lowercase and
 // contain no underscore (asserted in test/app-naming.test.js) — they are matched per WORD, not per id.
@@ -257,6 +258,16 @@ function territoryAdds(terr, alreadySaid) {
   let novel = 0;
   for (const w of t) if (!known.has(w)) novel++;
   return novel / t.size > 0.4;   // it must be substantially new, not a reworded echo
+}
+
+// A cord READING (spinal cord fix; owner, 2026-10-22, content round A1–A2): the same lesion read at another segment or
+// in spinal shock, said in brackets after the ANSWER's place only — the places that also fit stay plain. Never
+// "thoracic": a legs-only myelopathy can be cervical, and the plans keep the imaging at the whole spine.
+export function readingLabel(site) {
+  const v = site && site.variant;
+  if (!v) return "";
+  if (site.segments) return ` (at about ${spanName(site.segments, "–")}, root signs ${site.atLevel.sides.length > 1 ? "on both sides" : "on the " + site.atLevel.sides[0]})`;
+  return { "arms-spared": " (arms spared)", shock: " (spinal shock)", "shock:arms-spared": " (spinal shock, arms spared)" }[v] || "";
 }
 
 export function plainSiteName(site, opts = {}) {

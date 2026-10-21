@@ -16,9 +16,9 @@ export function showLevelField(tokens, display) {
 
 // The level line under the Where card, or null. Shown whenever a level is typed — a dismissed level used to be
 // invisible — and when none is typed but the chosen reading of the cord names its segment. `place` is the displayed
-// answer's plain name.
+// answer's plain place; it LEADS the contradiction, so it reads as a sentence (owner, 2026-10-22, content round C1).
 export function levelLine(level, place) {
   if (!level || !(level.given || level.fromVariant)) return null;
-  if (level.contradicts) return `a sensory level at ${level.segment} needs a cord lesion at or above ${level.segment}; ${place} cannot produce one — re-check the level, or consider a second lesion`;
+  if (level.contradicts) return `${place} cannot produce a sensory level at ${level.segment} — that needs a cord lesion at or above ${level.segment}. Re-check the level, or consider a second lesion.`;
   return level.note || null;
 }

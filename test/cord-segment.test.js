@@ -5,6 +5,8 @@
 import { solve, candidateSites, knownNegatives } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { prevalenceOf, UNCOMMON, RARE } from "../src/model/prevalence.js";
+import { causesFor, leadingCause } from "../src/data/causes.js";
+import { nameForSite } from "../src/data/syndromes.js";
 
 let pass = 0, fail = 0;
 function ok(label, cond, detail = "") { cond ? pass++ : fail++; console.log(`${cond ? "PASS" : "FAIL"}  ${label}${cond ? "" : "  " + detail}`); }
@@ -45,7 +47,8 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
   ok("every displayed id is a candidate id (variants add none)", r.display.every(c => all.includes(c.site.id)));
   ok("each id is displayed once", new Set(ids(r)).size === ids(r).length);
   const rl = solve(spastic, { sensoryLevel: "T10" });
-  ok("spastic legs + level T10 → the level note follows the displayed cord answer", rl.level.applies && /at or just above T10/.test(rl.level.note), rl.level.note);
+  ok("spastic legs + level T10 → the level note follows the displayed cord answer", rl.level.applies && /at or above T10/.test(rl.level.note), rl.level.note);
+  ok("…and says the level does not replace whole-spine imaging (content round, B3)", /does not replace whole-spine imaging/.test(rl.level.note) && !/at or just above/.test(rl.level.note), rl.level.note);
   const v = site("bilateral_cord_anterior").variants?.find(x => x.key === "arms-spared");
   const e = v ? expectedFindings({ ...site("bilateral_cord_anterior"), structures: v.structures }) : new Set();
   ok("the arms-spared reading predicts no arm weakness and no Hoffmann's, but still the legs", !!v && !e.has("weak_arm@left") && !e.has("hoffmann@left") && e.has("weak_leg@left"));
@@ -112,9 +115,9 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
 // ---- Row 9: the level note names the segment the chosen reading implies ----
 {
   const p1 = solve(L(`reflex_biceps_loss@left reflex_brachioradialis_loss@left weak_elbow_flexion@left ${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`));
-  ok("no level typed: the at-level reading names its segment", p1.level.fromVariant === true && /C5–6/.test(p1.level.note), p1.level.note);
+  ok("no level typed: the at-level reading names its segment, as root signs (content round, B1)", p1.level.fromVariant === true && /^root signs on the left place the lesion at about C5–6/.test(p1.level.note), p1.level.note);
   const sp = solve(L(`${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`));
-  ok("no level typed: the arms-spared reading says so, and never says thoracic", sp.level.fromVariant === true && /arms are spared/.test(sp.level.note) && !/thoracic/i.test(sp.level.note), sp.level.note);
+  ok("no level typed: the arms-spared reading says so, and never says thoracic (content round, B2)", sp.level.fromVariant === true && /^arms spared — /.test(sp.level.note) && !/thoracic/i.test(sp.level.note), sp.level.note);
   const cauda = solve(L("saddle_anaesthesia@midline sphincter_dysfunction@midline reflex_ankle_loss@left reflex_ankle_loss@right lmn_weakness@left radicular_pain@left"), { sensoryLevel: "T10" });
   ok("a level under a cauda answer is flagged as contradicted", first(cauda)?.id === "cauda_equina" && cauda.level.contradicts === true);
   const bs = solve(L("weak_arm@left weak_leg@left dorsal_sensory@left spinothalamic@right"));
@@ -129,6 +132,21 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
   const p8 = solve(L(`${B("weak_arm")} ${B("suspended_sensory")}`));
   ok("both arms weak + cape → the central cord, one lesion", first(p8)?.id === "bilateral_cord_central" && p8.multi === null);
   ok("a bare cape still → the central cord", first(solve(L(B("suspended_sensory"))))?.id === "bilateral_cord_central");
+}
+
+// ---- Content round 1 (owner, 2026-10-22): the cause order and the red flag the readings show ----
+{
+  const anterior = r => first(r);
+  const spastic = solve(L(`${B("hyperreflexia")} ${B("babinski")} ${B("spasticity")}`));
+  const lead = (s, onset) => leadingCause(causesFor(s, { onset }).all)?.name;
+  ok("E1: the anterior cord leads with compression (no onset), not the ASA infarct", lead(anterior(spastic)) === "Compressive myelopathy (disc / mass / abscess)", lead(anterior(spastic)));
+  ok("E1: …and at acute onset (an acute disc, abscess or haematoma compresses acutely)", lead(anterior(spastic), "acute") === "Compressive myelopathy (disc / mass / abscess)");
+  ok("E1: the ASA infarct still leads at a hyperacute onset", lead(anterior(spastic), "hyperacute") === "Anterior spinal artery infarct");
+  const names = id => causesFor(site(id)).all.map(c => c.name);
+  ok("E3: cervical spondylotic myelopathy is listed at the anterior and the transverse cord", names("bilateral_cord_anterior").includes("Cervical spondylotic myelopathy") && names("bilateral_cord_transverse").includes("Cervical spondylotic myelopathy"));
+  ok("E3: …and it does not lead at a chronic onset (compression does)", lead(site("bilateral_cord_anterior"), "chronic") === "Compressive myelopathy (disc / mass / abscess)");
+  ok("E4: the transverse cord names a cause at a chronic onset", lead(site("bilateral_cord_transverse"), "chronic") === "Compressive myelopathy (tumour, disc, abscess, haematoma)");
+  ok("A4: the anterior cord's red flag puts compression first", /^A new bilateral cord picture is compression until whole-spine MRI says otherwise/.test(nameForSite(site("bilateral_cord_anterior")).red || ""));
 }
 
 // ---- report ----

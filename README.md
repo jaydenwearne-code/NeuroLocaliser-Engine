@@ -14,7 +14,7 @@ be causing it — then **what to do next**.
 | Pathology | **1294 causes** across 202 sites, tempo-aware, every one with a discriminating feature |
 | Workup | **1294 / 1294 causes carry an authored, pathology-specific plan** (816 plans, 71 families) |
 | Cross-site | **13 diseases** that explain a multifocal picture as one illness |
-| Tests | 84 suites, **7195 assertions**, zero dependencies, no build step |
+| Tests | 84 suites, **7209 assertions**, zero dependencies, no build step |
 
 ## The idea
 
