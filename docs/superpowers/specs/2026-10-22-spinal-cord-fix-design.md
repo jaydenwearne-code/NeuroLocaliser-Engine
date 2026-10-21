@@ -244,3 +244,79 @@ assert these:
 - the Why and the Where agree.
 
 The audit's 263 mirror pairs still mirror.
+
+## 10. Content round 1 — the clinical wording (awaiting your ruling)
+
+This round covers the clinical text the fix introduced, plus what it newly exposed. There are 22 rows. Approving the
+table approves every recommendation as written. "Today" is the branch as built. Every recommended change was
+prototyped on a scratch copy, except A2 (the "also fit" list), which is checked when it is built.
+
+**Measured effect of all recommendations together:**
+- **Audit:** unchanged at 79/105, cord 19/20, everything else identical.
+- **`npm test`:** five pinned assertions change, and every one is wording or a count this round sets:
+  - two in `cord-segment` and two in `level-axis`, which pin the B2, B3 and C1 wording;
+  - the onset-follows count (row E2).
+
+**What the reader sees, today → recommended.** The examples have no onset unless one is stated.
+
+| Picture | Today | Recommended |
+|---|---|---|
+| Spastic paraparesis | *Bilateral anterior cord.* · *Most likely Anterior spinal artery infarct.* | *Bilateral anterior cord (arms spared).* · *Most likely Compressive myelopathy (disc / mass / abscess) (must not miss). Must not miss: Epidural abscess.* |
+| The same, chronic onset | *Most likely Compressive myelopathy … Could represent an old stroke.* | *Most likely Compressive myelopathy … Must not miss: Spinal dural arteriovenous fistula.* |
+| C5/6 myeloradiculopathy | *Bilateral anterior cord.* · *Most likely Anterior spinal artery infarct.* | *Bilateral anterior cord (at about C5–6, root signs on the left).* · *Most likely Compressive myelopathy …* |
+| Spinal shock, level T6, acute | *Most likely Anterior spinal artery infarct.* | *Most likely Compressive myelopathy (disc / mass / abscess) (must not miss).* (ASA infarct still leads at a hyperacute onset) |
+| Transverse cord, chronic onset | *No cause here typically starts this way — 6 set aside.* | *Most likely Compressive myelopathy (tumour, disc, abscess, haematoma) (must not miss).* |
+
+### A. How a reading of the cord shows on the card
+
+| # | Item | Today | Recommendation |
+|---|---|---|---|
+| A1 | The reading on the Where line | Not shown: every reading reads "Bilateral anterior cord" | **Add it to the place, in brackets:** "(arms spared)", "(at about C5–6, root signs on the left)", "(spinal shock)", "(spinal shock, arms spared)". Never "thoracic", because a legs-only myelopathy can be cervical. |
+| A2 | Readings in the "also fit" list | The prototype repeats them: "1 other place also fits: Bilateral transverse cord (at about C5–6, root signs on the left)" | **Show the reading for the answer only;** the "also fit" list keeps plain places. |
+| A3 | The card title | "Anterior cord syndrome (anterior spinal artery)" for every anterior reading | **Keep the pattern's title.** The reading (A1), the red flag (A4) and the cause order (E1) carry the difference. Per-reading titles would be a new piece of phonebook content for every reading. |
+| A4 | The anterior cord's red-flag line, shown under every reading, even a spastic paraparesis with no sensory loss | "Preserved vibration with dense weakness and a dissociated sensory loss points to ASA territory — look for an aortic/vascular cause." | **"A new bilateral cord picture is compression until whole-spine MRI says otherwise; only then does preserved vibration with a dissociated sensory loss point to ASA territory and an aortic or vascular cause."** |
+
+### B. The level notes
+
+| # | Item | Today | Recommendation |
+|---|---|---|---|
+| B1 | At-level reading, no level typed | "the at-level signs (left) place the lesion at about C5–6; the long-tract signs below it come from the same lesion" | **"root signs on the left place the lesion at about C5–6; the long-tract signs below it come from the same lesion"**. "At-level signs" is jargon. |
+| B2 | Arms-spared reading, no level typed | "the arms are spared — the lesion lies below the arm segments, or is cervical and not yet reaching the arm fibres; a sensory level is needed to localise the segment" | **"arms spared — the lesion is below the arm segments, or cervical and not yet reaching the arm fibres; a sensory level will narrow it"** |
+| B3 | A level typed under a cord answer. This is existing, signed-off wording, which the fix now shows far more often | "lesion at or just above T10 (the sensory level typically sits a segment or two below the lesion)" | **"lesion at or above T10 — usually just above it, but a compression can sit several segments higher (a cervical lesion can give a thoracic level), so the level does not replace whole-spine imaging"**. "At or just above" can send the scan to the wrong segment, which is the very error this fix is about. |
+| B4 | The demoted row | "less likely — cannot produce a sensory level at T10" | **Keep.** |
+
+### C. The contradiction sentence
+
+| # | Item | Today | Recommendation |
+|---|---|---|---|
+| C1 | A typed level under a non-cord answer | "a sensory level at T10 needs a cord lesion at or above T10; Midline cauda equina cannot produce one — re-check the level, or consider a second lesion" (the place lands capitalised mid-sentence) | **"Midline cauda equina cannot produce a sensory level at T10 — that needs a cord lesion at or above T10. Re-check the level, or consider a second lesion."** |
+
+### D. The seven new structures, and reused rows
+
+The note's first clause is what the Why line quotes ("carried by spinal shock"); the anatomy-sheet row is its long form.
+
+| # | Structure | Note (anatomy row) | Recommendation |
+|---|---|---|---|
+| D1 | `cord_saddle` | "complete cord lesion — every modality lost below the level, the saddle included" (row: "…; the incomplete patterns keep sacral sparing") | **Keep.** |
+| D2 | `cord_shock_flaccid` | "spinal shock — flaccid paralysis below an acute cord lesion" | **Keep.** |
+| D3 | `cord_shock_tone` | "spinal shock — tone lost below the lesion" | **Keep.** |
+| D4 | `cord_shock_knee` | "spinal shock — knee jerks lost below the lesion" | **Keep.** |
+| D5 | `cord_shock_ankle` | "spinal shock — ankle jerks lost below the lesion" | **Keep.** |
+| D6 | `cord_shock_bulbo` | "spinal shock — bulbocavernosus reflex lost; its return marks the end of shock" | **Keep.** |
+| D7 | `cord_shock_anal` | "spinal shock — anal wink lost" | **Keep.** |
+| D8 | Reused rows | The at-level readings quote the roots' own notes ("biceps jerk (C5/6)", "C5 — biceps"). The central cord's wasting would quote "anterior horn — denervation wasting (generalised LMN)". | **Keep the root rows**, which are accurate at the segment. "Generalised" is wrong for a syrinx, but no picture reaches it until the syrinx's leg signs land, so **fix it in the composite-sites round**. |
+
+Once these rows are approved, the anatomy sheet's new rows count as reviewed and can be republished with the next
+Artifact refresh.
+
+### E. The cause order per reading (the What line)
+
+Causes are keyed by pattern, so every reading of the anterior cord shares one list.
+
+| # | Item | Today | Recommendation |
+|---|---|---|---|
+| E1 | The anterior cord, every reading | "Anterior spinal artery infarct" leads at no onset, hyperacute and acute. That covers a spastic paraparesis, a myeloradiculopathy and spinal shock. | **Put "Compressive myelopathy (disc / mass / abscess)" first, and let it be acute as well as subacute and chronic**: an acute disc, abscess or haematoma compresses acutely. Measured: compression leads at no onset, acute, subacute and chronic; ASA infarct still leads at a hyperacute onset. |
+| E2 | The 2026-09-29 "onset follows the cause" rule | It applies to the anterior cord because its leading cause is vascular. At a chronic onset the card adds *"Could represent an old stroke."* | **Accept the consequence of E1.** The leading cause is no longer vascular, so the rule no longer applies here; the old-stroke clause goes and the site's own plan stands. **Re-pin onset-follows "subacute 37, chronic 42" → 36, 41.** |
+| E3 | Cervical spondylotic myelopathy | Absent from the anterior and transverse lists, though it is the commonest myelopathy in older adults | **Add it to both** (chronic, common, not must-not-miss), after the compressive cause. It reuses its authored workup, so the every-cause gate holds. Its text has no figures ("an older patient"). It does not lead; compression does. |
+| E4 | The transverse cord at a chronic onset | "No cause here typically starts this way — 6 set aside." | **Let "Compressive myelopathy (tumour, disc, abscess, haematoma)" be chronic too** (a slow tumour or spondylosis). Measured: "Most likely Compressive myelopathy …". |
+| E5 | Spinal shock | — | **No separate change.** It follows E1 on the anterior cord. On the transverse cord, compression already leads at an acute onset and cord infarct at a hyperacute one. |
