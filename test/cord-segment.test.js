@@ -80,6 +80,21 @@ ok("other bilateral sites stay RARE (locked-in)", prevalenceOf(site("locked_in")
   ok("…with the complete cord listed second (look for a level)", conus.display[1]?.site.id === "bilateral_cord_transverse");
 }
 
+// ---- Row 7: spinal shock — flaccid and areflexic below an acute lesion, offered only with a stated level ----
+{
+  const flaccid = `${B("lmn_weakness")} ${B("reflex_knee_loss")} ${B("reflex_ankle_loss")}`;
+  const p15 = solve(L(`${flaccid} ${B("hypotonia")} ${B("spinothalamic")} sphincter_dysfunction@midline`), { sensoryLevel: "T6" });
+  ok("flaccid areflexic legs + pain loss + retention, level T6 → the cord in spinal shock, one lesion", first(p15)?.level === "cord" && /^shock/.test(first(p15)?.variant || "") && p15.multi === null, `${ids(p15).slice(0, 2)} ${first(p15)?.variant}`);
+  const p16 = solve(L(`${B("weak_leg")} ${B("reflex_knee_loss")} ${B("reflex_ankle_loss")} ${B("spinothalamic")} sphincter_dysfunction@midline`), { sensoryLevel: "T6" });
+  ok("…entered as weak legs + areflexia → the same, one lesion", first(p16)?.level === "cord" && p16.multi === null);
+  const gbs = solve(L(flaccid));
+  ok("with no level stated, spinal shock is not offered: flaccid areflexic legs stay GBS", first(gbs)?.id === "polyradiculoneuropathy_acute" && !ids(gbs).some(id => id.startsWith("bilateral_cord")));
+  const bab = solve(L(`${flaccid} ${B("spinothalamic")} sphincter_dysfunction@midline ${B("babinski")}`), { sensoryLevel: "T6" });
+  ok("up-going plantars do not argue against shock: still one lesion", first(bab)?.level === "cord" && bab.multi === null);
+  const down = solve(L(`${flaccid} ${B("spinothalamic")} sphincter_dysfunction@midline plantar_flexor@left plantar_flexor@right`), { sensoryLevel: "T6" });
+  ok("down-going plantars only demote it", first(down)?.level === "cord" && !!down.display[0].against);
+}
+
 // ---- report ----
 console.log(`\ncord segment: ${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

@@ -39,10 +39,16 @@ export function candidateSites() {
 // and pins are untouched, and every ranked list keeps each site once, as its best variant (firstPerId).
 // candidateSites() stays one site per id for everything that enumerates sites (the atlas, the per-site tests).
 export function solverSites(opts = {}) {
+  const level = normaliseLevel(opts.sensoryLevel);
   const out = [];
   for (const site of candidateSites()) {
     out.push(site);
-    for (const v of site.variants || []) out.push(variantOf(site, v));
+    for (const v of site.variants || []) {
+      // Spinal shock needs a stated level (spinal cord fix, row 1c): the level is the bedside discriminator from GBS,
+      // and without it the shock reading takes GBS's own picture (measured: the GBS probe, vignette and Why clue).
+      if (v.needsLevel && !level) continue;
+      out.push(variantOf(site, v));
+    }
   }
   return out;
 }

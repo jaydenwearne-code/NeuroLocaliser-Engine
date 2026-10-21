@@ -304,7 +304,11 @@ export const DIVISION = {
 //   at-level    — a two-segment span (a disc-level lesion takes two segments: the biceps jerk is a C5 row, the
 //                 supinator jerk a C6 row) whose anterior horn cells and exiting roots are caught: the span's root
 //                 motor, reflex and wasting rows, on the left, the right or both — reused, not duplicated.
+//   shock       — an acute lesion in spinal shock: flaccid and areflexic below the level, the sacral reflexes lost; the
+//                 release signs (brisk reflexes, spasticity, Hoffmann's) have not appeared. Babinski is kept — the
+//                 plantars may be mute, flexor or already extensor. `needsLevel`: offered only with a stated level.
 const CORD_ARM_ROWS = new Set(["cst_cord_arm", "cst_cord_hof"]);
+const CORD_RELEASE_ROWS = new Set(["cst_cord_hyper", "cst_cord_spast", "cst_cord_hof"]);
 const AT_LEVEL_SPANS = [["C5", "C6"], ["C6", "C7"], ["C7", "C8"], ["C8", "T1"]];
 const armsSpared = structures => ({ key: "arms-spared", top: "T2", structures: structures.filter(id => !CORD_ARM_ROWS.has(id)) });
 const atLevelRows = span => STRUCTURES
@@ -318,6 +322,10 @@ function cordVariants(structures) {
       variants.push({ key: `${spanName(span)}:${sides.join("+")}`, top: span[0], segments: span,
         structures: [...structures, ...rows], atLevel: { structures: rows, sides } });
   }
+  const shockRows = STRUCTURES.filter(s => s.level === "cord" && s.part === "shock").map(s => s.id);
+  const shock = [...structures.filter(id => !CORD_RELEASE_ROWS.has(id)), ...shockRows];
+  variants.push({ key: "shock", structures: shock, needsLevel: true });
+  variants.push({ ...armsSpared(shock), key: "shock:arms-spared", needsLevel: true });
   return variants;
 }
 

@@ -204,6 +204,22 @@ export const STRUCTURES = [
   // saddle numbness has no side, and must match the token the conus and cauda emit.
   { id: "cord_saddle", level: "cord", part: "sacral", produces: "saddle_anaesthesia", crosses: false, emit: "midline",
     note: "complete cord lesion — every modality lost below the level, the saddle included" },
+  // ADDED 2026-10-22 (spinal cord fix, row 7): SPINAL SHOCK. Below an acute cord lesion the legs are at first flaccid
+  // and areflexic and the sacral reflexes are lost; the release signs come later. A composite-only part (cord|shock),
+  // used only by the shock variants of the anterior and transverse cord (sites.js cordVariants), which need a stated
+  // sensory level.
+  { id: "cord_shock_flaccid", level: "cord", part: "shock", produces: "lmn_weakness", crosses: false,
+    note: "spinal shock — flaccid paralysis below an acute cord lesion" },
+  { id: "cord_shock_tone", level: "cord", part: "shock", produces: "hypotonia", crosses: false,
+    note: "spinal shock — tone lost below the lesion" },
+  { id: "cord_shock_knee", level: "cord", part: "shock", produces: "reflex_knee_loss", crosses: false,
+    note: "spinal shock — knee jerks lost below the lesion" },
+  { id: "cord_shock_ankle", level: "cord", part: "shock", produces: "reflex_ankle_loss", crosses: false,
+    note: "spinal shock — ankle jerks lost below the lesion" },
+  { id: "cord_shock_bulbo", level: "cord", part: "shock", produces: "bulbocavernosus_loss", crosses: false, emit: "midline",
+    note: "spinal shock — bulbocavernosus reflex lost; its return marks the end of shock" },
+  { id: "cord_shock_anal", level: "cord", part: "shock", produces: "anal_wink_loss", crosses: false, emit: "midline",
+    note: "spinal shock — anal wink lost" },
 
   // ---- CAUDA EQUINA (lumbosacral nerve roots, below the conus) ----
   { id: "ls_roots_motor",       level: "cauda", part: "equina", produces: "lmn_weakness",         crosses: false, emit: "bilateral",
