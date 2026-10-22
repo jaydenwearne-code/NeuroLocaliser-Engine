@@ -13,9 +13,12 @@
 // information sits entirely in what a candidate PREDICTS THAT HAS NOT BEEN LOOKED FOR, which is exactly
 // the next examination.
 
-// Which of the entered findings does this candidate account for?
+import { enteredSet, enteredToken } from "../src/engine/families.js";
+
+// Which of the entered findings does this candidate account for? Read through the word families: `cand.exp` holds the
+// place's tokens as the solver reads them (false-multifocal fix).
 export function explainedBy(cand, observed) {
-  return [...observed].filter(t => cand.exp.has(t));
+  return [...observed].filter(t => cand.exp.has(enteredToken(t, observed)));
 }
 
 // The findings that would SPLIT the field, most informative first.
@@ -27,7 +30,8 @@ export function discriminators(candidates, observed) {
   if (!candidates || candidates.length < 2) return [];
 
   const tokens = new Set();
-  for (const c of candidates) for (const t of c.exp) if (!observed.has(t)) tokens.add(t);
+  const seen = enteredSet(observed);   // a word already examined under another name is not still to examine
+  for (const c of candidates) for (const t of c.exp) if (!seen.has(t)) tokens.add(t);
 
   const out = [];
   for (const token of tokens) {

@@ -10,6 +10,7 @@ import { STRUCTURE_BY_ID } from "../model/structures.js";
 import { TRACTS } from "../model/tracts.js";
 import { stationOf, STATION_ORDER, STATION_GROUP, AXIS } from "../model/stations.js";
 import { REASON, TRACT_SAME, CROSSING_NAME } from "../data/sideReasons.js";
+import { enteredSet, enteredToken, predictedToken, indexTokens } from "./families.js";
 
 // "corticobulbar tract (to the facial nucleus)" -> "corticobulbar tract"; "trigeminal lemniscus — crosses…" ->
 // "trigeminal lemniscus". Model labels carry teaching asides that do not belong mid-sentence.
@@ -27,7 +28,8 @@ function locusIndex(opts) {
   for (const s of solverSites(opts)) {
     let E; try { E = expectedFindings(s, opts); } catch { continue; }
     const st = stationOf(s); if (!st) continue;
-    for (const t of E) (idx.get(t) ?? idx.set(t, new Set()).get(t)).add(st);
+    // Indexed under every token the word can be matched as (word families: past-pointing arises wherever limb ataxia does).
+    for (const t0 of E) for (const t of indexTokens(t0)) (idx.get(t) ?? idx.set(t, new Set()).get(t)).add(st);
   }
   INDEX.set(key, idx);
   return idx;
@@ -82,17 +84,21 @@ export function reasonFor(finding, relation, struct, station, siblingFindings = 
 
 export function whyChain(observedSet, site, opts = {}) {
   const idx = locusIndex(opts);
+  // Word families (false-multifocal fix): each entered word is read through its family, so past-pointing is carried by
+  // whatever carries limb ataxia at this place, and could arise wherever limb ataxia can.
+  const read = enteredSet(observedSet);
   // Only findings some site produces are steps: papilloedema (an axis) and the refractive and functional signs
   // (flags) carry their own banners and localise nothing.
-  const toks = [...observedSet].filter(t => idx.has(t));
+  const toks = [...observedSet].filter(t => idx.has(enteredToken(t, observedSet)));
   const station = stationOf(site);
   const ex = explain(site, opts);
   const carrierOf = e => STRUCTURE_BY_ID[e.structure].note.split(" — ")[0];
   const steps = toks.map((token, order) => {
     const [finding, bodySide] = token.split("@");
-    const e = ex.find(x => `${x.finding}@${x.bodySide}` === token);
+    const asRead = enteredToken(token, observedSet);
+    const e = ex.find(x => predictedToken(`${x.finding}@${x.bodySide}`, read) === asRead);
     const struct = e ? STRUCTURE_BY_ID[e.structure] : null;
-    const stations = [...idx.get(token)].sort(byOrder);
+    const stations = [...idx.get(asRead)].sort(byOrder);
     const relation = relationOf(token, site);
     const siblings = e ? ex.filter(x => x.finding !== finding && carrierOf(x) === carrierOf(e)).map(x => x.finding) : [];
     return {

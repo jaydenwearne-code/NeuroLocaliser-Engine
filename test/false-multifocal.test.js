@@ -127,5 +127,21 @@ const WALL = "face_pain_loss@left spinothalamic@right miosis@left ptosis@left li
   ok("guard: INO + optic neuritis → two lesions", two("ino@left central_scotoma@right rapd@right"));
 }
 
+// ---- 3. the Why chain and the compare panel ----
+import { whyChain } from "../src/engine/why.js";
+import { explainedBy, discriminators } from "../app/discriminators.js";
+{
+  const set = S("face_pain_loss@left spinothalamic@right miosis@left ptosis@left dysmetria@left dysphagia@left cn8_vertigo@left");
+  const r = solve(set);
+  const ch = whyChain(set, r.display[0].site);
+  const step = ch.steps.find(s => s.finding === "dysmetria");
+  ok("why: past-pointing is carried at the lateral medulla (the inferior peduncle)", step && step.explained && /cerebellar peduncle/.test(step.carrier), step && step.carrier);
+  ok("why: ...and could arise along the whole cerebellar limb pathway — the medulla and pons too", step && step.stations.includes("medulla") && step.stations.includes("pons"), step && step.stations.join(", "));
+  ok("why: the picture meets at one place", ch.verdict === "one");
+  ok("compare: the lateral medulla explains the past-pointing", explainedBy(r.display[0], set).includes("dysmetria@left"));
+  ok("compare: limb ataxia is not offered as a finding still to examine",
+     !discriminators(r.display.slice(0, 2), set).some(d => d.token === "limb_ataxia@left"));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
