@@ -9,6 +9,7 @@
 // inspectable, which matters for a teaching tool and for clinician review.
 
 import { expectedFindings } from "./forward.js";
+import { enteredSet, enteredToken, predictedSet } from "./families.js";
 
 // Findings that strongly pin location (nuclear/fascicular CN signs, gaze, INO, Horner, ataxia,
 // face pain). Long-tract signs (hemiparesis, dorsal columns, spinothalamic) are less localising
@@ -132,15 +133,18 @@ export const NOT_LOCALISING_BY_DESIGN = {
 function findingIdOf(signed) { return signed.split("@")[0]; }
 
 export function scoreSite(site, observedSet, opts = {}) {
-  const expected = expectedFindings(site, opts);
+  // Word families (false-multifocal fix): an entered word is matched through its family; the entered token is still
+  // what is listed as matched or unexplained.
+  const read = enteredSet(observedSet);
+  const expected = predictedSet(expectedFindings(site, opts), read);
   let matched = [], missedByPatient = [], unexplained = [];
 
   for (const obs of observedSet) {
-    if (expected.has(obs)) matched.push(obs);
+    if (expected.has(enteredToken(obs, observedSet))) matched.push(obs);
     else unexplained.push(obs); // patient has it, this site doesn't explain it
   }
   for (const exp of expected) {
-    if (!observedSet.has(exp)) missedByPatient.push(exp); // site predicts it, patient lacks it
+    if (!read.has(exp)) missedByPatient.push(exp); // site predicts it, patient lacks it
   }
 
   // Weight matches: localising findings count more.

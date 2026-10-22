@@ -18,6 +18,8 @@ import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
 import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS } from "../model/compartments.js";
 import { EXPLICIT_NORMAL } from "../model/findings.js";
+import { BACKGROUND_FINDINGS } from "../model/families.js";
+import { enteredToken, enteredSet, predictedSet, sameFamilyInstead } from "./families.js";
 
 // One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
 // the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
@@ -166,19 +168,24 @@ export function differential(observedSet, opts = {}) {
   // Explicit normals are stripped too: they act only through knownNegatives(), never as a finding to explain.
   const observed = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
   const pressure = raisedPressureAxis(observedSet);
-  const negatives = knownNegatives(observedSet);
-  const againstNormal = normalNegatives(observedSet);
+  // WORD FAMILIES (false-multifocal fix, rows 1–4): each entered word is read through its family, in the context of
+  // everything entered, and each place's prediction is read the same way. The entered token itself is what is counted,
+  // shown and returned in `explained`; `exp` holds the place's tokens as read.
+  const read = enteredSet(observedSet);
+  const readOf = new Map(observed.map(t => [t, enteredToken(t, observedSet)]));
+  const negatives = knownNegatives(read);
+  const againstNormal = normalNegatives(read);
   const level = normaliseLevel(opts.sensoryLevel);
   const cands = [];
   for (const site of solverSites(opts)) {
     if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
-    let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
+    let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
     let contradicted = false;
     // An ASYMMETRIC site (motor-unit disease, cauda equina) may present on one side: the un-entered side is
     // not evidence against it, so the known-negative exclusion does not apply to it.
     if (!site.asymmetric) for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
     if (contradicted) continue;
-    const explained = observed.filter(t => exp.has(t));
+    const explained = observed.filter(t => exp.has(readOf.get(t)));
     // Papilloedema on its own explains nothing site-specific, but it is still informative: every
     // intracranial site stays in play rather than the list collapsing to empty.
     if (!explained.length && !(pressure.present && !observed.length)) continue;
@@ -188,7 +195,7 @@ export function differential(observedSet, opts = {}) {
     // one — anything outside the cord; the conus and cauda lie below every cord level — sorts below every site that
     // explains as much and can: demoted like a recorded normal, never excluded, so no multifocal claim changes.
     const levelAgainst = level && site.level !== "cord" ? level : null;
-    cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
+    cands.push({ site, exp, explained, over: [...exp].filter(t => !read.has(t)).length,
                  n: explained.length, prevalence: prevalenceOf(site), against, levelAgainst });
   }
   // coverage first (localisation), then anything a recorded normal counts against goes below the rest, then fit
@@ -202,14 +209,15 @@ export function differential(observedSet, opts = {}) {
 // footnote lists relevant near-misses like locked-in, not every unrelated bilateral site). Each is paired
 // with the first known-negative token that contradicted it, for a teaching note.
 export function ruledOutSites(observedSet, opts = {}) {
-  const negatives = knownNegatives(observedSet);
+  const read = enteredSet(observedSet);   // word families, as in differential()
+  const negatives = knownNegatives(read);
   if (!negatives.size) return [];
   // Per site, across its variants: ruled out only when EVERY variant that would explain something is contradicted.
   const byId = new Map();
   for (const site of solverSites(opts)) {
-    let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
+    let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
     let explainsSomething = false;
-    for (const t of observedSet) if (exp.has(t)) { explainsSomething = true; break; }
+    for (const t of read) if (exp.has(t)) { explainsSomething = true; break; }
     if (!explainsSomething) continue;
     if (site.asymmetric) continue; // never excluded by a known negative, so never "ruled out" by one
     let contradictedBy = null;
@@ -249,8 +257,10 @@ export function minimalSet(observedSet, opts = {}) {
   // ruled out: `weak_arm@right` + `weak_leg@left` was "covered" by locked-in alone — a bilateral site that
   // also predicts a weak LEFT arm and a weak RIGHT leg, both recorded as normal — so the cover collapsed to
   // one site and no multifocal hypothesis was offered (owner bug report, 2026-08-15).
+  const readOf = new Map([...needAll].map(t => [t, enteredToken(t, observedSet)]));   // word families
+  const read = new Set(readOf.values());
   const sites = differential(observedSet, opts)
-    .map(c => ({ site: c.site, exp: c.exp, covers: new Set([...needAll].filter(f => c.exp.has(f))) }))
+    .map(c => ({ site: c.site, exp: c.exp, covers: new Set([...needAll].filter(f => c.exp.has(readOf.get(f)))) }))
     .filter(s => s.covers.size > 0);
 
   const remaining = new Set(needAll);
@@ -262,10 +272,12 @@ export function minimalSet(observedSet, opts = {}) {
     // then on fewest over-predictions (tightest fit).
     let best = null;
     for (const s of sites) {
-      const gain = [...s.covers].filter(f => remaining.has(f)).length;
+      // A family is ONE finding (false-multifocal fix, row 17): its words count once in the gain. Otherwise one
+      // cerebellar sign on each side covers eight words, and a hemipons wins the first pick of a two-place cover.
+      const gain = new Set([...s.covers].filter(f => remaining.has(f)).map(f => readOf.get(f))).size;
       if (gain === 0) continue;
-      const matched = [...s.exp].filter(f => observedSet.has(f)).length;
-      const overPredict = [...s.exp].filter(f => !observedSet.has(f)).length;
+      const matched = [...s.exp].filter(f => read.has(f)).length;
+      const overPredict = [...s.exp].filter(f => !read.has(f)).length;
       if (!best || gain > best.gain
           || (gain === best.gain && matched > best.matched)
           || (gain === best.gain && matched === best.matched && overPredict < best.overPredict)) {
@@ -288,10 +300,11 @@ export function minimalSet(observedSet, opts = {}) {
 export function nearFit(observedSet, opts = {}) {
   const observed = [...observedSet];
   const sites = solverSites(opts);
+  const read = enteredSet(observedSet);   // word families, as in differential()
   const explainsAll = tokens => {
     for (const site of sites) {
-      let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
-      if (tokens.every(t => exp.has(t))) return site;
+      let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
+      if (tokens.every(t => exp.has(enteredToken(t, observedSet)))) return site;
     }
     return null;
   };
@@ -383,8 +396,8 @@ export function describeLength(best, distalReach) {
   return describeReach(raw); // { reach, threshold, involved, glove, applies, note, severity }
 }
 
-// ---- TOP-LEVEL SOLVE ----
-export function solve(observedSet, options = {}) {
+// ---- SOLVING ONE PICTURE ---- (solve(), below, sets background aside first, then calls this)
+function solveOne(observedSet, options = {}) {
   const opts = { dominantSide: options.dominantSide || "left", sensoryLevel: options.sensoryLevel };
   // The raised-pressure token is an AXIS, not a site finding — no site's expectedFindings contain it. It is
   // therefore stripped from every SCORED path (which would otherwise count it as permanently unexplained and
@@ -423,8 +436,26 @@ export function solve(observedSet, options = {}) {
     if (ms && ms.sites.length > 1 && ms.sites.length <= MAX_COVER_SITES) multi = ms;
   }
 
-  const nf = nearFit(localising, opts);
-  const display = explainAll.length ? explainAll : diff;
+  // THE SAME-FAMILY NEAR-FIT (owner ruling 2026-10-22, false-multifocal fix rows 5–9) — the one exception to "a
+  // LOCALISING sign is never relaxed away". A word entered INSTEAD of a family word that a place predicts on that
+  // side, and that was not entered (face numbness for the face pain loss a lateral medulla gives): that place is a
+  // near-fit, it leads the list, and NO multifocal claim is made — a single non-equivalent word gives one place, not
+  // two lesions plus MS (audit round 1). Both words entered is not a substitution, so the claim stands (row 7).
+  let sameFamily = null;
+  if (!singleExplainsAll) {
+    const read = enteredSet(localising);
+    for (const c of diff) {
+      if (c.n !== total - 1) break;
+      const missing = [...localising].find(t => !c.explained.includes(t));
+      const instead = sameFamilyInstead(enteredToken(missing, localising), c.exp, read);
+      if (instead) { sameFamily = { site: c.site, missing, instead }; break; }
+    }
+  }
+  if (sameFamily) multi = null;
+  const nf = sameFamily || nearFit(localising, opts);
+  const display = explainAll.length ? explainAll
+    : sameFamily ? [diff.find(c => c.site.id === sameFamily.site.id), ...diff.filter(c => c.site.id !== sameFamily.site.id)]
+    : diff;
   // The level note describes the answer the reader SEES (spinal cord fix, row 9). It used to read the scored ranking,
   // which can disagree with the display — a GBS answer whose note named Friedreich's.
   const level = describeLevel(display[0] || best, options.sensoryLevel);
@@ -433,4 +464,39 @@ export function solve(observedSet, options = {}) {
   const ruledOut = ruledOutSites(localising, opts);
   return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,
            differential: diff, explainAll, display, defaultSite, ruledOut, pressure };
+}
+
+// ---- BACKGROUND (Hickam) — owner ruling 2026-10-22, false-multifocal fix rows 11–13 ----
+// A common finding on BOTH sides (BACKGROUND_FINDINGS: absent ankle jerks, glove-and-stocking numbness) is set aside as
+// a probably separate condition when it is what stops one place explaining the rest. It is KEPT when a place in the
+// answer predicts it on both sides (GBS keeps its absent ankle jerks); it goes as a pair, never one side; and it never
+// joins a multifocal cover, so a genuine two-lesion picture keeps its claim without a background place.
+// Returns the tokens to set aside: [] when nothing is.
+export function backgroundAside(observedSet, options = {}) {
+  const opts = { dominantSide: options.dominantSide || "left", sensoryLevel: options.sensoryLevel };
+  const entered = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
+  const pairs = BACKGROUND_FINDINGS.filter(f => entered.includes(`${f}@left`) && entered.includes(`${f}@right`));
+  if (!pairs.length) return [];
+  const bg = new Set(pairs.flatMap(f => [`${f}@left`, `${f}@right`]));
+  const rest = entered.filter(t => !bg.has(t));
+  if (!rest.length) return [];                                 // the background IS the picture
+  const full = differential(observedSet, opts);
+  if (full.some(c => c.n === entered.length)) return [];       // one place explains it all, background included
+  // The places in the answer: those explaining everything else, or else the cover of everything else.
+  let answer = differential(new Set([...observedSet].filter(t => !bg.has(t))), opts).filter(c => c.n === rest.length);
+  if (!answer.length) {
+    const ms = minimalSet(new Set(rest), opts);
+    answer = ms ? full.filter(c => ms.sites.some(s => s.id === c.site.id)) : [];
+  }
+  const kept = pairs.filter(f => answer.some(c => c.exp.has(`${f}@left`) && c.exp.has(`${f}@right`)));
+  return pairs.filter(f => !kept.includes(f)).flatMap(f => [`${f}@left`, `${f}@right`]);
+}
+
+// ---- TOP-LEVEL SOLVE ----
+// The background step runs first: what it sets aside is not localised at all, and the rest is solved as usual.
+// `background` is null, or { tokens } — the tokens set aside, for the card to name.
+export function solve(observedSet, options = {}) {
+  const aside = backgroundAside(observedSet, options);
+  if (!aside.length) return { ...solveOne(observedSet, options), background: null };
+  return { ...solveOne(new Set([...observedSet].filter(t => !aside.includes(t))), options), background: { tokens: aside } };
 }

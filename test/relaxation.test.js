@@ -34,5 +34,16 @@ ok("nearFit is null when a single site already explains all", nearFit(setFull, {
 // solve() exposes nearFit
 ok("solve() result carries a nearFit field", "nearFit" in solve(set, { dominantSide: "left" }));
 
+// The SAME-FAMILY near-fit (false-multifocal fix rows 5–7, owner ruling 2026-10-22). nearFit() above still never drops
+// a localising sign. solve() sets one aside only for a word entered INSTEAD of a family word that the place predicts on
+// that side — and then it withholds the multifocal claim.
+const wall = new Set(["face_sensory_loss@left","spinothalamic@right","miosis@left","ptosis@left","limb_ataxia@left","dysphagia@left"]);
+ok("nearFit() still refuses to drop the localising face word", nearFit(wall, { dominantSide: "left" }) === null);
+const rw = solve(wall, { dominantSide: "left" });
+ok("solve() reads it as a same-family near-fit: the lateral medulla, face pain loss instead",
+   !!rw.nearFit && rw.nearFit.site.id === "left_medulla_lateral" && rw.nearFit.instead === "face_pain_loss@left");
+ok("...and withholds the multifocal claim", rw.multi === null);
+ok("a stray face pain loss beside an MCA (no family word predicted) keeps its claim", solve(setLoc, { dominantSide: "left" }).multi !== null);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
