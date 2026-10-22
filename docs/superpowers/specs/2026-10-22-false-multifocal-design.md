@@ -1,6 +1,11 @@
 # The false-multifocal fix — one place, one word to re-check (design, 2026-10-22)
 
-**Status: DESIGN. Round 1 (20 rows, §4) is awaiting the owner's ruling. No engine code has been written.**
+**Status: RULED (2026-10-22). Round 1: all 20 recommendations APPROVED as written.**
+
+> *"Round 1 of the false-multifocal fix: I approve all 20 recommendations as written."* — the owner
+
+Every recommendation in §4 is now a ruling, including the overturn in row 5 (§3, option B) and the wording rows 10, 14
+and 15.
 - Branch: `fix/false-multifocal` (worktree `Code/neurolocaliser-multifocal/`).
 - Cut from `fix/cord-localisation` at `1afeddb`. That branch is the finished spinal cord fix, stacked on
   `test/clinical-audit-suite` (PR #18), which stays open and is not to be merged. Not pushed; no PR.
@@ -111,9 +116,10 @@ The principle would then read: *a localising sign is never relaxed away — exce
 same-family word that the place predicts on that side. Then the place is a near-fit, the card names both words, and no
 second lesion is claimed.*
 
-## 4. Rulings — round 1 (20 rows, awaiting your ruling)
+## 4. Rulings — round 1 (all 20 APPROVED as written, 2026-10-22)
 
-Each row is one decision, with my recommendation.
+Each row is one decision, with my recommendation. The owner approved the table as written, so every recommendation
+below is now a ruling.
 
 ### A. The words: your rows 18–21, applied to the engine
 
