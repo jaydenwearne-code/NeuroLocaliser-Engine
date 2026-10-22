@@ -634,7 +634,7 @@ function whereCard(list, cands, total, r) {
     : "";
   // Background set aside (rows 11–15): the same sentence as the answer card's Where line.
   const bg = r.background
-    ? `<div class="annot"><b>Set aside:</b> ${esc(backgroundSentence([...new Set(r.background.tokens.map(fid))], !!list[0] && list[0].site.level === "cord"))}</div>` : "";
+    ? `<div class="annot"><b>Background:</b> ${esc(backgroundSentence([...new Set(r.background.tokens.map(fid))], !!list[0] && list[0].site.level === "cord"))}</div>` : "";
   const multi = (!nAll && r.multi)
     // NB: minimalSet() yields RAW site objects (unlike r.nearFit, which is a {site,missing} wrapper).
     ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
