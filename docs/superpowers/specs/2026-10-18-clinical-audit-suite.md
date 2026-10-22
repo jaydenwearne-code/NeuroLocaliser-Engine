@@ -223,3 +223,21 @@ the 2026-10-18 baseline:
 
 Baseline with them (measured): **66 / 105** probes, spinal cord **6 / 20**. Counted checks are 658 passed and 323
 failed. Each probe is also mirrored, so the mirror property now runs **267** checks, all clean.
+
+## False-multifocal fix, round 1, row 19: three probes added (2026-10-22)
+
+The false-multifocal fix's round 1 (`2026-10-22-false-multifocal-design.md`, row 19, approved as written) added three
+counted probes. They cover pictures that the word families and the background step decide, and that no probe covered.
+Each fails on the `1afeddb` baseline (the spinal cord fix), where the engine called each one two lesions:
+
+| Probe | Expected answer (approved) | Baseline |
+|---|---|---|
+| Wallenberg + limb ataxia + its listed refinement past-pointing | the left lateral medulla first; one lesion | lateral medulla + cerebellar hemisphere, "MS" |
+| truncal ataxia + gaze-evoked nystagmus + slurred speech (plain dysarthria) | a cerebellar site first; one lesion | whole cerebellum + hemipons, "MS" |
+| carpal tunnel + absent ankle jerks on both sides | carpal tunnel first; one lesion | carpal tunnel + SCD, "vasculitis" |
+
+Each probe is also mirrored, so the mirror property runs **270** checks.
+
+**After the fix (measured on `fix/false-multifocal`):** probes **86 / 108**; counted checks 960 passed, 30 failed;
+synonym swaps 223 / 224, none called multifocal; background 292 / 292, none called multifocal, first answer kept 146 /
+146; mirror 270 / 270.

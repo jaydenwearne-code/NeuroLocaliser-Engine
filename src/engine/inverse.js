@@ -296,7 +296,9 @@ export function minimalSet(observedSet, opts = {}) {
 // "Slight relaxation of parameters": if no single site explains EVERY entered finding, retry allowing exactly
 // ONE non-localising finding to go unexplained. If a single site then explains all the rest, that is a
 // near-fit — surfaced (naming the odd finding) BEFORE the multifocal hypothesis. A LOCALISING sign is never
-// relaxed away: it is too specific to ignore. Superset-based, matching the app's "explains all" differential.
+// relaxed away here: it is too specific to ignore. Superset-based, matching the app's "explains all" differential.
+// The ONE exception (owner ruling 2026-10-22) lives in solveOne(): a word entered INSTEAD of a same-family word that
+// a place predicts on that side — see "THE SAME-FAMILY NEAR-FIT" there.
 export function nearFit(observedSet, opts = {}) {
   const observed = [...observedSet];
   const sites = solverSites(opts);

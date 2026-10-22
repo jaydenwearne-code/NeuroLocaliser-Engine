@@ -211,6 +211,12 @@ T("Robustness & functional", "right hemiparesis with a down-going right plantar 
 T("Robustness & functional", "kitchen sink (7 unrelated findings) → no single site claims all of it", "ptosis@left weak_abduction@right sensory_l5@left neglect@left median_sensory@right truncal_ataxia@none anosmia@left", { none: true });
 T("Robustness & functional", "functional: Hoover + give-way + weak leg → functional flag, no multifocal claim", "weak_leg@left hoovers_sign@none give_way_weakness@none", { functional: true, single: true });
 
+// owner-approved 2026-10-22 (false-multifocal fix, round 1, row 19): pictures the word families and the background
+// step decide, which no audit probe covered. Each failed on the 2026-10-22 baseline (1afeddb).
+T("Brainstem", "Wallenberg + limb ataxia AND its listed refinement past-pointing → lateral medulla, one lesion", "face_pain_loss@left spinothalamic@right miosis@left ptosis@left limb_ataxia@left dysmetria@left dysphagia@left", { first: /^left_medulla_lateral$/, single: true });
+T("Vestibular & cerebellar", "truncal ataxia + gaze-evoked nystagmus + slurred speech (plain dysarthria) → a cerebellar site, one lesion", "truncal_ataxia@none nystagmus_gaze_evoked@none dysarthria@none", { first: /^cerebellum_/, single: true });
+T("Roots, plexus & nerves", "carpal tunnel + absent ankle jerks on both sides → carpal tunnel, one lesion", "median_sensory@left weak_thumb_abduction@left reflex_ankle_loss@left reflex_ankle_loss@right", { first: /^left_nerve_median_carpal_tunnel$/, single: true });
+
 // ======================================================================================================
 // 0. Harness: every probe token is a real finding the app can enter.
 // ======================================================================================================

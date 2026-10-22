@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**84 test suites / 7209 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**85 test suites / 7289 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1268,6 +1268,53 @@ signs conflict with R1 #12 until a bilateral parasagittal site exists.
 
 Spec/plan: `docs/superpowers/specs/2026-10-22-spinal-cord-fix-design.md`, `docs/superpowers/plans/2026-10-22-spinal-cord-fix.md`.
 
+## False-multifocal fix (DONE 2026-10-22, round 1) — ✅ owner-approved rulings (all 20 rows)
+
+The second fix from the 2026-10-18 clinical audit. **The defect:** the engine claimed two lesions, and named a disease
+to join them, when one place explained the picture. It held 269 of the 302 failing audit checks. A Wallenberg entered
+with past-pointing read "lateral medulla + cerebellar hemisphere — Together: Multiple sclerosis", and the app's own
+follow-ups list offers past-pointing as the refinement of limb ataxia.
+
+**Mechanics:**
+- **Word families** (`src/model/families.js` content, `src/engine/families.js` matching). The solver matches every
+  entered word through its family and NEVER rewrites it:
+  - the cerebellar limb signs are one finding;
+  - hand weakness is arm weakness only with leg or facial weakness on that side;
+  - a place giving scanning speech explains "slurred speech".
+- **The same-family near-fit** (in `solveOne`) is the one exception to "a LOCALISING sign is never relaxed away"
+  (owner-approved overturn, row 5). A word entered INSTEAD of a family word that a place predicts on that side, and that
+  was not entered, makes that place a near-fit: it leads, `r.nearFit.instead` names the word, and `multi` is null.
+  - Only the facial sensory words and plain → scanning speech qualify, not hand weakness outside a hemiparesis.
+  - "As well as" is not "instead of": with both words entered, the claim stands.
+- **Background (Hickam).** `backgroundAside` wraps `solve`. Absent ankle jerks, or glove-and-stocking numbness, on BOTH
+  sides are set aside when they are what stops one place explaining the rest.
+  - They are kept when a place in the answer predicts both sides, so GBS keeps its absent ankle jerks.
+  - They go as a pair, never one side.
+  - They never join a multifocal cover.
+  - `r.background.tokens` carries them, and the card names them.
+- **The cover counts a family once**, or one cerebellar sign on each side wins the greedy first pick.
+- **The card** (`app/answer.js`) names both words for a near-fit and adds the set-aside sentence, plus a B12 line for a
+  cord answer. The Why line leaves out what was set aside, and `app.js` counts the rows without it.
+- **The roster is unchanged.**
+
+**Traps worth knowing:**
+- Equivalence must be MATCHING-level. Teaching every limb-ataxia structure to also produce the other three words would
+  make the audit's swap loop skip them, silently removing 54 counted checks.
+- Relaxing ANY one localising sign was measured and rejected. It hides 3,934 of 9,226 sampled genuine two-lesion claims,
+  including x-mets/x-embolic, x-paraneo and x-syphilis. The archetype suite pins both places, so it cannot see this.
+- The first background prototype set aside GBS's OWN absent ankle jerks, because it checked what was entered rather than
+  what the place predicts. Only reading the real card showed it.
+
+**Measured:**
+- Audit 79 → 86/108 probes, with 3 probes added by row 19. Counted checks 679/302 → 960/30. Swaps 223/224, background
+  292/292, mirror 270/270.
+- `npm test`: 85 suites, 7289 assertions, no re-pins.
+- Of 9,226 sampled genuine two-lesion claims, 15 become one lesion, all read clinically as one lesion: crossed brainstem
+  syndromes, a hemiparesis with the hand in it, and a cord lesion with background ankle jerks. None are added.
+- Past-pointing alone now fits 10 places along the cerebellar limb pathway (it was 2).
+
+Spec/plan: `docs/superpowers/specs/2026-10-22-false-multifocal-design.md`, `docs/superpowers/plans/2026-10-22-false-multifocal.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1279,7 +1326,7 @@ Spec/plan: `docs/superpowers/specs/2026-10-22-spinal-cord-fix-design.md`, `docs/
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
 - **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
-  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix, 2026-10-22) + three metamorphic properties (synonym swap, background
+  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22) + three metamorphic properties (synonym swap, background
   comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
   deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
   are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
@@ -1287,7 +1334,7 @@ Spec/plan: `docs/superpowers/specs/2026-10-22-spinal-cord-fix-design.md`, `docs/
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
   groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
   hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
-  Baseline: 66/101 probes correct (66/105 with the cord fix's four). Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 
@@ -1312,6 +1359,8 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
   levels.js      ordered dermatome coordinate C2..S5 (+ spanName) — WHERE along the cord; a stated level is evidence
                  since 2026-10-22 (it demotes, constrains and gates — see "Orthogonal axes")
   prevalence.js  prevalenceOf(site) -> 2|1|0 (common/uncommon/rare) coarse per-site prior; TIEBREAK only
+  families.js    WORD FAMILIES (bedside words for one examination, each citing its ruling) + BACKGROUND_FINDINGS
+                 (Hickam: set aside on both sides) — content only (false-multifocal fix, 2026-10-22)
   tracts.js      the long tracts (corticospinal/spinothalamic/dorsal-column/corticobulbar): findings,
                  rostro-caudal course (level + detail + supply), decussation, direction; + NEURAXIS ordering
   compartments.js  level -> COMPARTMENT axis (brain/brainstem/cerebellum/cord/cauda/optic/skull_base/
@@ -1334,6 +1383,8 @@ src/engine/    generic solver code (rarely changes when adding a region)
   tracts.js      tractsFor() (which tracts a finding-set implicates + candidate sites along each);
                  tractNarrative() (composed Course prose); whyNotOthers() (derived per-level discrimination)
   patterns.js    cross-cutting SYNTHESIS (NOT localisation): umnLmnPattern() and functionalFlag()
+  families.js    matching through the word families: an entered word is READ through its family, never rewritten
+                 (enteredToken / predictedToken / sameFamilyInstead) — used by inverse, score, why and the app
   multifocal.js  LOGIC ONLY (content lives in data/multifocal.js). unifyingDiagnoses(sites,observed,
                  {onset,course}) matches the MULTIFOCAL roster against a site set (hard constraints filter,
                  tempo/course only demote); forcingFindings(observed,opts) is the parsimony guard — for

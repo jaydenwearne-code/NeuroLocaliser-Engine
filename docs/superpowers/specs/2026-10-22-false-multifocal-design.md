@@ -1,11 +1,17 @@
 # The false-multifocal fix — one place, one word to re-check (design, 2026-10-22)
 
-**Status: RULED (2026-10-22). Round 1: all 20 recommendations APPROVED as written.**
+**Status: IMPLEMENTED (2026-10-22) on `fix/false-multifocal`. Round 1: all 20 recommendations APPROVED as written.**
 
 > *"Round 1 of the false-multifocal fix: I approve all 20 recommendations as written."* — the owner
 
 Every recommendation in §4 is now a ruling, including the overturn in row 5 (§3, option B) and the wording rows 10, 14
-and 15.
+and 15. Plan: `docs/superpowers/plans/2026-10-22-false-multifocal.md`.
+- **Audit:** 86 / 108 probes. That is 79 / 105 before, plus the three row-19 probes, which fail on the baseline and pass
+  now. Counted checks: 960 passed, 30 failed. Swaps 223 / 224, background 292 / 292, mirror 270 / 270.
+- **`npm test`:** 85 suites, 7289 assertions, green, with no re-pins. The new suite is `test/false-multifocal.test.js`;
+  `relaxation.test` gained the same-family case.
+- **As prototyped:** the implementation reproduces the prototype check for check: the same 272 checks gained, nothing
+  lost.
 - Branch: `fix/false-multifocal` (worktree `Code/neurolocaliser-multifocal/`).
 - Cut from `fix/cord-localisation` at `1afeddb`. That branch is the finished spinal cord fix, stacked on
   `test/clinical-audit-suite` (PR #18), which stays open and is not to be merged. Not pushed; no PR.
