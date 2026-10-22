@@ -10,20 +10,34 @@ import { unifyingDiagnoses } from "../src/engine/multifocal.js";
 import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { combinedSites } from "./combined-sites.js";
 import { plainSiteName, readingLabel } from "./labels.js";
-import { displayLabel } from "./plain-labels.js";
+import { displayLabel, PLAIN } from "./plain-labels.js";
 
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const andList = xs => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 const orList = xs => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} or ${xs[xs.length - 1]}`);
 
 // ---- Where ----
-export function whereLine({ place, others = [], cover = null, fit = null }) {
-  if (cover && cover.length >= 2) return `No single place explains every finding — likely ${andList(cover)}.`;
-  if (fit && fit.n < fit.total) return `${place} explains ${fit.n} of ${fit.total} findings.`;
-  if (!others.length) return `${place}.`;
+// A word as the near-fit line names it: its label, its proper name, and its row note when it has one — "face numbness
+// (thalamic pattern)". The note is what says why two words for the face are different findings.
+const wordFor = f => displayLabel(f) + (PLAIN[f] && PLAIN[f].note ? ` (${PLAIN[f].note})` : "");
+// Background set aside (false-multifocal fix rows 11–15; wording approved by the owner 2026-10-22).
+export const BACKGROUND_LINE = {
+  reflex_ankle_loss: "Absent ankle jerks on both sides are set aside: common with age and in a neuropathy, and probably a separate condition.",
+  distal_sensory_loss: "Glove-and-stocking numbness on both sides is set aside: a length-dependent neuropathy (most often diabetic) is common, and probably a separate condition.",
+};
+export const B12_LINE = "With a myelopathy, check B12 (subacute combined degeneration) before calling them separate.";
+export const backgroundSentence = (findings, cord = false) =>
+  findings.length ? findings.map(f => BACKGROUND_LINE[f]).join(" ") + (cord ? ` ${B12_LINE}` : "") : "";
+export function whereLine({ place, others = [], cover = null, fit = null, instead = null, background = "" }) {
+  const after = background ? ` ${background}` : "";
+  if (cover && cover.length >= 2) return `No single place explains every finding — likely ${andList(cover)}.${after}`;
+  // The same-family near-fit (rows 5–10): the place, both words, and what to do — never "two lesions".
+  if (instead && fit) return `${place} explains ${fit.n} of ${fit.total} findings. It gives ${wordFor(instead.gives)}, but ${wordFor(instead.entered)} was entered — re-examine that before calling this two lesions.${after}`;
+  if (fit && fit.n < fit.total) return `${place} explains ${fit.n} of ${fit.total} findings.${after}`;
+  if (!others.length) return `${place}.${after}`;
   const n = others.length, shown = others.slice(0, 2);
-  const tail = n > 2 ? `, and ${n - 2} more` : "";
-  return `${place}. ${n} other place${n > 1 ? "s" : ""} also fit${n > 1 ? "" : "s"}: ${shown.join(", ")}${tail}.`;
+  const more = n > 2 ? `, and ${n - 2} more` : "";
+  return `${place}. ${n} other place${n > 1 ? "s" : ""} also fit${n > 1 ? "" : "s"}: ${shown.join(", ")}${more}.${after}`;
 }
 
 // ---- Why ----
@@ -84,6 +98,14 @@ export function answerFor(st) {
   const place = s => plainSiteName(s, { dominantSide: st.dominant }).place;
   const { sites } = combinedSites(st.r, list, st.pinned);
   const twoLesions = !st.r.explainAll.length && sites.length >= 2;
+  // Background set aside (rows 11–15) is not localised: it leaves the count and the Why line, and the Where line names
+  // it. The same-family near-fit's entered word (rows 5–10) is named on the Where line and left out of the Why line,
+  // which explains the rest.
+  const aside = new Set(st.r.background ? st.r.background.tokens : []);
+  const nf = st.r.nearFit && st.r.nearFit.instead && st.r.nearFit.site.id === st.sel.site.id ? st.r.nearFit : null;
+  const whyTokens = new Set([...st.tokens].filter(t => !aside.has(t) && !(nf && t === nf.missing)));
+  const total = st.total - aside.size;
+  const background = backgroundSentence([...new Set([...aside].map(t => t.split("@")[0]))], st.sel.site.level === "cord");
   const { nx, combined } = resolveNext({ ...st, site: st.sel.site });
   let entity = st.selectedEntity || null;
   if (twoLesions && !entity) {
@@ -95,11 +117,13 @@ export function answerFor(st) {
   const lines = {
     where: whereLine({
       place: place(st.sel.site) + readingLabel(st.sel.site),
-      others: list.filter(c => c.n === st.total && c.site.id !== st.sel.site.id).map(c => place(c.site)),
+      others: list.filter(c => c.n === total && c.site.id !== st.sel.site.id).map(c => place(c.site)),
       cover: twoLesions ? sites.map(place) : null,
-      fit: { n: st.sel.n, total: st.total },
+      fit: { n: st.sel.n, total },
+      instead: nf ? { entered: nf.missing.split("@")[0], gives: nf.instead.split("@")[0] } : null,
+      background,
     }),
-    why: whySentence(whyClues(whyChain(st.tokens, st.sel.site, opts), st.tokens, opts)),
+    why: whySentence(whyClues(whyChain(whyTokens, st.sel.site, opts), whyTokens, opts)),
     what: whatLine({
       causes: res.all, demotedCount: (res.demoted || []).length,
       selected: (twoLesions ? st.selectedEntity : st.selectedPathology) || null, entity, twoLesions,

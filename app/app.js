@@ -25,7 +25,7 @@ import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { offersFor, tokensForRow, currentTokens } from "./sides.js";
-import { answerFor, resolveNext } from "./answer.js";
+import { answerFor, resolveNext, backgroundSentence } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
@@ -360,6 +360,9 @@ function renderResults() {
   // solve() still receives the FULL set — differential() needs the pressure token to apply the compartment
   // filter, and strips it internally before matching.
   const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
+  // Background set aside (false-multifocal fix, rows 11–13) is not a finding to explain either: the rows count without
+  // it. answerFor() takes the full total and subtracts it itself.
+  const counted = total - (r.background ? r.background.tokens.length : 0);
   LAST_DISPLAY = r.display; syncLevelCtrls();
   const cands = r.differential;
   const refr = refractiveFlag(S.tokens);
@@ -396,12 +399,12 @@ function renderResults() {
   el.innerHTML = answerCard(sel, list, r, ans)
     + sectionNav(has)
     + pmsg + rmsg
-    + whereCard(list, cands, total, r)
+    + whereCard(list, cands, counted, r)
     + together
     + whyCard(tf, sel, list)
     + whatCard(sel.site, r, list)
     + nextCard(sel.site, r, list)
-    + answerStrip(sel, list, total, ans.nx);
+    + answerStrip(sel, list, counted, ans.nx);
   wireCardControls();
   wireJumpLinks(el);
   wireSectionToggles(el);
@@ -624,7 +627,14 @@ const idsOf = list => list.map(c => c.site.id);
 function whereCard(list, cands, total, r) {
   const nAll = r.explainAll.length;
   const near = (!nAll && r.nearFit)
-    ? `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but <code>${esc(r.nearFit.missing)}</code> — re-check that finding, or consider a second lesion.</div>` : "";
+    ? (r.nearFit.instead
+      // The same-family near-fit (false-multifocal fix row 10): both words, and no second lesion claimed.
+      ? `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but ${esc(displayLabel(fid(r.nearFit.missing)))} — it gives ${esc(displayLabel(fid(r.nearFit.instead)))} on that side. Re-examine that finding; no second lesion is claimed.</div>`
+      : `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but <code>${esc(r.nearFit.missing)}</code> — re-check that finding, or consider a second lesion.</div>`)
+    : "";
+  // Background set aside (rows 11–15): the same sentence as the answer card's Where line.
+  const bg = r.background
+    ? `<div class="annot"><b>Set aside:</b> ${esc(backgroundSentence([...new Set(r.background.tokens.map(fid))], !!list[0] && list[0].site.level === "cord"))}</div>` : "";
   const multi = (!nAll && r.multi)
     // NB: minimalSet() yields RAW site objects (unlike r.nearFit, which is a {site,missing} wrapper).
     ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
@@ -650,7 +660,7 @@ function whereCard(list, cands, total, r) {
         }).join("")}</div>`)
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
-  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where", "— every place that fits");
+  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${bg}${annot}${ruled}`, "where", "— every place that fits");
 }
 
 // A `spread`/`motor` clause has no single site — it is satisfied by the SET of sites, or by the observed

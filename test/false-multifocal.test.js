@@ -143,5 +143,29 @@ import { explainedBy, discriminators } from "../app/discriminators.js";
      !discriminators(r.display.slice(0, 2), set).some(d => d.token === "limb_ataxia@left"));
 }
 
+// ---- 4. the answer card (rows 10, 14, 15 — wording approved 2026-10-22) ----
+import { answerFor, whereLine } from "../app/answer.js";
+const card = t => {
+  const tokens = S(t);
+  const r = solve(tokens, { dominantSide: "left" });
+  const sel = r.display.find(x => x.site.id === r.defaultSite) || r.display[0];
+  return answerFor({ r, sel, total: tokens.size, tokens, onset: "", course: "", dominant: "left", sensoryLevel: "",
+    pinned: new Set(), scope: "site", selectedPathology: undefined, selectedEntity: undefined }).lines;
+};
+{
+  const a = card("face_sensory_loss@left spinothalamic@right miosis@left ptosis@left limb_ataxia@left dysphagia@left");
+  ok("card row 10: the near-fit Where line", a.where === "Left lateral medulla explains 5 of 6 findings. It gives face pain loss, but face numbness (thalamic pattern) was entered — re-examine that before calling this two lesions.", a.where);
+  ok("card row 10: the Why line leaves the entered word out", a.why === "Left swallowing difficulty (dysphagia) + right body pain loss (spinothalamic loss) → only the left medulla.", a.why);
+  ok("card: the What line is the place's own cause, not 'Together'", /^Most likely PICA/.test(a.what), a.what);
+  const b = card("speech_nonfluent@none comprehension_impaired@none weak_arm@right facial_weakness@right forehead_spared@right homonymous_hemianopia@right reflex_ankle_loss@left reflex_ankle_loss@right");
+  ok("card row 14: background after the place", b.where === "Left MCA territory. Absent ankle jerks on both sides are set aside: common with age and in a neuropathy, and probably a separate condition.", b.where);
+  ok("card: the Why line is drawn without the set-aside pair", !/ankle/.test(b.why) && /only the left cerebral cortex/.test(b.why), b.why);
+  const c = card("hyperreflexia@left hyperreflexia@right babinski@left babinski@right spasticity@left spasticity@right reflex_ankle_loss@left reflex_ankle_loss@right");
+  ok("card row 15: a cord answer adds the B12 line", c.where.endsWith("Absent ankle jerks on both sides are set aside: common with age and in a neuropathy, and probably a separate condition. With a myelopathy, check B12 (subacute combined degeneration) before calling them separate."), c.where);
+  const d = card("facial_weakness@right forehead_spared@right weak_arm@right homonymous_hemianopia@left reflex_ankle_loss@left reflex_ankle_loss@right");
+  ok("card row 14: background after a two-lesion line too", /^No single place explains every finding — likely .+\. Absent ankle jerks on both sides are set aside/.test(d.where), d.where);
+  ok("card: whereLine is unchanged without the new fields", whereLine({ place: "A", fit: { n: 3, total: 4 } }) === "A explains 3 of 4 findings.");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
