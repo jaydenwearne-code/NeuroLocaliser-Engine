@@ -137,6 +137,14 @@ const cardFor = (toks, dominant) => {
   ok("row 15: with right dominance set, a right MCA aphasia shows the DOMINANT red flag (the live bug)",
      r.dominance === null && lines.red === nameForSite(r.display[0].site, { dominantSide: "right" }).red, lines.red); }
 
+// ---- F. Wording (rows 16, 17) ----
+ok("row 16: gaze deviation is described by the side the eyes look toward", /record the side the eyes look toward/.test(FINDINGS.gaze_deviation.desc));
+ok("row 17: the carotid space's red flag names the XII palsy", /alone or with a XII palsy/.test(nameForSite(SITE["left_skull_base_carotid_space"]).red));
+ok("row 17: the dominant PCA's red flag is the pure-alexia flag", /pure alexia/.test(nameForSite(SITE["left_cortex_pca"], { dominantSide: "left" }).red));
+ok("row 17: the non-dominant PCA names prosopagnosia", /prosopagnosia/i.test(nameForSite(SITE["right_cortex_pca"], { dominantSide: "left" }).note));
+ok("row 17: the elbow's note says the claw is milder", /claw is milder/.test(nameForSite(SITE["left_nerve_ulnar_elbow"]).note));
+ok("row 17: the thalamus's note names the hemiataxia", /hemiataxia/.test(nameForSite(SITE["left_subcortex_thalamus"]).note));
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — content-gap fixes (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

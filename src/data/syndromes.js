@@ -148,11 +148,20 @@ export const BY_SITE = {
       red: "Malignant MCA infarction risk as for the dominant side; neglect masks the severity."
     }
   },
+  // Dominant / non-dominant since the PCA reaches the fusiform (content-gap fix, rows 10 and 17, 2026-11-01).
   cortex_pca: {
-    name: "Posterior cerebral artery (PCA) syndrome",
-    note: "Occipital: isolated contralateral homonymous hemianopia (often with macular sparing); minimal other deficit.",
-    ddx: ["PCA infarct", "Occipital haemorrhage", "Tumour", "Posterior reversible encephalopathy (PRES)", "Migrainous / seizure aura"],
-    red: "An isolated hemianopia is easily missed — confrontation-test fields; consider a posterior-circulation cause."
+    dominant: {
+      name: "Posterior cerebral artery (PCA) syndrome",
+      note: "Occipital: contralateral homonymous hemianopia (often with macular sparing). In the dominant hemisphere, alexia without agraphia (the fusiform with the splenium).",
+      ddx: ["PCA infarct", "Occipital haemorrhage", "Tumour", "Posterior reversible encephalopathy (PRES)", "Migrainous / seizure aura"],
+      red: "New pure alexia with a right hemianopia is a left PCA stroke until proven otherwise."
+    },
+    nondominant: {
+      name: "Posterior cerebral artery (PCA) syndrome",
+      note: "Occipital: contralateral homonymous hemianopia (often with macular sparing). In the non-dominant hemisphere, prosopagnosia (the fusiform face area).",
+      ddx: ["PCA infarct", "Occipital haemorrhage", "Tumour", "Posterior reversible encephalopathy (PRES)", "Migrainous / seizure aura"],
+      red: "An isolated hemianopia is easily missed — confrontation-test fields; consider a posterior-circulation cause."
+    }
   },
   cortex_occipital: {
     name: "Occipital (PCA territory) syndrome",
@@ -260,7 +269,7 @@ export const BY_SITE = {
   },
   subcortex_thalamus: {
     name: "Pure sensory lacune / Déjerine–Roussy (thalamic VPL)",
-    note: "Ventral posterolateral thalamus: contralateral loss of all sensory modalities on the face, arm and leg, with no weakness; a delayed contralateral central post-stroke pain (Déjerine–Roussy) may follow.",
+    note: "Ventral posterolateral thalamus: contralateral loss of all sensory modalities on the face, arm and leg, with no weakness; a larger thalamogeniculate infarct reaching the ventral lateral nucleus adds contralateral hemiataxia; a delayed contralateral central post-stroke pain (Déjerine–Roussy) may follow.",
     ddx: ["Thalamic lacunar infarct", "Thalamic haemorrhage", "Demyelination", "Small tumour / metastasis"],
     red: "Central post-stroke pain is often refractory and misattributed — it is a thalamic sign, not functional."
   },
@@ -694,7 +703,7 @@ export const BY_SITE = {
   nerve_median_proximal: { name: "Proximal median nerve palsy (pronator)", note: "Weak pronation, wrist and finger flexion and thumb abduction with digital AND palmar sensory loss — a forearm-level median lesion.", ddx: ["Pronator syndrome", "Supracondylar fracture", "Ligament of Struthers"], red: "Median weakness that includes pronation and forearm flexors (not just thenar) localises proximal to the carpal tunnel." },
   nerve_median_ain: { name: "Anterior interosseous nerve palsy", note: "Weak thumb and index flexion (FPL/FDP2) — a failed 'OK' sign — with pronator quadratus weakness and NO sensory loss; a pure-motor deep-branch lesion.", ddx: ["AIN neuritis (Parsonage-Turner)", "Forearm trauma", "Compression"], red: "An inability to make the 'OK' sign with no sensory loss is the anterior interosseous nerve." },
   nerve_median_carpal_tunnel: { name: "Median nerve palsy (carpal tunnel syndrome)", note: "Weak thumb abduction (APB) with thenar wasting and digital sensory loss over the radial 3½ digits — but the PALM (palmar cutaneous branch) is spared.", ddx: ["Carpal tunnel syndrome", "Hypothyroidism / pregnancy / RA (predisposing)"], red: "Nocturnal hand paraesthesiae with thenar wasting and palmar sparing is carpal tunnel — treat before permanent wasting." },
-  nerve_ulnar_elbow: { name: "Ulnar nerve palsy at the elbow (cubital tunnel)", note: "Weak interossei, thumb adduction (Froment), FDP 4/5 and FCU, with palmar AND dorsal-hand sensory loss — a lesion at the elbow.", ddx: ["Cubital tunnel syndrome", "Elbow trauma / OA", "Leprosy (worldwide)"], red: "Dorsal-hand sensory loss and FDP/FCU weakness localise the ulnar lesion to the elbow, not the wrist." },
+  nerve_ulnar_elbow: { name: "Ulnar nerve palsy at the elbow (cubital tunnel)", note: "Weak interossei, thumb adduction (Froment), FDP 4/5 and FCU, with palmar AND dorsal-hand sensory loss — a lesion at the elbow. The claw is milder than at the wrist (FDP 4/5 is weak too — the paradox).", ddx: ["Cubital tunnel syndrome", "Elbow trauma / OA", "Leprosy (worldwide)"], red: "Dorsal-hand sensory loss and FDP/FCU weakness localise the ulnar lesion to the elbow, not the wrist." },
   nerve_ulnar_wrist: { name: "Ulnar nerve palsy at the wrist (Guyon's canal)", note: "Weak interossei and thumb adduction (Froment) with a MORE pronounced claw (intact FDP 4/5), sparing the FDP, FCU and dorsal-hand sensation — the ulnar paradox.", ddx: ["Guyon's canal compression (handlebar palsy, ganglion)", "Hook-of-hamate fracture", "Trauma"], red: "A worse claw with spared FDP and dorsal-hand sensation localises the ulnar lesion to the wrist — the paradox that the distal lesion looks worse." },
   nerve_femoral: { name: "Femoral nerve palsy", note: "Weak hip flexion and knee extension with a depressed knee jerk and anterior-thigh / saphenous (medial leg) sensory loss.", ddx: ["Retroperitoneal / iliopsoas haematoma", "Pelvic surgery or lithotomy positioning", "Diabetic amyotrophy", "Femoral catheterisation"], red: "Femoral palsy with anticoagulation is a retroperitoneal haematoma until proven otherwise — image urgently." },
   nerve_obturator: { name: "Obturator nerve palsy", note: "Weak hip adduction with medial-thigh sensory loss.", ddx: ["Pelvic surgery / obstetric injury", "Obturator hernia", "Pelvic tumour"], red: "Medial-thigh pain with adductor weakness — consider an obturator hernia or pelvic mass." },
@@ -967,7 +976,7 @@ export const BY_SITE = {
   cord_lateral: { name: "Central (first-order) Horner's — cervical cord", note: "Descending sympathetic in the lateral cervical cord (syringomyelia, cord tumour/infarct); ipsilateral hemibody anhidrosis. Only a lesion at/above ~T1 gives a Horner.", ddx: ["Syringomyelia", "Intramedullary tumour", "Cord infarct", "Demyelination"], red: "A Horner with suspended sensory loss or long-tract signs → image the cervical cord." },
   sympathetic_preganglionic: { name: "Preganglionic (second-order) Horner's", note: "A Horner from the preganglionic oculosympathetic (ciliospinal centre → stellate ganglion); facial anhidrosis with the body spared.", ddx: ["Pancoast (apical lung) tumour", "Thyroid / mediastinal mass", "Iatrogenic (CVC, surgery)", "Trauma"], red: "A preganglionic Horner with C8/T1 wasting or arm pain → image the lung apex for a Pancoast tumour." },
   sympathetic_pancoast: { name: "Pancoast syndrome (superior sulcus tumour)", note: "A preganglionic Horner PLUS lower-trunk (C8/T1) involvement — hand-intrinsic wasting, T1 sensory loss and aching arm/shoulder pain — from an apical lung tumour.", ddx: ["Bronchogenic (superior sulcus) carcinoma", "Apical TB / infection", "Metastasis"], red: "A Horner with hand wasting and arm pain is a Pancoast tumour until proven otherwise — image the lung apex urgently." },
-  skull_base_carotid_space: { name: "Postganglionic (third-order) Horner's — carotid", note: "A Horner from the postganglionic fibres on the internal carotid (carotid dissection, cavernous lesion); isolated, often painful, with NO anhidrosis (the facial sudomotor fibres left with the external carotid).", ddx: ["Internal carotid artery dissection", "Cavernous sinus lesion", "Cluster headache"], red: "A painful isolated Horner is a carotid dissection until proven otherwise — urgent vessel imaging (stroke risk)." }
+  skull_base_carotid_space: { name: "Postganglionic (third-order) Horner's — carotid", note: "A Horner from the postganglionic fibres on the internal carotid (carotid dissection, cavernous lesion); often painful, with NO anhidrosis (the facial sudomotor fibres left with the external carotid) — with a XII palsy in some (the hypoglossal crosses the internal carotid).", ddx: ["Internal carotid artery dissection", "Cavernous sinus lesion", "Cluster headache"], red: "A painful Horner, alone or with a XII palsy, is a carotid dissection until proven otherwise — urgent vessel imaging (stroke risk)." }
 };
 
 // Recognise the eponym for a chosen site. Falls back to a plain anatomical description.
