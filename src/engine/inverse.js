@@ -443,8 +443,20 @@ function solveOne(observedSet, options = {}) {
   // side, and that was not entered (face numbness for the face pain loss a lateral medulla gives): that place is a
   // near-fit, it leads the list, and NO multifocal claim is made — a single non-equivalent word gives one place, not
   // two lesions plus MS (audit round 1). Both words entered is not a substitution, so the claim stands (row 7).
-  let sameFamily = null;
+  // DOMINANCE AS A PRIOR (owner ruling 2026-11-01, content-gap fix row 9; audit R1 #10). The setting gates every dominant
+  // and non-dominant structure. When NO place explains every finding with the dominance set, the places that do with
+  // the other dominance are the answer: atypical (crossed) dominance. They lead, no second lesion is claimed, and the
+  // card names the assumption. Whenever any place explains the picture with the setting, this never runs, so an aphasia
+  // the left hemisphere explains never lists a right-hemisphere place. It runs before the same-family near-fit: a place
+  // that explains everything beats one that explains all but one finding.
+  let atypical = null;
   if (!singleExplainsAll) {
+    const assumed = opts.dominantSide === "left" ? "right" : "left";
+    const alt = differential(observedSet, { ...opts, dominantSide: assumed }).filter(c => c.n === total);
+    if (alt.length) atypical = { assumed, sites: alt };
+  }
+  let sameFamily = null;
+  if (!singleExplainsAll && !atypical) {
     const read = enteredSet(localising);
     for (const c of diff) {
       if (c.n !== total - 1) break;
@@ -453,9 +465,10 @@ function solveOne(observedSet, options = {}) {
       if (instead) { sameFamily = { site: c.site, missing, instead }; break; }
     }
   }
-  if (sameFamily) multi = null;
-  const nf = sameFamily || nearFit(localising, opts);
+  if (sameFamily || atypical) multi = null;
+  const nf = atypical ? null : sameFamily || nearFit(localising, opts);
   const display = explainAll.length ? explainAll
+    : atypical ? atypical.sites
     : sameFamily ? [diff.find(c => c.site.id === sameFamily.site.id), ...diff.filter(c => c.site.id !== sameFamily.site.id)]
     : diff;
   // The level note describes the answer the reader SEES (spinal cord fix, row 9). It used to read the scored ranking,
@@ -465,7 +478,8 @@ function solveOne(observedSet, options = {}) {
   const defaultSite = display[0]?.site.id ?? null;
   const ruledOut = ruledOutSites(localising, opts);
   return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,
-           differential: diff, explainAll, display, defaultSite, ruledOut, pressure };
+           differential: diff, explainAll: atypical ? atypical.sites : explainAll, display, defaultSite, ruledOut, pressure,
+           dominance: atypical ? { assumed: atypical.assumed, set: opts.dominantSide } : null };
 }
 
 // ---- BACKGROUND (Hickam) — owner ruling 2026-10-22, false-multifocal fix rows 11–13 ----

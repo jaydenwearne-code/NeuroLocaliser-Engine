@@ -28,6 +28,9 @@ export const BACKGROUND_LINE = {
 export const B12_LINE = "With a myelopathy, check B12 (subacute combined degeneration) before calling them separate.";
 export const backgroundSentence = (findings, cord = false) =>
   findings.length ? findings.map(f => BACKGROUND_LINE[f]).join(" ") + (cord ? ` ${B12_LINE}` : "") : "";
+// Row 14 (owner-approved wording, content-gap fix 2026-11-01): the assumption the dominance fallback made.
+export const dominanceSentence = d =>
+  d ? `This assumes the ${d.assumed} hemisphere is dominant, though ${d.set} dominance is set (atypical dominance). If that is unlikely for this patient, no single place explains these findings.` : "";
 export function whereLine({ place, others = [], cover = null, fit = null, instead = null, background = "" }) {
   const after = background ? ` ${background}` : "";
   if (cover && cover.length >= 2) return `No single place explains every finding — likely ${andList(cover)}.${after}`;
@@ -93,9 +96,12 @@ export function resolveNext({ site, r, pinned, scope, selectedPathology, selecte
 // `st` carries exactly what app.js holds: the solve() result, the selected candidate, the finding count, and the
 // case state (tokens, onset, course, dominant, sensoryLevel, pinned, scope, selectedPathology, selectedEntity).
 export function answerFor(st) {
-  const opts = { dominantSide: st.dominant, sensoryLevel: st.sensoryLevel || undefined };
+  // The dominance the answer assumes (content-gap fix, rows 9 and 15): the setting, or the other side when the engine's
+  // dominance fallback answered. The place, the Why line and the red flag all read with it.
+  const dom = st.r.dominance ? st.r.dominance.assumed : st.dominant;
+  const opts = { dominantSide: dom, sensoryLevel: st.sensoryLevel || undefined };
   const list = st.r.display;
-  const place = s => plainSiteName(s, { dominantSide: st.dominant }).place;
+  const place = s => plainSiteName(s, { dominantSide: dom }).place;
   const { sites } = combinedSites(st.r, list, st.pinned);
   const twoLesions = !st.r.explainAll.length && sites.length >= 2;
   // Background set aside (rows 11–15) is not localised: it leaves the count and the Why line, and the Where line names
@@ -122,7 +128,7 @@ export function answerFor(st) {
       fit: { n: st.sel.n, total },
       instead: nf ? { entered: nf.missing.split("@")[0], gives: nf.instead.split("@")[0] } : null,
       background,
-    }),
+    }) + (st.r.dominance ? ` ${dominanceSentence(st.r.dominance)}` : ""),
     why: whySentence(whyClues(whyChain(whyTokens, st.sel.site, opts), whyTokens, opts)),
     what: whatLine({
       causes: res.all, demotedCount: (res.demoted || []).length,
@@ -130,7 +136,7 @@ export function answerFor(st) {
       oldStroke: !!(nx.followed && nx.followed.onset === "chronic"),
     }),
     next: nx.referral || "",
-    red: entityRed || nameForSite(st.sel.site).red || null,
+    red: entityRed || nameForSite(st.sel.site, { dominantSide: dom }).red || null,
   };
   return { lines, nx, combined, twoLesions };
 }

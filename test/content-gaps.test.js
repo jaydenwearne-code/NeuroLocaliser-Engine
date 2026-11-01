@@ -106,6 +106,37 @@ ok("row 13 guard: the cortical hand still leads with the hand knob", first("weak
 { const set = T("weak_ankle_dorsiflexion@left babinski@left");
   ok("row 13: the entered word is never rewritten", enteredToken("weak_ankle_dorsiflexion@left", set) === "weak_ankle_dorsiflexion@left"); }
 
+// ---- E. Dominance as a prior (row 9) and the card (rows 14, 15) ----
+const R10 = "speech_nonfluent@none comprehension_impaired@none weak_arm@right facial_weakness@right forehead_spared@right homonymous_hemianopia@right";
+{ const r = solve(T(R10), { dominantSide: "right" });
+  ok("row 9: left MCA picture, right dominance set → the left MCA, one lesion (R1 #10)", ids(r)[0] === "left_cortex_mca" && r.multi === null);
+  ok("row 9: the result names the assumption", r.dominance?.assumed === "left" && r.dominance?.set === "right", JSON.stringify(r.dominance)); }
+{ const r = solve(T(R10));
+  ok("row 9 guard: with the dominance that explains it, no fallback", r.dominance === null && ids(r)[0] === "left_cortex_mca"); }
+{ const r = solve(T("speech_nonfluent@none"));
+  ok("row 9 guard: an aphasia the setting explains never lists the other hemisphere", r.dominance === null && !ids(r).some(id => /^right_|_right$/.test(id))); }
+{ const r = solve(T("speech_nonfluent@none weak_arm@left facial_weakness@left forehead_spared@left"));
+  ok("row 9: crossed aphasia → one right-hemisphere lesion, assuming right dominance (R1 #11 consistent)",
+     /^right_cortex_/.test(ids(r)[0] || "") && r.multi === null && r.dominance?.assumed === "right"); }
+{ const r = solve(T(R10.replace(/@right/g, "@left")), { dominantSide: "left" });
+  ok("row 9 mirror: right MCA picture, left dominance set → the right MCA", ids(r)[0] === "right_cortex_mca" && r.dominance?.assumed === "right"); }
+{ const r = solve(T("face_sensory_loss@left spinothalamic@right miosis@left ptosis@left limb_ataxia@left dysphagia@left"));
+  ok("row 9 guard: the same-family near-fit is untouched (no gated finding)", r.dominance === null && !!r.nearFit?.instead); }
+const cardFor = (toks, dominant) => {
+  const tokens = T(toks), r = solve(tokens, { dominantSide: dominant });
+  const sel = r.display.find(x => x.site.id === r.defaultSite) || r.display[0];
+  return { r, lines: answerFor({ r, sel, total: tokens.size, tokens, onset: "", course: "", dominant, sensoryLevel: "",
+    pinned: new Set(), scope: "site", selectedPathology: undefined, selectedEntity: undefined }).lines };
+};
+{ const { r, lines } = cardFor(R10, "right");
+  ok("row 14: the Where line names the assumption",
+     lines.where.endsWith("This assumes the left hemisphere is dominant, though right dominance is set (atypical dominance). If that is unlikely for this patient, no single place explains these findings."), lines.where);
+  ok("row 14: the Why line reads with the assumed dominance", /only the left cerebral cortex/.test(lines.why), lines.why);
+  ok("row 15: the red flag follows the assumed dominance", lines.red === nameForSite(r.display[0].site, { dominantSide: "left" }).red); }
+{ const { r, lines } = cardFor("speech_nonfluent@none comprehension_impaired@none weak_arm@left facial_weakness@left forehead_spared@left homonymous_hemianopia@left", "right");
+  ok("row 15: with right dominance set, a right MCA aphasia shows the DOMINANT red flag (the live bug)",
+     r.dominance === null && lines.red === nameForSite(r.display[0].site, { dominantSide: "right" }).red, lines.red); }
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — content-gap fixes (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

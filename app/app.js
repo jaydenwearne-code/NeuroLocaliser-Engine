@@ -96,6 +96,10 @@ function syncURL() {
 // hemisphere moved into the card they act on (What / Together / the header) — see the 2026-08-16 UI-clarity spec.
 // The last displayed list, so the field's visibility can follow the answer without re-solving.
 let LAST_DISPLAY = [];
+// The dominance the displayed answer assumes (content-gap fix, row 15): null = the setting; the other side when the
+// engine's dominance fallback answered (r.dominance). Reset on every render; set after the localiser solves.
+let RESULT_DOM = null;
+const domView = () => RESULT_DOM || S.dominant;
 
 function renderLocalise() {
   const hasCord = showLevelField(S.tokens, LAST_DISPLAY);
@@ -337,6 +341,7 @@ function renderChips() {
 }
 
 function renderResults() {
+  RESULT_DOM = null; // it can return before solving
   const el = document.getElementById("results");
   const su = document.getElementById("setup"); if (su) su.innerHTML = setupRow();
   if (!S.tokens.size) {
@@ -360,6 +365,7 @@ function renderResults() {
   // solve() still receives the FULL set — differential() needs the pressure token to apply the compartment
   // filter, and strips it internally before matching.
   const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
+  RESULT_DOM = r.dominance ? r.dominance.assumed : null;
   // Background set aside (false-multifocal fix, rows 11–13) is not a finding to explain either: the rows count without
   // it. answerFor() takes the full total and subtracts it itself.
   const counted = total - (r.background ? r.background.tokens.length : 0);
@@ -485,9 +491,9 @@ function renderResults() {
 
 // siteName keeps returning a plain STRING — all 15 call sites (diagram labels, feedback payload, why
 // blocks, together rows, code-stroke) depend on that. Only the composition changed.
-function siteName(site){ return plainSiteName(site, { dominantSide: S.dominant }).name; }
-function siteSub(site){ return plainSiteName(site, { dominantSide: S.dominant }).sub; }
-function siteRaw(site){ return plainSiteName(site, { dominantSide: S.dominant }).raw; }
+function siteName(site){ return plainSiteName(site, { dominantSide: domView() }).name; }
+function siteSub(site){ return plainSiteName(site, { dominantSide: domView() }).sub; }
+function siteRaw(site){ return plainSiteName(site, { dominantSide: domView() }).raw; }
 
 // cap is trusted HTML (literal labels we control, e.g. "Why" or `Where <span…>(N)</span>`) — not user input.
 // `anchor` gives the section nav a jump target.
@@ -639,7 +645,7 @@ function whereCard(list, cands, total, r) {
     // NB: minimalSet() yields RAW site objects (unlike r.nearFit, which is a {site,missing} wrapper).
     ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
   let annot = "";
-  const ll = levelLine(r.level, list[0] ? plainSiteName(list[0].site, { dominantSide: S.dominant }).place : "");
+  const ll = levelLine(r.level, list[0] ? plainSiteName(list[0].site, { dominantSide: domView() }).place : "");
   if (ll) annot += `<div class="annot"><b>Sensory level:</b> ${esc(ll)}</div>`;
   if (r.length && r.length.applies) annot += `<div class="annot"><b>Length:</b> ${esc(r.length.note||"")}${r.length.glove?" · stocking-glove":""}</div>`;
   const rows = list.map(c => {
@@ -864,7 +870,7 @@ function whyCard(tf, sel, list) {
   const umnlmn = pat.verdict
     ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
     : "";
-  const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
+  const opts = { dominantSide: domView(), sensoryLevel: S.sensoryLevel || undefined };
   const w = whyChain(S.tokens, sel.site, opts);
   const chain = w.steps.length
     ? `<p class="wc-h">Why ${esc(siteName(sel.site))}</p><div class="why-chain">${w.steps.map(whyStepHTML).join("")}</div><p class="wc-meet">${esc(meetSentence(w))}</p>`
@@ -972,7 +978,7 @@ function renderCause(c) {
 
 function whatBlock(site) {
   const res = causesFor(site, { onset: S.onset || undefined });
-  const ph = nameForSite(site);
+  const ph = nameForSite(site, { dominantSide: domView() });
   const red = ph.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(ph.red)}</div>` : "";
   // Curated causes only — a category with nothing plausible at this site is simply not shown.
   const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));
@@ -1150,7 +1156,7 @@ function boot() {
     globalThis.matchMedia?.("(prefers-color-scheme:dark)")
       ?.addEventListener?.("change", () => { if (choice === "system") paintFavicon(); });
   }
-  try { S.mode==="atlas" ? renderAtlas() : S.mode==="stroke" ? renderStroke() : renderLocalise(); }
+  try { RESULT_DOM = null; S.mode==="atlas" ? renderAtlas() : S.mode==="stroke" ? renderStroke() : renderLocalise(); }
   catch (err) { app.innerHTML = errorPanel(err); }
 }
 
