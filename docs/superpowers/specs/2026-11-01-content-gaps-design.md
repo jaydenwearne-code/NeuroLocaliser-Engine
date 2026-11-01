@@ -1,6 +1,9 @@
 # The content-gap fixes — sixteen audit checks (design, 2026-11-01)
 
-**Status: RULED (2026-11-01). Round 1: every recommendation APPROVED as written.**
+**Status: RULED and IMPLEMENTED (2026-11-01) on `fix/content-gaps` (`026c545..32fae59`). Round 1: every recommendation
+APPROVED as written.** Measured on the branch: `npm test` 86 suites, 7355 assertions, green; audit 101 / 111 probes,
+1034 passed / 13 failed, and the 1,037 checks it shares with the prototype are identical. Still to do: the browser drive
+(plan Task 8, step 3) and the CLAUDE.md section.
 
 > *"Approve as written"* — the owner, on round 1 of the content-gap fixes
 
