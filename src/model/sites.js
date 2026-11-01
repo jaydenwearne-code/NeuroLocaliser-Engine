@@ -288,6 +288,9 @@ export const DIVISION = {
   temporoparietal:{ territory: "MCA", division: "inferior" },
   temporal:       { territory: "MCA", division: "inferior" },
   occipital:      { territory: "PCA" },
+  // The ventral occipitotemporal (fusiform) gyrus is PCA territory (P4, as vascular.js already says) — content-gap fix,
+  // row 10: the dominant PCA gives alexia without agraphia, the non-dominant prosopagnosia.
+  fusiform:       { territory: "PCA" },
   // ADDED 2026-09-26 (B10, owner-approved): the paracentral lobule (micturition, gait) and the SMA (alien limb)
   // are medial frontal ACA territory. Without them an ACA stroke with incontinence read as two lesions.
   paracentral:    { territory: "ACA" },
@@ -782,7 +785,8 @@ export function composeAphasiaSites() {
   const bothWatersheds = ["ctx_tcma", "ctx_tcma_naming", "ctx_tcsa", "ctx_tcsa_naming"];
   // thal_face keeps this composite in step with the VPL site (B11): without it the NON-dominant composite —
   // whose dominant-only rows emit nothing — is a VPL lesion missing the face, and out-ranks the real one.
-  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face"];
+  // thal_ataxia too (content-gap fix, row 12) — the same trap: a stale copy out-ranks the real thalamus.
+  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face", "thal_ataxia"];
   // ic_hyper keeps this composite in step with the capsule (brisk reflexes, 2026-09-29) — the same trap as thal_face.
   const striatocapsular = ["sc_aphasia_nonfluent", "sc_aphasia_naming", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_hyper", "ic_spast"];
   const out = [];

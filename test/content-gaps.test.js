@@ -68,6 +68,30 @@ ok("row 8 guard (the accepted cost): vestibular neuritis still leads with the la
 ok("row 8 guard: a central AVS still leads with the central vestibular nucleus",
    first("cn8_vertigo@left nystagmus_gaze_evoked@none skew_deviation@none") === "left_central_vestibular_nucleus");
 
+// ---- C. PCA, wrong-way eyes, thalamus (rows 10–12) ----
+ok("row 10: the left (dominant) PCA gives alexia without agraphia", predicts("left_cortex_pca", "alexia_without_agraphia@none"));
+ok("row 10: the right (non-dominant) PCA gives prosopagnosia", predicts("right_cortex_pca", "prosopagnosia@none"));
+{ const r = solve(T("homonymous_hemianopia@right alexia_without_agraphia@none"));
+  ok("row 10: alexia without agraphia + right hemianopia → the left PCA, one lesion", ids(r)[0] === "left_cortex_pca" && r.multi === null); }
+{ const r = solve(T("homonymous_hemianopia@left prosopagnosia@none"));
+  ok("row 10: left hemianopia + prosopagnosia → the right PCA, one lesion", ids(r)[0] === "right_cortex_pca" && r.multi === null); }
+ok("row 10 guard: an isolated right hemianopia still leads with the occipital cortex", first("homonymous_hemianopia@right") === "left_cortex_occipital");
+ok("row 11: an acute right PPRF lesion leaves the eyes deviated LEFT (toward the hemiparesis)", predicts("right_pons_medial", "gaze_deviation@left"));
+{ const r = solve(T("gaze_deviation@left weak_arm@left weak_leg@left"));
+  ok("row 11: wrong-way eyes → the right pons, one lesion", ids(r)[0] === "right_pons_medial" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
+ok("row 11 guard: right-way eyes (gaze right + left hemiparesis + face) still lead with the right MCA",
+   first("gaze_deviation@right weak_arm@left weak_leg@left facial_weakness@left forehead_spared@left") === "right_cortex_mca");
+ok("row 12: the thalamus gives contralateral hemiataxia", predicts("left_subcortex_thalamus", "limb_ataxia@right"));
+ok("row 12: the hand-listed thalamic-aphasia composite carries the same row (the B11 trap)",
+   SITE["thalamic_aphasia_left"].structures.includes("thal_ataxia"));
+ok("row 12: hemisensory loss + hemiataxia + face → the thalamus first",
+   first("spinothalamic@right dorsal_sensory@right face_sensory_loss@right limb_ataxia@right") === "left_subcortex_thalamus");
+ok("row 12 guard: a pure sensory stroke still leads with the thalamus",
+   first("spinothalamic@right dorsal_sensory@right face_sensory_loss@right") === "left_subcortex_thalamus");
+ok("row 12 guard: hemibody pain loss alone still leads with the thalamus", first("spinothalamic@left") === "right_subcortex_thalamus");
+ok("row 12 guard: face + body pain loss on one side still leads contralaterally",
+   /^right_(subcortex_(thalamus|sensorimotor)|thalamus_vpm|midbrain_lateral)$/.test(first("face_pain_loss@left spinothalamic@left") || ""));
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — content-gap fixes (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -85,6 +85,9 @@ export const STRUCTURES = [
     note: "VII fascicle — LMN, so the forehead is weak too" },
   { id: "pprf",           level: "pons", part: "medial",  produces: "gaze_palsy",
     note: "paramedian pontine reticular formation / lateral gaze centre" },
+  // ADDED 2026-11-01 (content-gap fix, row 11): the eyes look toward a frontal lesion and AWAY from a pontine one.
+  { id: "pprf_deviation", level: "pons", part: "medial", produces: "gaze_deviation", crosses: true,
+    note: "PPRF / abducens nucleus, acute — the eyes rest deviated away from the lesion, toward the hemiparesis ('wrong-way eyes')" },
   { id: "mlf_pons",       level: "pons", part: "medial",  produces: "ino",
     note: "medial longitudinal fasciculus" },
   { id: "cst_pons_arm", level: "pons", part: "medial", produces: "weak_arm", note: "corticospinal (pons) — contra arm weakness" },
@@ -409,6 +412,11 @@ export const STRUCTURES = [
   // site's own phonebook note says. Without it a pure sensory stroke localised to the lateral midbrain.
   { id: "thal_face", level: "subcortex", part: "thalamus", produces: "face_sensory_loss",
     note: "VPM beside VPL — contralateral facial sensory loss (the pure-sensory lacune is face-arm-leg)" },
+  // ADDED 2026-11-01 (content-gap fix, row 12): the thalamogeniculate territory reaches the ventral lateral nucleus — the
+  // cerebellar relay, already crossed in the midbrain (as scp_midbrain), so the hemiataxia is contralateral. The ONE
+  // subcortex row with a crossing override (subcortex.test.js names it).
+  { id: "thal_ataxia", level: "subcortex", part: "thalamus", produces: "limb_ataxia", crosses: true,
+    note: "ventral lateral nucleus beside VPL (thalamogeniculate territory) — the cerebellar relay, already crossed in the midbrain: contralateral hemiataxia" },
   // Other thalamic nuclei — a DEDICATED `thalamus` level (like thalamus_arousal / aphasia_subcortical), so the
   // `subcortex/thalamus` VPL relay is untouched and the subcortex "no gated structure" invariant holds.
   { id: "thal_vpm",  level: "thalamus", part: "vpm", produces: "face_sensory_loss",
