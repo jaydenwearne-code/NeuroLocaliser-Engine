@@ -92,6 +92,20 @@ ok("row 12 guard: hemibody pain loss alone still leads with the thalamus", first
 ok("row 12 guard: face + body pain loss on one side still leads contralaterally",
    /^right_(subcortex_(thalamus|sensorimotor)|thalamus_vpm|midbrain_lateral)$/.test(first("face_pain_loss@left spinothalamic@left") || ""));
 
+// ---- D. The pyramidal foot drop (row 13, option A2) ----
+{ const r = solve(T("weak_ankle_dorsiflexion@left babinski@left hyperreflexia@left"));
+  ok("row 13: foot drop + Babinski + brisk → a right corticospinal place (not the hand knob), one lesion (R1 #5)",
+     ids(r)[0] === "right_cortex_motor_leg" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
+{ const r = solve(T("weak_ankle_dorsiflexion@left weak_arm@left facial_weakness@left forehead_spared@left"));
+  ok("row 13: foot drop + weak arm + face (one side) → one capsular lesion", ids(r)[0] === "right_subcortex_corona_radiata" && r.multi === null); }
+{ const r = solve(T("weak_ankle_dorsiflexion@left weak_great_toe_extension@left sensory_l5@left babinski@left"));
+  ok("row 13 guard (A2, not A): an L5 root + Babinski keeps the L5 root first; the second place is the leg area",
+     ids(r)[0] === "left_root_l5" && !!r.multi && r.multi.sites.some(s => s.id === "right_cortex_motor_leg")); }
+ok("row 13 guard: a foot drop alone still means a nerve or root", /^left_(nerve|root|plexus)_/.test(first("weak_ankle_dorsiflexion@left") || ""));
+ok("row 13 guard: the cortical hand still leads with the hand knob", first("weak_hand@left babinski@left hyperreflexia@left") === "right_cortex_hand_knob");
+{ const set = T("weak_ankle_dorsiflexion@left babinski@left");
+  ok("row 13: the entered word is never rewritten", enteredToken("weak_ankle_dorsiflexion@left", set) === "weak_ankle_dorsiflexion@left"); }
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — content-gap fixes (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

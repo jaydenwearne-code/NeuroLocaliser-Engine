@@ -37,6 +37,12 @@ export function predictedToken(t, read) {
     const g = `${fam.generic}@${s}`;
     if (read.has(g) && !read.has(m)) return g;
   }
+  // `pyramidal` (content-gap fix, row 13): a place's leg weakness reads as the foot drop that was entered with an UMN
+  // sign or other pyramidal weakness on that side. The entered word is untouched.
+  if (fam && fam.relation === "pyramidal" && f === fam.head) {
+    const d = `${fam.member}@${s}`;
+    if (read.has(d) && !read.has(m) && fam.inside.some(g => read.has(`${g}@${s}`))) return d;
+  }
   return m;
 }
 export const predictedSet = (exp, read) => new Set([...exp].map(t => predictedToken(t, read)));
@@ -46,6 +52,7 @@ export function indexTokens(t) {
   const m = matchToken(t);
   const [f, s] = split(m);
   const fam = FAMILY_OF.get(f);
+  if (fam && fam.relation === "pyramidal" && f === fam.head) return [m, `${fam.member}@${s}`];
   return fam && fam.relation === "generic" && f !== fam.generic ? [m, `${fam.generic}@${s}`] : [m];
 }
 

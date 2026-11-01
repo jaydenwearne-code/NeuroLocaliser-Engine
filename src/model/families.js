@@ -9,6 +9,9 @@
 //                 on the same side. Outside it the words stay different findings.
 //   generic     — `generic` is explained by a place that gives a more specific member (specific → generic is safe);
 //                 the reverse is a different claim.
+//   pyramidal   — a place that gives `head` (pyramidal leg weakness) also explains `member` (a foot drop) entered with a
+//                 finding in `inside` on the same side. The PLACE's word is read, never the entered one, so a root or a
+//                 nerve that predicts the foot drop keeps its match (content-gap fix, row 13, option A2).
 //   different   — different findings: they localise differently.
 // `nearFit: true` — a member entered INSTEAD of another member that a place predicts on that side (and that was not
 // entered) makes that place a near-fit with no multifocal claim: the narrow overturn of "a LOCALISING sign is never
@@ -20,6 +23,10 @@ export const FINDING_FAMILIES = [
   { id: "arm_hand", relation: "hemiparesis", head: "weak_arm", inside: ["weak_leg", "facial_weakness"],
     members: ["weak_arm", "weak_hand"], nearFit: false,
     ruling: "Equivalent inside a hemiparesis (leg or face weakness on that side); weak hand alone still means the hand knob (audit round 1, row 20)." },
+  { id: "leg_foot", relation: "pyramidal", head: "weak_leg", member: "weak_ankle_dorsiflexion",
+    inside: ["babinski", "hyperreflexia", "spasticity", "hoffmann", "weak_arm", "facial_weakness"],
+    members: ["weak_leg", "weak_ankle_dorsiflexion"], nearFit: false,
+    ruling: "A foot drop with an UMN sign or other pyramidal weakness on that side is explained by pyramidal leg weakness; the word is never rewritten (audit round 1, row 5; content-gap fix, row 13)." },
   { id: "dysarthria", relation: "generic", generic: "dysarthria",
     members: ["dysarthria", "ataxic_dysarthria"], nearFit: true,
     ruling: "Specific → generic is safe; generic → specific is a different claim (audit round 1, row 21)." },
