@@ -216,6 +216,11 @@ T("Robustness & functional", "functional: Hoover + give-way + weak leg → funct
 T("Brainstem", "Wallenberg + limb ataxia AND its listed refinement past-pointing → lateral medulla, one lesion", "face_pain_loss@left spinothalamic@right miosis@left ptosis@left limb_ataxia@left dysmetria@left dysphagia@left", { first: /^left_medulla_lateral$/, single: true });
 T("Vestibular & cerebellar", "truncal ataxia + gaze-evoked nystagmus + slurred speech (plain dysarthria) → a cerebellar site, one lesion", "truncal_ataxia@none nystagmus_gaze_evoked@none dysarthria@none", { first: /^cerebellum_/, single: true });
 T("Roots, plexus & nerves", "carpal tunnel + absent ankle jerks on both sides → carpal tunnel, one lesion", "median_sensory@left weak_thumb_abduction@left reflex_ankle_loss@left reflex_ankle_loss@right", { first: /^left_nerve_median_carpal_tunnel$/, single: true });
+// owner-approved 2026-11-01 (content-gap fix, round 1, row 19): pictures the new rows decide, which no audit probe
+// covered. Each failed on 417385f.
+T("Brainstem", "AICA picture + abnormal head impulse → lateral pons, one lesion", "cn8_vertigo@left hearing_loss@left facial_weakness@left forehead_involved@left limb_ataxia@left head_impulse_abnormal@none", { first: /^left_pons_lateral$/, single: true });
+T("Hemispheres, thalamus & vision", "left hemianopia + prosopagnosia → right PCA, one lesion", "homonymous_hemianopia@left prosopagnosia@none", { first: /^right_cortex_pca$/, single: true });
+T("Roots, plexus & nerves", "foot drop + weak arm + facial weakness, one side → a contralateral corticospinal site, one lesion", "weak_ankle_dorsiflexion@left weak_arm@left facial_weakness@left forehead_spared@left", { first: /^right_(cortex|subcortex|pons|midbrain|medulla)_/, single: true });
 
 // ======================================================================================================
 // 0. Harness: every probe token is a real finding the app can enter.

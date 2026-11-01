@@ -241,3 +241,21 @@ Each probe is also mirrored, so the mirror property runs **270** checks.
 **After the fix (measured on `fix/false-multifocal`):** probes **86 / 108**; counted checks 960 passed, 30 failed;
 synonym swaps 223 / 224, none called multifocal; background 292 / 292, none called multifocal, first answer kept 146 /
 146; mirror 270 / 270.
+
+## Content-gap fix, round 1, row 19: three probes added (2026-11-01)
+
+The content-gap fix's round 1 (`2026-11-01-content-gaps-design.md`, row 19, approved as written) added three counted
+probes. They cover pictures that the new rows decide, and that no probe covered. Each fails on `417385f` (the
+false-multifocal fix):
+
+| Probe | Expected answer (approved) | Baseline |
+|---|---|---|
+| AICA picture + abnormal head impulse | the left lateral pons first; one lesion | lateral pons + labyrinth, "Vasculitis" |
+| left hemianopia + prosopagnosia | the right PCA first; one lesion | right fusiform + right optic radiation, "MS" |
+| foot drop + weak arm + facial weakness, one side | a contralateral corticospinal site first; one lesion | face-arm cortex + deep peroneal nerve, "Vasculitis" |
+
+Each probe is also mirrored, so the mirror property runs **273** checks.
+
+**After the fix (measured on `fix/content-gaps`):** probes **101 / 111**; counted checks 1034 passed, 13 failed. The 13
+are exactly the composite-sites round (9) and the raised-pressure round (4). Synonym swaps 272 / 272, including 48 new
+cerebellar swaps from the thalamic hemiataxia, all passing; background 292 / 292; mirror 273 / 273.
