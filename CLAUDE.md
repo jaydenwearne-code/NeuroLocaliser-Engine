@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**85 test suites / 7289 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**86 test suites / 7355 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1315,6 +1315,52 @@ follow-ups list offers past-pointing as the refinement of limb ataxia.
 
 Spec/plan: `docs/superpowers/specs/2026-10-22-false-multifocal-design.md`, `docs/superpowers/plans/2026-10-22-false-multifocal.md`.
 
+## Content-gap fix (DONE 2026-11-01, round 1) — ✅ owner-approved rulings (every row)
+
+The third fix from the 2026-10-18 clinical audit. **The defect:** 16 counted checks failed because a place was missing
+one of its own signs, a word had no pyramidal reading, or a setting acted as a hard gate. Two of them sent the reader the
+wrong way: a C6 radiculopathy read as an obstetric upper-trunk injury (urgent nerve-transfer surgery), and a thalamic
+lacune with hemiataxia read as a top-of-the-basilar occlusion.
+
+**Mechanics:**
+- **Nine one-finding rows:** the claw at the ulnar elbow (the paradox is about degree), the C6 biceps jerk, the L4
+  adductors, the tongue in the anterior horn's bulbar neurones, XII in the carotid space, AICA's inner ear (abnormal head
+  impulse + peripheral nystagmus on the lateral pons), the PPRF's resting deviation away from the lesion (wrong-way eyes,
+  `crosses: true`), and the thalamogeniculate hemiataxia (`thal_ataxia`, `crosses: true`).
+- **Composites:** the upper trunk reuses `axil_sens` (`composePlexusSites` `nerves`); the fusiform is PCA territory
+  (`DIVISION`), so the dominant PCA gives alexia without agraphia and the non-dominant prosopagnosia; the hand-listed
+  thalamic-aphasia composite carries `thal_ataxia`.
+- **The `pyramidal` family relation** (`leg_foot`): a place that gives pyramidal leg weakness explains a foot drop entered
+  with an UMN sign or other pyramidal weakness on that side. It reads the PLACE's word (`predictedToken`), never the
+  entered one, so a root or nerve keeps the foot drop (option A2).
+- **Dominance is a prior** (`solveOne`): only when NO place explains the picture with the dominance set, the places that
+  do with the other dominance lead, no second lesion is claimed, and `r.dominance = { assumed, set }`. The card reads the
+  place, Why line and red flag with the assumed dominance and adds the row-14 sentence; `app.js` reads it through
+  `domView()` (reset on every render). The red flag now follows the dominance setting at all — it ignored it before.
+
+**Rulings that are traps:**
+- The thalamic-aphasia composite is hand-listed: without `thal_ataxia` the stale copy out-ranks the thalamus (the B11
+  trap, a third time).
+- `subcortex.test` allows exactly one crossing override, `thal_ataxia`.
+- Option A (re-reading the entered foot drop, row-20 style) takes it away from the L5 root whenever a Babinski is on that
+  side; A2 does not.
+- Accepted cost: AICA is an "also fits" for every peripheral-HINTS picture, with or without hearing loss (the model
+  cannot condition on it). A recorded normal hearing would remove it — not built.
+- The dominance fallback turns crossed pictures (one hemisphere's signs with the other's language or neglect signs) into
+  one lesion; the card names the assumption.
+- Isolated ptosis now leads with the orbital III superior division; it used to tie with the carotid space and win on
+  alphabetical order.
+
+**Deferred:** the upper trunk's musculocutaneous row (row 5) goes to the plexus round, with "a trunk takes every row of
+its roots" (spec O1). The cover's larger-place tie-break (O3) is its own design (`fix/cover-tiebreak`).
+
+**Measured:** audit 86/108 → 101/111 probes (3 probes added by row 19); counted checks 960/30 → 1034/13, the 13 being
+exactly the composite-sites and raised-pressure rounds; swaps 272/272 (48 new cerebellar swaps), background 292/292,
+mirror 273/273. The 1,037 checks shared with the prototype are identical. `npm test`: 86 suites, 7355 assertions; new
+suite `test/content-gaps.test.js`; the re-pins are exactly spec row 18. Browser-checked on port 8140.
+
+Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/superpowers/plans/2026-11-01-content-gaps.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1326,7 +1372,7 @@ Spec/plan: `docs/superpowers/specs/2026-10-22-false-multifocal-design.md`, `docs
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
 - **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
-  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22) + three metamorphic properties (synonym swap, background
+  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01) + three metamorphic properties (synonym swap, background
   comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
   deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
   are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
@@ -1334,7 +1380,7 @@ Spec/plan: `docs/superpowers/specs/2026-10-22-false-multifocal-design.md`, `docs
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
   groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
   hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
-  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 
@@ -1359,7 +1405,8 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
   levels.js      ordered dermatome coordinate C2..S5 (+ spanName) — WHERE along the cord; a stated level is evidence
                  since 2026-10-22 (it demotes, constrains and gates — see "Orthogonal axes")
   prevalence.js  prevalenceOf(site) -> 2|1|0 (common/uncommon/rare) coarse per-site prior; TIEBREAK only
-  families.js    WORD FAMILIES (bedside words for one examination, each citing its ruling) + BACKGROUND_FINDINGS
+  families.js    WORD FAMILIES (bedside words for one examination, each citing its ruling; incl. the `pyramidal`
+                 foot-drop relation, 2026-11-01) + BACKGROUND_FINDINGS
                  (Hickam: set aside on both sides) — content only (false-multifocal fix, 2026-10-22)
   tracts.js      the long tracts (corticospinal/spinothalamic/dorsal-column/corticobulbar): findings,
                  rostro-caudal course (level + detail + supply), decussation, direction; + NEURAXIS ordering
@@ -1379,7 +1426,8 @@ src/engine/    generic solver code (rarely changes when adding a region)
                  solverSites() = candidates + their cord VARIANTS, each id kept once by the rankings;
                  differential() = the broad count/superset narrowing list (known-negative exclusion +
                  prevalence tiebreak); solve() returns {differential,explainAll,display,defaultSite,ruledOut}
-                 AND the scored single/best/nearFit/multi/level/length; knownNegatives(); ruledOutSites()
+                 AND the scored single/best/nearFit/multi/level/length + `dominance` (the dominance fallback,
+                 2026-11-01); knownNegatives(); ruledOutSites()
   tracts.js      tractsFor() (which tracts a finding-set implicates + candidate sites along each);
                  tractNarrative() (composed Course prose); whyNotOthers() (derived per-level discrimination)
   patterns.js    cross-cutting SYNTHESIS (NOT localisation): umnLmnPattern() and functionalFlag()

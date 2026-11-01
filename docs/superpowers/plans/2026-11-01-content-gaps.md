@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: NOT STARTED.** Implements every ruling of round 1 in
+**Status: IMPLEMENTED (2026-11-01), `026c545..32fae59` + docs; every step verified (npm 86 suites / 7355 green; audit 1034/13).** Implements every ruling of round 1 in
 `docs/superpowers/specs/2026-11-01-content-gaps-design.md` (owner: *"Approve as written"*, 2026-11-01). Row 5 is
 deferred to the plexus round and is NOT built.
 
