@@ -201,7 +201,7 @@ inside the full set (leave-one-out, §5).
 | # | Decision | Recommendation |
 |---|---|---|
 | 14 | The Where line under the dominance fallback | *"This assumes the left hemisphere is dominant, though right dominance is set (atypical dominance). If that is unlikely for this patient, no single place explains these findings."* The second sentence is true by construction, since the fallback runs only when nothing explains the picture with the dominance set. It also reads correctly for a single finding (right neglect alone), and for crossed aphasia in a right-hander, where the alternative is two lesions. The prototype's first wording, "… check handedness before calling this two lesions", did neither |
-| 15 | The red flag and the Where card's phonebook follow the dominance | **Yes.** `answer.js` and `app.js` call `nameForSite(site)` without the dominance, so **today a right-dominant patient's card shows the left-dominant variant's red flag** (measured: a right MCA aphasia, right-dominant, shows "risk as for the dominant side; neglect masks the severity"). Under row 9 they follow the assumed dominance. |
+| 15 | The red flag (on the answer card and the What card) follows the dominance | **Yes.** `answer.js` and `app.js` (`whatBlock`) call `nameForSite(site)` without the dominance, so **today a right-dominant patient's card shows the left-dominant variant's red flag** (measured: a right MCA aphasia, right-dominant, shows "risk as for the dominant side; neglect masks the severity"). Under row 9 they follow the assumed dominance. |
 | 16 | `gaze_deviation`'s description | Direction-neutral: *"Conjugate gaze deviation — record the side the eyes look toward (toward a frontal lesion, away from a pontine one)"*. Today it says "toward the lesion (away from the weak side)", which row 11 contradicts. The plain label ("eyes deviated to one side") is unchanged |
 | 17 | Phonebook notes and red flags that the new rows make stale | Carotid space: note *"… with a XII palsy in some (the hypoglossal crosses the internal carotid)"*; red *"A painful Horner, alone or with a XII palsy, is a carotid dissection until proven otherwise — urgent vessel imaging (stroke risk)."* PCA: dominant and non-dominant variants. The note adds *"dominant: alexia without agraphia (with the splenium); non-dominant: prosopagnosia"*, and the dominant red flag becomes the fusiform's *"New pure alexia with a right hemianopia is a left PCA stroke until proven otherwise."* Ulnar at the elbow: note adds *"the claw is milder than at the wrist (FDP 4/5 is weak too — the paradox)"*. Thalamus: note adds *"a larger thalamogeniculate infarct reaching the ventral lateral nucleus adds contralateral hemiataxia"* |
 
@@ -383,7 +383,7 @@ shown.
 - `src/engine/inverse.js` `solveOne`: the dominance fallback, before the same-family near-fit; the result carries
   `dominance: { assumed, set }`.
 - `app/answer.js`: the place, the Why line and the red flag read with the assumed dominance; the row-14 sentence.
-  `app/app.js`: the Where card's `nameForSite` passes the dominance (row 15).
+  `app/app.js`: the What card's red flag, the place names and the Why card read the result's dominance (row 15).
 - `src/model/findings.js`: `gaze_deviation`'s description (row 16). `src/engine/score.js`: the `LOCALISING` comment
   for the ulnar claw (it now pins the ulnar nerve, not a segment).
 - `src/data/syndromes.js`: the row-17 wording.
