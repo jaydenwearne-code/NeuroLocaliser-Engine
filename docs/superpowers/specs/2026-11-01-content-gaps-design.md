@@ -1,6 +1,17 @@
 # The content-gap fixes — sixteen audit checks (design, 2026-11-01)
 
-**Status: DESIGN — round 1 (20 rows) awaiting the owner's ruling. No engine code has changed.**
+**Status: RULED (2026-11-01). Round 1: every recommendation APPROVED as written.**
+
+> *"Approve as written"* — the owner, on round 1 of the content-gap fixes
+
+Every recommendation in §4 is now a ruling: rows 1–4 and 6–20 are approved, and row 5 (the upper trunk's
+musculocutaneous row) is deferred to the plexus round, as recommended. The three decisions in §3 follow:
+- §3.1: the dominance setting is a prior (the fallback);
+- §3.2: option A2 for the pyramidal foot drop;
+- §3.3: option A for AICA's inner ear, with its stated cost.
+
+The plexus round (observation O1) and the cover tie-break (O3) were started the same day as design sessions of their
+own. The implementation plan follows this ruling.
 - Branch: `fix/content-gaps` (worktree `Code/neurolocaliser-content/`), cut from `fix/false-multifocal` at `417385f`.
   That branch is the finished false-multifocal fix, stacked on the cord fix and on PR #18 (open, not to be merged).
   Not pushed; no PR.
@@ -146,9 +157,10 @@ AICA as also fitting, **with or without hearing loss**:
 A later mechanism could remove the cost without touching this row: a recorded **normal hearing**, as an explicit
 normal, would demote AICA in a neuritis picture, as a down-going plantar demotes today. It is not prototyped.
 
-## 4. Rulings — round 1 (20 rows)
+## 4. Rulings — round 1 (20 rows, all APPROVED as written, 2026-11-01)
 
-Each row is one decision, with my recommendation. "+n" is counted audit checks fixed, measured alone and confirmed
+Each row is one decision, with my recommendation. The owner approved the table as written, so every recommendation
+below is now a ruling. "+n" is counted audit checks fixed, measured alone and confirmed
 inside the full set (leave-one-out, §5).
 
 ### A. Roots, plexus and nerves
