@@ -876,6 +876,7 @@ export const STRUCTURES = [
   { id: "root_c6_wristext",level: "root", part: "c6", produces: "weak_wrist_extension", note: "C6 — wrist extensors" },
   { id: "root_c6_sup",    level: "root", part: "c6", produces: "weak_forearm_supination", note: "C6 — supinator" },
   { id: "root_c6_reflex", level: "root", part: "c6", produces: "reflex_brachioradialis_loss", note: "brachioradialis (supinator) jerk (C6)" },
+  { id: "root_c6_biceps", level: "root", part: "c6", produces: "reflex_biceps_loss", note: "biceps jerk (C5/6)" }, // content-gap fix, row 2
   { id: "root_c6_pain", level: "root", part: "c6", produces: "radicular_pain", note: "C6 radicular pain" },
   { id: "root_c7_derm", level: "root", part: "c7", produces: "sensory_c7", note: "C7 dermatome — middle finger" },
   { id: "root_c7_elbext", level: "root", part: "c7", produces: "weak_elbow_extension", note: "C7 — triceps" },
@@ -905,6 +906,7 @@ export const STRUCTURES = [
   { id: "root_l4_kneeext",level: "root", part: "l4", produces: "weak_knee_extension", note: "L4 — quadriceps" },
   { id: "root_l4_df",     level: "root", part: "l4", produces: "weak_ankle_dorsiflexion", note: "L4 — tibialis anterior" },
   { id: "root_l4_inv",    level: "root", part: "l4", produces: "weak_foot_inversion", note: "L4 — tibialis posterior" },
+  { id: "root_l4_hipadd", level: "root", part: "l4", produces: "weak_hip_adduction", note: "L4 — adductors (obturator, L2–4)" }, // content-gap fix, row 3
   { id: "root_l4_reflex", level: "root", part: "l4", produces: "reflex_knee_loss", note: "knee jerk (L3/4)" },
   { id: "root_l4_pain", level: "root", part: "l4", produces: "radicular_pain", note: "L4 radicular pain" },
   { id: "root_l5_derm", level: "root", part: "l5", produces: "sensory_l5", note: "L5 dermatome — dorsum of foot / great toe" },
@@ -1029,6 +1031,10 @@ export const STRUCTURES = [
   { id: "uln_el_wf",     level: "nerve", part: "ulnar_elbow", produces: "weak_wrist_flexion", note: "ulnar (elbow) — FCU" },
   { id: "uln_el_sens",   level: "nerve", part: "ulnar_elbow", produces: "ulnar_sensory", note: "ulnar (elbow) — palmar little finger + medial hand" },
   { id: "uln_el_dsens",  level: "nerve", part: "ulnar_elbow", produces: "ulnar_dorsal_sensory", note: "ulnar (elbow) — dorsal ulnar cutaneous" },
+  // ADDED 2026-11-01 (content-gap fix, row 1, owner-approved): the ulnar paradox is about DEGREE — the claw is milder
+  // at the elbow because FDP 4/5 is weak too, but it is there. Dorsal-hand sensation and FDP/FCU weakness are what
+  // separate elbow from wrist.
+  { id: "uln_el_claw",   level: "nerve", part: "ulnar_elbow", produces: "ulnar_claw", note: "ulnar (elbow) — claw, usually milder than at the wrist because FDP 4/5 is weak too (the ulnar paradox)" },
   { id: "uln_el_wast",   level: "nerve", part: "ulnar_elbow", produces: "wasting", note: "ulnar (elbow) — intrinsic + forearm wasting" },
   { id: "uln_wr_fab",    level: "nerve", part: "ulnar_wrist", produces: "weak_finger_abduction", note: "ulnar (wrist/Guyon) — interossei" },
   { id: "uln_wr_tad",    level: "nerve", part: "ulnar_wrist", produces: "weak_thumb_adduction", note: "ulnar (wrist/Guyon) — adductor pollicis (Froment)" },

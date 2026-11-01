@@ -903,7 +903,9 @@ export function composePlexusSites() {
   const structuresForRoots = segs =>
     STRUCTURES.filter(s => s.level === "root" && segs.includes(s.part)).map(s => s.id);
   const groups = [
-    { part: "upper_trunk",   segs: ["c5", "c6"], terr: "brachial plexus upper trunk (C5-6) — Erb's palsy" },
+    // The upper trunk also carries the axillary nerve's cutaneous fibres — the deltoid patch a clinician tests (content-gap
+    // fix, row 4). The musculocutaneous row waits for the plexus round (row 5, deferred).
+    { part: "upper_trunk",   segs: ["c5", "c6"], nerves: ["axil_sens"], terr: "brachial plexus upper trunk (C5-6) — Erb's palsy" },
     { part: "middle_trunk",  segs: ["c7"], terr: "brachial plexus middle trunk (C7)" },
     { part: "lower_trunk",   segs: ["c8", "t1"], terr: "brachial plexus lower trunk (C8-T1) — Klumpke's palsy" },
     { part: "lumbar_plexus", segs: ["l2", "l3", "l4"], terr: "lumbar plexus (L2-4)" },
@@ -911,7 +913,7 @@ export function composePlexusSites() {
   ];
   const sites = [];
   for (const g of groups) {
-    const structures = structuresForRoots(g.segs);
+    const structures = [...structuresForRoots(g.segs), ...(g.nerves || [])]; // nerve rows are REUSED, as the cords reuse them
     if (structures.length === 0) continue;
     for (const side of SIDES) {
       sites.push({ id: `${side}_plexus_${g.part}`, side, level: "plexus", part: g.part,

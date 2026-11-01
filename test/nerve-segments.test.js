@@ -48,9 +48,11 @@ ok("radial_spiral_groove spares triceps, keeps wrist ext + sensory",
 ok("radial_pin spares wrist ext + all sensory (pure motor finger drop)",
    !nerveOf("radial_pin").includes("weak_wrist_extension") && !nerveOf("radial_pin").includes("radial_sensory") &&
    nerveOf("radial_pin").includes("weak_finger_extension"));
-ok("ulnar_elbow has FDP + dorsal sensory, NO claw",
+// The claw is milder at the elbow (FDP 4/5 weak too — the paradox), but present: owner ruling 2026-11-01, content-gap
+// fix row 1. Dorsal sensation and FDP/FCU separate the levels.
+ok("ulnar_elbow has FDP + dorsal sensory, and a (milder) claw",
    nerveOf("ulnar_elbow").includes("weak_finger_flexion") && nerveOf("ulnar_elbow").includes("ulnar_dorsal_sensory") &&
-   !nerveOf("ulnar_elbow").includes("ulnar_claw"));
+   nerveOf("ulnar_elbow").includes("ulnar_claw"));
 ok("ulnar_wrist has claw, spares FDP + dorsal sensory",
    nerveOf("ulnar_wrist").includes("ulnar_claw") && !nerveOf("ulnar_wrist").includes("weak_finger_flexion") &&
    !nerveOf("ulnar_wrist").includes("ulnar_dorsal_sensory"));

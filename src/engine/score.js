@@ -81,7 +81,8 @@ const LOCALISING = new Set([
   // territory does the pinning; pure-motor nerves localise by parsimony on their movement pattern).
   "axillary_sensory","musculocutaneous_sensory","radial_sensory","median_sensory","ulnar_sensory",
   "femoral_sensory","obturator_sensory","lat_fem_cutaneous_sensory","sciatic_sensory","peroneal_sensory","tibial_sensory",
-  // nerve-segment cutaneous branches + the ulnar claw — each pins a nerve SEGMENT (level). Movements
+  // nerve-segment cutaneous branches pin a nerve SEGMENT (level); the ulnar claw pins the ulnar nerve (elbow or wrist —
+  // content-gap fix, row 1: the dorsal branch and FDP/FCU decide which). Movements
   // (weak_forearm_pronation / weak_thumb_adduction) stay NON-localising, like every other movement.
   "deep_peroneal_sensory","ulnar_dorsal_sensory","median_palmar_sensory","ulnar_claw",
   // non-muscle reflexes: sacral arc + frontal grasp localise. Babinski/Hoffmann are NON-localising (they
