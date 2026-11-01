@@ -42,6 +42,32 @@ ok("row 5 deferred: the upper trunk does not yet carry musculocutaneous sensatio
 ok("row 4 guard: an axillary neuropathy still leads with the axillary nerve",
    first("axillary_sensory@left weak_shoulder_abduction@left") === "left_nerve_axillary");
 
+// ---- B. Motor unit, carotid space, AICA (rows 6–8) ----
+ok("row 6: the anterior horn's bulbar neurones give the tongue, both sides",
+   predicts("motor_unit_anterior_horn", "cn12_palsy@left") && predicts("motor_unit_anterior_horn", "cn12_palsy@right"));
+{ const r = solve(T("cn12_palsy@left cn12_palsy@right dysarthria@none dysphagia@left dysphagia@right fasciculations@left fasciculations@right"));
+  ok("row 6: bulbar ALS → the anterior horn, one lesion (R1 #3)", ids(r)[0] === "motor_unit_anterior_horn" && r.multi === null); }
+ok("row 6 guard: a one-sided XII palsy still leads with the hypoglossal canal", first("cn12_palsy@left") === "left_skull_base_hypoglossal_canal");
+{ const set = T("fasciculations@left fasciculations@right wasting@left wasting@right hyperreflexia@left hyperreflexia@right babinski@left babinski@right dysarthria@none");
+  const r = solve(set);
+  ok("row 6 guard: UMN + LMN still names motor neurone disease (R1 #2)", !!r.multi && /Motor neurone/.test(unifyingDiagnoses(r.multi.sites, set, {}).concordant[0]?.name || "")); }
+ok("row 7: the carotid space gives a XII palsy", predicts("left_skull_base_carotid_space", "cn12_palsy@left"));
+ok("row 7: Horner + XII → the carotid space first (dissection)", first("miosis@left ptosis@left cn12_palsy@left") === "left_skull_base_carotid_space");
+ok("row 7 guard: Collet-Sicard still leads with Collet-Sicard",
+   first("gag_afferent_loss@left palatal_weakness@left vocal_cord_palsy@left weak_scm@left weak_trapezius@left cn12_palsy@left") === "left_skull_base_collet_sicard");
+ok("row 7 guard: Horner alone still leads with the carotid space", first("miosis@left ptosis@left") === "left_skull_base_carotid_space");
+ok("row 8: AICA's inner-ear rows (abnormal head impulse, peripheral nystagmus)",
+   predicts("left_pons_lateral", "head_impulse_abnormal@none") && predicts("left_pons_lateral", "nystagmus_peripheral@none"));
+{ const r = solve(T("cn8_vertigo@left hearing_loss@left nystagmus_peripheral@none head_impulse_abnormal@none"));
+  ok("row 8: HINTS-plus → labyrinth first, AICA (lateral pons) in the top 3 (R1 #9)",
+     ids(r)[0] === "left_peripheral_vestibular_labyrinth" && ids(r).slice(0, 3).includes("left_pons_lateral"), ids(r).slice(0, 3).join(", ")); }
+{ const r = solve(T("cn8_vertigo@left hearing_loss@left facial_weakness@left forehead_involved@left limb_ataxia@left head_impulse_abnormal@none"));
+  ok("row 8: AICA picture + abnormal head impulse → the lateral pons, one lesion", ids(r)[0] === "left_pons_lateral" && r.multi === null); }
+ok("row 8 guard (the accepted cost): vestibular neuritis still leads with the labyrinth",
+   first("cn8_vertigo@left nystagmus_peripheral@none head_impulse_abnormal@none") === "left_peripheral_vestibular_labyrinth");
+ok("row 8 guard: a central AVS still leads with the central vestibular nucleus",
+   first("cn8_vertigo@left nystagmus_gaze_evoked@none skew_deviation@none") === "left_central_vestibular_nucleus");
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — content-gap fixes (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

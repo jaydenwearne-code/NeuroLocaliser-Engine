@@ -109,6 +109,13 @@ export const STRUCTURES = [
     note: "facial nucleus — LMN, so the forehead is weak too" },
   { id: "cochlear_pons", level: "pons", part: "lateral", produces: "hearing_loss",
     note: "cochlear nuclei / labyrinthine artery (an AICA branch) — IPSI sensorineural deafness" },
+  // ADDED 2026-11-01 (content-gap fix, row 8): an AICA infarct reaching the inner ear breaks the VOR like a peripheral
+  // lesion — why HINTS-plus asks about hearing. Accepted cost (owner ruling): AICA is an "also fits" for every
+  // peripheral-HINTS picture, with or without hearing loss.
+  { id: "lab_art_hit", level: "pons", part: "lateral", produces: "head_impulse_abnormal",
+    note: "labyrinthine artery (an AICA branch) — inner-ear infarct: the head impulse is abnormal, as in a peripheral lesion (why HINTS-plus asks about hearing)" },
+  { id: "lab_art_nyst", level: "pons", part: "lateral", produces: "nystagmus_peripheral",
+    note: "labyrinthine artery — inner-ear infarct: peripheral-type nystagmus" },
   { id: "sp5_pons", level: "pons", part: "lateral", produces: "face_pain_loss",
     note: "spinal trigeminal nucleus and tract (caudal pons) — IPSI facial pain/temperature loss" },
   { id: "sym_pons_miosis", level: "pons", part: "lateral", produces: "miosis",
@@ -818,6 +825,10 @@ export const STRUCTURES = [
     note: "cervical sympathetic chain in the carotid space — miosis (isolated Horner)" },
   { id: "car_symp_ptosis", level: "skull_base", part: "carotid_space", produces: "ptosis",
     note: "cervical sympathetic (carotid space) — partial ptosis" },
+  // ADDED 2026-11-01 (content-gap fix, row 7): XII crosses the internal carotid below the skull base — the commonest
+  // cranial nerve palsy in carotid dissection. Painful Horner + XII is dissection until shown otherwise.
+  { id: "car_cn12", level: "skull_base", part: "carotid_space", produces: "cn12_palsy",
+    note: "the hypoglossal nerve where it crosses the internal carotid — the commonest cranial nerve palsy in carotid dissection" },
 
   // ---- MOTOR UNIT (pure-motor endings: anterior horn / NMJ / muscle) ----
   // Generalized, symmetric conditions → each part is one BILATERAL site (see composeMotorUnitSites).
@@ -833,6 +844,8 @@ export const STRUCTURES = [
     note: "bulbar motor neurones (progressive bulbar palsy) — dysphagia (LMN)" },
   { id: "ah_bulbar_dysar", level: "motor_unit", part: "anterior_horn", produces: "dysarthria",
     note: "bulbar motor neurones (progressive bulbar palsy) — dysarthria (LMN)" },
+  { id: "ah_bulbar_tongue", level: "motor_unit", part: "anterior_horn", produces: "cn12_palsy",
+    note: "bulbar motor neurones (hypoglossal nuclei) — tongue weakness, wasting and fasciculation (LMN)" }, // content-gap fix, row 6
   { id: "mg_fatig",  level: "motor_unit", part: "nmj_postsynaptic", produces: "fatigable_weakness",
     note: "post-synaptic NMJ (AChR) — fatigable weakness worsening with effort (myasthenia gravis)" },
   { id: "mg_ocular", level: "motor_unit", part: "nmj_postsynaptic", produces: "fatigable_ocular",
