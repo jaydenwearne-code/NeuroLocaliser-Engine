@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**86 test suites / 7355 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**87 test suites / 7399 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1361,6 +1361,53 @@ suite `test/content-gaps.test.js`; the re-pins are exactly spec row 18. Browser-
 
 Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/superpowers/plans/2026-11-01-content-gaps.md`.
 
+## Plexus round (DONE 2026-11-05, round 1, rows 3–7) — ✅ owner-approved rulings (every row)
+
+Content-gap observation O1 found that `composePlexusSites` built every trunk and plexus as a plain union of its root rows.
+**The defect this round fixes:** a plexopathy entered in the nerve-territory words a clinician tests read as two lesions:
+- Erb + lateral-forearm numbness read "upper trunk + musculocutaneous — Vasculitis";
+- a lumbar plexopathy with front- and inner-thigh numbness read "femoral + obturator — Mononeuritis multiplex", EMERGENCY;
+- sciatic numbness + a weak gluteus medius read "sciatic + sacral plexus";
+- little-finger + T1 numbness read "T1 root + medial cord".
+
+**Mechanics (one composer change).** Each element carries the cutaneous row of every MIXED nerve that arises wholly from
+it. The rows are reused through the `nerves` lists, the content-gap row-4 idiom:
+- upper trunk: `axil_sens`, `mcut_sens` (`mcut_sens` is content-gap row 5);
+- lower trunk: `uln_el_sens`;
+- lumbar plexus: `fem_sens`, `obt_sens`;
+- sacral plexus: `sci_sens`.
+
+No new structure, finding, site id or solver step.
+
+**Rulings that are traps:**
+- **Branch and pure-sensory rows stay out** (deep and superficial peroneal, tibial, sural, saphenous, LFCN, dorsal ulnar).
+  The broad version breaks the foot-drop worked example: first web-space numbness stops pinning the peroneal nerve
+  (3 checks). Meralgia, sural and saphenous numbness would each list a plexus.
+- **Radicular pain stays shared with the plexus (row 2: NOT root-only).** Measured, root-only adds 9 sampled two-lesion
+  claims and grows 381 covers to three places. A painful plexopathy entered with root pain reads "root + plexus —
+  Vasculitis". It needs 4 re-pins, and it makes the middle trunk a strict subset of the C7 root.
+- **The L4 split is approved only together with a whole lumbosacral plexus place (rows 8–9).** Both wait for content round
+  2 (label, phonebook, causes, workup, plans, topography, anatomy row). Alone, the split adds 9 sampled two-lesion claims,
+  and knee + ankle jerk lost on one side reads "femoral + tibial — Mononeuritis multiplex", EMERGENCY. Until then:
+  - the sacral plexus still carries L4's quadriceps and knee jerk (pinned as "not built");
+  - comparing the sciatic nerve with the sacral plexus still offers those borrowed L4 tests.
+- **Read sample growth with care when a row takes a sign away from a place.** Frozen pictures still carry the old sign,
+  so the growth is definitional. The spec explains it.
+
+**Measured:**
+- Audit 101/111 → 105/115 probes (4 probes added by row 15, each failing on `4d781bd`); counted checks 1034/13 → 1046/13.
+- Swaps 272/272, background 292/292, mirror 277/277.
+- `npm test`: 87 suites, 7399 assertions. New suite `test/plexus-round.test.js` (44); one re-pin, the content-gap suite's
+  "row 5 deferred".
+- Safety sample: 11 claims become one plexus, none added. 41 covers swap a nerve for its plexus element (the tie-break,
+  O3). No first answer changes.
+- The real cards equal the prototype's on all 119 captured pictures.
+- Browser-checked on port 8141 (launch entry "NeuroLocaliser plexus worktree"). Six left-sided row taps (front- and
+  inner-thigh numbness, weak hip flexion, knee extension and hip adduction, absent knee jerk) read "Left lumbar plexus."
+  with no Together line, and the console has no errors.
+
+Spec/plan: `docs/superpowers/specs/2026-11-04-plexus-round-design.md`, `docs/superpowers/plans/2026-11-05-plexus-round.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1372,7 +1419,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/sup
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
 - **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
-  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01) + three metamorphic properties (synonym swap, background
+  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, 3 by the content-gap fix, 2026-11-01, and 4 by the plexus round, 2026-11-05) + three metamorphic properties (synonym swap, background
   comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
   deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
   are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
@@ -1380,7 +1427,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/sup
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
   groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
   hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
-  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the plexus round: 105/115. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 

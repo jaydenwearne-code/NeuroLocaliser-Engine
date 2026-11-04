@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: PLANNED (2026-11-05).** It implements rows 3–7 and their rows 11–16 of round 1 in
+**Status: IMPLEMENTED (2026-11-05), `f5af58c..e171a4e` + docs; every step verified (npm 87 suites / 7399 green; audit
+1046/13, probes 105/115; the real cards equal the prototype's on all 119 captured pictures).** It implements rows 3–7 and their rows 11–16 of round 1 in
 `docs/superpowers/specs/2026-11-04-plexus-round-design.md` (owner: *"Approve as written"*, 2026-11-05). Rows 8–9 (the L4
 split with a whole lumbosacral plexus) wait for content round 2 and are NOT built here. Rows 1–2 change nothing.
 

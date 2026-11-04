@@ -1,6 +1,8 @@
 # The plexus round — what each plexus element carries (design, 2026-11-04)
 
-**Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. No engine code has changed yet.**
+**Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. Rows 3–7 IMPLEMENTED (2026-11-05,
+`f5af58c..e171a4e`, plan `docs/superpowers/plans/2026-11-05-plexus-round.md`): `npm test` 87 suites / 7399 green; audit
+105/115 probes, 1046 passed / 13 failed. Rows 8–10 wait for content round 2 (§9).**
 
 > *"Approve as written"* — the owner, on round 1 of the plexus round
 
