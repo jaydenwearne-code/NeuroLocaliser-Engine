@@ -5,6 +5,11 @@
   That is PR #19, open and not to be merged, stacked on #21 → #20 → #18. This branch is not pushed and has no PR.
 - Every number below was measured by applying candidate changes to throwaway copies of `4d781bd`, outside the repo.
   Nothing was committed except this document.
+- **A sibling round shares the base.** The raised-pressure round (`fix/raised-pressure`, also cut at `4d781bd`) was ruled
+  on 2026-11-05 and is not yet implemented.
+  - It owns the other 4 failing checks, and on the audit the two rounds do not overlap.
+  - They share one mechanism: a gated reading. Rows 2, 4 and 5 reuse it (§3.3, §8).
+  - Their combination is not measured, because neither round is implemented.
 
 This is the fourth fix from the 2026-10-18 clinical audit, after the spinal cord, false-multifocal and content-gap fixes.
 The yardstick is `npm run test:audit`; its baseline and rulings are in `2026-10-18-clinical-audit-suite.md`. On
@@ -135,6 +140,10 @@ the central cord. Spinal shock already works this way: it is offered only with a
   measured alone it fixes the syrinx and breaks nothing.
 - Alternative, not prototyped: a RARE tier for the reading alone. The reading would still sit in the list for every
   spastic paraparesis.
+- **It is the same mechanism the raised-pressure round already has.** That round was ruled on 2026-11-05 on
+  `fix/raised-pressure` and is not yet implemented. It gates its uncal reading of the compressive III through
+  `solverSites(opts, observed)` with a `needs` condition. This row reuses that gate rather than adding a second one:
+  whichever round lands second builds on the first.
 
 ### 3.4 One place for the top of the basilar (row 8)
 
@@ -327,6 +336,20 @@ herniation (2). Nothing here touches them; the uncal picture fails exactly as to
   locked-in. A "both paramedian pontine tegmenta" site would make it one. No probe asks for it, so it is not proposed.
 - **O7. The parasagittal site is the paracentral lobules only.** A bilateral ACA infarct with abulia and grasp reflexes
   would need both whole ACA territories. Not proposed.
+- **O8. The raised-pressure round's O3 is fixed here.** Coma with both Babinski signs used to read *"subacute combined
+  degeneration + diffuse cerebrum — MS"*. It now reads *"Bilateral paramedian tegmentum (ARAS) — with the basis pontis …
+  Reduced consciousness + bilateral up-going plantar → only the pons"*, through row 2 (measured).
+- **O9. The raised-pressure round's O2 was deferred to this round, and it is not a row here.**
+  - What O2 is: the cover and the Why line both ignore the papilloedema compartment filter. So R1 #16's Why line still
+    reads *"→ only the spinal cord"* under a banner that excludes the cord. That stays true under this set; only the
+    Where line changes, to the bilateral paracentral lobule, 4 of 5.
+  - It is no longer blocked. Measured, the cover honouring the filter now changes no audit check and no `npm test`
+    assertion. On today's engine it breaks one check, because R1 #16 becomes a claim.
+  - But it is much larger than one probe. In a papilloedema version of the safety sample (every picture + papilloedema),
+    it removes 5,209 of 9,189 two-lesion claims, adds 22 and changes 2,083 covers.
+  - 13 site pictures + papilloedema become new claims. For example, a bilateral cord picture becomes *"Bilateral
+    paracentral lobule + both sensorimotor lacunes — MS"*.
+  - What papilloedema means for a SECOND lesion is a design of its own.
 
 ## 8. How it would be built (the plan follows the ruling)
 
@@ -338,7 +361,10 @@ herniation (2). Nothing here touches them; the uncal picture fails exactly as to
     (`carrierStations: true`);
   - a territory line.
 - `src/engine/inverse.js`: `variantOf` carries a reading's `side` and `station`; `solverSites(opts, entered)` honours
-  `needs`; its four callers pass what was entered.
+  `needs`; its four callers pass what was entered. **This is the raised-pressure round's gate**
+  (`solverSites(opts, observed)`, where `variantOf` also carries `leads` and `red`). If that round lands first, these rows
+  add `side` and `station` to it. Its `leads` could also serve O3, letting the basilar reading lead with basilar artery
+  occlusion.
 - `src/model/stations.js`: `stationOf` reads a site's own `station`.
 - `src/engine/why.js`: `stationsAt` (row 9), used by the locus index, the meet and the clues; a one-place meet over two
   stations joins them with "and".
