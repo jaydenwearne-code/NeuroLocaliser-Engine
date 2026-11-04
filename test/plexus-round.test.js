@@ -100,6 +100,14 @@ ok("guard: Pancoast → the lung apex",
 ok("rows 8–9 not built: the sacral plexus still carries L4's knee jerk (until the lumbosacral place exists)",
    predicts("left_plexus_sacral_plexus", "reflex_knee_loss@left"));
 
+// ---- Wording (rows 11, 12) ----
+ok("row 11: the upper trunk's note names the deltoid patch and the lateral forearm",
+   /numbness over the deltoid patch and the lateral forearm/.test(nameForSite(SITE["left_plexus_upper_trunk"]).note));
+ok("row 12: the lumbar plexus's note names front- and inner-thigh numbness",
+   /^Front- and inner-thigh numbness \(femoral and obturator territories\)/.test(nameForSite(SITE["left_plexus_lumbar_plexus"]).note));
+ok("row 12: the lower trunk's note names the little finger and the medial forearm",
+   /sensory loss over the little finger and the medial forearm/.test(nameForSite(SITE["left_plexus_lower_trunk"]).note));
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — plexus round (round 1, rows 3–7)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
