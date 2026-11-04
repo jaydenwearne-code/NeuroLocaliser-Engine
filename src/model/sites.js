@@ -906,18 +906,22 @@ export function composeBrachialCordSites() {
 export function composePlexusSites() {
   const structuresForRoots = segs =>
     STRUCTURES.filter(s => s.level === "root" && segs.includes(s.part)).map(s => s.id);
+  // Each element also carries the cutaneous row of every MIXED nerve that arises wholly from it — the patch a clinician
+  // tests for that plexopathy (content-gap fix row 4; plexus round rows 3–6, owner-ruled 2026-11-05). Nerve rows are
+  // REUSED, as the cords reuse them. Branch and pure-sensory nerves (deep and superficial peroneal, tibial, sural,
+  // saphenous, lateral femoral cutaneous, dorsal ulnar) keep pinning their own territory, so they stay out (row 7: the
+  // foot-drop worked example's first web space). Every root row travels in, radicular pain included (row 2: the pain is
+  // shared). L4 still travels in both plexuses until the whole lumbosacral place exists (rows 8–9, content round 2).
   const groups = [
-    // The upper trunk also carries the axillary nerve's cutaneous fibres — the deltoid patch a clinician tests (content-gap
-    // fix, row 4). The musculocutaneous row waits for the plexus round (row 5, deferred).
-    { part: "upper_trunk",   segs: ["c5", "c6"], nerves: ["axil_sens"], terr: "brachial plexus upper trunk (C5-6) — Erb's palsy" },
+    { part: "upper_trunk",   segs: ["c5", "c6"], nerves: ["axil_sens", "mcut_sens"], terr: "brachial plexus upper trunk (C5-6) — Erb's palsy" },
     { part: "middle_trunk",  segs: ["c7"], terr: "brachial plexus middle trunk (C7)" },
-    { part: "lower_trunk",   segs: ["c8", "t1"], terr: "brachial plexus lower trunk (C8-T1) — Klumpke's palsy" },
-    { part: "lumbar_plexus", segs: ["l2", "l3", "l4"], terr: "lumbar plexus (L2-4)" },
-    { part: "sacral_plexus", segs: ["l4", "l5", "s1"], terr: "sacral plexus (L4-S1)" }
+    { part: "lower_trunk",   segs: ["c8", "t1"], nerves: ["uln_el_sens"], terr: "brachial plexus lower trunk (C8-T1) — Klumpke's palsy" },
+    { part: "lumbar_plexus", segs: ["l2", "l3", "l4"], nerves: ["fem_sens", "obt_sens"], terr: "lumbar plexus (L2-4)" },
+    { part: "sacral_plexus", segs: ["l4", "l5", "s1"], nerves: ["sci_sens"], terr: "sacral plexus (L4-S1)" }
   ];
   const sites = [];
   for (const g of groups) {
-    const structures = [...structuresForRoots(g.segs), ...(g.nerves || [])]; // nerve rows are REUSED, as the cords reuse them
+    const structures = [...structuresForRoots(g.segs), ...(g.nerves || [])];
     if (structures.length === 0) continue;
     for (const side of SIDES) {
       sites.push({ id: `${side}_plexus_${g.part}`, side, level: "plexus", part: g.part,
