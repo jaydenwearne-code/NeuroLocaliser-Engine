@@ -1,6 +1,20 @@
 # The plexus round — what each plexus element carries (design, 2026-11-04)
 
-**Status: DESIGN — round 1 (16 rows) awaiting the owner's ruling. No engine code has changed.**
+**Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. No engine code has changed yet.**
+
+> *"Approve as written"* — the owner, on round 1 of the plexus round
+
+Every recommendation in §4 is now a ruling:
+- **Rows 3–7 are built next.** Each plexus element carries the cutaneous row of the mixed nerves that arise wholly
+  from it; branch and pure-sensory nerves stay out.
+- **Rows 1–2 change nothing now.** Root rows are tagged only where a root divides. Radicular pain stays shared with the
+  plexus.
+- **Rows 8–9 are approved together.** The L4 split is built only with a whole lumbosacral plexus place, after content
+  round 2 (§9).
+- **Row 10 is decided in content round 2.** It asks whether to add a whole brachial plexus place.
+- **Rows 11–16 are approved:** the wording, the one re-pin, the four audit probes and the new suite.
+
+The implementation plan for rows 3–7 follows this ruling.
 - Branch: `fix/plexus-round` (worktree `Code/neurolocaliser-plexus/`). It was cut from `fix/content-gaps` and
   fast-forwarded to that branch's tip, `4d781bd` (the content-gap fix, implemented). Not pushed; no PR. The stacked PRs
   (#18 → #20 → #21 → #19) are the owner's to merge.
@@ -130,10 +144,11 @@ lateral femoral cutaneous and dorsal ulnar.
 | **Mixed nerves (recommended)** | 11 claims become one plexus, none added; 41 covers change places (20 musculocutaneous → upper trunk, 8 sciatic → sacral, 7 femoral and 6 obturator → lumbar), none grow, and 3 change their suggested disease | The four cards become one place. Femoral, obturator, sciatic and musculocutaneous neuropathy each list their plexus as also fitting, and the Why line reads "the plexus or peripheral nerve" instead of "only the peripheral nerve". The compare panel then names the classic test: inner-thigh numbness for femoral vs lumbar plexus, front-of-thigh numbness for obturator vs lumbar plexus, the deltoid patch for musculocutaneous vs upper trunk | 1 fail: the "row 5 deferred" pin |
 | Broad (every nerve and branch in the territory) | not snapshotted on `4d781bd` | Meralgia, sural and saphenous numbness each list a plexus. **First web-space numbness no longer pins the peroneal nerve**: the sacral plexus gives it too | 3 more fail, the foot-drop worked example's own checks ("… and it confirms the NERVE, not the root"; "nerve-vs-root and root-vs-plexus lead with DIFFERENT examinations"; "root vs plexus leads with a reflex …") |
 
-## 4. Rulings — round 1 (16 rows)
+## 4. Rulings — round 1 (16 rows, all APPROVED as written, 2026-11-05)
 
-Each row is one decision, with my recommendation. Measured effects are against `4d781bd`, and for rows 3–7 they were also
-confirmed inside the recommended set.
+Each row is one decision, with my recommendation. The owner approved the table as written, so every recommendation below
+is now a ruling. Measured effects are against `4d781bd`, and for rows 3–7 they were also confirmed inside the recommended
+set.
 
 ### A. How rows travel, and root pain
 
