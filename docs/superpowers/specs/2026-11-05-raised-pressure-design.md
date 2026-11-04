@@ -1,6 +1,18 @@
 # The raised-pressure and herniation round — four audit checks (design, 2026-11-05)
 
-**Status: DESIGN — round 1 awaiting the owner's ruling. No engine code.**
+**Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. No engine code yet.**
+
+> *"Approve as written"* — the owner, on round 1 of the raised-pressure design
+
+Every recommendation in §4 is now a ruling, rows 1–14. That includes:
+- row 3, the narrow overturn of *"a LOCALISING sign is never relaxed away"* (the second, after the same-family near-fit): with
+  papilloedema, a VI palsy that stops one place explaining the rest is set aside as a false-localising sign, under conditions
+  (a)–(d);
+- row 2's scope: the VI's own course only, with the IV measured and deferred (O1, O8);
+- row 5's gate: reduced consciousness, and one of the III's own signs on that side;
+- the new wording of rows 8–11, the one re-pin of row 12, the four probes of row 13 and the new suite of row 14.
+
+The implementation plan follows this ruling.
 - Branch `fix/raised-pressure` (worktree `Code/neurolocaliser-pressure/`), cut from `fix/content-gaps` at `4d781bd`. That branch is
   the finished content-gap fix, stacked on the false-multifocal fix, the cord fix and PR #18 (all open, none to be merged).
   Not pushed; no PR.
@@ -123,9 +135,10 @@ GBS's picture. The herniation reading needs a gate for the same kind of reason:
 | Reduced consciousness entered | Coma alone and coma + posturing list both III readings as "also fit"; **coma + one weak arm reads "right CN III (compressive) — uncal herniation"**, with no III sign entered; in the safety sample the reading takes the coma in 23 two-place covers (observation O3 of the content-gap design: the cover's tie-break prefers the larger place) |
 | **Reduced consciousness, and one of the III's own signs on that side (recommended)** | Coma alone, coma + posturing and coma + a weak arm are unchanged. In the safety sample the reading takes the coma in 10 covers instead of 23, each pairing a picture with a ptosis, a duction or a pupil sign with a comatose one. A reading of a place is offered only when that place is implicated, and the midbrain only when consciousness is reduced |
 
-## 4. Rulings — round 1 (14 rows)
+## 4. Rulings — round 1 (14 rows, all APPROVED as written, 2026-11-05)
 
-Each row is one decision, with my recommendation. "+n" is counted audit checks fixed; the leave-one-out in §5 confirms them.
+Each row is one decision, with my recommendation. The owner approved the table as written, so every recommendation below is
+now a ruling. "+n" is counted audit checks fixed; the leave-one-out in §5 confirms them.
 
 ### A. The VI nerves and raised pressure
 
@@ -287,7 +300,7 @@ parasagittal (R1 #12); top of the basilar (R1 #14); bilateral PCA (R1 #15). None
   coma + the ischaemic III's picture reads the reading). The model has no normal-pupil finding; like the normal hearing of the
   content-gap design's O5, it would demote as a down-going plantar does.
 
-## 8. How it would be built (the plan follows the ruling)
+## 8. How it will be built (the plan follows the ruling)
 
 - `src/model/sites.js`:
   - a composer for the bilateral cisternal VI (row 1);
