@@ -221,6 +221,12 @@ T("Roots, plexus & nerves", "carpal tunnel + absent ankle jerks on both sides �
 T("Brainstem", "AICA picture + abnormal head impulse → lateral pons, one lesion", "cn8_vertigo@left hearing_loss@left facial_weakness@left forehead_involved@left limb_ataxia@left head_impulse_abnormal@none", { first: /^left_pons_lateral$/, single: true });
 T("Hemispheres, thalamus & vision", "left hemianopia + prosopagnosia → right PCA, one lesion", "homonymous_hemianopia@left prosopagnosia@none", { first: /^right_cortex_pca$/, single: true });
 T("Roots, plexus & nerves", "foot drop + weak arm + facial weakness, one side → a contralateral corticospinal site, one lesion", "weak_ankle_dorsiflexion@left weak_arm@left facial_weakness@left forehead_spared@left", { first: /^right_(cortex|subcortex|pons|midbrain|medulla)_/, single: true });
+// owner-approved 2026-11-05 (plexus round, round 1, row 15): plexopathies entered in the nerve-territory words a
+// clinician tests, which no audit probe covered. Each failed on 4d781bd (the content-gap fix).
+T("Roots, plexus & nerves", "Erb with deltoid-patch and lateral-forearm numbness → upper trunk, one lesion", "weak_shoulder_abduction@left weak_elbow_flexion@left weak_shoulder_external_rotation@left reflex_biceps_loss@left axillary_sensory@left musculocutaneous_sensory@left", { first: /^left_plexus_upper_trunk$/, single: true });
+T("Roots, plexus & nerves", "lumbar plexopathy in nerve words (front- and inner-thigh numbness) → lumbar plexus, one lesion", "weak_hip_flexion@left weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left femoral_sensory@left obturator_sensory@left", { first: /^left_plexus_lumbar_plexus$/, single: true });
+T("Roots, plexus & nerves", "sciatic numbness + sciatic motor signs + weak gluteus medius → sacral plexus, one lesion", "sciatic_sensory@left weak_knee_flexion@left weak_ankle_dorsiflexion@left weak_ankle_plantarflexion@left reflex_ankle_loss@left weak_hip_abduction@left", { first: /^left_plexus_sacral_plexus$/, single: true });
+T("Roots, plexus & nerves", "little-finger + T1 numbness + weak thumb and finger abduction → lower trunk, one lesion", "ulnar_sensory@left sensory_t1@left weak_thumb_abduction@left weak_finger_abduction@left", { first: /^left_plexus_lower_trunk$/, single: true });
 
 // ======================================================================================================
 // 0. Harness: every probe token is a real finding the app can enter.
