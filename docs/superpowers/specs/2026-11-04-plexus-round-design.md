@@ -2,8 +2,8 @@
 
 **Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. Rows 3–7 IMPLEMENTED (2026-11-05,
 `f5af58c..e171a4e`, plan `docs/superpowers/plans/2026-11-05-plexus-round.md`): `npm test` 87 suites / 7399 green; audit
-105/115 probes, 1046 passed / 13 failed. Rows 8–10 wait for content round 2, DRAFTED in §10 (14 rows) and awaiting
-the owner's ruling.**
+105/115 probes, 1046 passed / 13 failed. Content round 2 (§10, 14 rows) RULED 2026-11-05: every recommendation
+approved as written, so rows 8–9 are built with the lumbosacral place's content and row 10 is no.**
 
 > *"Approve as written"* — the owner, on round 1 of the plexus round
 
@@ -317,7 +317,12 @@ A new place has to clear every content gate before it ships. For the lumbosacral
 The same list applies to a whole brachial plexus place if row 10 says yes. I would draft them as a review round in the
 shape of the cord fix's content round (§10 of `2026-10-22-spinal-cord-fix-design.md`).
 
-## 10. Content round 2 — the whole lumbosacral plexus, and row 10 (DRAFT, awaiting the owner's ruling)
+## 10. Content round 2 — the whole lumbosacral plexus, and row 10 (RULED 2026-11-05: all 14 approved as written)
+
+> *"Approve as written"* — the owner, on content round 2 of the plexus round
+
+Every recommendation below is now a ruling. Rows 8–9 are built together with this content, and there will be no whole
+brachial plexus place (row 10 / C14). The implementation plan follows this ruling.
 
 This round drafts the content §9 asks for and recommends on row 10. There are 14 rows, and approving the table approves
 every recommendation as written. Rows 8–9 were approved in principle on 2026-11-05: the L4 split, built only together
