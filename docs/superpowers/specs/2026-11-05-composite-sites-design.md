@@ -1,6 +1,18 @@
 # The composite sites — nine audit checks (design, 2026-11-05)
 
-**Status: DESIGN. Round 1 (16 rows) awaits the owner's ruling. There is no engine code.**
+**Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written.**
+
+> *"Approve as written"* — the owner, on round 1 of the composite-sites design
+
+Every recommendation in §4 is now a ruling, rows 1–16. The four decisions in §3 follow:
+- §3.1: the same lesion grown larger is a reading of its site, and a different place is a new site. Both are derived
+  from their source rows, never hand-listed.
+- §3.2: option A. `bilateral_paracentral` joins the audit's PARASAG regex. This is the owner's ruling on the yardstick.
+- §3.3: the syrinx reading is offered only when the cape is entered (the gate).
+- §3.4: option A, a basilar-apex site.
+
+The observations in §7 stay observations. That includes O9, the raised-pressure round's deferred O2, which needs a
+design of its own. The implementation plan follows this ruling. There is still no engine code.
 - Branch: `fix/composite-sites` (worktree `Code/neurolocaliser-composite/`), cut from `fix/content-gaps` at `4d781bd`.
   That is PR #19, open and not to be merged, stacked on #21 → #20 → #18. This branch is not pushed and has no PR.
 - Every number below was measured by applying candidate changes to throwaway copies of `4d781bd`, outside the repo.
@@ -28,8 +40,8 @@ In the frozen safety sample:
 - no claim is added;
 - no site picture changes its first answer.
 
-**One row changes the audit itself.** Row 7 widens one regex, the parasagittal family, so it is your call on the
-yardstick (§3.2).
+**One row changes the audit itself.** Row 7 widens one regex, the parasagittal family. It was your call on the
+yardstick (§3.2), and it is approved.
 
 ---
 
@@ -154,10 +166,10 @@ R1 #14 and #15 approved *"one process (no multifocal claim, or embolic leads)"*.
 | **A. A basilar-apex site (recommended)** | One place: both P1 perforator territories, which are the paramedian thalami as in Percheron, and both PCAs (the occipital and fusiform cortex). It explains both probes, because Percheron's amnesia row comes with it. This treats the basilar tip as the MCA composite treats the MCA: one vessel's territory is one place |
 | B. Make the embolic shower lead the roster for posterior-circulation pairs | Still *"No single place explains every finding — likely Bilateral paramedian thalamus and Bilateral primary visual cortex. Together: Embolic shower"*. It needs a new roster rule, and the anatomy is one occlusion at the tip, not a shower. Not prototyped |
 
-## 4. Rulings — round 1 (16 rows)
+## 4. Rulings — round 1 (16 rows, all APPROVED as written, 2026-11-05)
 
-Each row is one decision, with my recommendation. "+n" is counted audit checks fixed, confirmed by leaving the row out of
-the full set (§5).
+Each row is one decision, with my recommendation. The owner approved the table as written, so every recommendation below
+is now a ruling. "+n" is counted audit checks fixed, confirmed by leaving the row out of the full set (§5).
 
 ### A. The pons
 
@@ -351,7 +363,7 @@ herniation (2). Nothing here touches them; the uncal picture fails exactly as to
     paracentral lobule + both sensorimotor lacunes — MS"*.
   - What papilloedema means for a SECOND lesion is a design of its own.
 
-## 8. How it would be built (the plan follows the ruling)
+## 8. How it will be built (the plan follows the ruling)
 
 - `src/model/sites.js`:
   - `locked_in` derived as row 1;
