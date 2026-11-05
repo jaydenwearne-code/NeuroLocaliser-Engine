@@ -3,7 +3,8 @@
 **Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. Rows 3–7 IMPLEMENTED (2026-11-05,
 `f5af58c..e171a4e`, plan `docs/superpowers/plans/2026-11-05-plexus-round.md`): `npm test` 87 suites / 7399 green; audit
 105/115 probes, 1046 passed / 13 failed. Content round 2 (§10, 14 rows) RULED 2026-11-05: every recommendation
-approved as written, so rows 8–9 are built with the lumbosacral place's content and row 10 is no.**
+approved as written. Rows 8–9 and C1–C13 IMPLEMENTED 2026-11-06 (`312e8b5..5081580`, plan
+`docs/superpowers/plans/2026-11-06-plexus-round-rows-8-9.md`): npm 87 suites / 7440 green; audit 1047/13. Row 10 is no.**
 
 > *"Approve as written"* — the owner, on round 1 of the plexus round
 

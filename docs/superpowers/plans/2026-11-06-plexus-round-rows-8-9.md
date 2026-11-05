@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: PLANNED (2026-11-06).** Implements rows 1, 8 and 9 of round 1 and every row of content round 2 (C1–C14) in
+**Status: IMPLEMENTED (2026-11-06), `312e8b5..5081580` + docs; every step verified (npm 87 suites / 7440 green; audit
+1047/13; the cards and the 9,490-pair sample identical to the prototype's; browser-checked).** Implements rows 1, 8 and 9 of round 1 and every row of content round 2 (C1–C14) in
 `docs/superpowers/specs/2026-11-04-plexus-round-design.md` (owner: *"Approve as written"*, both rounds, 2026-11-05).
 Row 10 / C14 is "no": there is no whole brachial plexus place.
 

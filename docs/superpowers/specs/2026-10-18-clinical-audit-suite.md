@@ -280,3 +280,6 @@ Each probe is also mirrored, so the mirror property runs **277** checks.
   raised-pressure round (4).
 - Roots, plexus and nerves: 24 / 24.
 - Synonym swaps 272 / 272; background 292 / 292; mirror 277 / 277.
+
+**After rows 8–9 of the plexus round (2026-11-06, measured on `fix/plexus-round`):** counted checks 1047 passed, 13
+failed. The extra check is the whole lumbosacral plexus's own mirror, and it passes; mirror 278 / 278. No probe changed.
