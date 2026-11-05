@@ -259,3 +259,21 @@ Each probe is also mirrored, so the mirror property runs **273** checks.
 **After the fix (measured on `fix/content-gaps`):** probes **101 / 111**; counted checks 1034 passed, 13 failed. The 13
 are exactly the composite-sites round (9) and the raised-pressure round (4). Synonym swaps 272 / 272, including 48 new
 cerebellar swaps from the thalamic hemiataxia, all passing; background 292 / 292; mirror 273 / 273.
+
+## Raised-pressure round, round 1, row 13: four probes added (2026-11-05)
+
+The raised-pressure round's round 1 (`2026-11-05-raised-pressure-design.md`, row 13, approved as written) added four counted
+probes. They cover pictures that the new rows decide, and that no probe covered. Each fails on `4d781bd` (the content-gap
+fix):
+
+| Probe | Expected answer (approved) | Baseline |
+|---|---|---|
+| VI palsy + papilloedema | a left VI site first, not the pons; the raised-pressure axis fires | left medial pons first (basilar perforator infarct) |
+| coma + fixed dilated left pupil | the left compressive III first; one lesion | diffuse cerebrum + left ciliary ganglion (Adie pupil, routine) |
+| coma + fixed dilated left pupil + right hemiparesis | the left compressive III first; one lesion | three places |
+| bilateral VI + papilloedema + right hemiparesis | a left hemisphere site first; one lesion | left medial pons + right VI, "Vasculitis" |
+
+Each probe is also mirrored, so the mirror property runs **277** checks.
+
+**After the fix (measured on `fix/raised-pressure`):** probes **108 / 115**; counted checks 1050 passed, 9 failed. The 9 are
+exactly the composite-sites round. Synonym swaps 272 / 272; background 292 / 292; mirror 277 / 277.

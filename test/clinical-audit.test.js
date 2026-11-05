@@ -221,6 +221,12 @@ T("Roots, plexus & nerves", "carpal tunnel + absent ankle jerks on both sides �
 T("Brainstem", "AICA picture + abnormal head impulse → lateral pons, one lesion", "cn8_vertigo@left hearing_loss@left facial_weakness@left forehead_involved@left limb_ataxia@left head_impulse_abnormal@none", { first: /^left_pons_lateral$/, single: true });
 T("Hemispheres, thalamus & vision", "left hemianopia + prosopagnosia → right PCA, one lesion", "homonymous_hemianopia@left prosopagnosia@none", { first: /^right_cortex_pca$/, single: true });
 T("Roots, plexus & nerves", "foot drop + weak arm + facial weakness, one side → a contralateral corticospinal site, one lesion", "weak_ankle_dorsiflexion@left weak_arm@left facial_weakness@left forehead_spared@left", { first: /^right_(cortex|subcortex|pons|midbrain|medulla)_/, single: true });
+// owner-approved 2026-11-05 (raised-pressure round, round 1, row 13): pictures the round decides, which no audit probe
+// covered. Each fails on 4d781bd.
+T("Cranial nerves & skull base", "VI palsy + papilloedema → the VI nerve (false-localising), not a pontine stroke", "weak_abduction@left papilloedema@none", { first: /^left_skull_base_vi_(cisternal|petrous_apex)$/, pressure: true });
+T("Consciousness & raised pressure", "coma + fixed dilated L pupil → the compressive III (uncal herniation), one lesion", "reduced_consciousness@none fixed_dilated_pupil@left", { first: /^left_pupil_cn3_compressive$/, single: true });
+T("Consciousness & raised pressure", "coma + fixed dilated L pupil + R hemiparesis → the compressive III (uncal herniation), one lesion", "reduced_consciousness@none fixed_dilated_pupil@left weak_arm@right weak_leg@right", { first: /^left_pupil_cn3_compressive$/, single: true });
+T("Consciousness & raised pressure", "bilateral VI + papilloedema + R hemiparesis → a left hemisphere site, one lesion (the VIs false-localising)", "weak_abduction@left weak_abduction@right papilloedema@none weak_arm@right weak_leg@right", { first: /^left_(cortex|subcortex)_/, single: true });
 
 // ======================================================================================================
 // 0. Harness: every probe token is a real finding the app can enter.
