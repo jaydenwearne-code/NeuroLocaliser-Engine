@@ -223,6 +223,12 @@ T("Roots, plexus & nerves", "carpal tunnel + absent ankle jerks on both sides �
 T("Brainstem", "AICA picture + abnormal head impulse → lateral pons, one lesion", "cn8_vertigo@left hearing_loss@left facial_weakness@left forehead_involved@left limb_ataxia@left head_impulse_abnormal@none", { first: /^left_pons_lateral$/, single: true });
 T("Hemispheres, thalamus & vision", "left hemianopia + prosopagnosia → right PCA, one lesion", "homonymous_hemianopia@left prosopagnosia@none", { first: /^right_cortex_pca$/, single: true });
 T("Roots, plexus & nerves", "foot drop + weak arm + facial weakness, one side → a contralateral corticospinal site, one lesion", "weak_ankle_dorsiflexion@left weak_arm@left facial_weakness@left forehead_spared@left", { first: /^right_(cortex|subcortex|pons|midbrain|medulla)_/, single: true });
+// owner-approved 2026-11-05 (composite-sites round, round 1, row 15): pictures the composite sites decide, which no audit
+// probe covered. Each failed on 4d781bd.
+T("Spinal cord", "syrinx without wasted hands: cape + spastic legs → the central cord, one lesion", "suspended_sensory@left suspended_sensory@right weak_leg@left weak_leg@right babinski@left babinski@right hyperreflexia@left hyperreflexia@right", { first: /^bilateral_cord_central$/, single: true });
+T("Brainstem", "locked-in with both Babinski signs → ventral pons, one lesion", "weak_arm@left weak_arm@right weak_leg@left weak_leg@right babinski@left babinski@right preserved_vertical_gaze@none", { first: /^locked_in$/, single: true });
+T("Consciousness & raised pressure", "top of the basilar entered as field loss: coma + vertical gaze palsy + a hemianopia on each side → the basilar apex, one lesion", "reduced_consciousness@none vertical_gaze_palsy@none homonymous_hemianopia@left homonymous_hemianopia@right", { first: /^top_of_basilar$/, single: true });
+T("Hemispheres, thalamus & vision", "parasagittal with cortical sensory loss in both legs → both paracentral lobules, one lesion", "weak_leg@left weak_leg@right babinski@left babinski@right cortical_sensory_leg@left cortical_sensory_leg@right", { first: /^bilateral_paracentral$/, single: true });
 
 // ======================================================================================================
 // 0. Harness: every probe token is a real finding the app can enter.
