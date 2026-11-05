@@ -97,6 +97,7 @@ export const PART_LABEL = {
   "thalamus|limbic": "anterior + dorsomedial thalamic nuclei",
   "thalamus|pulvinar": "pulvinar",
   "thalamus_arousal|paramedian": "paramedian thalamus",
+  "thalamus_arousal|basilar_apex": "thalami and occipital lobes (top of the basilar)",
   // Every hypothalamic key is a PORTION of the hypothalamus — a nucleus or a named area — so none of them
   // may be labelled "<something> hypothalamus", which names the whole structure. Terms follow the site's
   // own territory string.

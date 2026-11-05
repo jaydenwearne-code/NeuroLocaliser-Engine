@@ -425,6 +425,7 @@ export default {
     ],
     urgency: "urgent",
     referral: "Neurology urgently with the national prion surveillance service; palliative care early",
+    bySite: { top_of_basilar: { level: "the visual fields, conscious level and vertical gaze" } },
   }),
 
   "Narcolepsy with cataplexy (orexin/hypocretin loss)": dz("Narcolepsy with cataplexy (orexin/hypocretin loss)", {

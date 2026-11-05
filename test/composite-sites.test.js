@@ -127,6 +127,43 @@ const BILATERAL_PCA = "cortical_blindness@none amnesia@none";
   ok("row 13: the shared anterior-horn wasting row no longer says 'generalised'", !!ah && !/generalised/i.test(ah.note), ah && ah.note);
 }
 
+// ---- 5. The top of the basilar (rows 8, 10–12) and its Why line (row 9) ----
+{
+  const tob = SITE.top_of_basilar;
+  const percheron = rowsOf("thalamus_arousal", "paramedian");
+  const pca = STRUCTURES.filter(s => s.level === "cortex" && ["occipital", "fusiform"].includes(s.part)).map(s => s.id);
+  ok("row 8: the top of the basilar is derived from Percheron's rows and both PCA cortical territories",
+     !!tob && tob.side === "bilateral" && [...percheron, ...pca].every(id => tob.structures.includes(id)) && tob.structures.length === percheron.length + pca.length);
+  const t14 = answer(TOP_OF_BASILAR);
+  ok("row 8: coma + vertical gaze palsy + cortical blindness → the top of the basilar, one lesion (R1 #14)", t14.id === "top_of_basilar" && t14.multi === null, `${t14.id} multi=${!!t14.multi}`);
+  const t15 = answer(BILATERAL_PCA);
+  ok("row 8: cortical blindness + amnesia → the top of the basilar, one lesion (R1 #15)", t15.id === "top_of_basilar" && t15.multi === null, `${t15.id} multi=${!!t15.multi}`);
+  const tf = answer("reduced_consciousness@none vertical_gaze_palsy@none homonymous_hemianopia@left homonymous_hemianopia@right");
+  ok("row 8: …and entered as a hemianopia on each side", tf.id === "top_of_basilar" && tf.multi === null, `${tf.id} multi=${!!tf.multi}`);
+  ok("row 8 guard: Percheron's triad still → the paramedian thalami", answer("reduced_consciousness@none vertical_gaze_palsy@none amnesia@none").id === "thalamus_bilateral_percheron");
+  ok("row 8 guard: Anton's alone still → both occipital lobes", answer("cortical_blindness@none").id === "bilateral_occipital");
+  ok("row 8 guard: a hemianopia on each side still → both occipital lobes", answer("homonymous_hemianopia@left homonymous_hemianopia@right").id === "bilateral_occipital");
+  ok("row 10: the place reads 'Bilateral thalami and occipital lobes (top of the basilar)'",
+     !!tob && plainSiteName(tob).place === "Bilateral thalami and occipital lobes (top of the basilar)", tob && plainSiteName(tob).place);
+  ok("row 11: its phonebook entry", !!tob && /top-of-the-basilar/i.test(nameForSite(tob).name));
+  const names = tob ? causesFor(tob).all.map(c => c.name) : [];
+  const RULED = ["Top-of-the-basilar embolism", "Basilar artery occlusion", "Vertebral artery dissection",
+    "Posterior reversible encephalopathy syndrome (PRES)", "Deep cerebral venous thrombosis",
+    "Cardiac arrest / profound global hypoperfusion", "Creutzfeldt-Jakob disease (Heidenhain variant)", "Non-convulsive status epilepticus"];
+  ok("row 12: its eight causes", names.length === 8 && RULED.every(n => names.includes(n)), names.join(" | "));
+  ok("row 12: with no onset the embolism leads", !!tob && (leadingCause(causesFor(tob).all) || {}).name === "Top-of-the-basilar embolism");
+  ok("row 12: at a chronic onset the What line names the slow cause, not nothing",
+     !!tob && (leadingCause(causesFor(tob, { onset: "chronic" }).all) || {}).name === "Creutzfeldt-Jakob disease (Heidenhain variant)");
+  ok("row 12: its plan is an emergency", !!tob && nextStepsFor(tob).urgency === "emergency");
+
+  ok("row 9: Anton's alone → only the cerebral cortex", whereOf("cortical_blindness@none").where === "cerebral cortex", whereOf("cortical_blindness@none").where);
+  const w15 = whereOf(BILATERAL_PCA);
+  ok("row 9: cortical blindness + amnesia → one place, the cerebral cortex and thalamus", w15.verdict === "one" && w15.where === "cerebral cortex and thalamus", `${w15.verdict}: ${w15.where}`);
+  const w14 = whereOf(TOP_OF_BASILAR);
+  ok("row 9: the top of the basilar's own picture → the cerebral cortex and thalamus", w14.verdict === "one" && w14.where === "cerebral cortex and thalamus", `${w14.verdict}: ${w14.where}`);
+  ok("row 9 guard: Percheron's triad → only the thalamus", whereOf("reduced_consciousness@none vertical_gaze_palsy@none amnesia@none").where === "thalamus");
+}
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — composite sites (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

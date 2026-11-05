@@ -967,6 +967,12 @@ export const BY_SITE = {
     ddx: ["Top-of-basilar / midbrain infarct", "Pontine haemorrhage", "Central (transtentorial) herniation", "Demyelination"],
     red: "Impaired arousal with brainstem signs (extensor posturing, asymmetric / fixed pupils, gaze palsy) is a posterior-circulation emergency — image the vessels."
   },
+  top_of_basilar: {
+    name: "Top-of-the-basilar syndrome (basilar apex)",
+    note: "An embolus at the basilar tip blocks both P1 segments, with the thalamoperforators to both paramedian thalami, and both PCAs beyond: reduced arousal, vertical gaze palsy and amnesia with cortical blindness or bilateral field loss — often with PRESERVED power.",
+    ddx: ["Top-of-the-basilar embolism (cardiac or vertebral source)", "Basilar artery thrombosis", "PRES", "Deep cerebral venous thrombosis (mimics the thalamic half)"],
+    red: "Drowsiness with vertical gaze palsy and visual loss is a basilar-tip occlusion until proven otherwise — CTA now; it is a thrombectomy target, and it is regularly called delirium."
+  },
   thalamus_bilateral_percheron: {
     name: "Bilateral paramedian thalamic syndrome (artery of Percheron)",
     note: "One artery (of Percheron) supplies both paramedian thalami ± the rostral midbrain → impaired arousal + vertical gaze palsy + memory / confusion.",

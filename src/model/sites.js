@@ -213,6 +213,7 @@ const TERRITORY = {
   "dorsal_midbrain|tectum": "dorsal midbrain / tectum (posterior commissure — Parinaud)",
   "cerebrum|diffuse": "diffuse bihemispheric cortex (metabolic / anoxic encephalopathy)",
   "thalamus_arousal|paramedian": "bilateral paramedian / intralaminar thalamus (artery of Percheron)",
+  "thalamus_arousal|basilar_apex": "basilar apex — both P1 thalamoperforators and both posterior cerebral arteries (top of the basilar)",
   "brainstem_aras|paramedian_tegmentum": "paramedian rostral brainstem tegmentum (ARAS)",
   "locked_in|ventral_pons": "ventral pons / basis pontis (basilar territory — locked-in)",
   "pons|trigeminal": "pontine trigeminal complex (main sensory + motor V)",
@@ -913,6 +914,19 @@ export function composeBilateralMlfSites() {
   const structures = STRUCTURES.filter(s => s.level === "pons" && s.part === "medial" && s.produces === "ino").map(s => s.id);
   return structures.length ? [{ id: "bilateral_pons_mlf", side: "bilateral", level: "pons", part: "medial",
     territory: "both medial longitudinal fasciculi (paramedian pontine tegmentum)", structures, composite: true }] : [];
+}
+
+// TOP OF THE BASILAR — the basilar apex (composite-sites round, row 8, owner-approved 2026-11-05): both P1s with their
+// thalamoperforators (the paramedian thalami, as the artery of Percheron) and both PCAs beyond (the occipital and ventral
+// occipitotemporal cortex). One embolus at the tip takes them all. Derived: the Percheron rows + the PCA cortical parts
+// (DIVISION), both sides. It spans two stations, so the Why line places it by the rows that carry what was entered
+// (carrierStations, row 9). Its own content key.
+export function composeTopOfBasilarSites() {
+  const thal = STRUCTURES.filter(s => s.level === "thalamus_arousal" && s.part === "paramedian").map(s => s.id);
+  const pcaParts = Object.keys(DIVISION).filter(p => DIVISION[p].territory === "PCA");
+  const pca = STRUCTURES.filter(s => s.level === "cortex" && pcaParts.includes(s.part)).map(s => s.id);
+  return thal.length && pca.length ? [{ id: "top_of_basilar", side: "bilateral", level: "thalamus_arousal", part: "basilar_apex",
+    territory: TERRITORY["thalamus_arousal|basilar_apex"], structures: [...thal, ...pca], composite: true, carrierStations: true }] : [];
 }
 
 // PLEXUS SITES. A trunk / plexus lesion affects exactly the roots that feed it, so each is a plain UNION

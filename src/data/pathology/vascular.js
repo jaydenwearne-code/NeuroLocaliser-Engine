@@ -436,6 +436,8 @@ export default {
     "Vertebral artery dissection": {
       slots: { level: "the crossed brainstem signs, and the neck for pain",
                flavour: "OCCIPITAL or posterior neck pain preceding a lateral medullary syndrome — and in a young patient with a Wallenberg picture, dissection is more likely than atherosclerosis" },
+      bySite: { top_of_basilar: { level: "conscious level, vertical gaze and both visual fields, and the neck for pain",
+        flavour: "an embolus from a dissected vertebral artery can lodge at the basilar tip — neck or occipital pain before a top-of-the-basilar picture in a younger patient" } },
     },
     "Vertebral dissection": {
       slots: { level: "tongue, swallow and the long tracts",
@@ -469,6 +471,7 @@ export default {
     "Top-of-the-basilar embolism": {
       slots: { level: "conscious level, pupils, vertical gaze and the visual fields",
                flavour: "a bewildering mixture of visual, oculomotor and behavioural signs with PRESERVED POWER — the pattern itself is the diagnosis, and it is regularly called delirium" },
+      bySite: { top_of_basilar: { level: "conscious level, vertical gaze, the pupils and BOTH visual fields — cortical blindness may be denied" } },
     },
     "Top-of-the-basilar occlusion": {
       slots: { level: "conscious level, the third nerve and all four limbs",
@@ -498,6 +501,7 @@ export default {
       slots: { level: "conscious level, brainstem reflexes and the visual fields",
                flavour: "hypoxic-ischaemic injury affects the watershed and the selectively vulnerable regions — and PROGNOSTICATION must not be attempted early, since sedation, hypothermia and organ failure all confound the examination" },
       confirmatoryExtra: ["Multimodal prognostication no earlier than the accepted interval after rewarming and off sedation — clinical examination, EEG, somatosensory evoked potentials and neuron-specific enolase together, never a single test"],
+      bySite: { top_of_basilar: { level: "conscious level, vertical gaze and both visual fields — cortical blindness may be denied (Anton's)" } },
     },
     "Moyamoya disease": {
       slots: { level: "the deficit and its RELATION TO HYPERVENTILATION or crying in a child",
