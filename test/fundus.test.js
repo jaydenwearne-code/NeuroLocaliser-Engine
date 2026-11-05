@@ -20,6 +20,7 @@ import { expectedFindings } from "../src/engine/forward.js";
 import { candidateSites, differential, raisedPressureAxis, INTRACRANIAL_LEVELS } from "../src/engine/inverse.js";
 import { refractiveFlag } from "../src/engine/patterns.js";
 import { causesFor } from "../src/data/causes.js";
+import { PRESSURE_REACHES } from "../src/model/compartments.js";
 import { nextStepsFor } from "../src/data/nextSteps.js";
 
 let pass = 0, fail = 0;
@@ -69,7 +70,9 @@ ok("non-correcting acuity loss is ipsilateral", CROSSES.va_reduced_no_pinhole ==
   // papilloedema ALONE still returns the whole intracranial compartment rather than collapsing to nothing
   const alone = differential(new Set(["papilloedema@none"]));
   ok("papilloedema alone returns the intracranial compartment", alone.length > 20);
-  ok("papilloedema alone excludes the periphery", alone.every(c => INTRACRANIAL_LEVELS.has(c.site.level)));
+  // The VI's own course stays in play: raised pressure itself produces its palsy (raised-pressure round, row 2, 2026-11-05).
+  ok("papilloedema alone keeps only intracranial places and the nerve courses the pressure reaches",
+     alone.every(c => INTRACRANIAL_LEVELS.has(c.site.level) || PRESSURE_REACHES.has(`${c.site.level}|${c.site.part}`)));
 }
 
 // --- 3: the optic disc and the retina are different places ---

@@ -60,6 +60,14 @@ export const LEVEL_COMPARTMENT = {
 // which is also not in this set), and a Pancoast tumour must not become intracranial by accident.
 export const INTRACRANIAL_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "optic", "pupil"]);
 
+// THE NERVE COURSES RAISED PRESSURE ITSELF INJURES (raised-pressure round, row 2, owner-approved 2026-11-05), keyed
+// `level|part`. Papilloedema keeps only the places inside the skull — and these, because the pressure produces their palsy
+// itself: the VI's long cisternal course, and the VI tethered at the petrous apex (the false-localising sign). Exactly three
+// parts outside the skull's levels name raised pressure among their own causes; the third, the IV's cisternal course, is
+// DEFERRED: kept under papilloedema, its card would lead with head trauma and badge routine, because its plan is not written
+// for the pressure (spec 2026-11-05, row 2, O1, O8). test/raised-pressure.test.js checks this set against the causes.
+export const PRESSURE_REACHES = new Set(["skull_base|vi_cisternal", "skull_base|vi_petrous_apex"]);
+
 // A site's LEVEL is a bony/anatomical grouping (which corridor or fossa it sits in); its COMPARTMENT is a
 // functional grouping (which system it belongs to for cross-site pathology purposes). The two can
 // legitimately disagree. Three PARTS at level `skull_base` are exactly this case: `optic_neuritis`,

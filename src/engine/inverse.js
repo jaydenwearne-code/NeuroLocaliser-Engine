@@ -16,7 +16,7 @@ import { expectedFindings } from "./forward.js";
 import { normaliseLevel, regionOf, landmarkOf, levelIndex, spanName } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
-import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS } from "../model/compartments.js";
+import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS, PRESSURE_REACHES } from "../model/compartments.js";
 import { EXPLICIT_NORMAL } from "../model/findings.js";
 import { BACKGROUND_FINDINGS } from "../model/families.js";
 import { enteredToken, enteredSet, predictedSet, sameFamilyInstead } from "./families.js";
@@ -130,7 +130,8 @@ export function normalNegatives(observedSet) {
 //
 // Excluded deliberately: cord, roots, plexus, peripheral nerves, polyneuropathy, motor unit, combined
 // degenerations, the peripheral vestibular apparatus and the sympathetic chain — and the skull-base
-// CORRIDORS, which are extra-axial nerve-in-a-canal lesions rather than mass within the compartment.
+// CORRIDORS, which are extra-axial nerve-in-a-canal lesions rather than mass within the compartment. The nerve courses the
+// pressure itself injures stay in play (PRESSURE_REACHES in compartments.js — raised-pressure round, row 2).
 // DERIVED from the compartment table (compartments.js) so there is exactly one definition of "inside the
 // skull". Previously a hand-listed set here, which was a second source of truth waiting to drift.
 export const INTRACRANIAL_LEVELS = new Set(
@@ -178,7 +179,7 @@ export function differential(observedSet, opts = {}) {
   const level = normaliseLevel(opts.sensoryLevel);
   const cands = [];
   for (const site of solverSites(opts)) {
-    if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
+    if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level) && !PRESSURE_REACHES.has(`${site.level}|${site.part}`)) continue; // compartment filter
     let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
     let contradicted = false;
     // An ASYMMETRIC site (motor-unit disease, cauda equina) may present on one side: the un-entered side is

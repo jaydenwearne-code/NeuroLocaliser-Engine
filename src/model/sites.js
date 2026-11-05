@@ -610,6 +610,16 @@ export function composeSkullBaseSites() {
   return sites;
 }
 
+// BOTH VI NERVES (raised-pressure round, row 1, owner-approved 2026-11-05). The two nerves climb the clivus side by side in
+// the prepontine cistern to Dorello's canals, so one process there — raised or low CSF pressure, a clival tumour, basal
+// meningitis, trauma — catches both. ONE bilateral site from the same `vi_cisternal` row: it keeps every table keyed by the
+// place (causes, workup, label, vascular, topography), so it adds no content. buildSites still makes the left and right sites.
+export function composeBilateralAbducensSites() {
+  const structures = STRUCTURES.filter(s => s.level === "skull_base" && s.part === "vi_cisternal").map(s => s.id);
+  return structures.length ? [{ id: "bilateral_skull_base_vi_cisternal", side: "bilateral", level: "skull_base",
+    part: "vi_cisternal", territory: TERRITORY["skull_base|vi_cisternal"], structures, composite: true }] : [];
+}
+
 // MOTOR-UNIT SITES (pure-motor endings). These are generalized, symmetric conditions, so each part is
 // one BILATERAL site (the forward model emits every finding on both body sides) — NOT a left/right
 // primitive (a one-sided myopathy would be wrong). Like composeCaudaConusSites (midline sites), this is
