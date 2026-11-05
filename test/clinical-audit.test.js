@@ -56,7 +56,9 @@ const leadingUnifier = (r, set, opts) => r.multi ? unifyingDiagnoses(r.multi.sit
 // ---- site families (regexes over site ids) ----
 const CORD = /^(bilateral_cord_(transverse|anterior|posterior|central)|(left|right)_cord_(hemi|lateral))$/; // a true cord lesion: not the conus, not a system degeneration
 const PONS = /^(locked_in|brainstem_aras|pontomesencephalic_tegmentum|(left|right)_pons_)/;
-const PARASAG = /^(left|right)_cortex_(aca|paracentral|motor_leg)$/;
+// owner-approved 2026-11-05 (composite-sites round, row 7): R1 #12 asked for "a parasagittal site"; the bilateral one is the
+// place it asked for, and nothing else can pass through it.
+const PARASAG = /^((left|right)_cortex_(aca|paracentral|motor_leg)|bilateral_paracentral)$/;
 
 // ---- the probes: T = counted (textbook or owner-approved), R = awaiting the owner's ruling ----
 const CASES = [];
