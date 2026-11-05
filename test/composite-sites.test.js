@@ -90,6 +90,22 @@ const BILATERAL_PCA = "cortical_blindness@none amnesia@none";
   ok("row 2: the basilar picture → only the pons", whereOf(BASILAR).where === "pons", whereOf(BASILAR).where);
 }
 
+// ---- 3. Both MLFs (row 3) ----
+{
+  ok("row 3: the both-MLFs site exists, built from the paramedian pons's INO rows",
+     has("bilateral_pons_mlf") && JSON.stringify(SITE.bilateral_pons_mlf.structures) === JSON.stringify(rowsOf("pons", "medial", s => s.produces === "ino")));
+  ok("row 3: it predicts an INO on each side and nothing else",
+     has("bilateral_pons_mlf") && [...expectedFindings(SITE.bilateral_pons_mlf)].sort().join() === "ino@left,ino@right");
+  const ino = answer("ino@left ino@right");
+  ok("row 3: bilateral INO → both MLFs, one lesion", ino.id === "bilateral_pons_mlf" && ino.multi === null, `${ino.id} multi=${!!ino.multi}`);
+  ok("row 3: its phonebook entry", has("bilateral_pons_mlf") && /internuclear/i.test(nameForSite(SITE.bilateral_pons_mlf).name));
+  ok("row 3: its causes are the medial pons's", has("bilateral_pons_mlf") &&
+     causesFor(SITE.bilateral_pons_mlf).all.map(c => c.name).join() === causesFor(SITE.left_pons_medial).all.map(c => c.name).join());
+  const one = answer("ino@left");
+  ok("row 3 guard: a one-sided INO never reads both MLFs", one.id !== "bilateral_pons_mlf" && !ids(one.r).includes("bilateral_pons_mlf"), one.id);
+  ok("row 3 guard: one-and-a-half still → the left medial pons", answer("gaze_palsy@left ino@left").id === "left_pons_medial");
+}
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — composite sites (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

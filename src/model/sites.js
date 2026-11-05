@@ -899,6 +899,15 @@ export function composeParasagittalSites() {
     territory: "both paracentral lobules (parasagittal — falx / superior sagittal sinus / both ACAs)", structures, composite: true }] : [];
 }
 
+// BILATERAL INO — both MLFs (composite-sites round, row 3, owner-approved 2026-11-05). The two fasciculi lie side by side in
+// the paramedian tegmentum, so one small paramedian lesion takes both. Derived: the paramedian pons's INO rows, emitted on
+// both sides. Its causes, plan, label and tables fall back to pons_medial; its phonebook entry is its own.
+export function composeBilateralMlfSites() {
+  const structures = STRUCTURES.filter(s => s.level === "pons" && s.part === "medial" && s.produces === "ino").map(s => s.id);
+  return structures.length ? [{ id: "bilateral_pons_mlf", side: "bilateral", level: "pons", part: "medial",
+    territory: "both medial longitudinal fasciculi (paramedian pontine tegmentum)", structures, composite: true }] : [];
+}
+
 // PLEXUS SITES. A trunk / plexus lesion affects exactly the roots that feed it, so each is a plain UNION
 // of the constituent root sites' structures — the same composer shape as the vascular composites. A
 // two-adjacent-root pattern is then explained by ONE trunk (Erb/Klumpke), which beats two separate root

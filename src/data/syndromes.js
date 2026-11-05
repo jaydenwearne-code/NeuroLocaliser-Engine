@@ -28,6 +28,12 @@ export const BY_SITE = {
     ddx: ["Pontine infarct (basilar perforators)", "Central pontine myelinolysis", "Demyelination", "Pontine glioma"],
     red: "Basilar territory disease can progress to locked-in syndrome — watch closely."
   },
+  bilateral_pons_mlf: {
+    name: "Bilateral internuclear ophthalmoplegia (both MLFs)",
+    note: "The two medial longitudinal fasciculi lie side by side in the paramedian tegmentum, so one small paramedian lesion takes both: neither eye adducts on lateral gaze, with nystagmus of the abducting eye on each side; convergence may be spared.",
+    ddx: ["Demyelination (MS) — the commonest cause in a younger patient", "Brainstem infarct (basilar perforators) in an older patient", "Wernicke's encephalopathy", "Tumour", "Myasthenia gravis (pseudo-INO)"],
+    red: "A bilateral INO in an older patient, or with any other brainstem sign, is a posterior-circulation stroke until imaging says otherwise."
+  },
   pons_lateral: {
     name: "Lateral pontine syndrome (Marie-Foix)",
     note: "Middle cerebellar peduncle, spinothalamic tract and vestibular nuclei laterally (AICA territory).",
