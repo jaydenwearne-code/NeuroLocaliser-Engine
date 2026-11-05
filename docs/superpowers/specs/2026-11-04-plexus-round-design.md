@@ -2,7 +2,8 @@
 
 **Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. Rows 3–7 IMPLEMENTED (2026-11-05,
 `f5af58c..e171a4e`, plan `docs/superpowers/plans/2026-11-05-plexus-round.md`): `npm test` 87 suites / 7399 green; audit
-105/115 probes, 1046 passed / 13 failed. Rows 8–10 wait for content round 2 (§9).**
+105/115 probes, 1046 passed / 13 failed. Rows 8–10 wait for content round 2, DRAFTED in §10 (14 rows) and awaiting
+the owner's ruling.**
 
 > *"Approve as written"* — the owner, on round 1 of the plexus round
 
@@ -315,3 +316,74 @@ A new place has to clear every content gate before it ships. For the lumbosacral
 
 The same list applies to a whole brachial plexus place if row 10 says yes. I would draft them as a review round in the
 shape of the cord fix's content round (§10 of `2026-10-22-spinal-cord-fix-design.md`).
+
+## 10. Content round 2 — the whole lumbosacral plexus, and row 10 (DRAFT, awaiting the owner's ruling)
+
+This round drafts the content §9 asks for and recommends on row 10. There are 14 rows, and approving the table approves
+every recommendation as written. Rows 8–9 were approved in principle on 2026-11-05: the L4 split, built only together
+with a whole lumbosacral plexus place. Nothing here is built yet.
+
+**Measured on a scratch copy of the branch tip (`9639613`, rows 3–7 built), with rows 8–9 and every row below applied:**
+- **Audit:** unchanged at 105/115 probes, 1047 passed and 13 failed. The one extra check is the new place's own mirror,
+  and it passes.
+- **`npm test`:** every content gate passes: the causes depth, the plan gates (no orphan plan, no unreachable per-place
+  entry, no plan reading identically everywhere), the red gate, the hard gate and topography. Three things fail, each
+  a pin that rows 8–9 change on purpose (row C13):
+  - two pins of the foot-drop worked example ("three candidates"; "Where names the other two");
+  - this round's own suite, whose composition table does not yet list the new place.
+- **Safety sample (the 9,490 frozen pairs):** 7 two-lesion claims become one lumbosacral plexus, and none are added. 302
+  covers change places, 291 of them moving from the lumbar or sacral plexus to the whole place (the tie-break, O3), and
+  6 grow.
+
+**What the reader sees, today → with rows 8–9 and this content.** Real cards (`answerFor`), left leg.
+
+| Picture | Today | Recommended |
+|---|---|---|
+| Whole-leg plexopathy in nerve words: front-thigh, inner-thigh and below-knee numbness, weak above and below the knee, knee and ankle jerks lost | *No single place … — likely lumbar plexus and sacral plexus. Together: Vasculitis.* | *Left lumbosacral plexus.* · *Most likely Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy). Must not miss: Pelvic or retroperitoneal tumour.* · URGENT |
+| Knee jerk and ankle jerk lost on one side | *Left sacral plexus* (which cannot lose the knee jerk) · *Most likely Pelvic malignancy* | *Left lumbosacral plexus* · *Most likely Diabetic lumbosacral radiculoplexus neuropathy …* |
+| L4 + L5 radiculopathy with root pain | *Left sacral plexus* | *Left lumbosacral plexus* |
+| L3 root + S1 root pictures | *… sacral plexus and L3 root. Together: Vasculitis.* | *Left lumbosacral plexus* |
+| **L2 numbness + S1 numbness** | *… L2 root and S1 root. Together: Vasculitis.* | *Left lumbosacral plexus.* **Why:** *L2 numbness + S1 numbness → only the left plexus* (row C12) |
+| The foot-drop worked example | *Left common peroneal nerve. 2 other places also fit: Left L5 root, Left sacral plexus.* | *… 3 other places also fit: Left L5 root, Left sacral plexus, and 1 more.* (row C13) |
+
+### A. The place
+
+| # | Item | Recommendation |
+|---|---|---|
+| C1 | The label on the card | **"lumbosacral plexus"**, derived from the place's id as "lumbar plexus" and "sacral plexus" are. No label entry is needed |
+| C2 | The phonebook name | **"Lumbosacral plexopathy (L2-S1)"** |
+| C3 | The phonebook note | **"The whole leg plexus: weakness above AND below the knee — hip flexion, adduction and knee extension with foot drop, plantarflexion and hip abduction — with the knee and ankle jerks lost and numbness over the thigh and below the knee. Broader than any single root, nerve or half of the plexus."** |
+| C4 | The differential list | **Diabetic lumbosacral radiculoplexus neuropathy (amyotrophy); pelvic or retroperitoneal malignancy; retroperitoneal or pelvic haematoma; radiotherapy; several lumbosacral roots (the mimic)** |
+| C5 | The red flag | **"A painful whole-leg plexopathy with weight loss is diabetic amyotrophy or malignant infiltration until imaging and a diabetes screen say otherwise — and on anticoagulation, image urgently for a haematoma."** |
+
+### B. The causes, in this order
+
+Each cause reuses an existing plan, except C7's. "Likelihood" and "red" are the What card's ranking and its
+must-not-miss flag.
+
+| # | Cause · category · onset · likelihood | Feature (the "what points to it" clue) | Recommendation |
+|---|---|---|---|
+| C6 | **Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy)** · metabolic · subacute · common | "Severe asymmetric hip, thigh or buttock PAIN, then wasting and weakness both ABOVE and BELOW the knee with marked WEIGHT LOSS in a type 2 diabetic, often well controlled; it commonly spreads to the other leg, and recovery is slow and often incomplete" | **Approve**; it leads the What line |
+| | **Pelvic or retroperitoneal tumour** · neoplastic · subacute, chronic · common · **red** | "Progressive SEVERE pain with weakness spreading above and below the knee in a patient with a pelvic, colorectal, prostatic or retroperitoneal cancer, a sarcoma or lymphoma — tumour along the psoas and the pelvic sidewall reaches both halves of the plexus" | **Approve**; it is the must-not-miss |
+| | **Retroperitoneal or pelvic haematoma** · vascular · hyperacute, acute · uncommon · **red** | "Sudden flank, groin or buttock pain with whole-leg weakness on ANTICOAGULATION or after femoral or iliac arterial access — a bleed large enough to reach both halves of the plexus; a falling haemoglobin confirms it" | **Approve** |
+| | **Radiation plexopathy** · iatrogenic · chronic · uncommon | "PAINLESS slowly progressive weakness of the whole leg, sometimes both legs, with MYOKYMIA on EMG years after pelvic or para-aortic radiotherapy — painlessness is the discriminator from recurrent tumour" | **Approve** |
+| | **Vasculitic plexopathy** · inflammatory · acute, subacute · rare · **red** | "Painful STEPWISE weakness crossing the lumbar and sacral territories in a patient WITHOUT diabetes, with weight loss, rash or raised inflammatory markers — the non-diabetic radiculoplexus neuropathy is a microvasculitis and responds to immunotherapy" | **Approve** |
+| | **Pelvic abscess or infection** · infective · acute, subacute · rare · **red** | "Fever with deep pelvic, back or flank pain and whole-leg weakness — a psoas or pelvic collection, after pelvic surgery or delivery, or from a colorectal or urological source" | **Approve** |
+| C7 | **Several lumbosacral roots (multilevel spondylosis or canal stenosis)** · **mimic** · chronic, subacute · uncommon | "BACK pain with root pain in more than one dermatome, worse on standing and walking or on root stretch — several ROOTS rather than the plexus; a lumbar MRI usually shows it, and abnormal paraspinals on EMG point to the roots" | **Approve.** It is the commonest real alternative, and the card needs it most for row C12's pictures. It is "uncommon" so the diabetic cause still leads. Its new plan joins the degenerative-radiculopathy family, urgency routine: level *"the dermatome, reflex and muscles of EACH root, with the root-stretch signs"*; flavour *"the commonest mimic of a lumbosacral plexopathy: BACK pain, root pain in more than one dermatome, and symptoms worse on standing and walking. A lumbar MRI usually shows the multilevel compression, and abnormal paraspinals on EMG put it in the roots rather than the plexus"* |
+
+### C. The workup and the plans
+
+| # | Item | Recommendation |
+|---|---|---|
+| C8 | First-line investigations | **"URGENT CT ABDOMEN AND PELVIS, from the kidneys to the pelvic floor, if there is anticoagulation, fever or a cancer history — haematoma, abscess and tumour can each reach both halves of the plexus"; "CHECK CLOTTING/INR and haemoglobin, GLUCOSE/HbA1c and inflammatory markers"; "EMG and nerve conduction studies with PARASPINAL sampling — to separate a plexopathy from several root lesions, and to look for myokymia".** Urgency URGENT. Referral: **"URGENT general/vascular surgery and haematology if haematoma; oncology if infiltration; neurology/diabetes team otherwise."** |
+| C9 | Immediate, confirmatory and monitoring tiers | Immediate: **"Test ABOVE and BELOW the knee in one leg: hip flexion, adduction and knee extension, then dorsiflexion, plantarflexion and hip abduction, with the knee and ankle jerks — weakness on both sides of the knee is what makes it the whole plexus"; "Ask about ANTICOAGULATION, fever, cancer and radiotherapy, and diabetes with WEIGHT LOSS"; "Examine the BACK and the OTHER leg: back pain and root-stretch signs point to the roots; spread to the other leg points to diabetic amyotrophy or vasculitis".** Confirmatory: **"MRI of the lumbosacral plexus and pelvis with contrast, and MRI of the lumbar spine for multilevel root compression"; "EMG with paraspinal sampling (normal paraspinals favour the plexus); myokymia favours radiation injury"; "Biopsy of any mass; nerve biopsy when vasculitis is suspected and imaging is unrevealing".** Monitoring: **"Serial haemoglobin with a haematoma; urgent decompression for an expanding bleed"; "A knee brace for buckling and an ankle-foot orthosis; falls prevention and physiotherapy"; "RE-IMAGE if pain progresses despite negative imaging — infiltration can be occult; diabetic amyotrophy recovers slowly with pain control".** No specific figures |
+| C10 | The plans' per-place lines (each reused plan must read differently at a second place) | Diabetic amyotrophy: level **"the quadriceps AND the ankle — weakness on both sides of the knee is what makes it lumbosacral rather than femoral — and the other leg, which it often reaches later"**. Pelvic or retroperitoneal tumour: level **"the whole leg — hip flexion and knee extension as well as ankle movement and sphincter function"**, flavour **"a whole-plexus picture means tumour along both the psoas and the pelvic sidewall, so image from the kidneys to the pelvic floor rather than the pelvis alone"**. Haematoma: level **"hip flexion, knee extension and ankle movement together, with the haemoglobin"**, flavour **"a bleed that reaches both halves of the plexus is a large one — the haemoglobin and the anticoagulation matter as much as the leg"**. Radiation: level **"the whole leg, from hip flexion to the ankle"**, flavour **"after pelvic or para-aortic radiotherapy a whole-leg picture may be the plexus or the cauda equina, and symptoms in both legs favour the cauda"**. Vasculitic: level **"hip flexion, knee extension and the ankle, and the other leg"**. Pelvic abscess: level **"hip flexion and knee extension as well as ankle movement, with the temperature and the inflammatory markers"** |
+| C11 | The topography row and the anatomy sheet | Topography `plexus\|lumbosacral_plexus`: no lobe, deep, no system, like every plexus row. The sheet's plexus line adds **"lumbosacral = L2–S1 + femoral, obturator and sciatic (the whole leg plexus)"**. The six L4 rows show the plexus each travels in (row 1) |
+
+### D. What it costs, and row 10
+
+| # | Item | Recommendation |
+|---|---|---|
+| C12 | **Any two lumbosacral roots read as one lumbosacral plexopathy.** The whole place carries every L2–S1 row, so "L2 numbness + S1 numbness" reads "only the left plexus", where today it reads two roots. Two non-adjacent dermatomes are classically two roots, from multilevel spondylosis | **Accept, with C7.** Today the same pictures read two roots or "sacral plexus + root", each joined by "Vasculitis", so neither reading names spondylosis. The mimic row puts it on the What card. **Measured and rejected:** a whole place WITHOUT the dermatome rows keeps L2 + S1 as two roots, but 100 sampled pictures lose their claim (the cover grows past three places), 9 new two-lesion claims appear, and 199 covers grow |
+| C13 | Re-pins when rows 8–9 are built | **Approve these, and only these:** `discriminators` "foot drop has three candidates" → four; `answer` "Foot drop — Where names the other two" → *"Left common peroneal nerve. 3 other places also fit: Left L5 root, Left sacral plexus, and 1 more."*; the worked example's own comment ("three candidates appear") → four; `plexus-round` gains the lumbosacral place in its composition table, and its "rows 8–9 not built" pin flips. The example still teaches the narrowing: weak hip abduction still names L5, and first web-space numbness still names the nerve |
+| C14 | **Row 10: a whole brachial plexus place (C5–T1)** | **No.** Measured on the same copy: the flail arm reads one place, but the place takes every arm row, so 14 sampled two-lesion claims become one "brachial plexus". Among them are a C8 root with a posterior interosseous palsy, a T1 root with a musculocutaneous palsy, and C5 + C7 roots. It breaks the pinned teaching that C5 + C7 numbness is two roots (`pns`, 2 checks), and 40 covers move to it. The flail arm stays three places, an open observation: a complete traction injury is a root-versus-trunk surgical question that a single place would hide |
