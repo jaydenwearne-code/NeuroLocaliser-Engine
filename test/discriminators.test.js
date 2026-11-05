@@ -14,11 +14,12 @@ const ok = (l, c, extra = "") => { c ? pass++ : fail++; console.log((c ? "PASS  
 const build = toks => { const obs = new Set(toks); return { obs, r: solve(obs, {}) }; };
 
 // ---- FOOT DROP: the case the worked examples exist to teach ----
-// Three candidates, all explaining all three findings, separated only by what else each would produce.
+// Four candidates (the whole lumbosacral plexus joined in the plexus round), all explaining all three findings,
+// separated only by what else each would produce.
 {
   const { obs, r } = build(["weak_ankle_dorsiflexion@left", "weak_great_toe_extension@left", "weak_foot_eversion@left"]);
   const cands = r.display;
-  ok(`foot drop has three candidates (${cands.length})`, cands.length === 3);
+  ok(`foot drop has four candidates (${cands.length})`, cands.length === 4);
   ok("every candidate explains every entered finding — which is why the grid of explanations is useless",
      cands.every(c => explainedBy(c, obs).length === 3));
 

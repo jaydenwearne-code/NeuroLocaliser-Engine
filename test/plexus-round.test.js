@@ -6,6 +6,7 @@ import { solve, candidateSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { composePlexusSites } from "../src/model/sites.js";
 import { nameForSite } from "../src/data/syndromes.js";
+import { STRUCTURES } from "../src/model/structures.js";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, detail = "") => { cond ? pass++ : fail++; console.log((cond ? "PASS  " : "FAIL  ") + label + (cond ? "" : `  ${detail}`)); };
@@ -30,6 +31,7 @@ const NERVE_ROWS = {
   lower_trunk: ["uln_el_sens"],
   lumbar_plexus: ["fem_sens", "obt_sens"],
   sacral_plexus: ["sci_sens"],
+  lumbosacral_plexus: ["fem_sens", "obt_sens", "sci_sens"],
 };
 for (const s of composePlexusSites().filter(s => s.side === "left")) {
   const nerveRows = s.structures.filter(id => !id.startsWith("root_")).sort();
@@ -89,16 +91,39 @@ ok("row 2: root pain stays shared — the upper trunk still predicts root pain",
   ok("guard: Erb + root pain is still one upper-trunk lesion", ids(r)[0] === "left_plexus_upper_trunk" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
 { const r = solve(T("weak_hip_flexion@left weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left radicular_pain@left"));
   ok("guard: diabetic amyotrophy with root pain is still one lumbar-plexus lesion", ids(r)[0] === "left_plexus_lumbar_plexus" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
-ok("guard: the foot-drop worked example still has its three places",
-   ids(solve(T("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_foot_eversion@left"))).join() === "left_nerve_peroneal_common,left_root_l5,left_plexus_sacral_plexus");
+ok("guard: the foot-drop worked example has four places (C13: the whole lumbosacral plexus joins)",
+   ids(solve(T("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_foot_eversion@left"))).join() === "left_nerve_peroneal_common,left_root_l5,left_plexus_sacral_plexus,left_plexus_lumbosacral_plexus");
 ok("guard: + weak hip abduction → the L5 root", first("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_foot_eversion@left weak_hip_abduction@left") === "left_root_l5");
 ok("guard: Klumpke → the lower trunk", first("weak_thumb_abduction@left weak_finger_abduction@left weak_finger_flexion@left sensory_c8@left sensory_t1@left") === "left_plexus_lower_trunk");
 ok("guard: C8 + thumb and finger abduction → the C8 root or the lower trunk (audit probe)",
    /^left_(root_c8|plexus_lower_trunk)$/.test(first("weak_thumb_abduction@left weak_finger_abduction@left sensory_c8@left") || ""));
 ok("guard: Pancoast → the lung apex",
    first("miosis@left ptosis@left anhidrosis_face@left sensory_c8@left sensory_t1@left weak_finger_abduction@left radicular_pain@left") === "left_sympathetic_pancoast");
-ok("rows 8–9 not built: the sacral plexus still carries L4's knee jerk (until the lumbosacral place exists)",
-   predicts("left_plexus_sacral_plexus", "reflex_knee_loss@left"));
+// ---- Rows 1, 8, 9: L4 divides; the whole lumbosacral plexus ----
+{ const l4 = STRUCTURES.filter(s => s.level === "root" && s.part === "l4");
+  ok("row 1: every L4 row names the plexus it travels in", l4.length === 8 && l4.every(s => Array.isArray(s.plexus) && s.plexus.length > 0),
+     l4.filter(s => !Array.isArray(s.plexus)).map(s => s.id).join(", "));
+  ok("row 1: no other root row carries a plexus tag (only L4 divides)",
+     STRUCTURES.filter(s => s.level === "root" && s.part !== "l4" && s.plexus).length === 0); }
+ok("row 8: the lumbar plexus no longer carries L4's tibialis anterior or posterior",
+   !predicts("left_plexus_lumbar_plexus", "weak_ankle_dorsiflexion@left") && !predicts("left_plexus_lumbar_plexus", "weak_foot_inversion@left"));
+ok("row 8: the sacral plexus no longer carries L4's quadriceps, knee jerk, adductors or medial-shin numbness",
+   ["weak_knee_extension", "reflex_knee_loss", "weak_hip_adduction", "sensory_l4"].every(f => !predicts("left_plexus_sacral_plexus", `${f}@left`)));
+ok("row 8: both plexuses keep L4's wasting and root pain",
+   ["left_plexus_lumbar_plexus", "left_plexus_sacral_plexus"].every(id => predicts(id, "wasting@left") && predicts(id, "radicular_pain@left")));
+{ const r = solve(T("weak_knee_extension@left weak_ankle_dorsiflexion@left reflex_knee_loss@left sensory_l4@left"));
+  ok("row 8: quadriceps + foot drop + knee jerk + medial shin → the L4 root first, the lumbosacral plexus also fitting",
+     ids(r)[0] === "left_root_l4" && ids(r).includes("left_plexus_lumbosacral_plexus") && !ids(r).includes("left_plexus_sacral_plexus"), ids(r).join(", ")); }
+ok("row 9: the whole lumbosacral plexus carries the knee AND the ankle jerk",
+   !!SITE["left_plexus_lumbosacral_plexus"] && predicts("left_plexus_lumbosacral_plexus", "reflex_knee_loss@left") && predicts("left_plexus_lumbosacral_plexus", "reflex_ankle_loss@left"));
+oneLesion("femoral_sensory@left obturator_sensory@left sciatic_sensory@left weak_hip_flexion@left weak_knee_extension@left weak_ankle_dorsiflexion@left weak_ankle_plantarflexion@left reflex_knee_loss@left reflex_ankle_loss@left",
+  "left_plexus_lumbosacral_plexus", "row 9: a whole-leg plexopathy in nerve words → the lumbosacral plexus, one lesion");
+oneLesion("reflex_knee_loss@left reflex_ankle_loss@left", "left_plexus_lumbosacral_plexus", "row 9: knee jerk + ankle jerk lost on one side → the lumbosacral plexus");
+ok("row 9 guard: L5 radiculopathy with root pain still leads with the L5 root",
+   first("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_hip_abduction@left sensory_l5@left radicular_pain@left") === "left_root_l5");
+ok("row 9 guard: L4 (R1 #4) still leads with the L4 root", first("weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left sensory_l4@left") === "left_root_l4");
+ok("C12 (accepted): L2 numbness + S1 numbness reads one lumbosacral plexus", first("sensory_l2@left sensory_s1@left") === "left_plexus_lumbosacral_plexus");
+ok("C14: there is no whole brachial plexus place", !SITE["left_plexus_brachial_plexus"]);
 
 // ---- Wording (rows 11, 12) ----
 ok("row 11: the upper trunk's note names the deltoid patch and the lateral forearm",
