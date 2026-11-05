@@ -3,7 +3,9 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: NOT STARTED.** It implements every ruling of round 1 in
+**Status: IMPLEMENTED (2026-11-05), `6b3a3c1..480a4bb` + docs; every step verified (npm 87 suites / 7420 green; audit
+1055/4).** Task 7's browser drive loaded the pictures by case link, and the bilateral INO also by row taps. The hidden pane's
+screenshot was unusable (frozen transitions), so the card text was read instead. It implements every ruling of round 1 in
 `docs/superpowers/specs/2026-11-05-composite-sites-design.md` (owner: *"Approve as written"*, 2026-11-05).
 
 **Goal:** Fix the 9 counted clinical-audit checks where one lesion spans places the model held only separately: syrinx,

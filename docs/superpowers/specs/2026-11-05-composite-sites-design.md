@@ -1,6 +1,13 @@
 # The composite sites — nine audit checks (design, 2026-11-05)
 
-**Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written.**
+**Status: RULED and IMPLEMENTED (2026-11-05) on `fix/composite-sites` (`6b3a3c1..480a4bb` + docs). Round 1: every
+recommendation APPROVED as written.**
+
+Measured on the branch:
+- `npm test`: 87 suites, 7420 assertions, green, no re-pins;
+- audit: 112 / 115 probes, 1055 passed / 4 failed. The 4 are the raised-pressure round.
+- Browser-checked on port 8142: the seven §6 pictures read as the cards below, with the row-10 labels. A bilateral INO
+  entered by row taps reads the same as by case link. There are no console errors.
 
 > *"Approve as written"* — the owner, on round 1 of the composite-sites design
 
