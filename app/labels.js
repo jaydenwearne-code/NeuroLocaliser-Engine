@@ -267,7 +267,7 @@ export function readingLabel(site) {
   const v = site && site.variant;
   if (!v) return "";
   if (site.segments) return ` (at about ${spanName(site.segments, "–")}, root signs ${site.atLevel.sides.length > 1 ? "on both sides" : "on the " + site.atLevel.sides[0]})`;
-  return { "arms-spared": " (arms spared)", shock: " (spinal shock)", "shock:arms-spared": " (spinal shock, arms spared)", basis: " — with the basis pontis" }[v] || "";
+  return { "arms-spared": " (arms spared)", shock: " (spinal shock)", "shock:arms-spared": " (spinal shock, arms spared)", basis: " — with the basis pontis", syrinx: " (reaching the corticospinal tracts)" }[v] || "";
 }
 
 export function plainSiteName(site, opts = {}) {

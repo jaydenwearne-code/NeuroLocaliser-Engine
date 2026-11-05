@@ -40,7 +40,10 @@ export function candidateSites() {
 // in spinal shock (sites.js cordVariants; spinal cord fix, round 1). A variant keeps its site's id, so content, links
 // and pins are untouched, and every ranked list keeps each site once, as its best variant (firstPerId).
 // candidateSites() stays one site per id for everything that enumerates sites (the atlas, the per-site tests).
-export function solverSites(opts = {}) {
+// `entered`: what the clinician entered. A reading that NEEDS its defining finding (`needs`, composite-sites round, row 5:
+// the expanding syrinx needs the cape) is offered only when it is entered — as spinal shock is offered only with a stated
+// level. Callers without an entered set (the Why index) never see a gated reading.
+export function solverSites(opts = {}, entered = null) {
   const level = normaliseLevel(opts.sensoryLevel);
   const out = [];
   for (const site of candidateSites()) {
@@ -49,6 +52,7 @@ export function solverSites(opts = {}) {
       // Spinal shock needs a stated level (spinal cord fix, row 1c): the level is the bedside discriminator from GBS,
       // and without it the shock reading takes GBS's own picture (measured: the GBS probe, vignette and Why clue).
       if (v.needsLevel && !level) continue;
+      if (v.needs && !(entered && [...entered].some(t => v.needs.includes(t.split("@")[0])))) continue;
       // A stated level means a lesion at or above it (row 1b): a reading whose highest segment lies below it is out.
       if (level && v.top && levelIndex(v.top) > levelIndex(level)) continue;
       out.push(variantOf(site, v));
@@ -68,7 +72,7 @@ function localisingObserved(observedSet) {
 
 // ---- SINGLE-LESION RANKING ----
 export function rankSingle(observedSet, opts = {}) {
-  return firstPerId(solverSites(opts)
+  return firstPerId(solverSites(opts, observedSet)
     .map(site => scoreSite(site, observedSet, opts))
     .filter(r => r.score > 0)
     .sort((a, b) => b.score - a.score));
@@ -179,7 +183,7 @@ export function differential(observedSet, opts = {}) {
   const againstNormal = normalNegatives(read);
   const level = normaliseLevel(opts.sensoryLevel);
   const cands = [];
-  for (const site of solverSites(opts)) {
+  for (const site of solverSites(opts, observedSet)) {
     if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
     let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
     let contradicted = false;
@@ -216,7 +220,7 @@ export function ruledOutSites(observedSet, opts = {}) {
   if (!negatives.size) return [];
   // Per site, across its variants: ruled out only when EVERY variant that would explain something is contradicted.
   const byId = new Map();
-  for (const site of solverSites(opts)) {
+  for (const site of solverSites(opts, observedSet)) {
     let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
     let explainsSomething = false;
     for (const t of read) if (exp.has(t)) { explainsSomething = true; break; }
@@ -303,7 +307,7 @@ export function minimalSet(observedSet, opts = {}) {
 // a place predicts on that side — see "THE SAME-FAMILY NEAR-FIT" there.
 export function nearFit(observedSet, opts = {}) {
   const observed = [...observedSet];
-  const sites = solverSites(opts);
+  const sites = solverSites(opts, observedSet);
   const read = enteredSet(observedSet);   // word families, as in differential()
   const explainsAll = tokens => {
     for (const site of sites) {

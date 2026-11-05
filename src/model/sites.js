@@ -372,8 +372,12 @@ export function composeHemiLevelSites() {
 // solver tell ASA infarction from a complete transverse lesion — a derived consequence, no rule.
 // The central cord takes more than the commissure: the corticospinal ARM fibres (arms weaker than legs) and the
 // anterior horn cells at its level (wasting) — spinal cord fix, row 8, 2026-10-22. Both rows are reused. Leg signs
-// for an expanding syrinx are deferred to the composite-sites round; bladder stays out (owner ruling 2026-09-26).
+// for an expanding syrinx are its syrinx READING (composite-sites round, rows 4–5), offered only with the cape; bladder
+// stays out (owner ruling 2026-09-26).
 const CENTRAL_REACH = ["cst_cord_arm", "ah_wasting"];
+// The cord's LEG corticospinal rows: the anterior cord's corticospinal rows other than the arm rows. An expanding syrinx
+// reaches them from the centre (composite-sites round, row 4).
+const SYRINX_REACH = () => STRUCTURES.filter(s => s.level === "cord" && s.part === "anterior" && s.id.startsWith("cst_cord_") && !CORD_ARM_ROWS.has(s.id)).map(s => s.id);
 export function composeBilateralCordSites() {
   const cordParts = ["anterior", "posterior", "central"];
   const structuresForPart = part =>
@@ -394,7 +398,10 @@ export function composeBilateralCordSites() {
       side: "bilateral", level: "cord", part,
       territory: TERRITORY[`cord|${part}`],
       structures, composite: true,
-      ...(part === "anterior" ? { variants: cordVariants(structures) } : {})
+      ...(part === "anterior" ? { variants: cordVariants(structures) } : {}),
+      // the SYRINX READING (rows 4–5): the central lesion grown into the lateral columns — legs weak and spastic below it.
+      // Offered only with the cape that defines the central cord: ungated it takes "spastic legs + a cervical level".
+      ...(part === "central" ? { variants: [{ key: "syrinx", needs: ["suspended_sensory"], structures: [...structures, ...SYRINX_REACH()] }] } : {})
     });
   }
 

@@ -106,6 +106,27 @@ const BILATERAL_PCA = "cortical_blindness@none amnesia@none";
   ok("row 3 guard: one-and-a-half still → the left medial pons", answer("gaze_palsy@left ino@left").id === "left_pons_medial");
 }
 
+// ---- 4. The syrinx reading and its gate (rows 4, 5 and 13) ----
+{
+  const syr = answer(SYRINX);
+  ok("row 4: cape + wasted hands + spastic legs → the central cord read reaching the corticospinal tracts, one lesion",
+     syr.id === "bilateral_cord_central" && syr.reading === "syrinx" && syr.multi === null, `${syr.id} {${syr.reading}} multi=${!!syr.multi}`);
+  const legs = answer("suspended_sensory@left suspended_sensory@right weak_leg@left weak_leg@right babinski@left babinski@right hyperreflexia@left hyperreflexia@right");
+  ok("row 4: cape + spastic legs, without wasted hands → the same reading, one lesion", legs.id === "bilateral_cord_central" && legs.multi === null, `${legs.id} multi=${!!legs.multi}`);
+  ok("row 4: the reading's label", syr.id === "bilateral_cord_central" && readingLabel(syr.r.display[0].site) === " (reaching the corticospinal tracts)",
+     JSON.stringify(syr.id === "bilateral_cord_central" ? readingLabel(syr.r.display[0].site) : null));
+  const c4 = answer(SPASTIC_LEGS, { sensoryLevel: "C4" });
+  ok("row 5: without a cape the reading is not offered — spastic legs + C4 still → the anterior cord, level named",
+     c4.id === "bilateral_cord_anterior" && /C4/.test(c4.r.level?.note || ""), `${c4.id} {${c4.reading}}`);
+  ok("row 5: …and spastic legs alone never list the reading", !solve(T(SPASTIC_LEGS)).display.some(c => c.site.variant === "syrinx"));
+  const cape = answer("suspended_sensory@left suspended_sensory@right");
+  ok("row 4 guard: a bare cape still → the central cord, plain", cape.id === "bilateral_cord_central" && cape.reading === null, `{${cape.reading}}`);
+  const cc = answer("weak_arm@left weak_arm@right suspended_sensory@left suspended_sensory@right");
+  ok("row 4 guard: both arms weak + cape still → the central cord, plain, one lesion", cc.id === "bilateral_cord_central" && cc.reading === null && cc.multi === null);
+  const ah = STRUCTURES.find(s => s.id === "ah_wasting");
+  ok("row 13: the shared anterior-horn wasting row no longer says 'generalised'", !!ah && !/generalised/i.test(ah.note), ah && ah.note);
+}
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — composite sites (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
