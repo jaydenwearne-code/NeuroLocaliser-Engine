@@ -581,6 +581,10 @@ export default {
     "Pelvic or retroperitoneal tumour": {
       slots: { level: "hip flexion, knee extension, adduction and thigh sensation",
                flavour: "the lumbar plexus lies WITHIN the psoas, so a retroperitoneal mass reaches it early — and the psoas sign, a hip held flexed and painful to extend, is the bedside clue" },
+      bySite: {
+        plexus_lumbosacral_plexus: { level: "the whole leg — hip flexion and knee extension as well as ankle movement and sphincter function",
+                                     flavour: "a whole-plexus picture means tumour along both the psoas and the pelvic sidewall, so image from the kidneys to the pelvic floor rather than the pelvis alone" },
+      },
     },
     "Pelvic malignancy (cervical, rectal, prostate, sarcoma)": {
       slots: { level: "ankle movement, hip extension, and sphincter function",

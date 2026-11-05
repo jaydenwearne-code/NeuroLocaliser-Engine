@@ -7,6 +7,9 @@ import { expectedFindings } from "../src/engine/forward.js";
 import { composePlexusSites } from "../src/model/sites.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { STRUCTURES } from "../src/model/structures.js";
+import { causesFor } from "../src/data/causes.js";
+import { nextStepsFor } from "../src/data/nextSteps.js";
+import { pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, detail = "") => { cond ? pass++ : fail++; console.log((cond ? "PASS  " : "FAIL  ") + label + (cond ? "" : `  ${detail}`)); };
@@ -132,6 +135,23 @@ ok("row 12: the lumbar plexus's note names front- and inner-thigh numbness",
    /^Front- and inner-thigh numbness \(femoral and obturator territories\)/.test(nameForSite(SITE["left_plexus_lumbar_plexus"]).note));
 ok("row 12: the lower trunk's note names the little finger and the medial forearm",
    /sensory loss over the little finger and the medial forearm/.test(nameForSite(SITE["left_plexus_lower_trunk"]).note));
+
+// ---- Content round 2 (C2–C10) ----
+{ const ls = SITE["left_plexus_lumbosacral_plexus"], pb = nameForSite(ls);
+  ok("C2: the place's name", pb.name === "Lumbosacral plexopathy (L2-S1)", pb.name);
+  ok("C3: the note names weakness above AND below the knee", /^The whole leg plexus: weakness above AND below the knee/.test(pb.note || ""));
+  ok("C5: the red flag names diabetic amyotrophy, infiltration and the haematoma",
+     /diabetic amyotrophy or malignant infiltration/.test(pb.red || "") && /image urgently for a haematoma/.test(pb.red || ""));
+  const all = causesFor(ls).all.map(c => c.name);
+  ok("C6: seven causes, diabetic amyotrophy first", all.length === 7 && all[0] === "Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy)", all.join(" | "));
+  ok("C7: the mimic is listed, as a mimic",
+     causesFor(ls).all.some(c => c.name === "Several lumbosacral roots (multilevel spondylosis or canal stenosis)" && c.cat === "mimic"));
+  const nx = nextStepsFor(ls);
+  ok("C8: urgent, with the approved referral", nx.urgency === "urgent" && /oncology if infiltration; neurology\/diabetes team otherwise/.test(nx.referral || ""), `${nx.urgency} ${nx.referral}`);
+  ok("C9: the first immediate step tests above AND below the knee", /^Test ABOVE and BELOW the knee/.test((nx.immediate || [])[0] || ""));
+  for (const name of ["Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy)", "Pelvic or retroperitoneal tumour", "Retroperitoneal or pelvic haematoma",
+                      "Radiation plexopathy", "Vasculitic plexopathy", "Pelvic abscess or infection", "Several lumbosacral roots (multilevel spondylosis or canal stenosis)"])
+    ok(`C10: \`${name}\` has a plan at the whole plexus`, !!pathologyPlanFor(name, ls)); }
 
 // ---- report ----
 console.log(`\nNeuroLocaliser — plexus round (round 1, rows 3–7)\n${pass} passed, ${fail} failed`);

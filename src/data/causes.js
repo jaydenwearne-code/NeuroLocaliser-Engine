@@ -1659,6 +1659,22 @@ export const CAUSES = {
     c("Diabetic radiculoplexus neuropathy", "metabolic", ["subacute"], "uncommon", false,
       "Painful asymmetric leg wasting with weight loss in a diabetic, crossing several roots"),
   ],
+  plexus_lumbosacral_plexus: [ // L2-S1, the whole leg plexus (plexus round, content round 2)
+    c("Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy)", "metabolic", ["subacute"], "common", false,
+      "Severe asymmetric hip, thigh or buttock PAIN, then wasting and weakness both ABOVE and BELOW the knee with marked WEIGHT LOSS in a type 2 diabetic, often well controlled; it commonly spreads to the other leg, and recovery is slow and often incomplete"),
+    c("Pelvic or retroperitoneal tumour", "neoplastic", ["subacute","chronic"], "common", true,
+      "Progressive SEVERE pain with weakness spreading above and below the knee in a patient with a pelvic, colorectal, prostatic or retroperitoneal cancer, a sarcoma or lymphoma — tumour along the psoas and the pelvic sidewall reaches both halves of the plexus"),
+    c("Retroperitoneal or pelvic haematoma", "vascular", ["hyperacute","acute"], "uncommon", true,
+      "Sudden flank, groin or buttock pain with whole-leg weakness on ANTICOAGULATION or after femoral or iliac arterial access — a bleed large enough to reach both halves of the plexus; a falling haemoglobin confirms it"),
+    c("Radiation plexopathy", "iatrogenic", ["chronic"], "uncommon", false,
+      "PAINLESS slowly progressive weakness of the whole leg, sometimes both legs, with MYOKYMIA on EMG years after pelvic or para-aortic radiotherapy — painlessness is the discriminator from recurrent tumour"),
+    c("Vasculitic plexopathy", "inflammatory", ["acute","subacute"], "rare", true,
+      "Painful STEPWISE weakness crossing the lumbar and sacral territories in a patient WITHOUT diabetes, with weight loss, rash or raised inflammatory markers — the non-diabetic radiculoplexus neuropathy is a microvasculitis and responds to immunotherapy"),
+    c("Pelvic abscess or infection", "infective", ["acute","subacute"], "rare", true,
+      "Fever with deep pelvic, back or flank pain and whole-leg weakness — a psoas or pelvic collection, after pelvic surgery or delivery, or from a colorectal or urological source"),
+    c("Several lumbosacral roots (multilevel spondylosis or canal stenosis)", "mimic", ["chronic","subacute"], "uncommon", false,
+      "BACK pain with root pain in more than one dermatome, worse on standing and walking or on root stretch — several ROOTS rather than the plexus; a lumbar MRI usually shows it, and abnormal paraspinals on EMG point to the roots"),
+  ],
   // --- Region E: named peripheral nerves + polyneuropathy + motor unit (2026-08-10) ---
   // The aetiologies repeat (compression, trauma, diabetes); the VALUE is the per-site sparing rule that
   // tells you the level, so every feature here carries a discriminator rather than a generic clue.

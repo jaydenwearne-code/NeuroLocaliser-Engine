@@ -1022,6 +1022,10 @@ export default {
     "Retroperitoneal or pelvic haematoma": {
       slots: { level: "ankle movement, hip extension and sphincter function",
                flavour: "a pelvic collection reaches the sacral plexus, so ask explicitly about bladder, bowel and sexual function, which are rarely volunteered" },
+      bySite: {
+        plexus_lumbosacral_plexus: { level: "hip flexion, knee extension and ankle movement together, with the haemoglobin",
+                                     flavour: "a bleed that reaches both halves of the plexus is a large one — the haemoglobin and the anticoagulation matter as much as the leg" },
+      },
     },
   }),
 
