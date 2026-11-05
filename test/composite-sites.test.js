@@ -53,6 +53,43 @@ const BILATERAL_PCA = "cortical_blindness@none amnesia@none";
   ok("row 6 guard: one weak leg + Babinski + incontinence still → the one-sided ACA", answer("weak_leg@right babinski@right urinary_incontinence@none").id === "left_cortex_aca");
 }
 
+// ---- 2. The pons (rows 1–2) ----
+{
+  const li = SITE.locked_in;
+  const basis = rowsOf("pons", "basis_pontis");
+  ok("row 1: locked-in is derived from every basis pontis row", basis.length > 0 && basis.every(id => li.structures.includes(id)));
+  ok("row 1: …and the paramedian pons's horizontal-gaze rows", rowsOf("pons", "medial", s => s.produces === "gaze_palsy").every(id => li.structures.includes(id)));
+  ok("row 1: locked-in predicts both Babinski signs, both facial palsies, anarthria and both horizontal gaze palsies",
+     ["babinski@left", "babinski@right", "facial_weakness@left", "facial_weakness@right", "dysarthria@none", "gaze_palsy@left", "gaze_palsy@right"].every(t => predicts("locked_in", t)));
+  ok("row 1: locked-in keeps preserved vertical gaze and never predicts reduced consciousness",
+     predicts("locked_in", "preserved_vertical_gaze@none") && !predicts("locked_in", "reduced_consciousness@none"));
+  const full = answer(LOCKED_IN_FULL);
+  ok("row 1: the full locked-in picture → locked-in, one lesion", full.id === "locked_in" && full.multi === null, `${full.id} multi=${!!full.multi}`);
+  const bab = answer(`${QUADRI} babinski@left babinski@right preserved_vertical_gaze@none`);
+  ok("row 1: locked-in with both Babinski signs → locked-in, one lesion", bab.id === "locked_in" && bab.multi === null, `${bab.id} multi=${!!bab.multi}`);
+  const vign = answer(`${QUADRI} preserved_vertical_gaze@none`);
+  ok("row 1 guard: quadriplegia + preserved vertical gaze still → locked-in", vign.id === "locked_in" && vign.multi === null, vign.id);
+
+  const bas = answer(BASILAR);
+  ok("row 2: coma + quadriparesis + both Babinski → the ARAS read with the basis pontis, one lesion",
+     bas.id === "brainstem_aras" && bas.reading === "basis" && bas.multi === null, `${bas.id} {${bas.reading}} multi=${!!bas.multi}`);
+  const haem = answer(`reduced_consciousness@none gaze_palsy@left gaze_palsy@right ${QUADRI}`);
+  ok("row 2: coma + both horizontal gaze palsies + quadriparesis (pontine haemorrhage) → the same reading, one lesion",
+     haem.id === "brainstem_aras" && haem.reading === "basis" && haem.multi === null, `${haem.id} {${haem.reading}} multi=${!!haem.multi}`);
+  const post = answer(`reduced_consciousness@none extensor_posturing@none ${QUADRI}`);
+  ok("row 2: coma + extensor posturing + quadriparesis → the same reading, one lesion", post.id === "brainstem_aras" && post.reading === "basis" && post.multi === null, `${post.id} {${post.reading}}`);
+  const o3 = answer("reduced_consciousness@none babinski@left babinski@right");
+  ok("row 2: coma + both Babinski signs (the raised-pressure round's O3) → the same reading, one lesion", o3.id === "brainstem_aras" && o3.multi === null, `${o3.id} multi=${!!o3.multi}`);
+  ok("row 2 guard: coma alone still → the diffuse cerebrum", answer("reduced_consciousness@none").id === "cerebrum_diffuse");
+  const cp = answer("reduced_consciousness@none extensor_posturing@none");
+  ok("row 2 guard: coma + extensor posturing still → the ARAS itself, not the reading", cp.id === "brainstem_aras" && cp.reading === null, `{${cp.reading}}`);
+  ok("row 2: the ARAS itself stays midline; the reading is bilateral and sits in the pons",
+     SITE.brainstem_aras.side === "midline" && bas.r.display[0].site.side === "bilateral" && stationOf(bas.r.display[0].site) === "pons");
+  ok("row 2: the reading's label", readingLabel(bas.r.display[0].site) === " — with the basis pontis", JSON.stringify(readingLabel(bas.r.display[0].site)));
+  ok("row 2 guard: quadriparesis + both Babinski still leads with the cord", answer(`${QUADRI} babinski@left babinski@right`).id === "bilateral_cord_anterior");
+  ok("row 2: the basilar picture → only the pons", whereOf(BASILAR).where === "pons", whereOf(BASILAR).where);
+}
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — composite sites (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

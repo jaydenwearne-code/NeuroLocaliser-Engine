@@ -701,6 +701,9 @@ export function composeDorsalMidbrainSites() {
 // single midline paramedian tegmental lesion) OR both hemispheres (bilateral thalamus / diffuse cortex) —
 // the bilateralOnly gate (Anton/Balint) makes a UNILATERAL thalamic/cortical lesion emit nothing. Locked-in
 // is the ventral-vs-tegmental contrast (bilateral basis pontis: quadriplegia, ARAS spared → awake).
+// The paramedian pons's horizontal-gaze rows (the PPRF and the abducens nucleus). Locked-in loses horizontal gaze and keeps
+// vertical gaze and blinking; the ARAS's basilar reading carries them too (composite-sites round, rows 1–2).
+const PONS_GAZE = () => STRUCTURES.filter(s => s.level === "pons" && s.part === "medial" && s.produces === "gaze_palsy").map(s => s.id);
 export function composeConsciousnessSites() {
   const byLevelPart = (lvl, part) => STRUCTURES.filter(s => s.level === lvl && s.part === part).map(s => s.id);
   const thalBilat = STRUCTURES.filter(s => s.level === "thalamus_arousal" && s.part === "paramedian").map(s => s.id);
@@ -709,13 +712,20 @@ export function composeConsciousnessSites() {
   if (diffuse.length) sites.push({ id: "cerebrum_diffuse", side: "bilateral", level: "cerebrum", part: "diffuse",
     territory: TERRITORY["cerebrum|diffuse"], structures: diffuse, composite: true });
   const aras = byLevelPart("brainstem_aras", "paramedian_tegmentum");
+  // Its BASILAR READING (composite-sites round, row 2, owner-approved 2026-11-05): the tegmental lesion grown into the basis
+  // pontis on both sides — coma with quadriparesis, both Babinski signs and horizontal gaze palsies (basilar occlusion,
+  // pontine haemorrhage). The same id, causes and plan; the reading is bilateral and sits in the pons on the Why line (its
+  // level's own station, "brainstem (several levels)", would put an isolated Babinski there too).
   if (aras.length) sites.push({ id: "brainstem_aras", side: "midline", level: "brainstem_aras", part: "paramedian_tegmentum",
-    territory: TERRITORY["brainstem_aras|paramedian_tegmentum"], structures: aras, composite: true });
+    territory: TERRITORY["brainstem_aras|paramedian_tegmentum"], structures: aras, composite: true,
+    variants: [{ key: "basis", side: "bilateral", station: "pons", structures: [...aras, ...byLevelPart("pons", "basis_pontis"), ...PONS_GAZE()] }] });
   if (thalBilat.length) sites.push({ id: "thalamus_bilateral_percheron", side: "bilateral", level: "thalamus_arousal", part: "paramedian",
     territory: TERRITORY["thalamus_arousal|paramedian"], structures: thalBilat, composite: true });
   const li = byLevelPart("locked_in", "ventral_pons");
   if (li.length) sites.push({ id: "locked_in", side: "bilateral", level: "locked_in", part: "ventral_pons",
-    territory: TERRITORY["locked_in|ventral_pons"], structures: ["cst_pons_arm", "cst_pons_leg", ...li], composite: true });
+    // BOTH SIDES OF THE BASIS PONTIS, derived (composite-sites round, row 1): the hand list it replaced (cst_pons_arm +
+    // cst_pons_leg) went stale as the pons gained its Babinski, face and speech rows — the B11 trap a fourth time.
+    territory: TERRITORY["locked_in|ventral_pons"], structures: [...byLevelPart("pons", "basis_pontis"), ...PONS_GAZE(), ...li], composite: true });
   return sites;
 }
 

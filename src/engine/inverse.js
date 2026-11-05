@@ -56,8 +56,10 @@ export function solverSites(opts = {}) {
   }
   return out;
 }
-const variantOf = (site, v) => ({ ...site, variant: v.key, structures: v.structures, atLevel: v.atLevel,
-  segments: v.segments, variants: undefined });
+// A reading may carry its own side (the ARAS's basilar reading is bilateral, though the ARAS is midline) and its own
+// station on the Why line (that reading sits in the pons) — composite-sites round, row 2.
+const variantOf = (site, v) => ({ ...site, ...(v.side ? { side: v.side } : {}), ...(v.station ? { station: v.station } : {}),
+  variant: v.key, structures: v.structures, atLevel: v.atLevel, segments: v.segments, variants: undefined });
 const firstPerId = list => { const seen = new Set(); return list.filter(x => { const id = (x.site || x).id; return !seen.has(id) && !!seen.add(id); }); };
 
 function localisingObserved(observedSet) {
