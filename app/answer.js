@@ -25,6 +25,10 @@ export const BACKGROUND_LINE = {
   reflex_ankle_loss: "Absent ankle jerks on both sides are set aside: common with age and in a neuropathy, and probably a separate condition.",
   distal_sensory_loss: "Glove-and-stocking numbness on both sides is set aside: a length-dependent neuropathy (most often diabetic) is common, and probably a separate condition.",
 };
+// Row 9 (owner-approved wording, raised-pressure round 2026-11-05): the false-localising set-aside.
+export const falseLocalisingSentence = n => !n ? "" : n > 1
+  ? "The sixth-nerve palsies are set aside: with papilloedema they are a false-localising sign of the raised pressure, not further lesions."
+  : "The sixth-nerve palsy is set aside: with papilloedema it is a false-localising sign of the raised pressure, not a second lesion.";
 export const B12_LINE = "With a myelopathy, check B12 (subacute combined degeneration) before calling them separate.";
 export const backgroundSentence = (findings, cord = false) =>
   findings.length ? findings.map(f => BACKGROUND_LINE[f]).join(" ") + (cord ? ` ${B12_LINE}` : "") : "";
@@ -107,11 +111,14 @@ export function answerFor(st) {
   // Background set aside (rows 11–15) is not localised: it leaves the count and the Why line, and the Where line names
   // it. The same-family near-fit's entered word (rows 5–10) is named on the Where line and left out of the Why line,
   // which explains the rest.
-  const aside = new Set(st.r.background ? st.r.background.tokens : []);
+  // The false-localising palsies (raised-pressure round, rows 3 and 9) leave the count and the Why line, as background does.
+  const flTok = st.r.pressure && st.r.pressure.falseLocalising ? st.r.pressure.falseLocalising.tokens : [];
+  const aside = new Set([...(st.r.background ? st.r.background.tokens : []), ...flTok]);
   const nf = st.r.nearFit && st.r.nearFit.instead && st.r.nearFit.site.id === st.sel.site.id ? st.r.nearFit : null;
   const whyTokens = new Set([...st.tokens].filter(t => !aside.has(t) && !(nf && t === nf.missing)));
   const total = st.total - aside.size;
-  const background = backgroundSentence([...new Set([...aside].map(t => t.split("@")[0]))], st.sel.site.level === "cord");
+  const background = [backgroundSentence([...new Set([...aside].filter(t => !flTok.includes(t)).map(t => t.split("@")[0]))], st.sel.site.level === "cord"),
+    falseLocalisingSentence(flTok.length)].filter(Boolean).join(" ");
   const { nx, combined } = resolveNext({ ...st, site: st.sel.site });
   let entity = st.selectedEntity || null;
   if (twoLesions && !entity) {

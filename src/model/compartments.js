@@ -67,6 +67,10 @@ export const INTRACRANIAL_COMPARTMENTS = new Set(["brain", "brainstem", "cerebel
 // DEFERRED: kept under papilloedema, its card would lead with head trauma and badge routine, because its plan is not written
 // for the pressure (spec 2026-11-05, row 2, O1, O8). test/raised-pressure.test.js checks this set against the causes.
 export const PRESSURE_REACHES = new Set(["skull_base|vi_cisternal", "skull_base|vi_petrous_apex"]);
+// The palsies papilloedema makes false-localising (raised-pressure round, row 3): set aside, under the conditions in
+// inverse.js falseLocalisingAside, when they are what stops one place explaining the rest. The VI only; the IV was measured
+// and is not included (it is rarely the false-localising sign, and row 2 defers it).
+export const FALSE_LOCALISING_SIGNS = new Set(["weak_abduction"]);
 
 // A site's LEVEL is a bony/anatomical grouping (which corridor or fossa it sits in); its COMPARTMENT is a
 // functional grouping (which system it belongs to for cross-site pathology purposes). The two can

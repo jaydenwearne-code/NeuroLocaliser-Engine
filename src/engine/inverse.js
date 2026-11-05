@@ -16,7 +16,7 @@ import { expectedFindings } from "./forward.js";
 import { normaliseLevel, regionOf, landmarkOf, levelIndex, spanName } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
-import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS, PRESSURE_REACHES } from "../model/compartments.js";
+import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS, PRESSURE_REACHES, FALSE_LOCALISING_SIGNS } from "../model/compartments.js";
 import { EXPLICIT_NORMAL } from "../model/findings.js";
 import { BACKGROUND_FINDINGS } from "../model/families.js";
 import { enteredToken, enteredSet, predictedSet, sameFamilyInstead } from "./families.js";
@@ -514,11 +514,38 @@ export function backgroundAside(observedSet, options = {}) {
   return pairs.filter(f => !kept.includes(f)).flatMap(f => [`${f}@left`, `${f}@right`]);
 }
 
+// ---- FALSE-LOCALISING SIGNS (raised-pressure round, row 3, owner-approved 2026-11-05) ----
+// The second narrow overturn of "a LOCALISING sign is never relaxed away" (the first is the same-family near-fit). With
+// papilloedema, a sixth-nerve palsy (FALSE_LOCALISING_SIGNS) is set aside as a false-localising sign of the pressure when:
+//   (a) papilloedema is entered; (b) no place explains every finding;
+//   (c) one place explains the rest, or nothing is left but the papilloedema;
+//   (d) that place is the rest's own answer read without the papilloedema — a jugular-foramen or carotid-space picture
+//       that papilloedema replaces with a brainstem place keeps its claim.
+// Like background it never joins a cover, and the card names it. Returns the tokens to set aside: [] when nothing is.
+export function falseLocalisingAside(observedSet, options = {}) {
+  if (![...observedSet].some(t => PRESSURE_TOKEN.test(t))) return [];                       // (a)
+  const opts = { dominantSide: options.dominantSide || "left", sensoryLevel: options.sensoryLevel };
+  const entered = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
+  const fl = entered.filter(t => FALSE_LOCALISING_SIGNS.has(t.split("@")[0]));
+  if (!fl.length) return [];
+  if (differential(observedSet, opts).some(c => c.n === entered.length)) return [];         // (b)
+  const rest = entered.filter(t => !fl.includes(t));
+  if (!rest.length) return fl;                                                                // (c), nothing left
+  const fits = differential(new Set([...observedSet].filter(t => !fl.includes(t))), opts).filter(c => c.n === rest.length);
+  if (!fits.length) return [];                                                                // (c)
+  const own = differential(new Set(rest), opts).find(c => c.n === rest.length);
+  return own && fits.some(c => c.site.id === own.site.id) ? fl : [];                          // (d)
+}
+
 // ---- TOP-LEVEL SOLVE ----
-// The background step runs first: what it sets aside is not localised at all, and the rest is solved as usual.
-// `background` is null, or { tokens } — the tokens set aside, for the card to name.
+// The false-localising step runs first, then the background step: what they set aside is not localised at all, and the rest
+// is solved as usual. `background` is null, or { tokens }; `pressure.falseLocalising` is null, or { tokens } — for the card.
 export function solve(observedSet, options = {}) {
-  const aside = backgroundAside(observedSet, options);
-  if (!aside.length) return { ...solveOne(observedSet, options), background: null };
-  return { ...solveOne(new Set([...observedSet].filter(t => !aside.includes(t))), options), background: { tokens: aside } };
+  const fl = falseLocalisingAside(observedSet, options);
+  const kept = fl.length ? new Set([...observedSet].filter(t => !fl.includes(t))) : observedSet;
+  const aside = backgroundAside(kept, options);
+  const r = aside.length
+    ? { ...solveOne(new Set([...kept].filter(t => !aside.includes(t))), options), background: { tokens: aside } }
+    : { ...solveOne(kept, options), background: null };
+  return { ...r, pressure: { ...r.pressure, falseLocalising: fl.length ? { tokens: fl } : null } };
 }

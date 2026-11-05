@@ -25,7 +25,7 @@ import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { offersFor, tokensForRow, currentTokens } from "./sides.js";
-import { answerFor, resolveNext, backgroundSentence } from "./answer.js";
+import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
@@ -368,7 +368,8 @@ function renderResults() {
   RESULT_DOM = r.dominance ? r.dominance.assumed : null;
   // Background set aside (false-multifocal fix, rows 11–13) is not a finding to explain either: the rows count without
   // it. answerFor() takes the full total and subtracts it itself.
-  const counted = total - (r.background ? r.background.tokens.length : 0);
+  const flCount = r.pressure && r.pressure.falseLocalising ? r.pressure.falseLocalising.tokens.length : 0;
+  const counted = total - (r.background ? r.background.tokens.length : 0) - flCount; // raised-pressure round, row 3
   LAST_DISPLAY = r.display; syncLevelCtrls();
   const cands = r.differential;
   const refr = refractiveFlag(S.tokens);
@@ -641,6 +642,9 @@ function whereCard(list, cands, total, r) {
   // Background set aside (rows 11–15): the same sentence as the answer card's Where line.
   const bg = r.background
     ? `<div class="annot"><b>Background:</b> ${esc(backgroundSentence([...new Set(r.background.tokens.map(fid))], !!list[0] && list[0].site.level === "cord"))}</div>` : "";
+  // The false-localising palsies (raised-pressure round, rows 3 and 9): the same sentence as the answer card's Where line.
+  const fl = r.pressure && r.pressure.falseLocalising
+    ? `<div class="annot"><b>False-localising:</b> ${esc(falseLocalisingSentence(r.pressure.falseLocalising.tokens.length))}</div>` : "";
   const multi = (!nAll && r.multi)
     // NB: minimalSet() yields RAW site objects (unlike r.nearFit, which is a {site,missing} wrapper).
     ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
@@ -666,7 +670,7 @@ function whereCard(list, cands, total, r) {
         }).join("")}</div>`)
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
-  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${bg}${annot}${ruled}`, "where", "— every place that fits");
+  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${bg}${fl}${annot}${ruled}`, "where", "— every place that fits");
 }
 
 // A `spread`/`motor` clause has no single site — it is satisfied by the SET of sites, or by the observed

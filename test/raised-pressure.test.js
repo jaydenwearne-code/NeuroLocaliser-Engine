@@ -98,6 +98,32 @@ ok("row 5 gate: coma + posturing does not list the reading", ids(solve(T("reduce
 ok("row 5 gate: coma + a weak arm (no III sign) does not offer the reading",
    !solve(T("reduced_consciousness@none weak_arm@left")).display.some(c => c.site.variant === "uncal"));
 
+// ---- C. The false-localising set-aside (rows 3, 9) ----
+{ const r = solve(T(`weak_abduction@left weak_abduction@right ${P} weak_arm@right weak_leg@right`));
+  ok("row 3: bilateral VI + papilloedema + R hemiparesis → a left hemisphere place, one lesion",
+     /^left_(cortex|subcortex)_/.test(ids(r)[0] || "") && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`);
+  ok("row 3: …both VI palsies are set aside", flOf(r).join() === "weak_abduction@left,weak_abduction@right", flOf(r).join()); }
+{ const r = solve(T(`weak_abduction@left ${P} weak_arm@left weak_leg@left`));
+  ok("row 3: L VI + papilloedema + L hemiparesis → a right hemisphere place, the VI set aside",
+     /^right_(cortex|subcortex)_/.test(ids(r)[0] || "") && r.multi === null && flOf(r).join() === "weak_abduction@left", `${ids(r)[0]} ${flOf(r).join()}`); }
+ok("row 3 (b): one place explains it all (the pons: L VI + papilloedema + R hemiparesis) → nothing set aside",
+   flOf(solve(T(`weak_abduction@left ${P} weak_arm@right weak_leg@right`))).length === 0);
+{ const r = solve(T(`weak_abduction@left v1_sensory@left ${P}`));
+  ok("row 3 (c): Gradenigo + papilloedema → nothing set aside (no place explains the rest)", flOf(r).length === 0, flOf(r).join()); }
+{ const jug = exp("left_skull_base_x_jugular").join(" ");
+  const r = solve(T(`weak_abduction@left ${jug} ${P}`));
+  ok("row 3 (d): a jugular-foramen picture + VI + papilloedema keeps its claim (papilloedema had moved the rest)",
+     jug.length > 0 && flOf(r).length === 0 && r.multi !== null, `${flOf(r).join()} multi=${!!r.multi}`); }
+ok("row 3: without papilloedema nothing is set aside",
+   flOf(solve(T("weak_abduction@left weak_abduction@right weak_arm@right weak_leg@right"))).length === 0);
+{ const { ans } = card(`weak_abduction@left weak_abduction@right ${P} weak_arm@right weak_leg@right`);
+  ok("row 9: the Where line names the set-aside palsies",
+     (ans?.lines.where || "").endsWith("The sixth-nerve palsies are set aside: with papilloedema they are a false-localising sign of the raised pressure, not further lesions."), ans?.lines.where);
+  ok("row 9: the Where line counts without them", /^Left corona radiata\. \d+ other places also fit/.test(ans?.lines.where || ""), ans?.lines.where);
+  ok("row 9: the Why line leaves them out",
+     ans?.lines.why === "Right arm weakness → anywhere from the cerebral cortex to the spinal cord; see Where for what separates them.", ans?.lines.why); }
+ok("row 9: the one-palsy sentence", (ANS.falseLocalisingSentence || (() => ""))(1) === "The sixth-nerve palsy is set aside: with papilloedema it is a false-localising sign of the raised pressure, not a second lesion.");
+
 // ---- E. Unchanged by design (spec §6) ----
 const first = toks => ids(solve(T(toks)))[0];
 ok("guard: Gradenigo (VI + V1) → the petrous apex", first("weak_abduction@left v1_sensory@left") === "left_skull_base_petrous_apex");
