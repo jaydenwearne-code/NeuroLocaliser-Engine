@@ -745,6 +745,12 @@ export const BY_SITE = {
     ddx: ["Parasagittal / falx meningioma (bilateral leg weakness + incontinence)", "ACA infarct", "Normal-pressure hydrocephalus (gait + incontinence + cognition)"],
     red: "Bilateral leg weakness with urinary incontinence is a parasagittal lesion until proven otherwise — image the interhemispheric fissure."
   },
+  bilateral_paracentral: {
+    name: "Parasagittal syndrome (both paracentral lobules)",
+    note: "A lesion at the vertex takes both medial hemispheres: a spastic paraparesis with cortical-type urinary incontinence, often with cortical sensory loss in the legs and a magnetic gait — it mimics a spinal cord lesion almost perfectly.",
+    ddx: ["Parasagittal / falx meningioma", "Bilateral ACA infarct (azygos ACA, vasospasm)", "Superior sagittal sinus thrombosis", "Normal-pressure hydrocephalus (mimic)"],
+    red: "Bilateral leg weakness with urinary incontinence and a normal spine MRI is a parasagittal lesion until proven otherwise — image the brain."
+  },
   cortex_dlpfc: {
     name: "Dorsolateral prefrontal (dysexecutive) syndrome",
     note: "Impaired planning, organising, sequencing, working memory and set-shifting (perseveration), with intact primary functions.",

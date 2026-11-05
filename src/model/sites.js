@@ -877,6 +877,18 @@ export function composePolyneuropathySites() {
     part: "length_dependent", territory: TERRITORY["polyneuropathy|length_dependent"], structures, composite: true }];
 }
 
+// THE PARASAGITTAL LESION — both paracentral lobules (composite-sites round, row 6, owner-approved 2026-11-05). A falx
+// meningioma, a superior sagittal sinus thrombosis or an azygos ACA takes both medial hemispheres at the vertex: both legs
+// (motor and cortical sensory) and the cortical micturition centre. Derived from the three paracentral parts, both sides.
+// Its causes, plan, label and tables fall back to cortex_paracentral (level cortex, part paracentral), already written for
+// both legs; its phonebook entry is its own.
+const PARACENTRAL_PARTS = ["motor_leg", "sensory_leg", "paracentral"];
+export function composeParasagittalSites() {
+  const structures = STRUCTURES.filter(s => s.level === "cortex" && PARACENTRAL_PARTS.includes(s.part)).map(s => s.id);
+  return structures.length ? [{ id: "bilateral_paracentral", side: "bilateral", level: "cortex", part: "paracentral",
+    territory: "both paracentral lobules (parasagittal — falx / superior sagittal sinus / both ACAs)", structures, composite: true }] : [];
+}
+
 // PLEXUS SITES. A trunk / plexus lesion affects exactly the roots that feed it, so each is a plain UNION
 // of the constituent root sites' structures — the same composer shape as the vascular composites. A
 // two-adjacent-root pattern is then explained by ONE trunk (Erb/Klumpke), which beats two separate root
