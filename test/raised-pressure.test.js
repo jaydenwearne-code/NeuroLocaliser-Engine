@@ -124,6 +124,26 @@ ok("row 3: without papilloedema nothing is set aside",
      ans?.lines.why === "Right arm weakness → anywhere from the cerebral cortex to the spinal cord; see Where for what separates them.", ans?.lines.why); }
 ok("row 9: the one-palsy sentence", (ANS.falseLocalisingSentence || (() => ""))(1) === "The sixth-nerve palsy is set aside: with papilloedema it is a false-localising sign of the raised pressure, not a second lesion.");
 
+// ---- D. The pressure-only card (rows 4, 10) ----
+const PO = ANS.PRESSURE_ONLY || {};
+{ const { ans } = card(P);
+  ok("row 4: papilloedema alone → the pressure-only card", ans?.pressureOnly === true);
+  ok("row 10: its four lines",
+     ans?.lines.where === "Inside the skull — papilloedema means raised intracranial pressure, and on its own it does not say where."
+     && ans?.lines.why === "Papilloedema → raised intracranial pressure: it places the problem inside the skull but localises nothing."
+     && ans?.lines.what === "Find what is raising the pressure: a mass, hydrocephalus or cerebral venous sinus thrombosis — idiopathic intracranial hypertension only once those are excluded."
+     && ans?.lines.next === "Image the head, with venography, before any lumbar puncture; neurosurgery if there is a mass or hydrocephalus.",
+     JSON.stringify(ans?.lines));
+  ok("row 10: badged urgent, with no red flag line (the banner stays)", ans?.nx.urgency === "urgent" && ans?.lines.red === null);
+  ok("row 10: the card's head is the banner's own label", PO.head === "Raised intracranial pressure"); }
+ok("row 4: a down-going plantar + papilloedema → the pressure-only card too", card(`plantar_flexor@left ${P}`).ans?.pressureOnly === true);
+ok("row 4 guard: papilloedema + a hemiparesis is a place, not the pressure-only card", !card(`${P} weak_arm@right weak_leg@right`).ans?.pressureOnly);
+{ // Row 10's last sentence: with rows 1–2 in, no picture reaches it through solve(), so it is pinned with a crafted result.
+  const r0 = solve(T(P)), r = { ...r0, pressure: { ...r0.pressure, falseLocalising: { tokens: ["weak_abduction@left"] } } };
+  const { ans } = card(`weak_abduction@left ${P}`, r);
+  ok("row 10: a set-aside palsy adds its sentence to the pressure-only card",
+     ans?.pressureOnly === true && (ans?.lines.where || "").endsWith(" The sixth-nerve palsy is a false-localising sign of the raised pressure, not a second lesion."), ans?.lines.where); }
+
 // ---- E. Unchanged by design (spec §6) ----
 const first = toks => ids(solve(T(toks)))[0];
 ok("guard: Gradenigo (VI + V1) → the petrous apex", first("weak_abduction@left v1_sensory@left") === "left_skull_base_petrous_apex");

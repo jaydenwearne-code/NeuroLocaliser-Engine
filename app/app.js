@@ -25,7 +25,7 @@ import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { offersFor, tokensForRow, currentTokens } from "./sides.js";
-import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence } from "./answer.js";
+import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence, PRESSURE_ONLY } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
@@ -403,15 +403,22 @@ function renderResults() {
   if (together) has.add("together");
   const ans = answerFor({ r, sel, total, tokens: S.tokens, onset: S.onset, course: S.course, dominant: S.dominant,
     sensoryLevel: S.sensoryLevel, pinned: S.pinned, scope: S.scope, selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity });
-  el.innerHTML = answerCard(sel, list, r, ans)
-    + sectionNav(has)
-    + pmsg + rmsg
-    + whereCard(list, cands, counted, r)
-    + together
-    + whyCard(tf, sel, list)
-    + whatCard(sel.site, r, list)
-    + nextCard(sel.site, r, list)
-    + answerStrip(sel, list, counted, ans.nx);
+  // Papilloedema with nothing else localised (raised-pressure round, row 4): the card names no place, so the cards that
+  // describe the selected place (Together, Why, What, Next) are not drawn; the Where list stays, as fundus.test pins it.
+  if (ans.pressureOnly) {
+    el.innerHTML = answerCard(sel, list, r, ans) + pmsg + rmsg + whereCard(list, cands, counted, r)
+      + answerStrip(sel, list, counted, ans.nx, PRESSURE_ONLY.head);
+  } else {
+    el.innerHTML = answerCard(sel, list, r, ans)
+      + sectionNav(has)
+      + pmsg + rmsg
+      + whereCard(list, cands, counted, r)
+      + together
+      + whyCard(tf, sel, list)
+      + whatCard(sel.site, r, list)
+      + nextCard(sel.site, r, list)
+      + answerStrip(sel, list, counted, ans.nx);
+  }
   wireCardControls();
   wireJumpLinks(el);
   wireSectionToggles(el);
@@ -570,8 +577,8 @@ function answerCard(sel, list, r, ans) {
   const row = (k, v) => v ? `<div class="ans-row"><span class="ans-k">${k}</span><span class="ans-v">${esc(v)}</span></div>` : "";
   const red = L.red ? `<div class="ans-row ans-red"><span class="ans-k">⚑</span><span class="ans-v">${esc(L.red)}</span></div>` : "";
   return `<div class="out-head" id="answer">
-    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b>
-      <details class="oh-raw"><summary>site id</summary><code>${esc(siteRaw(sel.site))} · ${esc(sel.site.id)}</code></details>
+    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(ans.pressureOnly ? PRESSURE_ONLY.head : siteName(sel.site))}</b>
+      ${ans.pressureOnly ? "" : `<details class="oh-raw"><summary>site id</summary><code>${esc(siteRaw(sel.site))} · ${esc(sel.site.id)}</code></details>`}
     </div>${urg}${feedbackButton(list)}</div>
     <div class="ans">${row("Where", L.where)}${row("Why", L.why)}${row("What", L.what)}${row("Next", L.next)}${red}</div>
     ${scope}${funcFlag}</div>`;
@@ -580,11 +587,11 @@ function answerCard(sel, list, r, ans) {
 // The phone strip (spec 2026-09-27 §3.3). Below the single-column breakpoint the answer card sits under the whole
 // exam, so a slim bar pins the answer to the bottom of the screen while the card is out of view. A <button>, not
 // a link: THE HASH IS THE CASE, and an href would rewrite it.
-function answerStrip(sel, list, total, nx) {
-  const n = list.filter(c => c.n === total).length;
+function answerStrip(sel, list, total, nx, head = null) {
+  const n = head ? 0 : list.filter(c => c.n === total).length; // `head`: the pressure-only card names no place (row 4)
   const u = nx.urgency === "emergency" ? "Emergency" : nx.urgency === "urgent" ? "Urgent" : "Routine";
   // Urgency FIRST: on a narrow screen the line truncates, and the name is what may be cut, never the urgency.
-  return `<button class="ans-strip" id="ans-strip" type="button" hidden><span class="ans-strip-t">${u}${n > 1 ? ` · ${n} fit` : ""} · ${esc(siteName(sel.site))}</span><span class="ans-strip-go">View</span></button>`;
+  return `<button class="ans-strip" id="ans-strip" type="button" hidden><span class="ans-strip-t">${u}${n > 1 ? ` · ${n} fit` : ""} · ${esc(head || siteName(sel.site))}</span><span class="ans-strip-go">View</span></button>`;
 }
 // Visibility is measured on scroll and resize, not with an IntersectionObserver: its callbacks were measured NOT
 // to arrive in a throttled tab (the strip never appeared), and a strip that silently never shows is the failure

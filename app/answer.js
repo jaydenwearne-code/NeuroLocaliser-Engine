@@ -96,6 +96,25 @@ export function resolveNext({ site, r, pinned, scope, selectedPathology, selecte
   return { nx, combined };
 }
 
+// ---- papilloedema with nothing else localised (raised-pressure round, rows 4 and 10, owner-approved wording) ----
+// The card names no place: every intracranial place explains 0 of 0, and the first of them is an accident of the ranking.
+export const PRESSURE_ONLY = {
+  head: "Raised intracranial pressure",
+  where: "Inside the skull — papilloedema means raised intracranial pressure, and on its own it does not say where.",
+  why: "Papilloedema → raised intracranial pressure: it places the problem inside the skull but localises nothing.",
+  what: "Find what is raising the pressure: a mass, hydrocephalus or cerebral venous sinus thrombosis — idiopathic intracranial hypertension only once those are excluded.",
+  next: "Image the head, with venography, before any lumbar puncture; neurosurgery if there is a mass or hydrocephalus.",
+  urgency: "urgent",
+};
+const pressureOnlyFalseLocalising = n => !n ? "" : n > 1
+  ? " The sixth-nerve palsies are a false-localising sign of the raised pressure, not further lesions."
+  : " The sixth-nerve palsy is a false-localising sign of the raised pressure, not a second lesion.";
+function pressureOnlyCard(nFalseLocalising) {
+  return { lines: { where: PRESSURE_ONLY.where + pressureOnlyFalseLocalising(nFalseLocalising), why: PRESSURE_ONLY.why,
+    what: PRESSURE_ONLY.what, next: PRESSURE_ONLY.next, red: null },
+    nx: { urgency: PRESSURE_ONLY.urgency, referral: PRESSURE_ONLY.next }, combined: false, twoLesions: false, pressureOnly: true };
+}
+
 // ---- the whole card ----
 // `st` carries exactly what app.js holds: the solve() result, the selected candidate, the finding count, and the
 // case state (tokens, onset, course, dominant, sensoryLevel, pinned, scope, selectedPathology, selectedEntity).
@@ -117,6 +136,7 @@ export function answerFor(st) {
   const nf = st.r.nearFit && st.r.nearFit.instead && st.r.nearFit.site.id === st.sel.site.id ? st.r.nearFit : null;
   const whyTokens = new Set([...st.tokens].filter(t => !aside.has(t) && !(nf && t === nf.missing)));
   const total = st.total - aside.size;
+  if (st.r.pressure && st.r.pressure.present && total === 0) return pressureOnlyCard(flTok.length); // rows 4, 10
   const background = [backgroundSentence([...new Set([...aside].filter(t => !flTok.includes(t)).map(t => t.split("@")[0]))], st.sel.site.level === "cord"),
     falseLocalisingSentence(flTok.length)].filter(Boolean).join(" ");
   const { nx, combined } = resolveNext({ ...st, site: st.sel.site });
