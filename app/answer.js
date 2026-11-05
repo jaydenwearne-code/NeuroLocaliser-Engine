@@ -136,7 +136,7 @@ export function answerFor(st) {
       oldStroke: !!(nx.followed && nx.followed.onset === "chronic"),
     }),
     next: nx.referral || "",
-    red: entityRed || nameForSite(st.sel.site, { dominantSide: dom }).red || null,
+    red: entityRed || st.sel.site.red || nameForSite(st.sel.site, { dominantSide: dom }).red || null, // a reading's own flag first
   };
   return { lines, nx, combined, twoLesions };
 }

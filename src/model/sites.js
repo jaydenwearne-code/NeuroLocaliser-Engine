@@ -247,6 +247,24 @@ const TERRITORY = {
 // standalone site (preganglionic cord Horner) and is deliberately absent from this set.)
 const BUILDING_BLOCK_PARTS = new Set(["cord|anterior", "cord|posterior", "cord|central"]);
 
+// READINGS OF A PRIMITIVE SITE (raised-pressure round, row 5, owner-approved 2026-11-05). A reading is a variant, as the
+// cord's are: the same place, id, causes and plans, read in another state, so it predicts a different set of signs.
+//   uncal — the compressive III at the tentorial edge: the herniating uncus presses the III (the pupil first) and the
+//           midbrain beside it: the ARAS (reduced consciousness), extensor posturing, and the cerebral peduncle
+//           (contralateral weakness and Babinski). Every row is REUSED.
+// The gate: offered only with reduced consciousness entered (`needs`) AND one of the III's own signs (`needsOwn`). Ungated it
+// took the awake Weber picture (7 assertions); with the consciousness condition alone, coma + a weak arm read a compressed
+// III with no III sign entered (spec §3.3). `leads`: the cause its What line leads with (row 6); `red`: its red flag (row 11).
+const READINGS = {
+  "pupil|cn3_compressive": structures => [{
+    key: "uncal",
+    structures: [...structures, "aras_brainstem", "aras_posturing", "cst_midbrain_arm", "cst_midbrain_leg", "cst_midbrain_bab"],
+    needs: "reduced_consciousness", needsOwn: true,
+    leads: "Uncal herniation",
+    red: "A new dilated pupil with a falling conscious level is uncal herniation until proven otherwise — CT head now and call neurosurgery; start lowering the pressure while you wait.",
+  }],
+};
+
 function buildSites() {
   const sites = [];
   for (const level of LEVELS) {
@@ -260,7 +278,8 @@ function buildSites() {
           side, level, part,
           territory: TERRITORY[`${level}|${part}`],
           structures, // structure ids present at this site, derived not hand-listed
-          ...(buildingBlock ? { buildingBlock: true } : {})
+          ...(buildingBlock ? { buildingBlock: true } : {}),
+          ...(READINGS[`${level}|${part}`] ? { variants: READINGS[`${level}|${part}`](structures) } : {})
         });
       }
     }

@@ -3167,7 +3167,11 @@ export function causesFor(site, { onset } = {}) {
   // entered onset is still a real cause at this site — hiding it entirely is the same failure the sieve
   // sweep fixed, in reverse. It moves to `demoted`, carrying WHICH axis missed and what it does fit, so
   // the app can show it behind a "less likely given the tempo" disclosure.
-  const byLikelihood = (a, b) => LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood);
+  const byLikelihood = (a, b) => (!!b.lead - !!a.lead) || LIKELIHOOD.indexOf(a.likelihood) - LIKELIHOOD.indexOf(b.likelihood);
+  // A READING may lead with its own cause (raised-pressure round, row 6): the uncal reading of the compressive III leads with
+  // uncal herniation, where the awake III leads with the posterior communicating artery aneurysm. Within the reading it is the
+  // common cause, so it reads as common there (the What card's "Most likely" line agrees). The authored row is not edited.
+  if (site.leads) list = list.map(x => x.name === site.leads ? { ...x, lead: true, likelihood: "common" } : x);
   const concordant = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice()).sort(byLikelihood);
   const demoted = (onset ? list.filter(x => !x.tempo.includes(onset)) : [])
     .map(x => ({ ...x, demotion: { axis: "tempo", entered: onset, expected: x.tempo } }))
@@ -3187,7 +3191,7 @@ export function causesFor(site, { onset } = {}) {
 // (`after`): it names what may follow an earlier event, never the most likely cause of a new presentation.
 const likelihoodRank = c => { const i = LIKELIHOOD.indexOf(c.likelihood); return i < 0 ? LIKELIHOOD.length : i; };
 export function rankCauses(causes) {
-  return [...causes].sort((a, b) => likelihoodRank(a) - likelihoodRank(b));
+  return [...causes].sort((a, b) => (!!b.lead - !!a.lead) || likelihoodRank(a) - likelihoodRank(b)); // a reading's lead first
 }
 export function leadingCause(causes) {
   return rankCauses(causes).find(c => !c.after) || null;

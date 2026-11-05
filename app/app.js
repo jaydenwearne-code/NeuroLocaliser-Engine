@@ -979,7 +979,8 @@ function renderCause(c) {
 function whatBlock(site) {
   const res = causesFor(site, { onset: S.onset || undefined });
   const ph = nameForSite(site, { dominantSide: domView() });
-  const red = ph.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(ph.red)}</div>` : "";
+  const redText = site.red || ph.red; // a reading's own red flag (the uncal reading, raised-pressure round, row 11)
+  const red = redText ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(redText)}</div>` : "";
   // Curated causes only — a category with nothing plausible at this site is simply not shown.
   const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));
   // Per category the leading causes stay open, and EVERY red-flagged must-not-miss stays open regardless of

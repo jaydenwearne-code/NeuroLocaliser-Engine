@@ -61,6 +61,61 @@ ok("row 1 guard: a single VI palsy leads with the left VI, and the bilateral sit
 ok("row 2 guard: a IV palsy + papilloedema still leads with the contralateral trochlear nucleus (the IV is deferred)",
    ids(solve(T(`weak_depression@left vertical_diplopia@left ${P}`)))[0] === "right_midbrain_trochlear");
 
+// ---- B. The uncal reading of the compressive III (rows 5–8, 11) ----
+const UNCAL = "reduced_consciousness@none fixed_dilated_pupil@left extensor_posturing@none";
+const RED = "A new dilated pupil with a falling conscious level is uncal herniation until proven otherwise — CT head now and call neurosurgery; start lowering the pressure while you wait.";
+{ const r = solve(T(UNCAL)), c = r.display[0];
+  ok("row 5: coma + a blown L pupil + posturing → the left compressive III, one lesion (R1 #13)",
+     c?.site.id === "left_pupil_cn3_compressive" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`);
+  ok("row 5: …in its uncal reading", c?.site.variant === "uncal", c?.site.variant);
+  ok("row 6: the reading leads with uncal herniation", !!c && lead(c.site) === "Uncal herniation", c && lead(c.site)); }
+{ const r = solve(T("reduced_consciousness@none fixed_dilated_pupil@left"));
+  ok("row 5: coma + a blown L pupil → the left compressive III, one lesion (it read the Adie pupil, routine)",
+     ids(r)[0] === "left_pupil_cn3_compressive" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
+{ const r = solve(T("reduced_consciousness@none fixed_dilated_pupil@left weak_arm@right weak_leg@right babinski@right"));
+  ok("row 5: …with a contralateral hemiparesis and Babinski (the peduncle) → still one place",
+     ids(r)[0] === "left_pupil_cn3_compressive" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
+{ const { ans } = card(UNCAL);
+  ok("row 8: the Where line names the reading", ans?.lines.where === "Left CN III (compressive) — uncal herniation.", ans?.lines.where);
+  ok("row 6: the What line leads with uncal herniation",
+     ans?.lines.what === "Most likely Uncal herniation (must not miss). Must not miss: Posterior communicating artery aneurysm.", ans?.lines.what);
+  ok("row 6: the Next line stays the site's plan", /^IMMEDIATE neurosurgery/.test(ans?.lines.next || ""), ans?.lines.next);
+  ok("rows 7, 11: the reading's red flag", ans?.lines.red === RED, ans?.lines.red); }
+{ const c = solve(T(UNCAL)).display[0];
+  ok("row 6: within the reading it reads as common, so the What card's own 'Most likely' line names it first",
+     !!c && (causesFor(c.site).all.filter(x => x.likelihood === "common")[0] || {}).name === "Uncal herniation"); }
+ok("row 6 guard: the awake III keeps the authored order and likelihood (the aneurysm common, herniation uncommon)",
+   (causesFor(SITE.left_pupil_cn3_compressive).all.find(x => x.name === "Uncal herniation") || {}).likelihood === "uncommon"
+   && lead(SITE.left_pupil_cn3_compressive) === "Posterior communicating artery aneurysm");
+ok("row 5 gate: an awake blown pupil → the Adie pupil still leads", ids(solve(T("fixed_dilated_pupil@left")))[0] === "left_pupil_ciliary_ganglion");
+{ const r = solve(T("ptosis@left weak_adduction@left weak_elevation@left weak_depression@left fixed_dilated_pupil@left")), c = r.display[0];
+  ok("row 5 gate: an awake pupil-involving III → the compressive III, not the reading, aneurysm first",
+     c?.site.id === "left_pupil_cn3_compressive" && !c.site.variant && lead(c.site) === "Posterior communicating artery aneurysm", `${c?.site.id} ${c?.site.variant}`); }
+ok("row 5 gate: Weber, awake → the left medial midbrain still leads",
+   ids(solve(T("ptosis@left weak_adduction@left weak_elevation@left weak_depression@left weak_arm@right weak_leg@right")))[0] === "left_midbrain_medial");
+ok("row 5 gate: coma alone does not list the reading", !solve(T("reduced_consciousness@none")).display.some(c => c.site.variant === "uncal"));
+ok("row 5 gate: coma + posturing does not list the reading", ids(solve(T("reduced_consciousness@none extensor_posturing@none"))).join() === "brainstem_aras");
+ok("row 5 gate: coma + a weak arm (no III sign) does not offer the reading",
+   !solve(T("reduced_consciousness@none weak_arm@left")).display.some(c => c.site.variant === "uncal"));
+
+// ---- E. Unchanged by design (spec §6) ----
+const first = toks => ids(solve(T(toks)))[0];
+ok("guard: Gradenigo (VI + V1) → the petrous apex", first("weak_abduction@left v1_sensory@left") === "left_skull_base_petrous_apex");
+ok("guard: Millard-Gubler → the left medial pons", first("weak_abduction@left facial_weakness@left forehead_involved@left weak_arm@right weak_leg@right") === "left_pons_medial");
+ok("guard: Millard-Gubler + papilloedema → the left medial pons", first(`weak_abduction@left facial_weakness@left forehead_involved@left weak_arm@right weak_leg@right ${P}`) === "left_pons_medial");
+ok("guard: a complete III, pupil not entered → the ischaemic III", first("ptosis@left weak_adduction@left weak_elevation@left weak_depression@left") === "left_pupil_cn3_ischaemic");
+ok("guard: coma alone → the diffuse cerebrum", first("reduced_consciousness@none") === "cerebrum_diffuse");
+ok("guard: coma + papilloedema → the diffuse cerebrum", first(`reduced_consciousness@none ${P}`) === "cerebrum_diffuse");
+ok("guard: Kernohan's picture (coma + L pupil + L hemiparesis) → unchanged, the right corona radiata",
+   first("reduced_consciousness@none fixed_dilated_pupil@left weak_arm@left weak_leg@left") === "right_subcortex_corona_radiata");
+{ const r = solve(T("fixed_dilated_pupil@left weak_arm@right weak_leg@right"));
+  ok("guard: an awake dilated pupil + contralateral hemiparesis stays two places, without the reading",
+     r.multi !== null && !r.display.some(c => c.site.variant === "uncal")); }
+ok("guard: papilloedema + R hemiparesis → the left corona radiata", first(`${P} weak_arm@right weak_leg@right`) === "left_subcortex_corona_radiata");
+{ const r = solve(T("weak_depression@left weak_depression@right vertical_diplopia@left vertical_diplopia@right"));
+  ok("guard: bilateral IV stays the two IV nerves (no bilateral IV site)",
+     (r.multi?.sites.map(s => s.id).sort().join() || "") === "left_skull_base_trochlear_cisternal,right_skull_base_trochlear_cisternal"); }
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — raised-pressure and herniation round (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
