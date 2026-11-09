@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: NOT STARTED — awaiting the owner's go-ahead to build.** Implements every ruling of round 1 in
+**Status: IMPLEMENTED (2026-11-09), `3bd61c4..83e26b0` + docs; every step verified (npm 87 suites / 7413 green; audit
+1050 / 9, probes 108 / 115; browser-checked on port 8143, since 8142 had been given to the composite worktree).** Implements every ruling of round 1 in
 `docs/superpowers/specs/2026-11-05-raised-pressure-design.md` (owner: *"Approve as written"*, 2026-11-05). **The code in
 this plan was dry-run** on a throwaway copy of this branch at `bebf6b1`, task by task: `npm test` 87 suites / 7413 green;
 audit 1050 passed / 9 failed (probes 108 / 115); the 41 captured answer cards identical to the prototype's. The dry-run

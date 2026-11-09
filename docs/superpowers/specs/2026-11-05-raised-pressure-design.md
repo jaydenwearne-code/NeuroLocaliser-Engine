@@ -1,6 +1,10 @@
 # The raised-pressure and herniation round — four audit checks (design, 2026-11-05)
 
-**Status: RULED (2026-11-05). Round 1: every recommendation APPROVED as written. No engine code yet.**
+**Status: RULED (2026-11-05) and IMPLEMENTED (2026-11-09) on `fix/raised-pressure` (`3bd61c4..83e26b0` + docs). Round 1:
+every recommendation APPROVED as written.** Measured on the branch: `npm test` 87 suites / 7413 green; audit 108 / 115
+probes, 1050 passed / 9 failed (the composite-sites round); the safety and pressure samples and the 41 captured cards match
+§5 and §6 (§5's down-going-plantar change is made by the card, so the suite pins it). Browser-checked on port 8143; no
+console errors.
 
 > *"Approve as written"* — the owner, on round 1 of the raised-pressure design
 
@@ -12,7 +16,7 @@ Every recommendation in §4 is now a ruling, rows 1–14. That includes:
 - row 5's gate: reduced consciousness, and one of the III's own signs on that side;
 - the new wording of rows 8–11, the one re-pin of row 12, the four probes of row 13 and the new suite of row 14.
 
-The implementation plan follows this ruling.
+Built from `docs/superpowers/plans/2026-11-05-raised-pressure.md`.
 - Branch `fix/raised-pressure` (worktree `Code/neurolocaliser-pressure/`), cut from `fix/content-gaps` at `4d781bd`. That branch is
   the finished content-gap fix, stacked on the false-multifocal fix, the cord fix and PR #18 (all open, none to be merged).
   Not pushed; no PR.

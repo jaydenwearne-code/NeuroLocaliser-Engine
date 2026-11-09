@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**86 test suites / 7355 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**87 test suites / 7413 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1361,6 +1361,48 @@ suite `test/content-gaps.test.js`; the re-pins are exactly spec row 18. Browser-
 
 Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/superpowers/plans/2026-11-01-content-gaps.md`.
 
+## Raised-pressure round (DONE 2026-11-09, round 1) — ✅ owner-approved rulings (every row)
+
+The fourth fix from the 2026-10-18 clinical audit. **The defect:** a false-localising or herniation sign read as two
+lesions (R1 #7, #8, #13), and three cards were unsafe beyond those checks: coma + a blown pupil read as Adie's pupil
+("outpatient reassurance, routine"), papilloedema alone as a large MCA infarct (stroke pathway), and a VI palsy with
+papilloedema as a pontine infarct.
+
+**Mechanics:**
+- **Both VI nerves** are one bilateral site, `bilateral_skull_base_vi_cisternal` (`composeBilateralAbducensSites`), from the
+  existing `vi_cisternal` row, so it keeps every table keyed by the place.
+- **`PRESSURE_REACHES`** (`compartments.js`): under papilloedema the compartment filter also keeps the VI's cisternal course and
+  the VI at the petrous apex, the nerve courses the pressure itself injures. The IV's cisternal course is deferred (its card
+  would badge routine). `test/raised-pressure.test.js` checks the set against the causes.
+- **The false-localising set-aside** (`falseLocalisingAside`, run before the background step) is the second narrow overturn of
+  "a LOCALISING sign is never relaxed away". With papilloedema, a VI palsy (`FALSE_LOCALISING_SIGNS`) is set aside when:
+  (a) papilloedema is entered; (b) no place explains every finding; (c) one place explains the rest, or nothing is left;
+  (d) that place is the rest's own answer without the papilloedema. It never joins a cover; `r.pressure.falseLocalising.tokens`
+  carries it and the card names it.
+- **The pressure-only card** (`PRESSURE_ONLY`, `app/answer.js`): papilloedema with nothing else localised names no place, and
+  `app.js` draws only the answer card, the banner and the Where list.
+- **READINGS of a primitive site** (`sites.js`): the uncal reading of the compressive III, a variant with the same id, adds the
+  ARAS, extensor posturing and the midbrain peduncle (contralateral arm, leg, Babinski). `solverSites(opts, observed)` gates
+  it: reduced consciousness entered AND one of the III's own signs. It leads with uncal herniation (`leads` → `lead: true`,
+  read as common within the reading) and carries its own red flag.
+
+**Traps worth knowing:**
+- An ungated reading takes the awake Weber picture (7 assertions). The consciousness gate alone lets coma + a weak arm read a
+  compressed III, and lets the reading take the coma in 23 covers of the safety sample.
+- A herniation site with its own id fails the approved top-3 check: a place that explains every finding is shown alone.
+- The What card's "Most likely:" line lists only common causes. A lead flag alone left it naming the aneurysm under an answer
+  card naming herniation (found in the plan's dry run).
+- `minimalSet` is solved without the papilloedema, so the cover can use places the list excludes (spec O2). That is how R1
+  #7's card mixed two places.
+- `why.js`'s station index calls `solverSites(opts)` without findings, so it never sees a gated reading.
+
+**Measured:** audit 101/111 → 108/115 probes (4 probes added by row 13); counted checks 1034/13 → 1050/9, the 9 being the
+composite-sites round; swaps 272/272, background 292/292, mirror 277/277. `npm test`: 87 suites, 7413 assertions; new suite
+`test/raised-pressure.test.js`; the one re-pin is `fundus.test` (row 12). Safety sample: 3 claims fewer, 0 new. Pressure
+sample (papilloedema added): 84 claims fewer, 0 new. Browser-checked on port 8143.
+
+Spec/plan: `docs/superpowers/specs/2026-11-05-raised-pressure-design.md`, `docs/superpowers/plans/2026-11-05-raised-pressure.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1372,7 +1414,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/sup
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
 - **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
-  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01) + three metamorphic properties (synonym swap, background
+  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01, and 4 by the raised-pressure round, 2026-11-09) + three metamorphic properties (synonym swap, background
   comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
   deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
   are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
@@ -1380,7 +1422,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/sup
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
   groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
   hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
-  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the raised-pressure round: 108/115. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 
@@ -1401,7 +1443,8 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
                  structure `crosses` override when a pathway crosses differently here
   sites.js       SITES derived from structures by (level, part, side); plus composers (hemi,
                  bilateral cord, cauda/conus midline). `buildingBlock` flags composite-only parts
-                 (cord anterior/posterior/central) so they feed composers but aren't standalone candidates
+                 (cord anterior/posterior/central) so they feed composers but aren't standalone candidates;
+                 READINGS of a primitive site (the uncal reading of the compressive III, gated — 2026-11-09)
   levels.js      ordered dermatome coordinate C2..S5 (+ spanName) — WHERE along the cord; a stated level is evidence
                  since 2026-10-22 (it demotes, constrains and gates — see "Orthogonal axes")
   prevalence.js  prevalenceOf(site) -> 2|1|0 (common/uncommon/rare) coarse per-site prior; TIEBREAK only
@@ -1413,7 +1456,8 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
   compartments.js  level -> COMPARTMENT axis (brain/brainstem/cerebellum/cord/cauda/optic/skull_base/
                  root/plexus/nerve/motor_unit); compartmentOf(site). Finer than regionOf() in causes.js —
                  keeps brain and cord apart, which the multifocal roster needs. INTRACRANIAL_LEVELS in
-                 inverse.js DERIVES from this table (single source of truth for "inside the skull")
+                 inverse.js DERIVES from this table (single source of truth for "inside the skull"); plus
+                 PRESSURE_REACHES and FALSE_LOCALISING_SIGNS (the raised-pressure round, 2026-11-09)
   course.js      COURSES vocabulary (single/simultaneous/stepwise/relapsing/progressive) — HOW an illness
                  unfolded, orthogonal to onset tempo. Annotates/demotes only, like the sensory level
 src/engine/    generic solver code (rarely changes when adding a region)
