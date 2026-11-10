@@ -3,7 +3,7 @@
 // what the detail cards below already compute. Findings are named as the app shows them — the plain label with
 // its proper name in brackets (displayLabel, owner ruling 2026-09-29).
 import { whyChain, whyClues } from "../src/engine/why.js";
-import { causesFor, rankCauses, leadingCause } from "../src/data/causes.js";
+import { causesFor, rankCauses, leadingCause, pressureDemotesAt } from "../src/data/causes.js";
 import { pathologyNextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
@@ -85,16 +85,28 @@ export function whatLine({ causes = [], demotedCount = 0, selected = null, entit
 
 // ---- which workup is on screen ----
 // ONE resolution, shared by the Next card and the answer card, so the badge and the Next line can never describe
-// a different plan from the card below them. It follows the selection, as the Next card always has.
+// a different plan from the card below them. It follows the selection, as the Next card always has. Papilloedema steers it as
+// the onset does (pressure follows the cause, rows 9 and 11); and where no cause at the place can raise the pressure, the plan
+// follows the pressure itself: the pressure-only card's Next line, badged at least urgent (row 10). A selection, the
+// all-sites view and a two-place card are left as they are.
 export function resolveNext({ site, r, pinned, scope, selectedPathology, selectedEntity, onset }) {
   const { sites } = combinedSites(r, r.display, pinned);
   const combined = sites.length >= 2 && scope === "all";
-  const o = { onset: onset || undefined };
+  const pressure = !!(r.pressure && r.pressure.present);
+  const o = { onset: onset || undefined, pressure };
   const nx = combined
     ? combinedNextSteps(sites, selectedEntity || null, o)
     : pathologyNextStepsFor(site, selectedPathology || null, o);
+  const twoLesions = !r.explainAll.length && sites.length >= 2;
+  if (pressure && !combined && !selectedPathology && !twoLesions && pressureLeads(site, onset))
+    return { nx: { ...nx, referral: PRESSURE_ONLY.next, urgency: nx.urgency === "emergency" ? "emergency" : "urgent", pressureLeads: true }, combined };
   return { nx, combined };
 }
+
+// Papilloedema is entered and no cause at this place can raise the pressure, at this onset (row 10). One test, read by
+// resolveNext and by the What card. The retina, and a place outside the skull, never demote for the pressure, so never qualify.
+export const pressureLeads = (site, onset) =>
+  pressureDemotesAt(site) && !causesFor(site, { onset: onset || undefined, pressure: true }).all.length;
 
 // ---- papilloedema with nothing else localised (raised-pressure round, rows 4 and 10, owner-approved wording) ----
 // The card names no place: every intracranial place explains 0 of 0, and the first of them is an accident of the ranking.
@@ -106,6 +118,28 @@ export const PRESSURE_ONLY = {
   next: "Image the head, with venography, before any lumbar puncture; neurosurgery if there is a mass or hydrocephalus.",
   urgency: "urgent",
 };
+// ---- the pressure follow's wording (pressure follows the cause, rows 16–18, owner-approved 2026-11-10) ----
+// The What card's band for the causes papilloedema demotes, and the Next card's notes. Plain text: app.js escapes it.
+export const PRESSURE_BAND = {
+  title: "less likely with papilloedema",
+  note: "Papilloedema means the intracranial pressure is raised. These causes do not raise it: they can explain the deficit, but not the papilloedema.",
+  tag: "does not raise the pressure",
+};
+export const PRESSURE_LEADS_NOTE = "No cause usually found here raises the intracranial pressure, so the plan follows the papilloedema itself.";
+// Why the plan follows a cause nobody selected: the pressure's sentence, or the approved onset sentence (2026-09-29).
+export function followNote(f) {
+  if (!f) return "";
+  if (f.pressure && f.by && f.by.pressure) return f.by.onset
+    ? `Following the most likely cause, ${f.cause}. A ${f.onset} onset and papilloedema set aside ${f.setAside}, which this site's usual plan is written for.`
+    : `Following the most likely cause, ${f.cause}. Papilloedema sets aside ${f.setAside}, which cannot raise the intracranial pressure and is what this site's usual plan is written for.`;
+  return `Following the most likely cause, ${f.cause}. A ${f.onset} onset rules out ${f.setAside}, which this site's usual plan is written for.`;
+}
+// A demoted cause's reason as its row shows it: the tempo it usually has, that it does not raise the pressure, or both.
+export function demotionReason(d) {
+  return [d.axis === "tempo" ? `usually ${d.expected.join(" / ")}` : "", d.axis === "pressure" || d.pressure ? PRESSURE_BAND.tag : ""]
+    .filter(Boolean).join(" · ");
+}
+
 const pressureOnlyFalseLocalising = n => !n ? "" : n > 1
   ? " The sixth-nerve palsies are a false-localising sign of the raised pressure, not further lesions."
   : " The sixth-nerve palsy is a false-localising sign of the raised pressure, not a second lesion.";
@@ -145,7 +179,8 @@ export function answerFor(st) {
     const u = unifyingDiagnoses(sites, st.tokens, { onset: st.onset || undefined, course: st.course || undefined });
     entity = u.concordant.length ? u.concordant[0].name : null;
   }
-  const res = causesFor(st.sel.site, { onset: st.onset || undefined });
+  const pressed = !!(st.r.pressure && st.r.pressure.present);
+  const res = causesFor(st.sel.site, { onset: st.onset || undefined, pressure: pressed });
   const entityRed = st.selectedEntity ? ((MULTIFOCAL.find(e => e.name === st.selectedEntity) || {}).red || null) : null;
   const lines = {
     where: whereLine({
@@ -160,10 +195,14 @@ export function answerFor(st) {
     what: whatLine({
       causes: res.all, demotedCount: (res.demoted || []).length,
       selected: (twoLesions ? st.selectedEntity : st.selectedPathology) || null, entity, twoLesions,
-      oldStroke: !!(nx.followed && nx.followed.onset === "chronic"),
+      // With papilloedema the line names a cause that can raise the pressure; an old stroke cannot (row 14).
+      oldStroke: !pressed && !!(nx.followed && nx.followed.onset === "chronic"),
     }),
     next: nx.referral || "",
     red: entityRed || st.sel.site.red || nameForSite(st.sel.site, { dominantSide: dom }).red || null, // a reading's own flag first
   };
+  // The card follows the pressure itself (row 10): the pressure-only card's What line, and the banner as the red line — the
+  // site's red flag was written for causes now set aside. resolveNext has already given the Next line and the badge.
+  if (nx.pressureLeads) { lines.what = PRESSURE_ONLY.what; lines.red = null; }
   return { lines, nx, combined, twoLesions };
 }

@@ -176,6 +176,66 @@ ok("row 12: with no onset the badge follows the cause — the leg area's stroke 
   ok("row 13: …so the corona radiata at hyperacute onset with papilloedema stays an emergency",
      nextStepsFor(SITE.left_subcortex_corona_radiata, { onset: "hyperacute", pressure: true }).urgency === "emergency"); }
 
+// ---- D. The answer card (rows 9, 10, 14) ----
+ok("row 10: nothing at the diffuse cerebrum can raise the pressure; the corona radiata has its haemorrhage; the retina never qualifies",
+   pressureLeads(SITE.cerebrum_diffuse) === true && pressureLeads(SITE.left_subcortex_corona_radiata) === false
+   && pressureLeads(SITE.left_visual_pathway_retina, "chronic") === false);
+{ const a = card(`${P} weak_arm@right weak_leg@right`);
+  ok("row 9: papilloedema + right hemiparesis names the haemorrhage, and the Next line is its plan",
+     a?.lines.what === "Most likely Hypertensive deep haemorrhage (must not miss). Must not miss: Diffuse axonal injury."
+     && a?.lines.next === "Acute stroke pathway with neurosurgery; critical care if conscious level is falling" && a?.nx.urgency === "emergency",
+     `${a?.lines.what} | ${a?.lines.next} [${a?.nx.urgency}]`); }
+{ const a = card(`${P} weak_arm@right weak_leg@right`, "chronic");
+  ok("rows 9, 14: …at chronic onset, the glioma, with no old-stroke clause",
+     a?.lines.what === "Most likely Small metastasis / glioma." && a?.nx.urgency === "urgent", `${a?.lines.what} [${a?.nx.urgency}]`);
+  ok("row 14 guard: without papilloedema the chronic card keeps its old-stroke clause",
+     /Could represent an old stroke\./.test(card("weak_arm@right weak_leg@right", "chronic")?.lines.what || "")); }
+{ const a = card(`reduced_consciousness@none ${P}`);
+  ok("row 10: coma + papilloedema follows the pressure itself — the pressure-only lines, emergency, and the banner as the red line",
+     a?.lines.what === ANS.PRESSURE_ONLY.what && a?.lines.next === ANS.PRESSURE_ONLY.next && a?.nx.urgency === "emergency"
+     && a?.lines.red === null && a?.nx.pressureLeads === true, `${a?.lines.what} [${a?.nx.urgency}] red=${a?.lines.red}`); }
+{ const a = card(`${P} fixed_dilated_pupil@left`);
+  ok("row 10: an awake dilated pupil with papilloedema follows the pressure, urgent (it was Adie's pupil, routine)",
+     a?.lines.what === ANS.PRESSURE_ONLY.what && a?.nx.urgency === "urgent" && a?.lines.red === null, `${a?.lines.what} [${a?.nx.urgency}]`); }
+for (const [toks, what, why] of [
+  [`${P} homonymous_hemianopia@right`, "Most likely Occipital haemorrhage (must not miss). Must not miss: PRES (posterior reversible encephalopathy).", "papilloedema + hemianopia: not a PCA infarct"],
+  [`${P} truncal_ataxia@none`, "Most likely Medulloblastoma (must not miss). Must not miss: Cerebellar infarct (vermian).", "papilloedema + truncal ataxia: medulloblastoma"],
+  [`${P} weak_leg@left`, "Most likely Parasagittal meningioma. Must not miss: Superior sagittal sinus thrombosis.", "papilloedema + leg weakness: the parasagittal meningioma"],
+  [`${P} neglect@left weak_arm@left weak_leg@left`, "Most likely Large intracerebral haemorrhage (must not miss). Must not miss: Malignant MCA infarction (space-occupying oedema).", "papilloedema + a right hemisphere syndrome: not a carotid-T occlusion"],
+]) { const a = card(toks); ok(`§6: ${why}`, a?.lines.what === what, a?.lines.what); }
+ok("§6: papilloedema + a chronic hemianopia drops the old-stroke clause",
+   card(`${P} homonymous_hemianopia@right`, "chronic")?.lines.what === "Most likely Glioma / metastasis. Must not miss: Dural arteriovenous fistula.");
+{ const retina = [...expectedFindings(SITE.left_visual_pathway_retina)].join(" ");
+  ok("row 7: a retinal stroke with papilloedema keeps its own What line", card(`${retina} ${P}`)?.lines.what === card(retina)?.lines.what); }
+{ const bad = [];
+  for (const s of KINDS) { const exp = [...expectedFindings(s)]; if (!exp.length) continue;
+    const a = card(`${exp.join(" ")} ${P}`); if (!a || a.twoLesions || a.pressureOnly) continue;
+    if (a.nx.followed && !a.lines.what.startsWith(`Most likely ${a.nx.followed.cause}`)) bad.push(s.id);
+    if (a.nx.pressureLeads && a.lines.what !== ANS.PRESSURE_ONLY.what) bad.push(s.id); }
+  ok("rows 9–10: on every in-play place's own picture with papilloedema, the What line names the cause the plan follows", bad.length === 0, bad.slice(0, 5).join(", ")); }
+
+// ---- E. The wording (rows 16–18) ----
+ok("row 16: the What card's papilloedema band",
+   same(ANS.PRESSURE_BAND, { title: "less likely with papilloedema",
+     note: "Papilloedema means the intracranial pressure is raised. These causes do not raise it: they can explain the deficit, but not the papilloedema.",
+     tag: "does not raise the pressure" }));
+ok("row 16: a demoted cause's reason — the tempo, the pressure, or both",
+   demotionReason({ axis: "tempo", expected: ["hyperacute", "acute"] }) === "usually hyperacute / acute"
+   && demotionReason({ axis: "pressure", expected: [] }) === "does not raise the pressure"
+   && demotionReason({ axis: "tempo", expected: ["chronic"], pressure: true }) === "usually chronic · does not raise the pressure");
+ok("row 17: the Next card's note when papilloedema sets the cause aside",
+   followNote({ cause: "X", setAside: "Y", onset: null, pressure: true, by: { onset: false, pressure: true } })
+   === "Following the most likely cause, X. Papilloedema sets aside Y, which cannot raise the intracranial pressure and is what this site's usual plan is written for.");
+ok("row 17: …when the onset and papilloedema both do",
+   followNote({ cause: "X", setAside: "Y", onset: "chronic", pressure: true, by: { onset: true, pressure: true } })
+   === "Following the most likely cause, X. A chronic onset and papilloedema set aside Y, which this site's usual plan is written for.");
+ok("row 17: …and the approved onset sentence where only the onset does",
+   followNote({ cause: "X", setAside: "Y", onset: "chronic", pressure: true, by: { onset: true, pressure: false } })
+   === "Following the most likely cause, X. A chronic onset rules out Y, which this site's usual plan is written for."
+   && followNote({ cause: "X", setAside: "Y", onset: "subacute" }) === "Following the most likely cause, X. A subacute onset rules out Y, which this site's usual plan is written for.");
+ok("row 18: the Next card's note when the pressure leads",
+   ANS.PRESSURE_LEADS_NOTE === "No cause usually found here raises the intracranial pressure, so the plan follows the papilloedema itself.");
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — pressure follows the cause (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
