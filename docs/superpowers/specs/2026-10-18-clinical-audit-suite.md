@@ -342,3 +342,13 @@ Each probe is also mirrored, so the mirror property runs **281** checks.
 
 **After the fix (measured on `fix/pressure-follows-cause`):** probes **112 / 119**; counted checks 1063 passed, 9 failed. The 9
 are exactly the composite-sites round. Synonym swaps 272 / 272; background 292 / 292; mirror 281 / 281.
+
+## Integration of the open fixes: no probe added, no assertion changed (2026-11-10)
+
+The local branch `integrate/all-open-fixes` merges every open fix: PR #25 (which holds #18 → #20 → #21 → #19 → #24), then
+#23, #22 and #17. It is not pushed and not merged. The probe blocks of every round are kept whole: 111 + 4 composite sites
++ 4 plexus + 4 raised pressure + 4 pressure follows = **127**. The composite round's PARASAG widening (row 7) stands.
+
+**Measured on the integration:** probes **127 / 127**; counted checks 1097 passed, **0 failed**, 0 pending. Synonym swaps
+272 / 272; background 292 / 292; mirror 290 / 290. Each round's remaining failures were exactly another round's probes: the
+composite tip's 4 (raised pressure), the pressure tip's 9 (composite sites), the plexus tip's 13 (both).

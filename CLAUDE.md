@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**90 test suites / 7669 assertions: 7667 pass, 2 fail** (integration branch `integrate/all-open-fixes`: two `pressure-follows` pins, the row-21 snapshot and the row-1 ratchet, move because the composite sites bring three new places into play; they await the owner's ruling) — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**90 test suites / 7669 assertions: 7667 pass, 2 fail** (integration branch `integrate/all-open-fixes`: two `pressure-follows` pins, the row-21 snapshot and the row-1 ratchet, move because the composite sites bring three new places into play; they await the owner's ruling, see "Integration of the open fixes") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1583,6 +1583,47 @@ the cover still ignores the compartment filter (O4). Two wording points from the
 
 Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`, `docs/superpowers/plans/2026-11-09-pressure-follows-cause.md`.
 
+## Integration of the open fixes (2026-11-10) — LOCAL branch `integrate/all-open-fixes`, NOT pushed, NOT merged
+
+Every open engine fix in one tree, measured before they land as one release. It starts at PR #25's tip (`bda1113`, which
+already holds #18 → #20 → #21 → #19 → #24) and merges #23 composite sites (`a24453e`), #22 plexus round (`39b4957`) and
+#17 storage-accessor guard (`72a5c52`), in that order, one merge commit each, each measured. No fix branch was changed.
+`fix/cover-tiebreak` (O3) is a design awaiting its ruling, not a fix, so it is not in.
+
+**One reading gate.** The composite-sites and raised-pressure rounds each added a `needs` gate to `solverSites`. Git merged
+them into TWO gates with two parameter names (one would have thrown) and two shapes: the syrinx's `needs` is a list
+(`["suspended_sensory"]`), the uncal reading's a string (`"reduced_consciousness"`, plus `needsOwn`). Now one gate reads
+both, `[v.needs].flat().includes(t.split("@")[0])`. It equals each branch's own test on every real token, because every token
+carries a side (`@none` for a midline finding). Neither branch's site declarations changed. `variantOf` carries both rounds'
+fields (`side` and `station`; `leads` and `red`).
+
+**Measured** (`npm test`, `npm run test:audit`, and every suite one by one):
+- `npm test`: 90 suites, 7669 assertions, 7667 pass and 2 fail.
+- Audit: probes 127/127; counted checks 1097 passed, 0 failed, 0 pending; swaps 272/272, comorbidity 292/292, mirror
+  290/290. Composite's 4 failures and raised pressure's 9 are each fixed by the other round.
+- Every count is the exact union of the branches' own, each measured on its own tip.
+
+**The 2 failures are a clinical question for the owner, NOT fixed by re-pinning.** Both are `pressure-follows` pins that pass
+on their own branch. They move only because the composite sites bring three places into play under papilloedema.
+- **Row 21's snapshot** pins 99 lists, 647 rows, 438 names and 266 rows that can. Now: 100 lists, 655 rows, 438 names, 268
+  can. The top of the basilar's 8 causes join the in-play lists. `CAN_RAISE_PRESSURE` reads deep cerebral venous
+  thrombosis and PRES as able to raise the pressure there, and the other six as not: the embolism, basilar occlusion,
+  vertebral dissection, cardiac arrest, Heidenhain CJD and NCSE. The 160 names that can are unchanged.
+- **Row 1's ratchet** pins 112 kinds, `80/7 52/44 66/20 37/15 23/17`. Now: 115 kinds, `82/7 54/45 69/20 38/15 23/18`.
+  - Both MLFs and both paracentral lobules repeat their content source's rows exactly (the medial pons, the paracentral
+    lobule).
+  - The top of the basilar is the only new content. With papilloedema it leads with PRES at no onset and at acute onset.
+    The paramedian thalami lead with deep cerebral venous thrombosis; the list order decides between the two uncommon
+    causes.
+  - At hyperacute and chronic onset nothing there can raise the pressure, so the card follows the pressure itself.
+
+**Superseded, not failing:** an assertion one branch re-pinned under its own ruling runs in its new form:
+- plexus: four foot-drop candidates, the upper trunk's musculocutaneous row;
+- raised pressure: the fundus row 12;
+- composite: the PARASAG widening (row 7) is the audit's yardstick.
+
+The storage guard's code applied cleanly; only the status counter line conflicted.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1602,7 +1643,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`,
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
   groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
   hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
-  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the composite-sites round: 112/115 (on its own branch); after the plexus round: 105/115 (on its own branch); after the raised-pressure round: 108/115; after the pressure-follows round: 112/119 (on the raised-pressure branch); with the composite-sites and plexus rounds merged in (`integrate/all-open-fixes`): 127/127. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the composite-sites round: 112/115 (on its own branch); after the plexus round: 105/115 (on its own branch); after the raised-pressure round: 108/115; after the pressure-follows round: 112/119 (on the raised-pressure branch); with every open fix integrated (`integrate/all-open-fixes`, 2026-11-10): 127/127, every counted check passing. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 
