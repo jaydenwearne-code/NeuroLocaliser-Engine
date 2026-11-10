@@ -24,6 +24,9 @@
 //   level / levelNot — the sensory-level note matches / does not match
 //   pressure — the raised-pressure axis fired           none — no single site claims to explain it all
 //   functional — the functional flag fired
+//   lead / leadNot — the answer card's LEADING cause (its "Most likely" clause only, never the must-not-miss; "(the
+//              pressure)" when the card follows the pressure itself) matches / does not match — pressure-follows-the-cause
+//              round, row 20 (2026-11-10): the one kind that reads a cause rather than a place
 //
 // Tokens are what the app can ENTER (side offers from app/sides.js) — the harness section asserts it, so a renamed or
 // re-sided finding fails loudly here instead of turning a probe vacuous.
@@ -33,6 +36,8 @@ import { unifyingDiagnoses } from "../src/engine/multifocal.js";
 import { functionalFlag } from "../src/engine/patterns.js";
 import { FINDINGS } from "../src/model/findings.js";
 import { offersFor } from "../app/sides.js";
+import { answerFor } from "../app/answer.js";
+import { isNormalToken } from "../src/engine/inverse.js";
 
 const VERBOSE = process.argv.includes("--verbose");
 const tally = new Map();  // region -> { counted: [pass, total], ruling: [pass, total] }  — checks
@@ -227,6 +232,12 @@ T("Cranial nerves & skull base", "VI palsy + papilloedema → the VI nerve (fals
 T("Consciousness & raised pressure", "coma + fixed dilated L pupil → the compressive III (uncal herniation), one lesion", "reduced_consciousness@none fixed_dilated_pupil@left", { first: /^left_pupil_cn3_compressive$/, single: true });
 T("Consciousness & raised pressure", "coma + fixed dilated L pupil + R hemiparesis → the compressive III (uncal herniation), one lesion", "reduced_consciousness@none fixed_dilated_pupil@left weak_arm@right weak_leg@right", { first: /^left_pupil_cn3_compressive$/, single: true });
 T("Consciousness & raised pressure", "bilateral VI + papilloedema + R hemiparesis → a left hemisphere site, one lesion (the VIs false-localising)", "weak_abduction@left weak_abduction@right papilloedema@none weak_arm@right weak_leg@right", { first: /^left_(cortex|subcortex)_/, single: true });
+// owner-approved 2026-11-10 (pressure-follows-the-cause round, round 1, row 20): the answer card's leading cause with
+// papilloedema — a new kind of check, the yardstick change the row approved. Each fails on e31d5c9.
+T("Consciousness & raised pressure", "papilloedema + R hemiparesis → the What line leads with a cause that can raise the pressure, not a lacune", "papilloedema@none weak_arm@right weak_leg@right", { lead: /haemorrhage|haematoma|glioma|metastasis|tumour|abscess|meningioma|lymphoma|\(the pressure\)/i, pressure: true });
+T("Consciousness & raised pressure", "coma + papilloedema → the What line leads with the pressure, not a metabolic encephalopathy", "reduced_consciousness@none papilloedema@none", { lead: /\(the pressure\)|mass|hydroceph|venous|haemorrhage|abscess|encephalitis|meningitis|herniation/i, pressure: true });
+T("Hemispheres, thalamus & vision", "papilloedema + R hemianopia → the What line does not lead with an infarct", "papilloedema@none homonymous_hemianopia@right", { leadNot: /infarct/i, pressure: true });
+T("Cranial nerves & skull base", "IV palsy + papilloedema → the IV nerve first, led by the pressure or a tumour", "weak_depression@left vertical_diplopia@left papilloedema@none", { first: /^left_skull_base_trochlear_cisternal$/, lead: /raised intracranial pressure|tumour|\(the pressure\)/i, pressure: true });
 
 // ======================================================================================================
 // 0. Harness: every probe token is a real finding the app can enter.
@@ -269,6 +280,16 @@ for (const c of CASES) {
     if (w.pressure) A("raised-pressure axis fires", !!r.pressure?.present, "");
     if (w.none) A("no single site explains every finding", r.explainAll.length === 0, `explained by ${r.explainAll.map(x => x.site.id).join(", ")}`);
     if (w.functional) A("functional flag raised", functionalFlag(set).functional === true, "");
+    if (w.lead || w.leadNot) {
+      const sel = r.display.find(x => x.site.id === r.defaultSite) || r.display[0];
+      const total = [...set].filter(t => !t.startsWith("papilloedema@") && !isNormalToken(t)).length;
+      const what = sel ? answerFor({ r, sel, total, tokens: set, onset: "", course: "", dominant: "left", sensoryLevel: "",
+        pinned: new Set(), scope: "site", selectedPathology: undefined, selectedEntity: undefined }).lines.what : "";
+      const m = what.match(/^Most likely (.*?)(?: \(must not miss\))?\.(?= Must not miss| After a previous| Could represent|$)/);
+      const lead = m ? m[1] : what.startsWith("Find what is raising the pressure") ? "(the pressure)" : what;
+      if (w.lead) A(`the What line leads with ${w.lead}`, w.lead.test(lead), `What: ${what}`);
+      if (w.leadNot) A(`the What line does not lead with ${w.leadNot}`, !w.leadNot.test(lead), `What: ${what}`);
+    }
   }
   const p = probes.get(c.region) || { counted: [0, 0], ruling: [0, 0] };
   probes.set(c.region, p);

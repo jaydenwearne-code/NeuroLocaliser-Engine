@@ -277,3 +277,22 @@ Each probe is also mirrored, so the mirror property runs **277** checks.
 
 **After the fix (measured on `fix/raised-pressure`):** probes **108 / 115**; counted checks 1050 passed, 9 failed. The 9 are
 exactly the composite-sites round. Synonym swaps 272 / 272; background 292 / 292; mirror 277 / 277.
+
+## Pressure-follows-the-cause round, round 1, row 20: four probes and a new check (2026-11-10)
+
+The round's round 1 (`2026-11-09-pressure-follows-cause-design.md`, row 20, approved as written) added one assertion kind and
+four counted probes. **`lead` / `leadNot`** read the answer card's leading cause, from its "Most likely" clause only (never the
+must-not-miss), or "(the pressure)" when the card follows the pressure itself. It is the first check that reads a cause rather
+than a place: a yardstick change, approved with the row. Each probe fails on `e31d5c9` (the raised-pressure round):
+
+| Probe | Expected answer (approved) | Baseline |
+|---|---|---|
+| papilloedema + right hemiparesis | leads with a cause that can raise the pressure (a mass or a bleed) | "Small-vessel lacunar infarct" |
+| coma + papilloedema | leads with the pressure, not a metabolic encephalopathy | "Metabolic or toxic encephalopathy" |
+| papilloedema + right hemianopia | does not lead with an infarct | "PCA infarct" |
+| IV palsy + papilloedema | the IV nerve first; leads with the pressure or a tumour | the contralateral trochlear nucleus; "Demyelination" |
+
+Each probe is also mirrored, so the mirror property runs **281** checks.
+
+**After the fix (measured on `fix/pressure-follows-cause`):** probes **112 / 119**; counted checks 1063 passed, 9 failed. The 9
+are exactly the composite-sites round. Synonym swaps 272 / 272; background 292 / 292; mirror 281 / 281.
