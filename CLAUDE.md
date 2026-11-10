@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**87 test suites / 7413 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**88 test suites / 7495 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1372,8 +1372,9 @@ papilloedema as a pontine infarct.
 - **Both VI nerves** are one bilateral site, `bilateral_skull_base_vi_cisternal` (`composeBilateralAbducensSites`), from the
   existing `vi_cisternal` row, so it keeps every table keyed by the place.
 - **`PRESSURE_REACHES`** (`compartments.js`): under papilloedema the compartment filter also keeps the VI's cisternal course and
-  the VI at the petrous apex, the nerve courses the pressure itself injures. The IV's cisternal course is deferred (its card
-  would badge routine). `test/raised-pressure.test.js` checks the set against the causes.
+  the VI at the petrous apex, the nerve courses the pressure itself injures. The IV's cisternal course was deferred (its card
+  would badge routine) and joined in the pressure-follows round (2026-11-10), once its card followed the pressure.
+  `test/raised-pressure.test.js` checks the set against the causes.
 - **The false-localising set-aside** (`falseLocalisingAside`, run before the background step) is the second narrow overturn of
   "a LOCALISING sign is never relaxed away". With papilloedema, a VI palsy (`FALSE_LOCALISING_SIGNS`) is set aside when:
   (a) papilloedema is entered; (b) no place explains every finding; (c) one place explains the rest, or nothing is left;
@@ -1403,6 +1404,64 @@ sample (papilloedema added): 84 claims fewer, 0 new. Browser-checked on port 814
 
 Spec/plan: `docs/superpowers/specs/2026-11-05-raised-pressure-design.md`, `docs/superpowers/plans/2026-11-05-raised-pressure.md`.
 
+## Pressure follows the cause (DONE 2026-11-10, round 1) — ✅ owner-approved rulings (every row)
+
+Observation O1 of the raised-pressure round. **The defect:** papilloedema narrowed the PLACES but not their CAUSES. The What
+line, the Next plan and the badge still followed each place's usual cause, most often an infarct that cannot raise the
+pressure. With papilloedema and no onset, 316 of 434 cards led with such a cause; 202 of them badged emergency, mostly on a
+hyperacute stroke pathway, and 11 routine. Papilloedema + a right hemiparesis read *"Lacunar infarct"* with the hyperacute
+stroke pathway; coma + papilloedema read *"Metabolic or toxic encephalopathy"*.
+
+**Mechanics:**
+- **A second demotion axis** in `causesFor(site, { onset, pressure })`, beside the tempo: with papilloedema a cause that cannot
+  raise the intracranial pressure is DEMOTED, never dropped (`demotion: { axis: "pressure", entered: "papilloedema" }`). A
+  cause both axes demote keeps the tempo axis and adds `pressure: true`. `combinedCauses` passes it. The result gains
+  `pressure: true` only when the pressure acted, so every output without papilloedema is byte-identical (asserted).
+- **`CAN_RAISE_PRESSURE`** (`causes.js`) is ONE table: category defaults (neoplastic, infective and traumatic can; the rest
+  cannot) plus named `can` / `cannot` patterns, `cannot` read first. An infarct can only when it is named space-occupying
+  (malignant MCA) or sits in the posterior fossa and takes the cerebellum (PICA, SCA, cerebellar) — not a large MCA or
+  carotid-T, not AICA. Hypoxic-ischaemic injury cannot. Appendix A of the spec is the clinical content;
+  `test/pressure-follows.test.js` snapshots it.
+- **`pressureDemotesAt(site)`**: only where the compartment filter keeps the place (intracranial, or `PRESSURE_REACHES`). The
+  retina is exempt, so giant cell arteritis keeps its lead (row 7).
+- **`pressureFollows`** (`nextSteps.js`, the mirror of `onsetFollows`): the plan follows the cause the What line names when the
+  pressure sets the site's usual cause aside, or when the approved onset rule fires — never elsewhere. `followed.by` records
+  which axis did it, and the Next card's note says so (rows 17–18).
+- **`pressureFloor`**: nothing is routine with papilloedema — in `nextStepsFor`, `pathologyNextStepsFor` and the entity path of
+  `combinedNextSteps`. **The hyperacute escalation is untouched**: it still reads only the onset.
+- **The pressure leads** (`resolveNext`, `pressureLeads` in `app/answer.js`): where no cause at the place can raise it, the
+  What and Next lines are `PRESSURE_ONLY`'s, the badge is at least urgent, and the banner is the red line. Never on a
+  two-place card, a selection or the all-sites view.
+- With papilloedema the What line drops *"Could represent an old stroke."* (row 14).
+- **The IV's cisternal course joins `PRESSURE_REACHES`**: its card now leads *"Tumour or raised intracranial pressure"*
+  [emergency], not the trochlear nucleus's demyelination (row 15; three re-pins in `raised-pressure.test.js`).
+- **The cards:** the What card's *"Set aside — less likely with papilloedema"* band is selectable, because the papilloedema may
+  be unrelated: the lacune can still be chosen, and its plan is floored at urgent. The all-sites view splits demoted shared
+  causes the same way. The tempo band is unchanged.
+
+**Traps worth knowing:**
+- Letting the hyperacute escalation read the pressure drops 19 hyperacute cards from emergency. Keep it on the onset.
+- Following whenever EITHER axis sets the usual cause aside silently extends the onset rule to non-stroke places (the pretectum
+  at acute onset followed hydrocephalus). The approved onset rule is the GATE; the plan always follows the What line's cause.
+- A What-line probe must read the "Most likely" clause only: on the base, the IV probe passed by matching the must-not-miss.
+- The retina never follows the pressure, even when an onset alone empties its list (plan decision 1), so at chronic onset the
+  pressure leads on 71 cards, not the spec's 83.
+- The `RAISES_PRESSURE` regex (the ophthalmic prompt) is not the attribute: it names 24 of 641 rows, and as the attribute 351
+  of 436 cards named no cause at all.
+
+**Measured:** with no onset, 385 of 436 papilloedema cards change. The plan follows on 292 and the pressure leads on 24; none
+badge routine, and What and Next agree on every card. 59 leave emergency, 40 rise to it and 21 rise from routine. At hyperacute
+onset no card loses emergency. Without papilloedema 0 of 3,765 cards differ. The build equals the plan's dry run on all 7,530
+sample cards, all 1,226 pairs and the 46 + 41 captured cards. `npm test`: 88 suites, 7495 assertions; new suite
+`test/pressure-follows.test.js`; the re-pins are exactly row 19's three. Audit: the existing checks do not move (1050/9); with
+row 20's four probes and the new `lead` check, 1063/9 (probes 112/119); swaps 272/272, background 292/292, mirror 281/281.
+Browser-checked on port 8144.
+
+**Not fixed (spec §7, for later):** the place ranking and the Together card's disease still ignore the pressure (O1, O2), and
+the cover still ignores the compartment filter (O4). Two wording points from the browser check await a ruling (spec status).
+
+Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`, `docs/superpowers/plans/2026-11-09-pressure-follows-cause.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1414,7 +1473,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-05-raised-pressure-design.md`, `docs/
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
 - **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
-  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01, and 4 by the raised-pressure round, 2026-11-09) + three metamorphic properties (synonym swap, background
+  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01, and 4 by the raised-pressure round, 2026-11-09, and 4 with a new `lead` check by the pressure-follows round, 2026-11-10) + three metamorphic properties (synonym swap, background
   comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
   deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
   are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
@@ -1422,7 +1481,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-05-raised-pressure-design.md`, `docs/
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
   groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
   hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
-  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the raised-pressure round: 108/115. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the raised-pressure round: 108/115; after the pressure-follows round: 112/119. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 
@@ -1457,7 +1516,8 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
                  root/plexus/nerve/motor_unit); compartmentOf(site). Finer than regionOf() in causes.js —
                  keeps brain and cord apart, which the multifocal roster needs. INTRACRANIAL_LEVELS in
                  inverse.js DERIVES from this table (single source of truth for "inside the skull"); plus
-                 PRESSURE_REACHES and FALSE_LOCALISING_SIGNS (the raised-pressure round, 2026-11-09)
+                 PRESSURE_REACHES and FALSE_LOCALISING_SIGNS (the raised-pressure round, 2026-11-09; the IV's cisternal
+                 course joined PRESSURE_REACHES in the pressure-follows round, 2026-11-10)
   course.js      COURSES vocabulary (single/simultaneous/stepwise/relapsing/progressive) — HOW an illness
                  unfolded, orthogonal to onset tempo. Annotates/demotes only, like the sensory level
 src/engine/    generic solver code (rarely changes when adding a region)
@@ -1483,13 +1543,15 @@ src/engine/    generic solver code (rarely changes when adding a region)
                  each LOCALISING finding, does removing it collapse the picture to one site?
 src/data/
   syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags
-  causes.js      THE PATHOLOGY LAYER. tempo-aware surgical-sieve DDx: causesFor(site,{onset}) ->
+  causes.js      THE PATHOLOGY LAYER. tempo-aware surgical-sieve DDx: causesFor(site,{onset,pressure}) ->
                  {byCategory, demoted, all, source}. Precedence: curated CAUSES[site] → phonebook ddx
                  (categorised live) → attribute-derived fallback. Each cause via `c(name,cat,tempo,
                  likelihood,red,feature,pathognomonic)`: `feature` = a "what points to it" clue; `pathognomonic`
                  = a bedside "🔎 Confirm on exam" sign. A central `PATHOGNOMONIC` keyword→sign table enriches
                  causes from ALL sources by name (Ramsay Hunt vesicles, Argyll Robertson, KF rings, …).
-                 A cause whose tempo misses the entered onset moves to `demoted`, it is never dropped.
+                 A cause whose tempo misses the entered onset moves to `demoted`, it is never dropped. With
+                 papilloedema (`pressure`), so does a cause that cannot raise the ICP (`CAN_RAISE_PRESSURE`: category
+                 defaults + named exceptions), where `pressureDemotesAt` (the retina exempt) — the second axis, 2026-11-10.
                  combinedCauses(sites,{onset}) + canonicalKey(name) merge causes across sites for the
                  Together/What-all-sites views — canonicalised through the MULTIFOCAL roster's own `matches`
                  regex (a name matching 2+ regexes is left uncanonicalised rather than guessed).
@@ -1497,7 +1559,9 @@ src/data/
                  confirmatory, monitoring, urgency, referral, curated}. Curated NEXT[site] carries specifics;
                  tiers derive from urgency + region (bulbar/cord/arousal/nmu/optic/vestibular) otherwise.
                  combinedNextSteps(sites) unions per-site plans for the cross-site view; urgency = the
-                 MOST urgent site, never an average.
+                 MOST urgent site, never an average. With papilloedema, pressureFollows() (the mirror of
+                 onsetFollows) has the plan follow the cause the What line names, and pressureFloor() keeps every
+                 plan off routine (2026-11-10).
   multifocal.js  CONTENT ONLY (matching logic lives in engine/multifocal.js), reviewable on its own: the
                  13-entity MULTIFOCAL roster (ALS/MS/mets/vasculitis/sarcoid/mononeuritis multiplex/
                  leptomeningeal disease/NMOSD/CNS lymphoma/NF2/paraneoplastic/neurosyphilis-HIV/embolic

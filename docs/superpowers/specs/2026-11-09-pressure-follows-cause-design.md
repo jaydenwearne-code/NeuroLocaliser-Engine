@@ -1,6 +1,21 @@
 # Pressure follows the cause — papilloedema steers the What line, the plan and the badge (design, 2026-11-09)
 
-**Status: RULED (2026-11-10). Round 1: every recommendation APPROVED as written. No engine code yet.**
+**Status: IMPLEMENTED (2026-11-10) on `fix/pressure-follows-cause`, `ae1e7a1..10168de` plus the docs commit. Round 1: every
+recommendation APPROVED as written (ruled 2026-11-10).**
+
+**Measured on the branch:** `npm test` 88 suites / 7495 green; the audit 1063 passed / 9 failed (probes 112 / 119, mirror
+281 / 281). The build equals the plan's dry run on all 7,530 sample cards, all 1,226 pairs and the 46 + 41 captured cards. §5's
+numbers hold with one exception, the plan's decision 1: at chronic onset the pressure leads on 71 cards, not 83, because the
+retina never follows the pressure. Browser-checked on port 8144: every case in the plan's Task 7, the no-papilloedema guard,
+no console errors, 375 px and dark mode.
+
+**Found in the browser check, for a later ruling (nothing changed):**
+- At the IV, the Next card's note reads *"Papilloedema sets aside Head trauma, which cannot raise the intracranial
+  pressure …"*. That is row 17's template with Appendix A's ruling filled in (a traumatic IV palsy does not explain the
+  papilloedema), but read alone the sentence says that head trauma cannot raise the pressure.
+- The answer card's title is the place's phonebook name, so *"Corona radiata lacune (pure motor)"* heads a card whose What
+  line now leads with *"Hypertensive deep haemorrhage"*. This has the same shape as O6 (the site's red flag stays), and the onset
+  rule already does it at a slow onset.
 
 > *"Approve as written"* — the owner, on round 1 of the pressure-follows-the-cause design
 

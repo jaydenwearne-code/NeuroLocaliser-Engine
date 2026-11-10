@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: PLAN — not yet implemented.** It implements every ruling of round 1 in
+**Status: IMPLEMENTED (2026-11-10)** on `fix/pressure-follows-cause`, `ae1e7a1..10168de` plus the docs commit; every task
+matched its dry run (Task 7's re-measure: 0 card and 0 pair differences). It implements every ruling of round 1 in
 `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md` (owner: *"Approve as written"*, 2026-11-10).
 
 **The code in this plan was dry-run**, task by task, on a throwaway copy of this branch at `7966a70`. After the last task:
