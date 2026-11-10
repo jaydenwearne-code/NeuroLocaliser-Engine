@@ -42,24 +42,25 @@ ok("row 1: it reads the cisternal VI's causes — raised pressure first",
 { const r = solve(T(`weak_abduction@left ${P}`));
   ok("row 2: a VI palsy + papilloedema → the VI nerve first, not the pons", ids(r)[0] === "left_skull_base_vi_cisternal", ids(r).slice(0, 3).join(", "));
   ok("row 2: …the pons still fits", ids(r).includes("left_pons_medial")); }
-ok("row 2: PRESSURE_REACHES is the VI's cisternal course and the VI at the petrous apex",
-   [...PRESSURE_REACHES].sort().join() === "skull_base|vi_cisternal,skull_base|vi_petrous_apex", [...PRESSURE_REACHES].join());
-{ // The cross-check (row 2): the parts outside the skull's levels whose own causes name raised pressure are PRESSURE_REACHES,
-  // and the IV's cisternal course, deferred.
+ok("row 2: PRESSURE_REACHES is the VI's cisternal course, the VI at the petrous apex and (pressure-follows round, row 15) the IV's cisternal course",
+   [...PRESSURE_REACHES].sort().join() === "skull_base|trochlear_cisternal,skull_base|vi_cisternal,skull_base|vi_petrous_apex", [...PRESSURE_REACHES].join());
+{ // The cross-check (row 2): the parts outside the skull's levels whose own causes name raised pressure are exactly
+  // PRESSURE_REACHES — the IV's cisternal course joined it in the pressure-follows round (row 15).
   const named = new Set(candidateSites().filter(s => !INTRACRANIAL_LEVELS.has(s.level)
     && causesFor(s).all.some(c => /raised intracranial pressure/i.test(c.name))).map(s => `${s.level}|${s.part}`));
   ok("row 2: every part the pressure reaches names raised pressure among its own causes",
      PRESSURE_REACHES.size > 0 && [...PRESSURE_REACHES].every(k => named.has(k)), [...named].join(", "));
-  ok("row 2: every other part that names it is the deferred IV",
-     [...named].filter(k => !PRESSURE_REACHES.has(k)).join() === "skull_base|trochlear_cisternal", [...named].join(", ")); }
+  ok("row 2: no other part names it (the IV joined, pressure-follows round, row 15)",
+     [...named].filter(k => !PRESSURE_REACHES.has(k)).length === 0, [...named].join(", ")); }
 { const { ans } = card("weak_abduction@left weak_abduction@right");
   ok("row 1: the card names the bilateral site and the pressure",
      ans?.lines.where === "Bilateral VI — cisternal segment." && ans?.lines.what === "Most likely Raised intracranial pressure (false localising sign) (must not miss). Must not miss: Skull base tumour or nasopharyngeal carcinoma.",
      `${ans?.lines.where} | ${ans?.lines.what}`); }
 ok("row 1 guard: a single VI palsy leads with the left VI, and the bilateral site is not offered (the other side is a known normal)",
    ids(solve(T("weak_abduction@left")))[0] === "left_skull_base_vi_cisternal" && !ids(solve(T("weak_abduction@left"))).includes("bilateral_skull_base_vi_cisternal"));
-ok("row 2 guard: a IV palsy + papilloedema still leads with the contralateral trochlear nucleus (the IV is deferred)",
-   ids(solve(T(`weak_depression@left vertical_diplopia@left ${P}`)))[0] === "right_midbrain_trochlear");
+{ const r = solve(T(`weak_depression@left vertical_diplopia@left ${P}`));
+  ok("row 2 (pressure-follows round, row 15): a IV palsy + papilloedema leads with the IV nerve; the contralateral nucleus also fits",
+     ids(r)[0] === "left_skull_base_trochlear_cisternal" && ids(r).includes("right_midbrain_trochlear"), ids(r).slice(0, 3).join(", ")); }
 
 // ---- B. The uncal reading of the compressive III (rows 5–8, 11) ----
 const UNCAL = "reduced_consciousness@none fixed_dilated_pupil@left extensor_posturing@none";

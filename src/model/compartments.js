@@ -60,13 +60,14 @@ export const LEVEL_COMPARTMENT = {
 // which is also not in this set), and a Pancoast tumour must not become intracranial by accident.
 export const INTRACRANIAL_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "optic", "pupil"]);
 
-// THE NERVE COURSES RAISED PRESSURE ITSELF INJURES (raised-pressure round, row 2, owner-approved 2026-11-05), keyed
-// `level|part`. Papilloedema keeps only the places inside the skull — and these, because the pressure produces their palsy
-// itself: the VI's long cisternal course, and the VI tethered at the petrous apex (the false-localising sign). Exactly three
-// parts outside the skull's levels name raised pressure among their own causes; the third, the IV's cisternal course, is
-// DEFERRED: kept under papilloedema, its card would lead with head trauma and badge routine, because its plan is not written
-// for the pressure (spec 2026-11-05, row 2, O1, O8). test/raised-pressure.test.js checks this set against the causes.
-export const PRESSURE_REACHES = new Set(["skull_base|vi_cisternal", "skull_base|vi_petrous_apex"]);
+// THE NERVE COURSES RAISED PRESSURE ITSELF INJURES (raised-pressure round, row 2, owner-approved 2026-11-05; the IV added by
+// the pressure-follows-the-cause round, row 15, owner-approved 2026-11-10), keyed `level|part`. Papilloedema keeps only the
+// places inside the skull — and these, because the pressure produces their palsy itself: the VI's long cisternal course, the
+// VI tethered at the petrous apex (the false-localising sign), and the IV's cisternal course (the thinnest nerve, and the only
+// one to leave dorsally). They are exactly the parts outside the skull's levels whose own causes name raised pressure, and
+// test/raised-pressure.test.js checks the set against the causes. The IV waited until its card could follow the pressure: with
+// papilloedema it now leads with "Tumour or raised intracranial pressure", not head trauma (spec 2026-11-09, row 15).
+export const PRESSURE_REACHES = new Set(["skull_base|vi_cisternal", "skull_base|vi_petrous_apex", "skull_base|trochlear_cisternal"]);
 // The palsies papilloedema makes false-localising (raised-pressure round, row 3): set aside, under the conditions in
 // inverse.js falseLocalisingAside, when they are what stops one place explaining the rest. The VI only; the IV was measured
 // and is not included (it is rarely the false-localising sign, and row 2 defers it).
