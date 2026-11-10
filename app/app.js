@@ -25,7 +25,8 @@ import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { offersFor, tokensForRow, currentTokens } from "./sides.js";
-import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence, PRESSURE_ONLY } from "./answer.js";
+import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence, PRESSURE_ONLY, PRESSURE_BAND, PRESSURE_LEADS_NOTE,
+  followNote, demotionReason, pressureLeads } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
@@ -907,8 +908,11 @@ function scopeToggle(n) {
 // One shared cause row, in the merged What card. `dem` adds the "usually X onset" line the demoted band
 // needs — the concordant list omits it, since a concordant entry needs no such caveat.
 function sharedCauseRow(s, nSites, dem) {
+  const d = s.demotion;
+  const why = dem ? [d.axis === "tempo" ? `usually ${d.expected.map(esc).join(" / ")} onset` : "",
+    d.axis === "pressure" || d.pressure ? esc(PRESSURE_BAND.tag) : ""].filter(Boolean).join(" · ") : "";
   const loc = dem
-    ? `at ${s.count} of ${nSites} sites · usually ${s.demotion.expected.map(esc).join(" / ")} onset`
+    ? `at ${s.count} of ${nSites} sites · ${why}`
     : `at ${s.count} of ${nSites} sites`;
   return `<div class="cause${s.red?" red":""}"><b>${esc(s.name)}</b>${s.red?` <span class="rf">⚑ RED</span>`:""} <span class="dloc">${loc}</span>${s.feature?` — ${esc(s.feature)}`:""}</div>`;
 }
@@ -938,7 +942,7 @@ function perSiteRemainderHTML(cc, sites) {
   const body = bySite.map(({ site, remainder }) =>
     `<div class="catgrp"><div class="cathead">${esc(siteName(site))}</div>${remainder.map(c =>
       renderCause(c) + (c.demotion
-        ? `<div class="annot" style="margin:-4px 0 6px">Less likely given <b>${esc(c.demotion.entered)}</b> onset — usually ${c.demotion.expected.map(esc).join(" / ")}.</div>`
+        ? `<div class="annot" style="margin:-4px 0 6px">${c.demotion.axis === "tempo" ? `Less likely given <b>${esc(c.demotion.entered)}</b> onset` : "Less likely with papilloedema"} — ${esc(demotionReason(c.demotion))}.</div>`
         : "")
     ).join("")}</div>`
   ).join("");
@@ -953,24 +957,31 @@ function whatCard(site, r, list) {
   // the user's pinned pair, and the two cards silently describe DIFFERENT sites on the same screen.
   const { sites } = combinedSites(r, list, S.pinned);
   if (sites.length >= 2 && S.scope === "all") {
-    const cc = combinedCauses(sites, { onset: S.onset || undefined });
+    const cc = combinedCauses(sites, { onset: S.onset || undefined, pressure: raisedPressureAxis(S.tokens).present });
     // Tempo mismatches DEMOTE, never drop (owner ruling) — a shared cause is demoted iff EVERY contributing
     // site's own source was demoted. The "no shared cause" message must only fire when there is truly
     // nothing shared, never merely because everything that IS shared got demoted — that's a different,
     // narrower claim ("no cause is plausible at more than one site" is false when one is, just at the wrong
     // tempo) and the code cannot support the stronger one.
     const concordantShared = cc.shared.filter(s => !s.demoted);
-    const demotedShared = cc.shared.filter(s => s.demoted);
+    // Papilloedema demotes beside the tempo, in its own band (pressure follows the cause, row 16).
+    const demotedShared = cc.shared.filter(s => s.demoted && s.demotion.axis === "tempo");
+    const pressureShared = cc.shared.filter(s => s.demoted && s.demotion.axis === "pressure");
     const shared = concordantShared.length
       ? concordantShared.map(s => sharedCauseRow(s, sites.length, false)).join("")
       : demotedShared.length
       ? `<div class="empty">Every shared cause is demoted given <b>${esc(S.onset)}</b> onset — see "Less likely given the tempo" below.</div>`
+      : pressureShared.length
+      ? `<div class="empty">Every shared cause is set aside with papilloedema — see "${esc(PRESSURE_BAND.title)}" below.</div>`
       : `<div class="empty">No cause is plausible at more than one of these sites — which argues for two unrelated processes.</div>`;
-    const dem = demotedShared.length
+    const dem = (demotedShared.length
       ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, demotedShared.length,
           `<div class="annot">A cause shared here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
            ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}`)
-      : "";
+      : "") + (pressureShared.length
+      ? setAside(esc(PRESSURE_BAND.title), pressureShared.length,
+          `<div class="annot">${esc(PRESSURE_BAND.note)}</div>${pressureShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}`)
+      : "");
     const remainder = perSiteRemainderHTML(cc, sites);
     return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what", "— every cause, by onset");
   }
@@ -988,9 +999,13 @@ function renderCause(c) {
 }
 
 function whatBlock(site) {
-  const res = causesFor(site, { onset: S.onset || undefined });
+  const pressed = raisedPressureAxis(S.tokens).present;
+  const res = causesFor(site, { onset: S.onset || undefined, pressure: pressed });
+  // Nothing here can raise the pressure (pressure follows the cause, row 10): the card follows the pressure itself, and the
+  // banner is the red line, as on the answer card.
+  const leads = pressed && pressureLeads(site, S.onset);
   const ph = nameForSite(site, { dominantSide: domView() });
-  const redText = site.red || ph.red; // a reading's own red flag (the uncal reading, raised-pressure round, row 11)
+  const redText = leads ? null : (site.red || ph.red); // a reading's own red flag (the uncal reading, raised-pressure round, row 11)
   const red = redText ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(redText)}</div>` : "";
   // Curated causes only — a category with nothing plausible at this site is simply not shown.
   const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));
@@ -1017,7 +1032,9 @@ function whatBlock(site) {
   }).join("");
   // Lead: the common causes to think of first (given the chosen tempo, if any).
   const leadCauses = res.all.filter(x => x.likelihood === "common").slice(0, 3).map(x => x.name);
-  const lead = leadCauses.length
+  const lead = leads
+    ? `<p class="what-lead">${esc(PRESSURE_ONLY.what)}</p>`
+    : leadCauses.length
     ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
   // The onset control lives HERE, in the card it acts on — it filters/demotes causes and nothing else.
   const cap = `<div class="card-ctrl"><label>Onset
@@ -1026,12 +1043,20 @@ function whatBlock(site) {
         ${TEMPO.map(t=>`<option value="${t.id}"${S.onset===t.id?" selected":""}>${esc(t.label)}</option>`).join("")}
       </select></label>${res.derived ? `<span class="derived">(derived from site type — not individually curated)</span>` : ""}</div>`;
   // Tempo mismatches are demoted, never deleted — the teaching line that used to REPLACE the content now
-  // heads the disclosure. Spec 2026-08-14 §7.
-  const dem = res.demoted && res.demoted.length
-    ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, res.demoted.length,
+  // heads the disclosure. Spec 2026-08-14 §7. Papilloedema demotes beside them in its own band (pressure follows the cause,
+  // row 16); a cause both demote stays in the tempo band with both reasons. The papilloedema band's causes stay selectable
+  // (row 1), so it is held open while the selection lives inside it.
+  const tempoDem = res.demoted.filter(x => x.demotion.axis === "tempo");
+  const pressDem = res.demoted.filter(x => x.demotion.axis === "pressure");
+  const dem = (tempoDem.length
+    ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, tempoDem.length,
         `<div class="annot">A lesion here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
-         ${res.demoted.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">usually ${x.demotion.expected.map(esc).join(" / ")}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}`)
-    : "";
+         ${tempoDem.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">${esc(demotionReason(x.demotion))}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}`)
+    : "") + (pressDem.length
+    ? setAside(esc(PRESSURE_BAND.title), pressDem.length,
+        `<div class="annot">${esc(PRESSURE_BAND.note)}</div>${pressDem.map(x => renderCause(x) + `<div class="annot" style="margin:-4px 0 6px">${esc(PRESSURE_BAND.tag)}.</div>`).join("")}`,
+        pressDem.some(x => x.name === S.selectedPathology))
+    : "");
   return `${cap}${lead}${red}${groups}${dem}`;
 }
 
@@ -1071,8 +1096,10 @@ function nextBlock(nx, combined) {
     : ux
     ? `<div class="px-line">Plan for: <button class="px-chip" data-ux="${esc(nx.entity)}" title="Clear the selected cross-site diagnosis">${esc(nx.entity)} <span class="px-x" aria-hidden="true">×</span></button></div>`
     : "";
+  // Papilloedema has its own sentences (pressure follows the cause, rows 17–18); the onset's stays as approved.
   const fxHead = fx
-    ? `<p class="derived">Following the most likely cause, ${esc(fx.cause)}. A ${esc(fx.onset)} onset rules out ${esc(fx.setAside)}, which this site's usual plan is written for.</p>` : "";
+    ? `<p class="derived">${esc(followNote(fx))}</p>`
+    : !combined && !px && nx.pressureLeads ? `<p class="derived">${esc(PRESSURE_LEADS_NOTE)}</p>` : "";
   // The honest fallback (spec 2026-08-18): an uncurated pathology shows the SITE plan and says so, rather
   // than deriving generic content to fill the gap. There is deliberately NO cross-site equivalent — every
   // entity has an authored plan (the gate in test/multifocal-next-steps.test.js), so `ux` never falls back.
