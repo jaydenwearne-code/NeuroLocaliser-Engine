@@ -1,6 +1,22 @@
 # Pressure follows the cause — papilloedema steers the What line, the plan and the badge (design, 2026-11-09)
 
-**Status: DESIGN — round 1, awaiting the owner's ruling. No engine code.**
+**Status: RULED (2026-11-10). Round 1: every recommendation APPROVED as written. No engine code yet.**
+
+> *"Approve as written"* — the owner, on round 1 of the pressure-follows-the-cause design
+
+Every recommendation in §4 is now a ruling, rows 1–21. That includes:
+- row 1: papilloedema is a second demotion axis beside the tempo — it demotes, never drops — at the places it keeps in play;
+- rows 2–7: the attribute held as one table, a category default with the named exceptions of Appendix A (the judgement calls
+  listed in row 4 included), the infarct rule (Ep: a named space-occupying infarct and the posterior-fossa infarcts that take
+  the cerebellum; not AICA), hypoxic-ischaemic injury as unable to raise it, and the retina exempt;
+- rows 9–14: the plan follows the cause the What line names, where the pressure sets the usual cause aside or the approved onset
+  rule fires; the pressure-only lines where nothing can; never routine; the badge follows the cause with no onset; the
+  hyperacute escalation untouched; no "old stroke" clause with papilloedema;
+- row 15: the IV's cisternal course joins `PRESSURE_REACHES`, with its three re-pins (row 19);
+- the wording of rows 16–18, the four audit probes and their `lead` check (row 20, a yardstick change), and the new suite of
+  row 21.
+
+The implementation plan follows this ruling.
 - Branch `fix/pressure-follows-cause` (worktree `Code/neurolocaliser-pressure-cause/`), cut from `fix/raised-pressure` at
   `e31d5c9`. That branch is the implemented raised-pressure round, stacked on the content-gap fix, the false-multifocal fix,
   the cord fix and PR #18 (none to be merged). Not pushed; no PR.
@@ -177,10 +193,10 @@ trochlear one"*. Without row 15, the What line is still fixed: the trochlear nuc
 tectal)"* [emergency]. But the place stays the contralateral nucleus, with its "crossed palsy" red flag, for a palsy that
 could equally be the nerve.
 
-## 4. Rulings — round 1 (21 rows)
+## 4. Rulings — round 1 (21 rows, all APPROVED as written, 2026-11-10)
 
-Each row is one decision, with my recommendation. Measured effects are over the card sample (436 papilloedema cards per
-onset) unless stated.
+Each row is one decision, with my recommendation. The owner approved the table as written, so every recommendation below is
+now a ruling. Measured effects are over the card sample (436 papilloedema cards per onset) unless stated.
 
 ### A. What papilloedema does to the causes
 
