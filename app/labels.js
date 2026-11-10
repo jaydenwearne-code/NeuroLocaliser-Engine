@@ -97,6 +97,7 @@ export const PART_LABEL = {
   "thalamus|limbic": "anterior + dorsomedial thalamic nuclei",
   "thalamus|pulvinar": "pulvinar",
   "thalamus_arousal|paramedian": "paramedian thalamus",
+  "thalamus_arousal|basilar_apex": "thalami and occipital lobes (top of the basilar)",
   // Every hypothalamic key is a PORTION of the hypothalamus — a nucleus or a named area — so none of them
   // may be labelled "<something> hypothalamus", which names the whole structure. Terms follow the site's
   // own territory string.
@@ -267,7 +268,7 @@ export function readingLabel(site) {
   const v = site && site.variant;
   if (!v) return "";
   if (site.segments) return ` (at about ${spanName(site.segments, "–")}, root signs ${site.atLevel.sides.length > 1 ? "on both sides" : "on the " + site.atLevel.sides[0]})`;
-  return { "arms-spared": " (arms spared)", shock: " (spinal shock)", "shock:arms-spared": " (spinal shock, arms spared)", uncal: " — uncal herniation" }[v] || "";
+  return { "arms-spared": " (arms spared)", shock: " (spinal shock)", "shock:arms-spared": " (spinal shock, arms spared)", uncal: " — uncal herniation", basis: " — with the basis pontis", syrinx: " (reaching the corticospinal tracts)" }[v] || "";
 }
 
 export function plainSiteName(site, opts = {}) {

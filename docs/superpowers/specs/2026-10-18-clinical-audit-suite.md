@@ -260,6 +260,28 @@ Each probe is also mirrored, so the mirror property runs **273** checks.
 are exactly the composite-sites round (9) and the raised-pressure round (4). Synonym swaps 272 / 272, including 48 new
 cerebellar swaps from the thalamic hemiataxia, all passing; background 292 / 292; mirror 273 / 273.
 
+## Composite-sites round, round 1, rows 7 and 15: one regex widened, four probes added (2026-11-05)
+
+The composite-sites round's round 1 (`2026-11-05-composite-sites-design.md`, approved as written) changed the suite twice:
+
+- **Row 7.** `PARASAG` also admits `bilateral_paracentral`. R1 #12 asked for "a parasagittal site", and the bilateral one
+  is the place it asked for. With it, both of R1 #12's checks pass. Without it, R1 #16 (passing until then) would break
+  once the pontine places existed, because its top 3 would be the bilateral site, locked-in and the ARAS's basilar reading.
+- **Row 15.** Four counted probes cover pictures the composite sites decide, which no probe covered. Each fails on
+  `4d781bd`:
+
+| Probe | Expected answer (approved) | Before |
+|---|---|---|
+| cape + spastic legs, without wasted hands | `bilateral_cord_central` first; one lesion | anterior + central cord, "Metastases" |
+| quadriplegia + both Babinski + preserved vertical gaze | `locked_in` first; one lesion | anterior cord + locked-in, "MS" |
+| coma + vertical gaze palsy + a hemianopia on each side | `top_of_basilar` first; one lesion | paramedian thalami + both occipital lobes, "MS" |
+| both legs weak + both Babinski + cortical sensory loss in both legs | `bilateral_paracentral` first; one lesion | cord + both ACAs, "MS" |
+
+Each probe is also mirrored, so the mirror property runs **277** checks.
+
+**After the fix (measured on `fix/composite-sites`):** probes **112 / 115**; counted checks 1055 passed, 4 failed. The 4
+are exactly the raised-pressure round. Synonym swaps 272 / 272; background 292 / 292; mirror 277 / 277.
+
 ## Raised-pressure round, round 1, row 13: four probes added (2026-11-05)
 
 The raised-pressure round's round 1 (`2026-11-05-raised-pressure-design.md`, row 13, approved as written) added four counted

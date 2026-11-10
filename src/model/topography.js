@@ -220,6 +220,7 @@ export const TOPOGRAPHY = {
   "sympathetic|pancoast":                        { lobe: null        , surface: false, system: null },
   "sympathetic|preganglionic":                   { lobe: null        , surface: false, system: null },
   "thalamus_arousal|paramedian":                 { lobe: null        , surface: false, system: null },
+  "thalamus_arousal|basilar_apex":               { lobe: null        , surface: false, system: null },
   "thalamus|limbic":                             { lobe: null        , surface: false, system: "limbic" },
   "thalamus|pulvinar":                           { lobe: null        , surface: false, system: null },
   "thalamus|vl":                                 { lobe: null        , surface: false, system: null },

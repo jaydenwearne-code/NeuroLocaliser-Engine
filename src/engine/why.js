@@ -18,6 +18,23 @@ const plain = s => String(s).replace(/\s*\([^)]*\)/g, "").split(" — ")[0].trim
 const fillIn = (tpl, v) => tpl.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? "");
 const byOrder = (a, b) => STATION_ORDER.indexOf(a) - STATION_ORDER.indexOf(b);
 
+// A composite that spans stations (carrierStations: the top of the basilar — thalami AND occipital lobes) sits, for a
+// picture, at the stations of the structures that carry what was entered; every other site sits at its one station, exactly
+// as before (composite-sites round, row 9). Without this the site took its level's station, the thalamus, and Anton's
+// alone read "the cerebral cortex or thalamus".
+const stationOfStructure = id => { const s = STRUCTURE_BY_ID[id]; return s ? stationOf({ level: s.level, part: s.part }) : null; };
+function stationsAt(site, toks, observedSet, opts) {
+  if (!site.carrierStations) return [stationOf(site)];
+  const read = enteredSet(observedSet);
+  const ex = explain(site, opts);
+  const st = new Set();
+  for (const t of toks) {
+    const asRead = enteredToken(t, observedSet);
+    for (const x of ex) if (predictedToken(`${x.finding}@${x.bodySide}`, read) === asRead) { const k = stationOfStructure(x.structure); if (k) st.add(k); }
+  }
+  return st.size ? [...st].sort(byOrder) : [stationOf(site)];
+}
+
 // token -> Set of stations where ANY candidate site produces it. Built once per (dominance, sensory level),
 // the two options that change what a site emits.
 const INDEX = new Map();
@@ -28,8 +45,11 @@ function locusIndex(opts) {
   for (const s of solverSites(opts)) {
     let E; try { E = expectedFindings(s, opts); } catch { continue; }
     const st = stationOf(s); if (!st) continue;
+    // a carrierStations composite indexes each token at its carrier's station
+    const at = new Map();
+    if (s.carrierStations) for (const x of explain(s, opts)) { const k = stationOfStructure(x.structure); if (k) at.set(`${x.finding}@${x.bodySide}`, k); }
     // Indexed under every token the word can be matched as (word families: past-pointing arises wherever limb ataxia does).
-    for (const t0 of E) for (const t of indexTokens(t0)) (idx.get(t) ?? idx.set(t, new Set()).get(t)).add(st);
+    for (const t0 of E) for (const t of indexTokens(t0)) (idx.get(t) ?? idx.set(t, new Set()).get(t)).add(at.get(t0) ?? st);
   }
   INDEX.set(key, idx);
   return idx;
@@ -113,12 +133,14 @@ export function whyChain(observedSet, site, opts = {}) {
   // Why cannot disagree with the Where.
   const normals = [...observedSet].filter(isNormalToken);
   const all = toks.length ? differential(new Set([...toks, ...normals]), opts).filter(c => c.n === toks.length) : [];
-  const pairs = [...new Set(all.map(c => `${stationOf(c.site)}|${c.site.side}`))];
+  // One PLACE may span two stations (carrierStations); the verdict counts places, so it is "one" for that place alone.
+  const pairs = [...new Set(all.map(c => `${stationsAt(c.site, toks, observedSet, opts).join("+")}|${c.site.side}`))];
+  const places = [...new Set(pairs.map(p => p.split("|")[0]))];
   const meet = {
-    stations: [...new Set(pairs.map(p => p.split("|")[0]))].sort(byOrder),
+    stations: [...new Set(places.flatMap(p => p.split("+")))].sort(byOrder),
     sides: [...new Set(pairs.map(p => p.split("|")[1]))],
   };
-  const verdict = !pairs.length ? "none" : meet.stations.length === 1 ? "one" : "several";
+  const verdict = !pairs.length ? "none" : places.length === 1 ? "one" : "several";
   return { steps, meet, verdict, station };
 }
 
@@ -149,7 +171,7 @@ export function whyClues(chain, observedSet, opts = {}) {
     const key = [...toks].sort().join(" ");
     if (!memo.has(key)) {
       const fit = differential(new Set([...toks, ...normals]), opts).filter(c => c.n === toks.length);
-      memo.set(key, [...new Set(fit.map(c => `${stationOf(c.site)}|${c.site.side}`))]);
+      memo.set(key, [...new Set(fit.map(c => `${stationsAt(c.site, toks, observedSet, opts).join("+")}|${c.site.side}`))]);
     }
     return memo.get(key);
   };
@@ -189,6 +211,6 @@ export function whyClues(chain, observedSet, opts = {}) {
   return {
     verdict: chain.verdict, reached, more: chosen.length - shown.length,
     clues: shown.map(u => ({ finding: u.finding, side: u.side, relation: u.relation, tokens: u.tokens })),
-    meet: chain.meet, where: renderWhere(chain.meet.stations),
+    meet: chain.meet, where: chain.verdict === "one" && chain.meet.stations.length > 1 ? chain.meet.stations.join(" and ") : renderWhere(chain.meet.stations),
   };
 }

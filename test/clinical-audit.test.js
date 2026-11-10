@@ -61,7 +61,9 @@ const leadingUnifier = (r, set, opts) => r.multi ? unifyingDiagnoses(r.multi.sit
 // ---- site families (regexes over site ids) ----
 const CORD = /^(bilateral_cord_(transverse|anterior|posterior|central)|(left|right)_cord_(hemi|lateral))$/; // a true cord lesion: not the conus, not a system degeneration
 const PONS = /^(locked_in|brainstem_aras|pontomesencephalic_tegmentum|(left|right)_pons_)/;
-const PARASAG = /^(left|right)_cortex_(aca|paracentral|motor_leg)$/;
+// owner-approved 2026-11-05 (composite-sites round, row 7): R1 #12 asked for "a parasagittal site"; the bilateral one is the
+// place it asked for, and nothing else can pass through it.
+const PARASAG = /^((left|right)_cortex_(aca|paracentral|motor_leg)|bilateral_paracentral)$/;
 
 // ---- the probes: T = counted (textbook or owner-approved), R = awaiting the owner's ruling ----
 const CASES = [];
@@ -238,6 +240,12 @@ T("Consciousness & raised pressure", "papilloedema + R hemiparesis → the What 
 T("Consciousness & raised pressure", "coma + papilloedema → the What line leads with the pressure, not a metabolic encephalopathy", "reduced_consciousness@none papilloedema@none", { lead: /\(the pressure\)|mass|hydroceph|venous|haemorrhage|abscess|encephalitis|meningitis|herniation/i, pressure: true });
 T("Hemispheres, thalamus & vision", "papilloedema + R hemianopia → the What line does not lead with an infarct", "papilloedema@none homonymous_hemianopia@right", { leadNot: /infarct/i, pressure: true });
 T("Cranial nerves & skull base", "IV palsy + papilloedema → the IV nerve first, led by the pressure or a tumour", "weak_depression@left vertical_diplopia@left papilloedema@none", { first: /^left_skull_base_trochlear_cisternal$/, lead: /raised intracranial pressure|tumour|\(the pressure\)/i, pressure: true });
+// owner-approved 2026-11-05 (composite-sites round, round 1, row 15): pictures the composite sites decide, which no audit
+// probe covered. Each failed on 4d781bd.
+T("Spinal cord", "syrinx without wasted hands: cape + spastic legs → the central cord, one lesion", "suspended_sensory@left suspended_sensory@right weak_leg@left weak_leg@right babinski@left babinski@right hyperreflexia@left hyperreflexia@right", { first: /^bilateral_cord_central$/, single: true });
+T("Brainstem", "locked-in with both Babinski signs → ventral pons, one lesion", "weak_arm@left weak_arm@right weak_leg@left weak_leg@right babinski@left babinski@right preserved_vertical_gaze@none", { first: /^locked_in$/, single: true });
+T("Consciousness & raised pressure", "top of the basilar entered as field loss: coma + vertical gaze palsy + a hemianopia on each side → the basilar apex, one lesion", "reduced_consciousness@none vertical_gaze_palsy@none homonymous_hemianopia@left homonymous_hemianopia@right", { first: /^top_of_basilar$/, single: true });
+T("Hemispheres, thalamus & vision", "parasagittal with cortical sensory loss in both legs → both paracentral lobules, one lesion", "weak_leg@left weak_leg@right babinski@left babinski@right cortical_sensory_leg@left cortical_sensory_leg@right", { first: /^bilateral_paracentral$/, single: true });
 
 // ======================================================================================================
 // 0. Harness: every probe token is a real finding the app can enter.

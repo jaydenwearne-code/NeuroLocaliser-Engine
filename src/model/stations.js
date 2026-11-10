@@ -70,4 +70,5 @@ const BY_PART = {
   "skull_base|optic_neuritis": "visual pathway",
   "skull_base|optic_canal": "visual pathway",
 };
-export const stationOf = site => BY_PART[`${site.level}|${site.part}`] || BY_LEVEL[site.level] || null;
+// A site (or a reading) may name its own station: the ARAS's basilar reading sits in the pons (composite-sites round, row 2).
+export const stationOf = site => site.station || BY_PART[`${site.level}|${site.part}`] || BY_LEVEL[site.level] || null;

@@ -28,6 +28,12 @@ export const BY_SITE = {
     ddx: ["Pontine infarct (basilar perforators)", "Central pontine myelinolysis", "Demyelination", "Pontine glioma"],
     red: "Basilar territory disease can progress to locked-in syndrome — watch closely."
   },
+  bilateral_pons_mlf: {
+    name: "Bilateral internuclear ophthalmoplegia (both MLFs)",
+    note: "The two medial longitudinal fasciculi lie side by side in the paramedian tegmentum, so one small paramedian lesion takes both: neither eye adducts on lateral gaze, with nystagmus of the abducting eye on each side; convergence may be spared.",
+    ddx: ["Demyelination (MS) — the commonest cause in a younger patient", "Brainstem infarct (basilar perforators) in an older patient", "Wernicke's encephalopathy", "Tumour", "Myasthenia gravis (pseudo-INO)"],
+    red: "A bilateral INO in an older patient, or with any other brainstem sign, is a posterior-circulation stroke until imaging says otherwise."
+  },
   pons_lateral: {
     name: "Lateral pontine syndrome (Marie-Foix)",
     note: "Middle cerebellar peduncle, spinothalamic tract and vestibular nuclei laterally (AICA territory).",
@@ -745,6 +751,12 @@ export const BY_SITE = {
     ddx: ["Parasagittal / falx meningioma (bilateral leg weakness + incontinence)", "ACA infarct", "Normal-pressure hydrocephalus (gait + incontinence + cognition)"],
     red: "Bilateral leg weakness with urinary incontinence is a parasagittal lesion until proven otherwise — image the interhemispheric fissure."
   },
+  bilateral_paracentral: {
+    name: "Parasagittal syndrome (both paracentral lobules)",
+    note: "A lesion at the vertex takes both medial hemispheres: a spastic paraparesis with cortical-type urinary incontinence, often with cortical sensory loss in the legs and a magnetic gait — it mimics a spinal cord lesion almost perfectly.",
+    ddx: ["Parasagittal / falx meningioma", "Bilateral ACA infarct (azygos ACA, vasospasm)", "Superior sagittal sinus thrombosis", "Normal-pressure hydrocephalus (mimic)"],
+    red: "Bilateral leg weakness with urinary incontinence and a normal spine MRI is a parasagittal lesion until proven otherwise — image the brain."
+  },
   cortex_dlpfc: {
     name: "Dorsolateral prefrontal (dysexecutive) syndrome",
     note: "Impaired planning, organising, sequencing, working memory and set-shifting (perseveration), with intact primary functions.",
@@ -954,6 +966,12 @@ export const BY_SITE = {
     note: "A paramedian upper-pons / midbrain tegmental lesion knocks out the ascending reticular activating system; decerebrate (extensor) posturing and other brainstem signs accompany it.",
     ddx: ["Top-of-basilar / midbrain infarct", "Pontine haemorrhage", "Central (transtentorial) herniation", "Demyelination"],
     red: "Impaired arousal with brainstem signs (extensor posturing, asymmetric / fixed pupils, gaze palsy) is a posterior-circulation emergency — image the vessels."
+  },
+  top_of_basilar: {
+    name: "Top-of-the-basilar syndrome (basilar apex)",
+    note: "An embolus at the basilar tip blocks both P1 segments, with the thalamoperforators to both paramedian thalami, and both PCAs beyond: reduced arousal, vertical gaze palsy and amnesia with cortical blindness or bilateral field loss — often with PRESERVED power.",
+    ddx: ["Top-of-the-basilar embolism (cardiac or vertebral source)", "Basilar artery thrombosis", "PRES", "Deep cerebral venous thrombosis (mimics the thalamic half)"],
+    red: "Drowsiness with vertical gaze palsy and visual loss is a basilar-tip occlusion until proven otherwise — CTA now; it is a thrombectomy target, and it is regularly called delirium."
   },
   thalamus_bilateral_percheron: {
     name: "Bilateral paramedian thalamic syndrome (artery of Percheron)",

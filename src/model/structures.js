@@ -1165,7 +1165,7 @@ export const STRUCTURES = [
 
   // wasting: muscle atrophy — the broad LMN set. Requires innervated muscle, so it EXCLUDES pure-sensory
   // lat_fem_cutaneous, and (already LMN-excluded) NMJ + muscle. Non-localising, like fasciculations.
-  { id: "ah_wasting", level: "motor_unit", part: "anterior_horn", produces: "wasting", note: "anterior horn — denervation wasting (generalised LMN)" },
+  { id: "ah_wasting", level: "motor_unit", part: "anterior_horn", produces: "wasting", note: "anterior horn cells — denervation wasting (LMN)" },
   { id: "cauda_wasting", level: "cauda", part: "equina", produces: "wasting", crosses: false, emit: "bilateral", note: "cauda equina — denervation wasting, both legs" },
   { id: "poly_wasting", level: "polyneuropathy", part: "length_dependent", produces: "wasting", note: "polyneuropathy — distal denervation wasting" },
   { id: "root_c5_wasting", level: "root", part: "c5", produces: "wasting", note: "C5 — segmental wasting (deltoid/biceps)" },

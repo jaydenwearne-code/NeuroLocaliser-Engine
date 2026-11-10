@@ -40,6 +40,13 @@ export function candidateSites() {
 // in spinal shock (sites.js cordVariants; spinal cord fix, round 1). A variant keeps its site's id, so content, links
 // and pins are untouched, and every ranked list keeps each site once, as its best variant (firstPerId).
 // candidateSites() stays one site per id for everything that enumerates sites (the atlas, the per-site tests).
+// `observed`: what the clinician entered. A READING that NEEDS its defining finding (`needs`) is offered only when it is
+// entered — as spinal shock is offered only with a stated level. Callers without an entered set (the Why index) never see a
+// gated reading. ONE gate for every reading (integration of the composite-sites and raised-pressure rounds, which each
+// added it); `needs` names one finding, or a list of which any one will do:
+//   - the expanding syrinx needs the cape (composite-sites round, row 5: `needs: ["suspended_sensory"]`);
+//   - the uncal reading needs reduced consciousness (raised-pressure round, row 5: `needs: "reduced_consciousness"`) and,
+//     with `needsOwn`, the place itself implicated (one of its own findings entered).
 export function solverSites(opts = {}, observed = null) {
   const level = normaliseLevel(opts.sensoryLevel);
   const out = [];
@@ -51,18 +58,20 @@ export function solverSites(opts = {}, observed = null) {
       if (v.needsLevel && !level) continue;
       // A stated level means a lesion at or above it (row 1b): a reading whose highest segment lies below it is out.
       if (level && v.top && levelIndex(v.top) > levelIndex(level)) continue;
-      // A READING's gate (raised-pressure round, row 5): offered only when its finding is entered and, with `needsOwn`, when
-      // the place itself is implicated (one of its own findings entered). With no findings passed, a gated reading is not
-      // offered, as spinal shock is not offered without a level.
-      if (v.needs && !(observed && [...observed].some(t => t.startsWith(`${v.needs}@`)))) continue;
+      // A READING's gate (composite-sites round, row 5; raised-pressure round, row 5) — see above.
+      if (v.needs && !(observed && [...observed].some(t => [v.needs].flat().includes(t.split("@")[0])))) continue;
       if (v.needsOwn && !(observed && [...expectedFindings(site, opts)].some(t => observed.has(t)))) continue;
       out.push(variantOf(site, v));
     }
   }
   return out;
 }
-const variantOf = (site, v) => ({ ...site, variant: v.key, structures: v.structures, atLevel: v.atLevel,
-  segments: v.segments, variants: undefined, leads: v.leads, red: v.red });
+// A reading may carry its own side (the ARAS's basilar reading is bilateral, though the ARAS is midline) and its own
+// station on the Why line (that reading sits in the pons) — composite-sites round, row 2 — and its own lead cause and red
+// flag (the uncal reading — raised-pressure round, rows 6 and 11).
+const variantOf = (site, v) => ({ ...site, ...(v.side ? { side: v.side } : {}), ...(v.station ? { station: v.station } : {}),
+  variant: v.key, structures: v.structures, atLevel: v.atLevel, segments: v.segments, variants: undefined,
+  leads: v.leads, red: v.red });
 const firstPerId = list => { const seen = new Set(); return list.filter(x => { const id = (x.site || x).id; return !seen.has(id) && !!seen.add(id); }); };
 
 function localisingObserved(observedSet) {

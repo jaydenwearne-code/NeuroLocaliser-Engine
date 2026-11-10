@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**88 test suites / 7495 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**89 test suites / 7560 assertions: 7558 pass, 2 fail** (integration branch `integrate/all-open-fixes`: two `pressure-follows` pins, the row-21 snapshot and the row-1 ratchet, move because the composite sites bring three new places into play; they await the owner's ruling) — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1361,6 +1361,54 @@ suite `test/content-gaps.test.js`; the re-pins are exactly spec row 18. Browser-
 
 Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/superpowers/plans/2026-11-01-content-gaps.md`.
 
+## Composite sites (DONE 2026-11-05, round 1) — ✅ owner-approved rulings (all 16 rows)
+
+The fourth fix from the 2026-10-18 clinical audit. **The defect:** one lesion spanned places the model held only
+separately, so it claimed two lesions and named a disease to join them. Three cards sent the reader the wrong way:
+- a basilar coma got the cord's plan (*"Spinal surgery — cord compression is time-critical"*);
+- so did a parasagittal meningioma, the very mimic its own cause list warns about;
+- a comatose pontine haemorrhage showed the locked-in red flag, *"the patient is fully aware"*.
+
+**The principle (spec §3.1):** the same lesion grown larger is a READING of its site (same id, content and links, the
+cord fix's idiom); a different place is a NEW SITE. Either way it is DERIVED from its source rows, never hand-listed.
+
+**Mechanics:**
+- **Locked-in re-derived** (`composeConsciousnessSites`): both sides of the basis pontis + the paramedian pons's
+  horizontal-gaze rows (`PONS_GAZE`) + preserved vertical gaze.
+- **Two readings:**
+  - the ARAS's `basis` reading: bilateral, `station: "pons"`; coma with quadriparesis, both Babinski signs and gaze palsies;
+  - the central cord's `syrinx` reading: the leg corticospinal rows, `needs: ["suspended_sensory"]`.
+  `variantOf` carries a reading's `side` and `station`. `solverSites(opts, entered)` offers a `needs` reading only when its
+  finding is entered.
+- **Three new sites:** `bilateral_pons_mlf` (content from the medial pons); `bilateral_paracentral` (content from
+  `cortex_paracentral`); `top_of_basilar` (Percheron's rows + both PCA cortical territories, its own content key
+  `thalamus_arousal|basilar_apex`).
+- **The Why line:** a place spanning two stations (`carrierStations`, the top of the basilar) sits where the rows carrying
+  the entered findings are (`stationsAt` in why.js). So Anton's alone still reads "only the cerebral cortex".
+
+**Rulings that are traps:**
+- **The locked-in hand list went stale** — the B11 trap a fourth time. It had no Babinski, face, speech or gaze.
+- **The pontine haemorrhage probe passed by accident.** Its cover needed four places, one over the limit. Re-deriving
+  locked-in alone makes it a two-place claim; the basilar reading makes it one place. Ship them together.
+- **R1 #12's top 3 passed only because exactly two cord sites outranked the one-sided ACA.** Any new place explaining
+  "both legs + Babinski" pushes it out. The audit's PARASAG regex now admits `bilateral_paracentral` (owner's ruling on
+  the yardstick, row 7).
+- **The syrinx reading ungated** takes "spastic legs + a cervical level" from the anterior cord. Its gate is the cape.
+- **A new id for the basilar reading** fails the audit's PONS regex (measured −2), so it stays a reading of
+  `brainstem_aras`.
+- **The raised-pressure round** (`fix/raised-pressure`) gates its uncal reading the same way. Whichever lands second
+  reuses the first's gate.
+
+**Measured:**
+- Audit 101 → 112/115 probes (4 added by row 15). Counted checks 1034/13 → 1055/4; the 4 are the raised-pressure round.
+- Swaps 272/272, background 292/292, mirror 277/277.
+- `npm test`: 87 suites, 7420 assertions, no re-pins. The new suite is `test/composite-sites.test.js`.
+- Frozen-input safety sample: 2 two-lesion claims become one place (both basis pontis → locked-in; both fusiform gyri +
+  coma → the top of the basilar), 0 new, 21 covers move (the cover's larger-place tie-break), and no site picture
+  changes its first answer.
+
+Spec/plan: `docs/superpowers/specs/2026-11-05-composite-sites-design.md`, `docs/superpowers/plans/2026-11-05-composite-sites.md`.
+
 ## Raised-pressure round (DONE 2026-11-09, round 1) — ✅ owner-approved rulings (every row)
 
 The fourth fix from the 2026-10-18 clinical audit. **The defect:** a false-localising or herniation sign read as two
@@ -1473,7 +1521,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`,
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
 - **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
-  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01, and 4 by the raised-pressure round, 2026-11-09, and 4 with a new `lead` check by the pressure-follows round, 2026-11-10) + three metamorphic properties (synonym swap, background
+  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01, and 4 by the composite-sites round, 2026-11-05, and 4 by the raised-pressure round, 2026-11-09, and 4 with a new `lead` check by the pressure-follows round, 2026-11-10) + three metamorphic properties (synonym swap, background
   comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
   deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
   are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
@@ -1481,7 +1529,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`,
   answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
   groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
   hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
-  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the raised-pressure round: 108/115; after the pressure-follows round: 112/119. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the composite-sites round: 112/115 (on its own branch); after the raised-pressure round: 108/115; after the pressure-follows round: 112/119 (on the raised-pressure branch); with the composite-sites round merged in (`integrate/all-open-fixes`): 123/123. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 

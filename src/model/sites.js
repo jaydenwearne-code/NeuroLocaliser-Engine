@@ -213,6 +213,7 @@ const TERRITORY = {
   "dorsal_midbrain|tectum": "dorsal midbrain / tectum (posterior commissure — Parinaud)",
   "cerebrum|diffuse": "diffuse bihemispheric cortex (metabolic / anoxic encephalopathy)",
   "thalamus_arousal|paramedian": "bilateral paramedian / intralaminar thalamus (artery of Percheron)",
+  "thalamus_arousal|basilar_apex": "basilar apex — both P1 thalamoperforators and both posterior cerebral arteries (top of the basilar)",
   "brainstem_aras|paramedian_tegmentum": "paramedian rostral brainstem tegmentum (ARAS)",
   "locked_in|ventral_pons": "ventral pons / basis pontis (basilar territory — locked-in)",
   "pons|trigeminal": "pontine trigeminal complex (main sensory + motor V)",
@@ -391,8 +392,12 @@ export function composeHemiLevelSites() {
 // solver tell ASA infarction from a complete transverse lesion — a derived consequence, no rule.
 // The central cord takes more than the commissure: the corticospinal ARM fibres (arms weaker than legs) and the
 // anterior horn cells at its level (wasting) — spinal cord fix, row 8, 2026-10-22. Both rows are reused. Leg signs
-// for an expanding syrinx are deferred to the composite-sites round; bladder stays out (owner ruling 2026-09-26).
+// for an expanding syrinx are its syrinx READING (composite-sites round, rows 4–5), offered only with the cape; bladder
+// stays out (owner ruling 2026-09-26).
 const CENTRAL_REACH = ["cst_cord_arm", "ah_wasting"];
+// The cord's LEG corticospinal rows: the anterior cord's corticospinal rows other than the arm rows. An expanding syrinx
+// reaches them from the centre (composite-sites round, row 4).
+const SYRINX_REACH = () => STRUCTURES.filter(s => s.level === "cord" && s.part === "anterior" && s.id.startsWith("cst_cord_") && !CORD_ARM_ROWS.has(s.id)).map(s => s.id);
 export function composeBilateralCordSites() {
   const cordParts = ["anterior", "posterior", "central"];
   const structuresForPart = part =>
@@ -413,7 +418,10 @@ export function composeBilateralCordSites() {
       side: "bilateral", level: "cord", part,
       territory: TERRITORY[`cord|${part}`],
       structures, composite: true,
-      ...(part === "anterior" ? { variants: cordVariants(structures) } : {})
+      ...(part === "anterior" ? { variants: cordVariants(structures) } : {}),
+      // the SYRINX READING (rows 4–5): the central lesion grown into the lateral columns — legs weak and spastic below it.
+      // Offered only with the cape that defines the central cord: ungated it takes "spastic legs + a cervical level".
+      ...(part === "central" ? { variants: [{ key: "syrinx", needs: ["suspended_sensory"], structures: [...structures, ...SYRINX_REACH()] }] } : {})
     });
   }
 
@@ -730,6 +738,9 @@ export function composeDorsalMidbrainSites() {
 // single midline paramedian tegmental lesion) OR both hemispheres (bilateral thalamus / diffuse cortex) —
 // the bilateralOnly gate (Anton/Balint) makes a UNILATERAL thalamic/cortical lesion emit nothing. Locked-in
 // is the ventral-vs-tegmental contrast (bilateral basis pontis: quadriplegia, ARAS spared → awake).
+// The paramedian pons's horizontal-gaze rows (the PPRF and the abducens nucleus). Locked-in loses horizontal gaze and keeps
+// vertical gaze and blinking; the ARAS's basilar reading carries them too (composite-sites round, rows 1–2).
+const PONS_GAZE = () => STRUCTURES.filter(s => s.level === "pons" && s.part === "medial" && s.produces === "gaze_palsy").map(s => s.id);
 export function composeConsciousnessSites() {
   const byLevelPart = (lvl, part) => STRUCTURES.filter(s => s.level === lvl && s.part === part).map(s => s.id);
   const thalBilat = STRUCTURES.filter(s => s.level === "thalamus_arousal" && s.part === "paramedian").map(s => s.id);
@@ -738,13 +749,20 @@ export function composeConsciousnessSites() {
   if (diffuse.length) sites.push({ id: "cerebrum_diffuse", side: "bilateral", level: "cerebrum", part: "diffuse",
     territory: TERRITORY["cerebrum|diffuse"], structures: diffuse, composite: true });
   const aras = byLevelPart("brainstem_aras", "paramedian_tegmentum");
+  // Its BASILAR READING (composite-sites round, row 2, owner-approved 2026-11-05): the tegmental lesion grown into the basis
+  // pontis on both sides — coma with quadriparesis, both Babinski signs and horizontal gaze palsies (basilar occlusion,
+  // pontine haemorrhage). The same id, causes and plan; the reading is bilateral and sits in the pons on the Why line (its
+  // level's own station, "brainstem (several levels)", would put an isolated Babinski there too).
   if (aras.length) sites.push({ id: "brainstem_aras", side: "midline", level: "brainstem_aras", part: "paramedian_tegmentum",
-    territory: TERRITORY["brainstem_aras|paramedian_tegmentum"], structures: aras, composite: true });
+    territory: TERRITORY["brainstem_aras|paramedian_tegmentum"], structures: aras, composite: true,
+    variants: [{ key: "basis", side: "bilateral", station: "pons", structures: [...aras, ...byLevelPart("pons", "basis_pontis"), ...PONS_GAZE()] }] });
   if (thalBilat.length) sites.push({ id: "thalamus_bilateral_percheron", side: "bilateral", level: "thalamus_arousal", part: "paramedian",
     territory: TERRITORY["thalamus_arousal|paramedian"], structures: thalBilat, composite: true });
   const li = byLevelPart("locked_in", "ventral_pons");
   if (li.length) sites.push({ id: "locked_in", side: "bilateral", level: "locked_in", part: "ventral_pons",
-    territory: TERRITORY["locked_in|ventral_pons"], structures: ["cst_pons_arm", "cst_pons_leg", ...li], composite: true });
+    // BOTH SIDES OF THE BASIS PONTIS, derived (composite-sites round, row 1): the hand list it replaced (cst_pons_arm +
+    // cst_pons_leg) went stale as the pons gained its Babinski, face and speech rows — the B11 trap a fourth time.
+    territory: TERRITORY["locked_in|ventral_pons"], structures: [...byLevelPart("pons", "basis_pontis"), ...PONS_GAZE(), ...li], composite: true });
   return sites;
 }
 
@@ -904,6 +922,40 @@ export function composePolyneuropathySites() {
   if (structures.length === 0) return [];
   return [{ id: "polyneuropathy_length_dependent", side: "bilateral", level: "polyneuropathy",
     part: "length_dependent", territory: TERRITORY["polyneuropathy|length_dependent"], structures, composite: true }];
+}
+
+// THE PARASAGITTAL LESION — both paracentral lobules (composite-sites round, row 6, owner-approved 2026-11-05). A falx
+// meningioma, a superior sagittal sinus thrombosis or an azygos ACA takes both medial hemispheres at the vertex: both legs
+// (motor and cortical sensory) and the cortical micturition centre. Derived from the three paracentral parts, both sides.
+// Its causes, plan, label and tables fall back to cortex_paracentral (level cortex, part paracentral), already written for
+// both legs; its phonebook entry is its own.
+const PARACENTRAL_PARTS = ["motor_leg", "sensory_leg", "paracentral"];
+export function composeParasagittalSites() {
+  const structures = STRUCTURES.filter(s => s.level === "cortex" && PARACENTRAL_PARTS.includes(s.part)).map(s => s.id);
+  return structures.length ? [{ id: "bilateral_paracentral", side: "bilateral", level: "cortex", part: "paracentral",
+    territory: "both paracentral lobules (parasagittal — falx / superior sagittal sinus / both ACAs)", structures, composite: true }] : [];
+}
+
+// BILATERAL INO — both MLFs (composite-sites round, row 3, owner-approved 2026-11-05). The two fasciculi lie side by side in
+// the paramedian tegmentum, so one small paramedian lesion takes both. Derived: the paramedian pons's INO rows, emitted on
+// both sides. Its causes, plan, label and tables fall back to pons_medial; its phonebook entry is its own.
+export function composeBilateralMlfSites() {
+  const structures = STRUCTURES.filter(s => s.level === "pons" && s.part === "medial" && s.produces === "ino").map(s => s.id);
+  return structures.length ? [{ id: "bilateral_pons_mlf", side: "bilateral", level: "pons", part: "medial",
+    territory: "both medial longitudinal fasciculi (paramedian pontine tegmentum)", structures, composite: true }] : [];
+}
+
+// TOP OF THE BASILAR — the basilar apex (composite-sites round, row 8, owner-approved 2026-11-05): both P1s with their
+// thalamoperforators (the paramedian thalami, as the artery of Percheron) and both PCAs beyond (the occipital and ventral
+// occipitotemporal cortex). One embolus at the tip takes them all. Derived: the Percheron rows + the PCA cortical parts
+// (DIVISION), both sides. It spans two stations, so the Why line places it by the rows that carry what was entered
+// (carrierStations, row 9). Its own content key.
+export function composeTopOfBasilarSites() {
+  const thal = STRUCTURES.filter(s => s.level === "thalamus_arousal" && s.part === "paramedian").map(s => s.id);
+  const pcaParts = Object.keys(DIVISION).filter(p => DIVISION[p].territory === "PCA");
+  const pca = STRUCTURES.filter(s => s.level === "cortex" && pcaParts.includes(s.part)).map(s => s.id);
+  return thal.length && pca.length ? [{ id: "top_of_basilar", side: "bilateral", level: "thalamus_arousal", part: "basilar_apex",
+    territory: TERRITORY["thalamus_arousal|basilar_apex"], structures: [...thal, ...pca], composite: true, carrierStations: true }] : [];
 }
 
 // PLEXUS SITES. A trunk / plexus lesion affects exactly the roots that feed it, so each is a plain UNION
