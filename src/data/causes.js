@@ -19,6 +19,7 @@
 // See docs/superpowers/specs/2026-08-11-differential-depth-design.md.
 
 import { MULTIFOCAL } from "./multifocal.js";
+import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS, PRESSURE_REACHES } from "../model/compartments.js";
 
 // ---- the surgical sieve ----
 export const CATEGORIES = [
@@ -3145,11 +3146,52 @@ export function regionOf(site) {
   if (L === "motor_unit") return "motor_unit";
   return "parenchyma";
 }
+// ---- what papilloedema says about the CAUSE (pressure follows the cause, owner-ruled 2026-11-10; spec
+// docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md) ----
+// Papilloedema narrows the PLACES to those inside the skull (raisedPressureAxis in inverse.js). It also says something about
+// the CAUSE: the process itself has raised the intracranial pressure enough to swell the discs — a mass (tumour, abscess,
+// haematoma) or bleeding; obstruction of the venous outflow or of the CSF (venous sinus thrombosis, hydrocephalus); meningitis
+// or encephalitis; or a swelling brain (trauma, a space-occupying infarct, a cerebellar infarct). A lacune, an arterial infarct
+// that is not space-occupying, a demyelinating plaque, a degeneration, a toxic or metabolic encephalopathy, a microvascular
+// palsy and the mimics cannot (rows 3–6). So with papilloedema entered such a cause is DEMOTED, exactly as a cause whose tempo
+// misses the onset is: it stays listed (row 1).
+//
+// ONE TABLE (row 2): a default by sieve category, then the named exceptions, CANNOT checked first — so a small bleed or a
+// corridor tumour departs from its own pattern. test/pressure-follows.test.js pins the class of every cause at a place
+// papilloedema keeps in play, so a new or renamed cause there fails the suite until someone looks at it. The spec's
+// Appendix A lists every name under this table.
+export const CAN_RAISE_PRESSURE = {
+  // A mass, an infection or an injury can raise the pressure; every other category cannot, unless named below.
+  categories: new Set(["neoplastic", "infective", "traumatic"]),
+  // CAN, in a category that cannot: bleeding, the venous outflow, a ruptured aneurysm, a space-occupying infarct and the
+  // posterior-fossa infarcts that take the cerebellum (the swollen cerebellum blocks the fourth ventricle; AICA's territory
+  // rarely swells, so it is not named — row 5), CSF obstruction, and the inflammatory and hypertensive diseases that swell the
+  // brain or block the CSF.
+  can: /haemorrhag|haematoma|sinus thrombos|venous thrombos|vein thrombos|aneurysm|subarachnoid|apoplexy|arteriovenous|space-occupying|malignant mca|cerebellar infarct|cerebellar \/ brainstem stroke|cerebellar or brainstem infarct|\bpica\b|hydroceph|dandy-walker|chiari|craniopharyngioma|\badem\b|acute disseminated|sarcoid|beh[cç]et|\bpres\b|posterior reversible/i,
+  // CANNOT (checked first): normal pressure; a small bleed; a remote, extracranial or non-mass "neoplastic" cause; a corridor
+  // tumour on a nerve (the raised-pressure round's own reason for filtering the corridors); a systemic or ganglionic
+  // infection; and an injury to a nerve, a vessel, the orbit, the craniocervical junction or the suprachiasmatic nucleus
+  // rather than to the brain.
+  cannot: /normal.pressure hydroceph|small pontine haemorrhage|paraneoplastic (cerebellar|autonomic)|perineural|orbital|nasopharyng|sinonasal|esthesio|metastasis to the pituitary stalk|skull base tumour|petrous apex tumour|schwannoma \/ meningioma \/ metastasis|sepsis|post-viral|zoster|ganglionitis|tabes|general paresis|whipple|splenial lesion|craniocervical junction trauma|vertebral artery injury|cribriform|petrous fracture|total blindness|^head trauma$|^trauma \/ surgery$|pituitary or hypothalamic surgery/i,
+};
+export function canRaisePressure(cause) {
+  if (CAN_RAISE_PRESSURE.cannot.test(cause.name)) return false;
+  if (CAN_RAISE_PRESSURE.can.test(cause.name)) return true;
+  return CAN_RAISE_PRESSURE.categories.has(cause.cat);
+}
+// Where papilloedema demotes (rows 1, 7): only at the places it keeps in play — the compartment filter's own test, so a place
+// reached only through the cover keeps its order — and never at the retina, where a swollen disc beside a retinal stroke is
+// the eye's own disease until shown otherwise, and giant cell arteritis must keep the lead.
+export function pressureDemotesAt(site) {
+  if (site.level === "visual_pathway" && site.part === "retina") return false;
+  return INTRACRANIAL_COMPARTMENTS.has(LEVEL_COMPARTMENT[site.level]) || PRESSURE_REACHES.has(`${site.level}|${site.part}`);
+}
+
 // ---- public API ----
 // Three sources, in priority: (1) hand-curated CAUSES (best); (2) the phonebook ddx, categorised live so all
 // ~185 named sites get structured causes from one source of truth; (3) attribute-derived fallback so a site
 // with neither still returns plausible categories.
-export function causesFor(site, { onset } = {}) {
+export function causesFor(site, { onset, pressure } = {}) {
   const key = CAUSES[site.id] ? site.id : `${site.level}_${site.part}`;
   const pbKey = BY_SITE[site.id] ? site.id : `${site.level}_${site.part}`;
   let list, source;
@@ -3172,16 +3214,24 @@ export function causesFor(site, { onset } = {}) {
   // uncal herniation, where the awake III leads with the posterior communicating artery aneurysm. Within the reading it is the
   // common cause, so it reads as common there (the What card's "Most likely" line agrees). The authored row is not edited.
   if (site.leads) list = list.map(x => x.name === site.leads ? { ...x, lead: true, likelihood: "common" } : x);
-  const concordant = (onset ? list.filter(x => x.tempo.includes(onset)) : list.slice()).sort(byLikelihood);
-  const demoted = (onset ? list.filter(x => !x.tempo.includes(onset)) : [])
-    .map(x => ({ ...x, demotion: { axis: "tempo", entered: onset, expected: x.tempo } }))
+  // PAPILLOEDEMA DEMOTES TOO (pressure follows the cause, row 1): with papilloedema entered, at a place it keeps in play, a
+  // cause that cannot raise the pressure moves to `demoted` beside the tempo mismatches — never dropped. A cause both axes
+  // demote keeps its tempo reason and carries `pressure: true` as well. Without papilloedema nothing here changes.
+  const pressing = !!pressure && pressureDemotesAt(site);
+  const fitsTempo = x => !onset || x.tempo.includes(onset);
+  const fitsPressure = x => !pressing || canRaisePressure(x);
+  const concordant = list.filter(x => fitsTempo(x) && fitsPressure(x)).sort(byLikelihood);
+  const demoted = list.filter(x => !(fitsTempo(x) && fitsPressure(x)))
+    .map(x => ({ ...x, demotion: fitsTempo(x)
+      ? { axis: "pressure", entered: "papilloedema", expected: [] }
+      : { axis: "tempo", entered: onset, expected: x.tempo, ...(fitsPressure(x) ? {} : { pressure: true }) } }))
     .sort(byLikelihood);
   // A sieve category with no plausible cause at this site simply does not appear. The sieve is an
   // authoring checklist, not an output format — it must never manufacture content to fill itself.
   const byCategory = CATEGORIES
     .map(cat => ({ cat: cat.id, label: cat.label, tint: cat.tint, causes: concordant.filter(x => x.cat === cat.id) }))
     .filter(g => g.causes.length);
-  return { byCategory, demoted, all: concordant, onset: onset || null, derived, source };
+  return { byCategory, demoted, all: concordant, onset: onset || null, ...(pressing ? { pressure: true } : {}), derived, source };
 }
 
 // ---- the cause the What line names (spec 2026-09-29) ----
@@ -3233,9 +3283,9 @@ export function canonicalKey(name) {
 // A shared entry is demoted iff EVERY site that contributes it does so via a demoted (tempo-mismatched)
 // cause — one concordant source anywhere is enough to keep the merged entry out of the demoted band,
 // exactly as a single site's own concordant/demoted split works.
-export function combinedCauses(sites, { onset } = {}) {
+export function combinedCauses(sites, { onset, pressure } = {}) {
   const perSite = sites.map(site => {
-    const r = causesFor(site, { onset });
+    const r = causesFor(site, { onset, pressure });
     return { site, causes: r.all.concat(r.demoted) };
   });
   const buckets = new Map();
