@@ -123,6 +123,59 @@ ok("row 1: a place outside the skull (the cord) keeps its own causes — the cov
   ok("row 1 ratchet: lead changed / nothing left, by onset (none, hyperacute, acute, subacute, chronic), over 111 place kinds",
      KINDS.length === 111 && got === want, `${KINDS.length} kinds: ${got}`); }
 
+// ---- C. The plan follows the cause the What line names (rows 9, 11–13) ----
+{ const cr = SITE.left_subcortex_corona_radiata, nx = nextStepsFor(cr, { pressure: true }), sp = sitePlan(cr);
+  const plan = pathologyPlanFor("Hypertensive deep haemorrhage", cr);
+  ok("row 9: papilloedema at the corona radiata follows the haemorrhage, set aside the lacune",
+     same(nx.followed, { cause: "Hypertensive deep haemorrhage", setAside: "Small-vessel lacunar infarct", onset: null, pressure: true, by: { onset: false, pressure: true } }),
+     JSON.stringify(nx.followed));
+  ok("row 9: the tier split holds — immediate and first-line stay the site's",
+     same(nx.immediate, sp.immediate) && same(nx.investigations, sp.investigations));
+  ok("row 9: confirmatory, monitoring and referral become the followed cause's",
+     same(nx.confirmatory, plan.confirmatory) && same(nx.monitoring, plan.monitoring) && nx.referral === plan.referral);
+  ok("row 9: the urgency is resolved as a selection of it would be",
+     nx.urgency === resolveUrgency(cr, "Hypertensive deep haemorrhage", { pressure: true }) && nx.urgency === "emergency");
+  ok("row 9: pressureFollows returns nothing without papilloedema, and exactly what nextStepsFor follows with it",
+     pressureFollows(cr, {}) === null && same(pressureFollows(cr, { pressure: true }), nx.followed)); }
+{ const nx = nextStepsFor(SITE.left_subcortex_corona_radiata, { onset: "chronic", pressure: true });
+  ok("row 9: at chronic onset with papilloedema the corona radiata follows the glioma, both axes named",
+     nx.followed && nx.followed.cause === "Small metastasis / glioma" && same(nx.followed.by, { onset: true, pressure: true }) && nx.urgency === "urgent"); }
+ok("row 9: where the pressure keeps the usual cause and the onset rule does not fire, nothing is followed (the pretectum, acute)",
+   !("followed" in nextStepsFor(SITE.pupil_pretectum, { onset: "acute", pressure: true })));
+{ const nx = nextStepsFor(SITE.left_medulla_lateral, { onset: "chronic", pressure: true });
+  ok("row 9: where the approved onset rule fires and the pressure keeps the cause, the plan still follows the What line (the lateral medulla, chronic)",
+     !!nx.followed && same(nx.followed.by, { onset: true, pressure: false }) && nx.followed.cause === leadOf(SITE.left_medulla_lateral, { onset: "chronic", pressure: true })
+     && !!onsetFollows(SITE.left_medulla_lateral, "chronic")); }
+{ const bad = [], mismatch = [];
+  for (const s of KINDS) for (const onset of ONSETS) {
+    const f = nextStepsFor(s, { onset, pressure: true }).followed;
+    if (!f) continue;
+    if (!(f.by && f.by.pressure) && !onsetFollows(s, onset)) bad.push(`${s.id}@${onset || "none"}`);
+    if (f.cause !== leadOf(s, { onset, pressure: true })) mismatch.push(`${s.id}@${onset || "none"}`); }
+  ok("row 9: the plan follows only where the pressure sets the cause aside or the approved onset rule fires", bad.length === 0, bad.slice(0, 5).join(", "));
+  ok("row 9: the followed cause is always the What line's leading cause", mismatch.length === 0, mismatch.slice(0, 5).join(", ")); }
+{ const moved = [];
+  for (const s of candidateSites()) for (const onset of ONSETS) {
+    const nx = nextStepsFor(s, { onset });
+    if ((nx.followed && "pressure" in nx.followed) || !same(nx, nextStepsFor(s, { onset, pressure: false }))) moved.push(`${s.id}@${onset || "none"}`); }
+  ok("row 9 guard: without papilloedema the plan is unchanged at every place and onset", moved.length === 0, moved.slice(0, 5).join(", ")); }
+{ const og = SITE.left_olfactory_olfactory_groove, routine = [];
+  for (const s of KINDS) for (const onset of ONSETS) if (nextStepsFor(s, { onset, pressure: true }).urgency === "routine") routine.push(`${s.id}@${onset || "none"}`);
+  ok("row 11: with papilloedema no in-play place's plan badges routine", routine.length === 0, routine.slice(0, 5).join(", "));
+  ok("row 11: the olfactory groove (routine today) badges urgent with papilloedema",
+     sitePlan(og).urgency === "routine" && nextStepsFor(og, { pressure: true }).urgency === "urgent");
+  ok("row 11: …and so does a selection of its meningioma",
+     pathologyNextStepsFor(og, "Olfactory groove meningioma", {}).urgency === "routine"
+     && pathologyNextStepsFor(og, "Olfactory groove meningioma", { pressure: true }).urgency === "urgent"); }
+ok("row 12: with no onset the badge follows the cause — the leg area's stroke plan (emergency) becomes the meningioma's (urgent)",
+   sitePlan(SITE.right_cortex_motor_leg).urgency === "emergency" && nextStepsFor(SITE.right_cortex_motor_leg, { pressure: true }).urgency === "urgent"
+   && (nextStepsFor(SITE.right_cortex_motor_leg, { pressure: true }).followed || {}).cause === "Parasagittal meningioma");
+{ const moved = [];
+  for (const s of KINDS) if (!same(sitePlan(s, { onset: "hyperacute", pressure: true }), sitePlan(s, { onset: "hyperacute" }))) moved.push(s.id);
+  ok("row 13: the hyperacute escalation is untouched by papilloedema", moved.length === 0, moved.slice(0, 5).join(", "));
+  ok("row 13: …so the corona radiata at hyperacute onset with papilloedema stays an emergency",
+     nextStepsFor(SITE.left_subcortex_corona_radiata, { onset: "hyperacute", pressure: true }).urgency === "emergency"); }
+
 // ---- report ----
 console.log(`\nNeuroLocaliser — pressure follows the cause (round 1)\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

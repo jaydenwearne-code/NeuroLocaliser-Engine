@@ -2414,23 +2414,53 @@ export function onsetFollows(site, onset) {
   } catch { return null; }
 }
 
+// ---- the pressure follows the cause (owner-ruled 2026-11-10; spec 2026-11-09-pressure-follows-cause-design.md) ----
+// onsetFollows()'s mirror for papilloedema (row 9). With papilloedema entered, causesFor demotes the causes that cannot raise
+// the intracranial pressure, so the What line names one that can. The site's usual plan is written for its leading cause (the
+// first non-mimic, as onsetFollows reads it), and the plan follows the cause the What line names (both axes read) when:
+//   - the pressure sets that usual cause aside; or
+//   - the approved onset rule fires — papilloedema never widens the onset rule to the places its own design left alone.
+// Otherwise the site's own plan stands. Like onsetFollows it only chooses between signed-off plans, and it requires the
+// followed cause to have an authored plan. Where NO cause at the place can raise the pressure nothing is followed here: the
+// card follows the pressure itself (app/answer.js resolveNext, row 10).
+export function pressureFollows(site, { onset, pressure } = {}) {
+  if (!pressure) return null;
+  try {
+    const lead = causesFor(site).all.find(c => c.cat !== "mimic");
+    const kept = !!lead && causesFor(site, { pressure: true }).all.some(c => c.name === lead.name);
+    if (kept && !onsetFollows(site, onset)) return null;
+    const at = causesFor(site, { onset, pressure: true }).all;
+    if (lead && at.some(c => c.name === lead.name)) return null;
+    const cause = leadingCause(at);
+    if (!cause || !pathologyPlanFor(cause.name, site)) return null;
+    return { cause: cause.name, setAside: lead ? lead.name : null, onset: onset || null, pressure: true,
+      by: { onset: !!(lead && onset && !lead.tempo.includes(onset)), pressure: !kept } };
+  } catch { return null; }
+}
+
+// THE PAPILLOEDEMA FLOOR (row 11): with papilloedema entered the plan the card shows never badges routine. It mirrors the
+// pressure-only card's own badge ("papilloedema with a normal conscious level is a same-day problem") and the red floor
+// ("a must-not-miss never renders as routine"). Applied to the plan shown, never to the site's own plan.
+const pressureFloor = (plan, opts = {}) => (opts.pressure && plan.urgency === "routine") ? { ...plan, urgency: "urgent" } : plan;
+
 // The plan the Next card shows with nothing selected. THE TIER SPLIT holds: immediate and first-line stay the
 // site's — done before the cause is known, and what identifies it. Confirmatory, monitoring, referral and urgency
 // become the followed cause's, resolved exactly as a selection of it would be. Where the rule does not fire this
-// is sitePlan() with no added key, so with no onset, or at acute onset, nothing changes.
+// is sitePlan() with no added key, so with no onset, or at acute onset, nothing changes. With papilloedema the
+// pressure rule decides instead (it contains the onset rule) and the floor applies.
 export function nextStepsFor(site, opts = {}) {
   const base = sitePlan(site, opts);
-  const followed = onsetFollows(site, opts.onset);
-  if (!followed) return base;
+  const followed = opts.pressure ? pressureFollows(site, opts) : onsetFollows(site, opts.onset);
+  if (!followed) return pressureFloor(base, opts);
   const plan = pathologyPlanFor(followed.cause, site);
-  return {
+  return pressureFloor({
     ...base,
     confirmatory: plan.confirmatory,
     monitoring: plan.monitoring,
     urgency: resolveUrgency(site, followed.cause, opts),
     referral: plan.referral || base.referral,
     followed,
-  };
+  }, opts);
 }
 
 // The same plan, narrowed to ONE pathology (spec 2026-08-18). Immediate and first-line stay site-level —
@@ -2448,7 +2478,7 @@ export function pathologyNextStepsFor(site, causeName, opts = {}) {
   if (!causeName) return { ...nextStepsFor(site, opts), pathology: null, pathologyCurated: false };
   const base = sitePlan(site, opts);
   const plan = pathologyPlanFor(causeName, site);
-  return {
+  return pressureFloor({
     ...base,
     confirmatory: plan ? plan.confirmatory : base.confirmatory,
     monitoring:   plan ? plan.monitoring   : base.monitoring,
@@ -2456,7 +2486,7 @@ export function pathologyNextStepsFor(site, causeName, opts = {}) {
     referral:     (plan && plan.referral) || base.referral,
     pathology: causeName,
     pathologyCurated: !!plan,
-  };
+  }, opts);
 }
 
 // ---- CROSS-SITE WORKUP (spec 2026-08-14 §6) ----
@@ -2503,7 +2533,7 @@ export function combinedNextSteps(sites, entityName = null, opts = {}) {
   // only stops the card shouting about a disease that does not warrant it. The one mechanical floor that
   // survives is the entity's own `red` flag, applied inside multifocalPlanFor() — a must-not-miss can never
   // render as routine.
-  return {
+  return pressureFloor({
     ...base,
     entityFirstLine: plan.firstLine,
     confirmatory: plan.confirmatory,
@@ -2514,5 +2544,5 @@ export function combinedNextSteps(sites, entityName = null, opts = {}) {
     // disease itself. Rendered under the urgency band; empty string where the disease IS the emergency.
     entityBecause: plan.because || "",
     entity: entityName,
-  };
+  }, opts);
 }
