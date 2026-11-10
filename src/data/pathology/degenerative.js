@@ -594,6 +594,11 @@ export default {
         root_s3: { level: "PERINEAL sensation and bladder function specifically — this is a level where the deficit that matters is the one the patient will not raise unless asked" },
       },
     },
+    "Several lumbosacral roots (multilevel spondylosis or canal stenosis)": {
+      urgency: "routine",
+      slots: { level: "the dermatome, reflex and muscles of EACH root, with the root-stretch signs",
+               flavour: "the commonest mimic of a lumbosacral plexopathy: BACK pain, root pain in more than one dermatome, and symptoms worse on standing and walking. A lumbar MRI usually shows the multilevel compression, and abnormal paraspinals on EMG put it in the roots rather than the plexus" },
+    },
     "Lumbar spondylosis / foraminal or lateral recess stenosis": {
       urgency: "routine",
       slots: { level: "dorsiflexion and great-toe extension, hip abduction, and sensation over the dorsum of the foot",

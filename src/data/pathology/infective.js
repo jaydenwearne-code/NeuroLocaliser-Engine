@@ -714,6 +714,9 @@ export default {
     "Pelvic abscess or infection": {
       slots: { level: "ankle movement, hip extension and sphincter function",
                flavour: "a pelvic collection reaches the sacral plexus — ask directly about bladder, bowel and sexual function, and look for the gynaecological, colorectal or urological source" },
+      bySite: {
+        plexus_lumbosacral_plexus: { level: "hip flexion and knee extension as well as ankle movement, with the temperature and the inflammatory markers" },
+      },
     },
     "Apical infection (tuberculosis, fungal)": {
       slots: { level: "the pupil and lid, with the lower plexus",

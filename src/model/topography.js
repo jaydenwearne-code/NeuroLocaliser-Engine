@@ -144,6 +144,7 @@ export const TOPOGRAPHY = {
   "plexus|middle_trunk":                         { lobe: null        , surface: false, system: null },
   "plexus|posterior_cord":                       { lobe: null        , surface: false, system: null },
   "plexus|sacral_plexus":                        { lobe: null        , surface: false, system: null },
+  "plexus|lumbosacral_plexus":                   { lobe: null        , surface: false, system: null },
   "plexus|upper_trunk":                          { lobe: null        , surface: false, system: null },
   "polyneuropathy|length_dependent":             { lobe: null        , surface: false, system: null },
   "polyradiculoneuropathy|acute":                { lobe: null        , surface: true , system: null },

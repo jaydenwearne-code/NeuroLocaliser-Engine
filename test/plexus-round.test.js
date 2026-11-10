@@ -1,0 +1,158 @@
+// plexus-round.test.js — the plexus round, rows 3–7 (owner-ruled 2026-11-05; spec
+// docs/superpowers/specs/2026-11-04-plexus-round-design.md). Each plexus element carries the cutaneous row of every MIXED
+// nerve that arises wholly from it; branch and pure-sensory nerves keep pinning their own territory. Pins each approved
+// row on both sides, and the spec's §6 "unchanged by design" list. Run: node test/plexus-round.test.js
+import { solve, candidateSites } from "../src/engine/inverse.js";
+import { expectedFindings } from "../src/engine/forward.js";
+import { composePlexusSites } from "../src/model/sites.js";
+import { nameForSite } from "../src/data/syndromes.js";
+import { STRUCTURES } from "../src/model/structures.js";
+import { causesFor } from "../src/data/causes.js";
+import { nextStepsFor } from "../src/data/nextSteps.js";
+import { pathologyPlanFor } from "../src/data/pathologyNextSteps.js";
+
+let pass = 0, fail = 0;
+const ok = (label, cond, detail = "") => { cond ? pass++ : fail++; console.log((cond ? "PASS  " : "FAIL  ") + label + (cond ? "" : `  ${detail}`)); };
+const T = s => new Set(s.split(/\s+/).filter(Boolean));
+const SITE = Object.fromEntries(candidateSites().map(s => [s.id, s]));
+const predicts = (id, tok) => expectedFindings(SITE[id]).has(tok);
+const ids = r => r.display.map(c => c.site.id);
+const first = toks => ids(solve(T(toks)))[0];
+const mirror = s => s.replace(/@left/g, "@L").replace(/@right/g, "@left").replace(/@L/g, "@right");
+// a one-lesion picture, asserted on the left and mirrored to the right
+const oneLesion = (toks, id, label) => {
+  for (const [side, t, want] of [["left", toks, id], ["right", mirror(toks), id.replace(/^left_/, "right_")]]) {
+    const r = solve(T(t));
+    ok(`${label} (${side})`, ids(r)[0] === want && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`);
+  }
+};
+
+// ---- The composition: the nerve rows each element reuses (content-gap row 4; rows 3–7) ----
+const NERVE_ROWS = {
+  upper_trunk: ["axil_sens", "mcut_sens"],
+  middle_trunk: [],
+  lower_trunk: ["uln_el_sens"],
+  lumbar_plexus: ["fem_sens", "obt_sens"],
+  sacral_plexus: ["sci_sens"],
+  lumbosacral_plexus: ["fem_sens", "obt_sens", "sci_sens"],
+};
+for (const s of composePlexusSites().filter(s => s.side === "left")) {
+  const nerveRows = s.structures.filter(id => !id.startsWith("root_")).sort();
+  ok(`the ${s.part.replace(/_/g, " ")} reuses exactly: ${NERVE_ROWS[s.part].join(", ") || "no nerve row"}`,
+     JSON.stringify(nerveRows) === JSON.stringify([...NERVE_ROWS[s.part]].sort()), nerveRows.join(", "));
+}
+
+// ---- Row 3: the upper trunk + the musculocutaneous row ----
+ok("row 3: the upper trunk carries lateral forearm numbness (musculocutaneous)", predicts("left_plexus_upper_trunk", "musculocutaneous_sensory@left"));
+oneLesion("weak_shoulder_abduction@left weak_elbow_flexion@left weak_shoulder_external_rotation@left reflex_biceps_loss@left axillary_sensory@left musculocutaneous_sensory@left",
+  "left_plexus_upper_trunk", "row 3: Erb with deltoid-patch and lateral-forearm numbness → the upper trunk, one lesion");
+{ const r = solve(T("musculocutaneous_sensory@left weak_elbow_flexion@left reflex_biceps_loss@left weak_forearm_supination@left"));
+  ok("row 3 guard: a musculocutaneous neuropathy still leads with the nerve, the upper trunk also fitting",
+     ids(r)[0] === "left_nerve_musculocutaneous" && ids(r).includes("left_plexus_upper_trunk"), ids(r).join(", ")); }
+
+// ---- Row 4: the lumbar plexus + the femoral and obturator rows ----
+ok("row 4: the lumbar plexus carries front- and inner-thigh numbness (femoral, obturator)",
+   predicts("left_plexus_lumbar_plexus", "femoral_sensory@left") && predicts("left_plexus_lumbar_plexus", "obturator_sensory@left"));
+oneLesion("weak_hip_flexion@left weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left femoral_sensory@left obturator_sensory@left",
+  "left_plexus_lumbar_plexus", "row 4: a lumbar plexopathy in nerve words → the lumbar plexus, one lesion");
+ok("row 4 guard: a femoral neuropathy still leads with the femoral nerve (audit probe)",
+   first("weak_knee_extension@left reflex_knee_loss@left femoral_sensory@left") === "left_nerve_femoral");
+ok("row 4 guard: an obturator neuropathy still leads with the obturator nerve", first("obturator_sensory@left weak_hip_adduction@left") === "left_nerve_obturator");
+
+// ---- Row 5: the sacral plexus + the sciatic row ----
+ok("row 5: the sacral plexus carries below-knee numbness (sciatic)", predicts("left_plexus_sacral_plexus", "sciatic_sensory@left"));
+oneLesion("sciatic_sensory@left weak_knee_flexion@left weak_ankle_dorsiflexion@left weak_ankle_plantarflexion@left reflex_ankle_loss@left weak_hip_abduction@left",
+  "left_plexus_sacral_plexus", "row 5: sciatic numbness + weak gluteus medius → the sacral plexus, one lesion");
+ok("row 5 guard: a sciatic neuropathy still leads with the sciatic nerve",
+   first("sciatic_sensory@left weak_knee_flexion@left weak_ankle_dorsiflexion@left weak_ankle_plantarflexion@left weak_foot_eversion@left reflex_ankle_loss@left") === "left_nerve_sciatic");
+
+// ---- Row 6: the lower trunk + the ulnar palmar row ----
+ok("row 6: the lower trunk carries little-finger numbness (ulnar, palmar)", predicts("left_plexus_lower_trunk", "ulnar_sensory@left"));
+oneLesion("ulnar_sensory@left sensory_t1@left weak_thumb_abduction@left weak_finger_abduction@left",
+  "left_plexus_lower_trunk", "row 6: little-finger + T1 numbness + weak thumb and finger abduction → the lower trunk, one lesion");
+ok("row 6 guard: the ulnar nerve at the elbow still leads with the elbow (audit probe)",
+   first("ulnar_sensory@left ulnar_dorsal_sensory@left weak_finger_abduction@left ulnar_claw@left") === "left_nerve_ulnar_elbow");
+ok("row 6 guard: Guyon still leads with the wrist", first("ulnar_sensory@left weak_finger_abduction@left ulnar_claw@left") === "left_nerve_ulnar_wrist");
+
+// ---- Row 7: branch and pure-sensory nerves stay out ----
+const BRANCH = ["deep_peroneal_sensory", "peroneal_sensory", "tibial_sensory", "sural_sensory", "saphenous_sensory",
+  "lat_fem_cutaneous_sensory", "ulnar_dorsal_sensory", "median_palmar_sensory"];
+for (const s of composePlexusSites().filter(s => s.side === "left")) {
+  const got = BRANCH.filter(f => expectedFindings(s).has(`${f}@left`));
+  ok(`row 7: the ${s.part.replace(/_/g, " ")} predicts no branch or pure-sensory territory`, got.length === 0, got.join(", "));
+}
+ok("row 7 guard: first web-space numbness still pins the peroneal nerve (the foot-drop worked example)",
+   ids(solve(T("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_foot_eversion@left deep_peroneal_sensory@left"))).join() === "left_nerve_peroneal_common");
+ok("row 7 guard: meralgia still reads the lateral femoral cutaneous nerve alone", ids(solve(T("lat_fem_cutaneous_sensory@left"))).join() === "left_nerve_lat_fem_cutaneous");
+ok("row 7 guard: sural numbness still reads the sural nerve alone", ids(solve(T("sural_sensory@left"))).join() === "left_nerve_sural");
+
+// ---- Unchanged by design (spec §6); rows 2 and 8–9 ----
+ok("row 2: root pain stays shared — the upper trunk still predicts root pain", predicts("left_plexus_upper_trunk", "radicular_pain@left"));
+{ const r = solve(T("sensory_c6@left reflex_biceps_loss@left reflex_brachioradialis_loss@left weak_elbow_flexion@left radicular_pain@left"));
+  ok("guard: C6 radiculopathy → the C6 root first, the upper trunk also fitting", ids(r)[0] === "left_root_c6" && ids(r).includes("left_plexus_upper_trunk"), ids(r).join(", ")); }
+{ const r = solve(T("weak_shoulder_abduction@left weak_elbow_flexion@left weak_shoulder_external_rotation@left reflex_biceps_loss@left axillary_sensory@left radicular_pain@left"));
+  ok("guard: Erb + root pain is still one upper-trunk lesion", ids(r)[0] === "left_plexus_upper_trunk" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
+{ const r = solve(T("weak_hip_flexion@left weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left radicular_pain@left"));
+  ok("guard: diabetic amyotrophy with root pain is still one lumbar-plexus lesion", ids(r)[0] === "left_plexus_lumbar_plexus" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
+ok("guard: the foot-drop worked example has four places (C13: the whole lumbosacral plexus joins)",
+   ids(solve(T("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_foot_eversion@left"))).join() === "left_nerve_peroneal_common,left_root_l5,left_plexus_sacral_plexus,left_plexus_lumbosacral_plexus");
+ok("guard: + weak hip abduction → the L5 root", first("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_foot_eversion@left weak_hip_abduction@left") === "left_root_l5");
+ok("guard: Klumpke → the lower trunk", first("weak_thumb_abduction@left weak_finger_abduction@left weak_finger_flexion@left sensory_c8@left sensory_t1@left") === "left_plexus_lower_trunk");
+ok("guard: C8 + thumb and finger abduction → the C8 root or the lower trunk (audit probe)",
+   /^left_(root_c8|plexus_lower_trunk)$/.test(first("weak_thumb_abduction@left weak_finger_abduction@left sensory_c8@left") || ""));
+ok("guard: Pancoast → the lung apex",
+   first("miosis@left ptosis@left anhidrosis_face@left sensory_c8@left sensory_t1@left weak_finger_abduction@left radicular_pain@left") === "left_sympathetic_pancoast");
+// ---- Rows 1, 8, 9: L4 divides; the whole lumbosacral plexus ----
+{ const l4 = STRUCTURES.filter(s => s.level === "root" && s.part === "l4");
+  ok("row 1: every L4 row names the plexus it travels in", l4.length === 8 && l4.every(s => Array.isArray(s.plexus) && s.plexus.length > 0),
+     l4.filter(s => !Array.isArray(s.plexus)).map(s => s.id).join(", "));
+  ok("row 1: no other root row carries a plexus tag (only L4 divides)",
+     STRUCTURES.filter(s => s.level === "root" && s.part !== "l4" && s.plexus).length === 0); }
+ok("row 8: the lumbar plexus no longer carries L4's tibialis anterior or posterior",
+   !predicts("left_plexus_lumbar_plexus", "weak_ankle_dorsiflexion@left") && !predicts("left_plexus_lumbar_plexus", "weak_foot_inversion@left"));
+ok("row 8: the sacral plexus no longer carries L4's quadriceps, knee jerk, adductors or medial-shin numbness",
+   ["weak_knee_extension", "reflex_knee_loss", "weak_hip_adduction", "sensory_l4"].every(f => !predicts("left_plexus_sacral_plexus", `${f}@left`)));
+ok("row 8: both plexuses keep L4's wasting and root pain",
+   ["left_plexus_lumbar_plexus", "left_plexus_sacral_plexus"].every(id => predicts(id, "wasting@left") && predicts(id, "radicular_pain@left")));
+{ const r = solve(T("weak_knee_extension@left weak_ankle_dorsiflexion@left reflex_knee_loss@left sensory_l4@left"));
+  ok("row 8: quadriceps + foot drop + knee jerk + medial shin → the L4 root first, the lumbosacral plexus also fitting",
+     ids(r)[0] === "left_root_l4" && ids(r).includes("left_plexus_lumbosacral_plexus") && !ids(r).includes("left_plexus_sacral_plexus"), ids(r).join(", ")); }
+ok("row 9: the whole lumbosacral plexus carries the knee AND the ankle jerk",
+   !!SITE["left_plexus_lumbosacral_plexus"] && predicts("left_plexus_lumbosacral_plexus", "reflex_knee_loss@left") && predicts("left_plexus_lumbosacral_plexus", "reflex_ankle_loss@left"));
+oneLesion("femoral_sensory@left obturator_sensory@left sciatic_sensory@left weak_hip_flexion@left weak_knee_extension@left weak_ankle_dorsiflexion@left weak_ankle_plantarflexion@left reflex_knee_loss@left reflex_ankle_loss@left",
+  "left_plexus_lumbosacral_plexus", "row 9: a whole-leg plexopathy in nerve words → the lumbosacral plexus, one lesion");
+oneLesion("reflex_knee_loss@left reflex_ankle_loss@left", "left_plexus_lumbosacral_plexus", "row 9: knee jerk + ankle jerk lost on one side → the lumbosacral plexus");
+ok("row 9 guard: L5 radiculopathy with root pain still leads with the L5 root",
+   first("weak_ankle_dorsiflexion@left weak_great_toe_extension@left weak_hip_abduction@left sensory_l5@left radicular_pain@left") === "left_root_l5");
+ok("row 9 guard: L4 (R1 #4) still leads with the L4 root", first("weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left sensory_l4@left") === "left_root_l4");
+ok("C12 (accepted): L2 numbness + S1 numbness reads one lumbosacral plexus", first("sensory_l2@left sensory_s1@left") === "left_plexus_lumbosacral_plexus");
+ok("C14: there is no whole brachial plexus place", !SITE["left_plexus_brachial_plexus"]);
+
+// ---- Wording (rows 11, 12) ----
+ok("row 11: the upper trunk's note names the deltoid patch and the lateral forearm",
+   /numbness over the deltoid patch and the lateral forearm/.test(nameForSite(SITE["left_plexus_upper_trunk"]).note));
+ok("row 12: the lumbar plexus's note names front- and inner-thigh numbness",
+   /^Front- and inner-thigh numbness \(femoral and obturator territories\)/.test(nameForSite(SITE["left_plexus_lumbar_plexus"]).note));
+ok("row 12: the lower trunk's note names the little finger and the medial forearm",
+   /sensory loss over the little finger and the medial forearm/.test(nameForSite(SITE["left_plexus_lower_trunk"]).note));
+
+// ---- Content round 2 (C2–C10) ----
+{ const ls = SITE["left_plexus_lumbosacral_plexus"], pb = nameForSite(ls);
+  ok("C2: the place's name", pb.name === "Lumbosacral plexopathy (L2-S1)", pb.name);
+  ok("C3: the note names weakness above AND below the knee", /^The whole leg plexus: weakness above AND below the knee/.test(pb.note || ""));
+  ok("C5: the red flag names diabetic amyotrophy, infiltration and the haematoma",
+     /diabetic amyotrophy or malignant infiltration/.test(pb.red || "") && /image urgently for a haematoma/.test(pb.red || ""));
+  const all = causesFor(ls).all.map(c => c.name);
+  ok("C6: seven causes, diabetic amyotrophy first", all.length === 7 && all[0] === "Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy)", all.join(" | "));
+  ok("C7: the mimic is listed, as a mimic",
+     causesFor(ls).all.some(c => c.name === "Several lumbosacral roots (multilevel spondylosis or canal stenosis)" && c.cat === "mimic"));
+  const nx = nextStepsFor(ls);
+  ok("C8: urgent, with the approved referral", nx.urgency === "urgent" && /oncology if infiltration; neurology\/diabetes team otherwise/.test(nx.referral || ""), `${nx.urgency} ${nx.referral}`);
+  ok("C9: the first immediate step tests above AND below the knee", /^Test ABOVE and BELOW the knee/.test((nx.immediate || [])[0] || ""));
+  for (const name of ["Diabetic lumbosacral radiculoplexus neuropathy (diabetic amyotrophy)", "Pelvic or retroperitoneal tumour", "Retroperitoneal or pelvic haematoma",
+                      "Radiation plexopathy", "Vasculitic plexopathy", "Pelvic abscess or infection", "Several lumbosacral roots (multilevel spondylosis or canal stenosis)"])
+    ok(`C10: \`${name}\` has a plan at the whole plexus`, !!pathologyPlanFor(name, ls)); }
+
+// ---- report ----
+console.log(`\nNeuroLocaliser — plexus round (round 1, rows 3–7)\n${pass} passed, ${fail} failed`);
+process.exit(fail === 0 ? 0 : 1);

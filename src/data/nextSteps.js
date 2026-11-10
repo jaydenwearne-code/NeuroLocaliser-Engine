@@ -1143,6 +1143,20 @@ export const NEXT = {
       monitoring: ["Ankle-foot orthosis for foot drop; falls prevention and physiotherapy",
                    "RE-IMAGE if pain progresses despite negative initial imaging — recurrence can be occult",
                    "Neuropathic analgesia and early palliative input where malignant"] }),
+  plexus_lumbosacral_plexus: ns(
+    ["URGENT CT ABDOMEN AND PELVIS, from the kidneys to the pelvic floor, if there is anticoagulation, fever or a cancer history — haematoma, abscess and tumour can each reach both halves of the plexus",
+     "CHECK CLOTTING/INR and haemoglobin, GLUCOSE/HbA1c and inflammatory markers",
+     "EMG and nerve conduction studies with PARASPINAL sampling — to separate a plexopathy from several root lesions, and to look for myokymia"],
+    "urgent", "URGENT general/vascular surgery and haematology if haematoma; oncology if infiltration; neurology/diabetes team otherwise.",
+    { immediate: ["Test ABOVE and BELOW the knee in one leg: hip flexion, adduction and knee extension, then dorsiflexion, plantarflexion and hip abduction, with the knee and ankle jerks — weakness on both sides of the knee is what makes it the whole plexus",
+                  "Ask about ANTICOAGULATION, fever, cancer and radiotherapy, and diabetes with WEIGHT LOSS",
+                  "Examine the BACK and the OTHER leg: back pain and root-stretch signs point to the roots; spread to the other leg points to diabetic amyotrophy or vasculitis"],
+      confirmatory: ["MRI of the lumbosacral plexus and pelvis with contrast, and MRI of the lumbar spine for multilevel root compression",
+                     "EMG with paraspinal sampling (normal paraspinals favour the plexus); myokymia favours radiation injury",
+                     "Biopsy of any mass; nerve biopsy when vasculitis is suspected and imaging is unrevealing"],
+      monitoring: ["Serial haemoglobin with a haematoma; urgent decompression for an expanding bleed",
+                   "A knee brace for buckling and an ankle-foot orthosis; falls prevention and physiotherapy",
+                   "RE-IMAGE if pain progresses despite negative imaging — infiltration can be occult; diabetic amyotrophy recovers slowly with pain control"] }),
   // --- Region E: named peripheral nerves + polyneuropathy + motor unit (2026-08-10) ---
   nerve_phrenic: ns(
     ["Chest X-ray for a raised hemidiaphragm, then CT CHEST — a new diaphragm palsy needs malignancy excluded",

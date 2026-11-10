@@ -24,7 +24,7 @@ export const EXAMPLES = [
     id: "footdrop",
     label: "Foot drop",
     teaches: "narrow it down",
-    // DELIBERATELY only the findings L5 and peroneal SHARE, so three candidates appear and none wins.
+    // DELIBERATELY only the findings L5 and peroneal SHARE, so four candidates appear and none wins.
     // Adding weak hip abduction pins the root; adding deep peroneal sensory loss pins the nerve.
     tokens: ["weak_ankle_dorsiflexion@left", "weak_great_toe_extension@left", "weak_foot_eversion@left"],
   },

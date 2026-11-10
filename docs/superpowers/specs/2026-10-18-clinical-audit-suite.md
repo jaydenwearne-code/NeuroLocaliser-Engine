@@ -282,6 +282,30 @@ Each probe is also mirrored, so the mirror property runs **277** checks.
 **After the fix (measured on `fix/composite-sites`):** probes **112 / 115**; counted checks 1055 passed, 4 failed. The 4
 are exactly the raised-pressure round. Synonym swaps 272 / 272; background 292 / 292; mirror 277 / 277.
 
+## Plexus round, round 1, row 15: four probes added (2026-11-05)
+
+The plexus round's round 1 (`2026-11-04-plexus-round-design.md`, row 15, approved as written) added four counted
+probes. They cover plexopathies entered in the nerve-territory words a clinician tests, and no probe covered them. Each
+fails on `4d781bd` (the content-gap fix), where 7 of their 8 checks fail:
+
+| Probe | Expected answer (approved) | Baseline |
+|---|---|---|
+| Erb with deltoid-patch and lateral-forearm numbness | the left upper trunk first; one lesion | upper trunk + musculocutaneous nerve, "Vasculitis" |
+| lumbar plexopathy in nerve words (front- and inner-thigh numbness) | the left lumbar plexus first; one lesion | femoral + obturator nerves, "Mononeuritis multiplex" |
+| sciatic numbness + sciatic motor signs + weak gluteus medius | the left sacral plexus first; one lesion | sciatic nerve + sacral plexus, "Vasculitis" |
+| little-finger + T1 numbness + weak thumb and finger abduction | the left lower trunk first; one lesion | T1 root + medial cord, "Vasculitis" |
+
+Each probe is also mirrored, so the mirror property runs **277** checks.
+
+**After the round (measured on `fix/plexus-round`):**
+- Probes **105 / 115**; counted checks 1046 passed, 13 failed. The 13 are the composite-sites round (9) and the
+  raised-pressure round (4).
+- Roots, plexus and nerves: 24 / 24.
+- Synonym swaps 272 / 272; background 292 / 292; mirror 277 / 277.
+
+**After rows 8–9 of the plexus round (2026-11-06, measured on `fix/plexus-round`):** counted checks 1047 passed, 13
+failed. The extra check is the whole lumbosacral plexus's own mirror, and it passes; mirror 278 / 278. No probe changed.
+
 ## Raised-pressure round, round 1, row 13: four probes added (2026-11-05)
 
 The raised-pressure round's round 1 (`2026-11-05-raised-pressure-design.md`, row 13, approved as written) added four counted

@@ -35,8 +35,8 @@ ok("row 3: knee extension + adduction + knee jerk + L4 dermatome → the L4 root
 ok("row 3 guard: L3 radiculopathy still leads with the L3 root",
    first("sensory_l3@left weak_knee_extension@left weak_hip_adduction@left reflex_knee_loss@left") === "left_root_l3");
 ok("row 4: the upper trunk carries the axillary sensory row (deltoid patch)", predicts("left_plexus_upper_trunk", "axillary_sensory@left"));
-ok("row 5 deferred: the upper trunk does not yet carry musculocutaneous sensation (plexus round)",
-   !predicts("left_plexus_upper_trunk", "musculocutaneous_sensory@left"));
+ok("row 5: the upper trunk carries the musculocutaneous sensory row (plexus round)",
+   predicts("left_plexus_upper_trunk", "musculocutaneous_sensory@left"));
 { const r = solve(T("weak_shoulder_abduction@left weak_elbow_flexion@left weak_shoulder_external_rotation@left reflex_biceps_loss@left axillary_sensory@left"));
   ok("row 4: Erb with deltoid-patch numbness → the upper trunk, one lesion", ids(r)[0] === "left_plexus_upper_trunk" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`); }
 ok("row 4 guard: an axillary neuropathy still leads with the axillary nerve",
