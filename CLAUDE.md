@@ -1617,6 +1617,15 @@ on their own branch. They move only because the composite sites bring three plac
     causes.
   - At hyperacute and chronic onset nothing there can raise the pressure, so the card follows the pressure itself.
 
+**Browser-checked on port 8145** (launch entry "NeuroLocaliser integration worktree"; no console errors). Both readings render
+through the one gate: the uncal card reads *"Left CN III (compressive) — uncal herniation"* with its own lead and red flag, and
+the syrinx card *"Bilateral central cord (reaching the corticospinal tracts)"*. Knee + ankle jerk still reads *"Left
+lumbosacral plexus"*. **One combined-only card for the owner:** coma + vertical gaze palsy + a hemianopia on each side +
+papilloedema, no onset. It is EMERGENCY, and What leads with PRES (must not miss: deep cerebral venous thrombosis). Next
+follows PRES's plan ("Acute neurology with the specialty owning the trigger — obstetrics, nephrology, oncology or transplant
+medicine"). The place's red flag below them still reads *"basilar-tip occlusion until proven otherwise — CTA now; it is a
+thrombectomy target"*. Neither branch alone can draw it.
+
 **Superseded, not failing:** an assertion one branch re-pinned under its own ruling runs in its new form:
 - plexus: four foot-drop candidates, the upper trunk's musculocutaneous row;
 - raised pressure: the fundus row 12;
