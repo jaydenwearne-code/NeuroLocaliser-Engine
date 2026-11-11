@@ -1,7 +1,16 @@
 # The card follows its cause — every sentence on a card has one owner (design, 2026-11-11)
 
-**Status: DESIGNED.** The approach and design sections 1–4 were approved in conversation (2026-11-11). Round 1's rows (§4) and
-the content table (Appendix A) await the owner's ruling.
+**Status: RULED 2026-11-11 — round 1 "approve as proposed".** Every row of §4 is approved as recommended:
+- M1–M6, including M4's reversal of pressure-follows row 10's blank;
+- C1–C37 to the proposed (usual-cause) targets, not the alternatives;
+- C15 to the list's infarct;
+- C33 split as worded;
+- P1–P129 stay;
+- T1–T7 as proposed.
+
+**P22 (A-LP) is read as "yes, reword"**, the row's own recommendation. The new sentence: *"Acute Klüver-Bucy features
+with fever / confusion — treat empirically for HSV encephalitis; image, then do an LP."* The approach and design sections 1–4
+had been approved in conversation earlier the same day.
 - Branch `fix/card-follows-cause`, cut from `integrate/all-open-fixes` at `b6fdb73`; worktree `Code/neurolocaliser-card-cause/`.
 - Nothing is pushed, and no fix branch is touched.
 
@@ -150,7 +159,7 @@ changed except in the split and the titles. Appendix A lists every row; Appendix
 6. **Nothing else moves.** With no onset, papilloedema or selection, Where, Why, What, Next and the badge are identical on every
    card. The red line changes only at the split, and the titles only at the 7.
 
-## 4. Rulings — round 1 (awaiting the owner)
+## 4. Rulings — round 1 (APPROVED as proposed, 2026-11-11)
 
 ### A. The mechanism
 
