@@ -4,7 +4,7 @@
 // its proper name in brackets (displayLabel, owner ruling 2026-09-29).
 import { whyChain, whyClues } from "../src/engine/why.js";
 import { causesFor, rankCauses, leadingCause, pressureDemotesAt } from "../src/data/causes.js";
-import { pathologyNextStepsFor, combinedNextSteps } from "../src/data/nextSteps.js";
+import { pathologyNextStepsFor, combinedNextSteps, hyperacuteVascular } from "../src/data/nextSteps.js";
 import { nameForSite } from "../src/data/syndromes.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
 import { MULTIFOCAL } from "../src/data/multifocal.js";
@@ -105,8 +105,14 @@ export function resolveNext({ site, r, pinned, scope, selectedPathology, selecte
 
 // Papilloedema is entered and no cause at this place can raise the pressure, at this onset (row 10). One test, read by
 // resolveNext and by the What card. The retina, and a place outside the skull, never demote for the pressure, so never qualify.
-export const pressureLeads = (site, onset) =>
+// INSIDE THE STROKE WINDOW THE PRESSURE NEVER LEADS (owner, 2026-11-11, in the integration of the open fixes): at hyperacute
+// onset, at a place whose leading cause is vascular (hyperacuteVascular, the escalation's own test), papilloedema cannot have
+// formed since the onset, so it predates the event. There the card keeps the place's own stroke card — its causes, plan, badge
+// and red flag, read without the papilloedema — and names the pressure on a second line (strokeWindowHolds).
+const pressureEmpties = (site, onset) =>
   pressureDemotesAt(site) && !causesFor(site, { onset: onset || undefined, pressure: true }).all.length;
+export const strokeWindowHolds = (site, onset) => pressureEmpties(site, onset) && hyperacuteVascular(site, onset);
+export const pressureLeads = (site, onset) => pressureEmpties(site, onset) && !hyperacuteVascular(site, onset);
 
 // ---- papilloedema with nothing else localised (raised-pressure round, rows 4 and 10, owner-approved wording) ----
 // The card names no place: every intracranial place explains 0 of 0, and the first of them is an accident of the ranking.
@@ -180,7 +186,10 @@ export function answerFor(st) {
     entity = u.concordant.length ? u.concordant[0].name : null;
   }
   const pressed = !!(st.r.pressure && st.r.pressure.present);
-  const res = causesFor(st.sel.site, { onset: st.onset || undefined, pressure: pressed });
+  // Inside the stroke window the place's own causes stand, read without the papilloedema, and the pressure is the What line's
+  // second sentence (owner, 2026-11-11) — on the same cards the pressure would otherwise lead.
+  const held = pressed && !combined && !twoLesions && !st.selectedPathology && strokeWindowHolds(st.sel.site, st.onset);
+  const res = causesFor(st.sel.site, { onset: st.onset || undefined, pressure: pressed && !held });
   const entityRed = st.selectedEntity ? ((MULTIFOCAL.find(e => e.name === st.selectedEntity) || {}).red || null) : null;
   const lines = {
     where: whereLine({
@@ -197,7 +206,7 @@ export function answerFor(st) {
       selected: (twoLesions ? st.selectedEntity : st.selectedPathology) || null, entity, twoLesions,
       // With papilloedema the line names a cause that can raise the pressure; an old stroke cannot (row 14).
       oldStroke: !pressed && !!(nx.followed && nx.followed.onset === "chronic"),
-    }),
+    }) + (held ? ` ${PRESSURE_ONLY.what}` : ""),
     next: nx.referral || "",
     red: entityRed || st.sel.site.red || nameForSite(st.sel.site, { dominantSide: dom }).red || null, // a reading's own flag first
   };

@@ -26,7 +26,7 @@ import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { offersFor, tokensForRow, currentTokens } from "./sides.js";
 import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence, PRESSURE_ONLY, PRESSURE_BAND, PRESSURE_LEADS_NOTE,
-  followNote, demotionReason, pressureLeads } from "./answer.js";
+  followNote, demotionReason, pressureLeads, strokeWindowHolds } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
@@ -1000,7 +1000,10 @@ function renderCause(c) {
 
 function whatBlock(site) {
   const pressed = raisedPressureAxis(S.tokens).present;
-  const res = causesFor(site, { onset: S.onset || undefined, pressure: pressed });
+  // Inside the stroke window (owner, 2026-11-11) the place's own causes stand, read without the papilloedema, and the pressure is
+  // a second line, as on the answer card.
+  const held = pressed && strokeWindowHolds(site, S.onset);
+  const res = causesFor(site, { onset: S.onset || undefined, pressure: pressed && !held });
   // Nothing here can raise the pressure (pressure follows the cause, row 10): the card follows the pressure itself, and the
   // banner is the red line, as on the answer card.
   const leads = pressed && pressureLeads(site, S.onset);
@@ -1036,6 +1039,7 @@ function whatBlock(site) {
     ? `<p class="what-lead">${esc(PRESSURE_ONLY.what)}</p>`
     : leadCauses.length
     ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
+  const pressureLine = held ? `<p class="what-lead">${esc(PRESSURE_ONLY.what)}</p>` : "";
   // The onset control lives HERE, in the card it acts on — it filters/demotes causes and nothing else.
   const cap = `<div class="card-ctrl"><label>Onset
       <select id="onset">
@@ -1057,7 +1061,7 @@ function whatBlock(site) {
         `<div class="annot">${esc(PRESSURE_BAND.note)}</div>${pressDem.map(x => renderCause(x) + `<div class="annot" style="margin:-4px 0 6px">${esc(PRESSURE_BAND.tag)}.</div>`).join("")}`,
         pressDem.some(x => x.name === S.selectedPathology))
     : "");
-  return `${cap}${lead}${red}${groups}${dem}`;
+  return `${cap}${lead}${pressureLine}${red}${groups}${dem}`;
 }
 
 // ④ Next steps — its own card, tiered (immediate → first-line → confirmatory → monitoring) + urgency/referral.

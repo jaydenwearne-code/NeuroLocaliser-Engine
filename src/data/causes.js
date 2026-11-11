@@ -3200,9 +3200,10 @@ export const CAN_RAISE_PRESSURE = {
   categories: new Set(["neoplastic", "infective", "traumatic"]),
   // CAN, in a category that cannot: bleeding, the venous outflow, a ruptured aneurysm, a space-occupying infarct and the
   // posterior-fossa infarcts that take the cerebellum (the swollen cerebellum blocks the fourth ventricle; AICA's territory
-  // rarely swells, so it is not named — row 5), CSF obstruction, and the inflammatory and hypertensive diseases that swell the
-  // brain or block the CSF.
-  can: /haemorrhag|haematoma|sinus thrombos|venous thrombos|vein thrombos|aneurysm|subarachnoid|apoplexy|arteriovenous|space-occupying|malignant mca|cerebellar infarct|cerebellar \/ brainstem stroke|cerebellar or brainstem infarct|\bpica\b|hydroceph|dandy-walker|chiari|craniopharyngioma|\badem\b|acute disseminated|sarcoid|beh[cç]et|\bpres\b|posterior reversible/i,
+  // rarely swells, so it is not named — row 5), CSF obstruction, and the inflammatory diseases that swell the brain or block
+  // the CSF. NOT PRES (row 4 re-ruled by the owner, 2026-11-11): its intracranial pressure is usually normal, and the swollen
+  // discs beside it are hypertensive retinopathy; the metabolic default demotes it, and it stays listed and selectable.
+  can: /haemorrhag|haematoma|sinus thrombos|venous thrombos|vein thrombos|aneurysm|subarachnoid|apoplexy|arteriovenous|space-occupying|malignant mca|cerebellar infarct|cerebellar \/ brainstem stroke|cerebellar or brainstem infarct|\bpica\b|hydroceph|dandy-walker|chiari|craniopharyngioma|\badem\b|acute disseminated|sarcoid|beh[cç]et/i,
   // CANNOT (checked first): normal pressure; a small bleed; a remote, extracranial or non-mass "neoplastic" cause; a corridor
   // tumour on a nerve (the raised-pressure round's own reason for filtering the corridors); a systemic or ganglionic
   // infection; and an injury to a nerve, a vessel, the orbit, the craniocervical junction or the suprachiasmatic nucleus
