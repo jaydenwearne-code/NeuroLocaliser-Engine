@@ -3,6 +3,16 @@
 **Status: IMPLEMENTED (2026-11-10) on `fix/pressure-follows-cause`, `ae1e7a1..10168de` plus the docs commit. Round 1: every
 recommendation APPROVED as written (ruled 2026-11-10).**
 
+**Re-ruled by the owner 2026-11-11, in the integration of the open fixes** (`integrate/all-open-fixes` `6e1daba`;
+`fix/pressure-follows-cause` itself is unchanged). The composite sites' top of the basilar drew a card that led with PRES under a basilar-tip red flag.
+- **Row 4, Appendix A:** PRES is struck from the names that can raise the pressure. Its pressure is usually normal, and the
+  swollen discs beside it are hypertensive retinopathy.
+- **Row 10:** narrowed. At hyperacute onset, at a place whose leading cause is vascular (the escalation's own test), the
+  pressure never leads. The card keeps the place's stroke card and adds the pressure-only What sentence as a second line,
+  because papilloedema cannot form within the stroke window.
+
+Measured there: npm 90 suites / 7676 green; audit 127/127.
+
 **Measured on the branch:** `npm test` 88 suites / 7495 green; the audit 1063 passed / 9 failed (probes 112 / 119, mirror
 281 / 281). The build equals the plan's dry run on all 7,530 sample cards, all 1,226 pairs and the 46 + 41 captured cards. §5's
 numbers hold with one exception, the plan's decision 1: at chronic onset the pressure leads on 71 cards, not 83, because the

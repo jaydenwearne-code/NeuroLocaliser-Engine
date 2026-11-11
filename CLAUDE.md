@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**90 test suites / 7669 assertions: 7667 pass, 2 fail** (integration branch `integrate/all-open-fixes`: two `pressure-follows` pins, the row-21 snapshot and the row-1 ratchet, move because the composite sites bring three new places into play; they await the owner's ruling, see "Integration of the open fixes") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**90 test suites / 7676 assertions green** (integration branch `integrate/all-open-fixes`, with the owner's two rulings of 2026-11-11 — see "Integration of the open fixes") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1581,9 +1581,16 @@ Browser-checked on port 8144.
 **Not fixed (spec §7, for later):** the place ranking and the Together card's disease still ignore the pressure (O1, O2), and
 the cover still ignores the compartment filter (O4). Two wording points from the browser check await a ruling (spec status).
 
+**Re-ruled 2026-11-11, in the integration of the open fixes (`integrate/all-open-fixes` only):**
+- PRES cannot raise the pressure (row 4).
+- Inside the stroke window the pressure never leads (row 10 narrowed): at hyperacute onset, a place whose lead is vascular
+  keeps its stroke card, with the pressure as a second line.
+
+See "Integration of the open fixes" below.
+
 Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`, `docs/superpowers/plans/2026-11-09-pressure-follows-cause.md`.
 
-## Integration of the open fixes (2026-11-10) — LOCAL branch `integrate/all-open-fixes`, NOT pushed, NOT merged
+## Integration of the open fixes (2026-11-10, rulings 2026-11-11) — LOCAL branch `integrate/all-open-fixes`, NOT pushed, NOT merged
 
 Every open engine fix in one tree, measured before they land as one release. It starts at PR #25's tip (`bda1113`, which
 already holds #18 → #20 → #21 → #19 → #24) and merges #23 composite sites (`a24453e`), #22 plexus round (`39b4957`) and
@@ -1597,34 +1604,56 @@ both, `[v.needs].flat().includes(t.split("@")[0])`. It equals each branch's own 
 carries a side (`@none` for a midline finding). Neither branch's site declarations changed. `variantOf` carries both rounds'
 fields (`side` and `station`; `leads` and `red`).
 
-**Measured** (`npm test`, `npm run test:audit`, and every suite one by one):
+**Measured on the merges** (`npm test`, `npm run test:audit`, and every suite one by one):
 - `npm test`: 90 suites, 7669 assertions, 7667 pass and 2 fail.
 - Audit: probes 127/127; counted checks 1097 passed, 0 failed, 0 pending; swaps 272/272, comorbidity 292/292, mirror
   290/290. Composite's 4 failures and raised pressure's 9 are each fixed by the other round.
-- Every count is the exact union of the branches' own, each measured on its own tip.
+- Every count was the exact union of the branches' own, each measured on its own tip.
 
-**The 2 failures are a clinical question for the owner, NOT fixed by re-pinning.** Both are `pressure-follows` pins that pass
-on their own branch. They move only because the composite sites bring three places into play under papilloedema.
-- **Row 21's snapshot** pins 99 lists, 647 rows, 438 names and 266 rows that can. Now: 100 lists, 655 rows, 438 names, 268
-  can. The top of the basilar's 8 causes join the in-play lists. `CAN_RAISE_PRESSURE` reads deep cerebral venous
-  thrombosis and PRES as able to raise the pressure there, and the other six as not: the embolism, basilar occlusion,
-  vertebral dissection, cardiac arrest, Heidenhain CJD and NCSE. The 160 names that can are unchanged.
-- **Row 1's ratchet** pins 112 kinds, `80/7 52/44 66/20 37/15 23/17`. Now: 115 kinds, `82/7 54/45 69/20 38/15 23/18`.
-  - Both MLFs and both paracentral lobules repeat their content source's rows exactly (the medial pons, the paracentral
-    lobule).
-  - The top of the basilar is the only new content. With papilloedema it leads with PRES at no onset and at acute onset.
-    The paramedian thalami lead with deep cerebral venous thrombosis; the list order decides between the two uncommon
-    causes.
-  - At hyperacute and chronic onset nothing there can raise the pressure, so the card follows the pressure itself.
+**The 2 failures were `pressure-follows` pins** (row 21's snapshot, row 1's ratchet). They moved only because the composite
+sites bring three places into play under papilloedema.
+- Both MLFs and both paracentral lobules repeat their content source's approved rows.
+- The top of the basilar was new. The browser found a card neither branch alone can draw: coma + vertical gaze palsy + a
+  hemianopia on each side + papilloedema led with PRES, with Next sending the patient to "obstetrics, nephrology, oncology
+  or transplant medicine". Below that sat the place's basilar-tip red flag (CTA now; a thrombectomy target).
 
-**Browser-checked on port 8145** (launch entry "NeuroLocaliser integration worktree"; no console errors). Both readings render
-through the one gate: the uncal card reads *"Left CN III (compressive) — uncal herniation"* with its own lead and red flag, and
-the syrinx card *"Bilateral central cord (reaching the corticospinal tracts)"*. Knee + ankle jerk still reads *"Left
-lumbosacral plexus"*. **One combined-only card for the owner:** coma + vertical gaze palsy + a hemianopia on each side +
-papilloedema, no onset. It is EMERGENCY, and What leads with PRES (must not miss: deep cerebral venous thrombosis). Next
-follows PRES's plan ("Acute neurology with the specialty owning the trigger — obstetrics, nephrology, oncology or transplant
-medicine"). The place's red flag below them still reads *"basilar-tip occlusion until proven otherwise — CTA now; it is a
-thrombectomy target"*. Neither branch alone can draw it.
+**The owner's rulings (2026-11-11), built on this branch (`6e1daba`):**
+- **PRES cannot raise the pressure** (pressure-follows row 4 re-ruled). Its intracranial pressure is usually normal, and the
+  swollen discs beside it are hypertensive retinopathy. It stays listed and selectable, demoted.
+  - 17 of 575 in-play papilloedema cards change, all at the six places listing PRES.
+  - The top of the basilar leads with deep cerebral venous thrombosis (no onset, acute, subacute), as the paramedian thalami
+    do.
+  - Subacute occipital and PCA pictures lead with glioma/metastasis: 3 cards go from emergency to urgent, none to routine.
+- **Inside the stroke window the pressure never leads** (row 10 narrowed). The condition: hyperacute onset, a vascular lead
+  at the place (`hyperacuteVascular`), and no cause there that can raise the pressure. Papilloedema then predates the event.
+  - The card keeps the place's own stroke card (causes, plan, badge, red flag) and adds the pressure-only What sentence as a
+    second line.
+  - `strokeWindowHolds` (app/answer.js) is the one test, read by `resolveNext` through `pressureLeads`, the answer card and
+    the What card.
+  - It reaches 21 place kinds, 19 with a picture of their own, every one EMERGENCY. On #25 alone the pressure replaced the
+    stroke pathway at 15. Outside hyperacute onset nothing changes.
+- **Re-pinned under the rulings** (`test/pressure-follows.test.js`):
+  - row 4, both spellings;
+  - row 21: 100 lists, 655 rows, 438 names, 262 can; 158 names;
+  - the ratchet: 115 kinds, `82/7 54/45 68/21 42/15 23/18`;
+  - §6's hemianopia line (must not miss: AVM).
+
+  Section G pins both rulings. The row-21 and ratchet pins carry the composite places, so on #25 alone they would need
+  #25's own values.
+
+**Measured now:** `npm test` 90 suites, 7676 assertions, all green; the audit 127/127, 1097 passed, 0 failed.
+
+**Browser-checked on port 8145** (launch entry "NeuroLocaliser integration worktree"; no console errors).
+- Both readings render through the one gate: the uncal card reads *"Left CN III (compressive) — uncal herniation"* with its
+  own lead and red flag, and the syrinx card *"Bilateral central cord (reaching the corticospinal tracts)"*.
+- Knee + ankle jerk still reads *"Left lumbosacral plexus"*.
+- The top of the basilar with papilloedema reads deep cerebral venous thrombosis with no onset. At hyperacute onset it reads
+  its stroke card plus the pressure line, and the What card agrees (the embolism first, no papilloedema band). At chronic
+  onset it reads the pressure itself.
+
+**Still open (PR #25's, not the integration's):** where the plan follows a pressure-raising cause, the place's own red flag
+still shows (288 of 575 cards). 101 of those flags name a stroke or occlusion: some agree with the followed cause, some do
+not. It is the same class as #25's two unruled wording points.
 
 **Superseded, not failing:** an assertion one branch re-pinned under its own ruling runs in its new form:
 - plexus: four foot-drop candidates, the upper trunk's musculocutaneous row;
