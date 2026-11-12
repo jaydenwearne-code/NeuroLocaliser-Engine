@@ -189,32 +189,6 @@ export const BY_SITE = {
       red: "Neglect with anosognosia leads patients to deny deficits — corroborate history and examine formally."
     }
   },
-  cortex_temporoparietal: {
-    dominant: {
-      name: "Dominant temporoparietal syndrome (Wernicke's aphasia)",
-      note: "Fluent, paraphasic speech with impaired comprehension and repetition; ± quadrantanopia.",
-      ddx: ["MCA inferior division infarct", "Tumour", "Herpes simplex encephalitis", "Focal seizure"],
-      red: "Acute fluent aphasia can be mistaken for confusion — it is a localising cortical sign."
-    },
-    nondominant: {
-      name: "Non-dominant temporoparietal syndrome (sensory aprosodia)",
-      note: "Impaired comprehension of emotional prosody, ± quadrantanopia and neglect features.",
-      ddx: ["MCA inferior division infarct", "Tumour", "Focal seizure"],
-      red: "Subtle; the deficit is in emotional communication rather than words."
-    }
-  },
-  cortex_medial_pfc: {
-    name: "Medial frontal (ACA) behavioural syndrome",
-    note: "Apathy / abulia — reduced spontaneous behaviour and initiation, out of proportion to weakness.",
-    ddx: ["ACA infarct", "Parasagittal tumour", "Anterior communicating aneurysm rupture", "Normal-pressure hydrocephalus"],
-    red: "Abulia is easily labelled 'depression' — an acute-onset case warrants imaging."
-  },
-  cortex_orbitofrontal: {
-    name: "Orbitofrontal syndrome",
-    note: "Disinhibition, personality change and irritability with relatively preserved elementary neurology.",
-    ddx: ["Orbitofrontal contusion (head injury)", "Subfrontal meningioma", "Frontotemporal dementia", "Anterior communicating aneurysm"],
-    red: "Personality change with anosmia suggests a subfrontal mass — image before attributing to psychiatry."
-  },
   cortex_temporal: {
     name: "Temporal lobe syndrome",
     note: "Material-specific short-term memory impairment (verbal if dominant, non-verbal if non-dominant), episodic hallucinations/fear or mood change, ± superior quadrantanopia.",
@@ -784,10 +758,18 @@ export const BY_SITE = {
     red: "Acute non-fluent aphasia + right hemiparesis is a dominant MCA stroke — time-critical."
   },
   cortex_temporoparietal: {
-    name: "Wernicke's aphasia (fluent; comprehension + repetition impaired)",
-    note: "Dominant posterior superior temporal gyrus. Fluent, paraphasic (empty) speech with impaired comprehension and repetition; often no weakness (can be mistaken for confusion / psychosis).",
-    ddx: ["MCA inferior-division infarct", "Haemorrhage", "Tumour", "Encephalitis"],
-    red: "Fluent jargon aphasia without weakness is easily missed as an acute stroke — image and consider thrombolysis."
+    dominant: {
+      name: "Wernicke's aphasia (fluent; comprehension + repetition impaired)",
+      note: "Dominant posterior superior temporal gyrus. Fluent, paraphasic (empty) speech with impaired comprehension and repetition; often no weakness (can be mistaken for confusion / psychosis).",
+      ddx: ["MCA inferior-division infarct", "Haemorrhage", "Tumour", "Encephalitis"],
+      red: "Fluent jargon aphasia without weakness is easily missed as an acute stroke — image and consider thrombolysis."
+    },
+    nondominant: {
+      name: "Non-dominant temporoparietal syndrome (sensory aprosodia)",
+      note: "Impaired comprehension of emotional prosody, ± quadrantanopia and neglect features.",
+      ddx: ["MCA inferior division infarct", "Tumour", "Focal seizure"],
+      red: "Subtle; the deficit is in emotional communication rather than words."
+    }
   },
   cortex_arcuate: {
     name: "Conduction aphasia (arcuate fasciculus)",

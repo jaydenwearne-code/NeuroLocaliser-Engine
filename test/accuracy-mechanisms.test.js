@@ -188,7 +188,13 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   const lac = causesFor(ic, { onset: "hyperacute" }).all.map(c => c.name);
   ok("a lacunar infarct is CONCORDANT with hyperacute onset at the capsule (B15)", lac.includes("Small-vessel lacunar infarct"));
   ok("the capsule badges emergency at hyperacute onset", nextStepsFor(ic, { onset: "hyperacute" }).urgency === "emergency");
-  ok("…and keeps its curated badge with no onset", nextStepsFor(ic).urgency === "urgent");
+  // Re-pinned 2026-11-12 (duplicate keys, row D6): the capsule's curated plan is region B's own, emergency — the "urgent"
+  // this used to pin came from a terse duplicate entry that hid it. The onset gating it demonstrated moves to the striatum,
+  // which is still curated urgent: the escalation must never reach a card with no onset.
+  ok("…and keeps its curated badge with no onset (region B's: emergency)", nextStepsFor(ic).urgency === "emergency");
+  const st = byId("left_basal_ganglia_striatum");
+  ok("a deep stroke site curated urgent (the striatum) badges emergency at hyperacute onset", hyperacuteVascular(st, "hyperacute") && nextStepsFor(st, { onset: "hyperacute" }).urgency === "emergency");
+  ok("…and keeps its curated urgent badge with no onset", nextStepsFor(st).urgency === "urgent");
   ok("a peripheral vestibular site does NOT escalate (peripheral compartment)", nextStepsFor(byId("left_peripheral_vestibular_labyrinth"), { onset: "hyperacute" }).urgency !== "emergency");
   ok("a microvascular CN III does NOT escalate", nextStepsFor(byId("left_pupil_cn3_ischaemic"), { onset: "hyperacute" }).urgency !== "emergency");
   ok("hyperacuteVascular is false without hyperacute onset", !hyperacuteVascular(ic, "acute") && !hyperacuteVascular(ic, undefined));

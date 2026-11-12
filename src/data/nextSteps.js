@@ -2248,9 +2248,6 @@ export const NEXT = {
       confirmatory: ["Vascular risk-factor work-up (prolonged ECG monitoring, echocardiogram, lipids, HbA1c)",
                      "If the history is months rather than minutes: MRI with volumetric sequences and neuropsychometry for posterior cortical atrophy"],
       monitoring: ["Neglect is a major falls and safety risk — occupational-therapy assessment before mobilising or discharge"] }),
-  subcortex_internal_capsule: ns( // lacune
-    ["MRI brain (DWI) — small-vessel lacune", "Vascular risk-factor screen (BP, glucose, lipids); consider hypertensive haemorrhage on CT"],
-    "urgent", "Stroke team / TIA clinic."),
   // motor unit
   motor_unit_anterior_horn: ns( // MND / SMA
     ["EMG / nerve conduction studies", "MRI brain + cord to exclude a structural mimic"],
