@@ -4,10 +4,11 @@
 // hemisphere shows on both unless the entry names each one. Found 2026-11-12: the non-dominant operculum (motor aprosodia
 // alone) was titled "Broca's aphasia" with "…a dominant MCA stroke — time-critical.", and the non-dominant
 // temporoparietal cortex read "(Wernicke's area)" on its Where line (its title was the duplicate-keys round's row D1).
-import { candidateSites } from "../src/engine/inverse.js";
+import { candidateSites, solve } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { BY_SITE, nameForSite } from "../src/data/syndromes.js";
 import { PART_LABEL, NONDOMINANT_PART_LABEL, siteLabel, plainSiteName } from "../app/labels.js";
+import { answerFor } from "../app/answer.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -80,8 +81,13 @@ const OPEN = {
   const r = byId("right_cortex_operculum"), n = nameForSite(r, dom), p = plainSiteName(r, dom);
   ok("the non-dominant operculum is named motor aprosodia, not Broca's aphasia", n.name === "Motor aprosodia (non-dominant frontal operculum)" && p.name === n.name, p.name);
   ok("…its Where line names the gyrus without Broca's area", p.place === "Right frontal operculum", p.place);
-  ok("…its red flag is not the dominant MCA stroke flag",
-     n.red === "New flat, unmodulated speech is easily mistaken for depression — it is a focal sign that needs imaging.", n.red);
+  // Read on the card as well as the phonebook: once the card follows its cause, the infarct leads here and carries the
+  // "dominant MCA stroke" flag (C25), which must stay off the non-dominant card.
+  const tokens = new Set(expectedFindings(r, dom)), res = solve(tokens, dom), sel = res.display.find(x => x.site.id === r.id);
+  const card = sel && answerFor({ r: res, sel, total: tokens.size, tokens, onset: "", course: "", dominant: "left", sensoryLevel: "",
+    pinned: new Set(), scope: "site", selectedPathology: undefined, selectedEntity: undefined });
+  const FLAT = "New flat, unmodulated speech is easily mistaken for depression — it is a focal sign that needs imaging.";
+  ok("…its red flag, on the card too, is its own — not the dominant MCA stroke flag", n.red === FLAT && card?.lines.red === FLAT, card?.lines.red);
   ok("…and its note describes motor aprosodia", /^Non-dominant frontal operculum/.test(n.note) && /flat, unmodulated speech/i.test(n.note) && !/aphasia/i.test(n.note), n.note);
   const t = plainSiteName(byId("right_cortex_temporoparietal"), dom);
   ok("the non-dominant temporoparietal Where line names the gyrus without Wernicke's area", t.place === "Right posterior superior temporal gyrus", t.place);

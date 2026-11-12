@@ -15,8 +15,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { BY_SITE, nameForSite } from "../src/data/syndromes.js";
 import { NEXT, nextStepsFor } from "../src/data/nextSteps.js";
 import { PATHOLOGY_NEXT } from "../src/data/pathologyNextSteps.js";
-import { candidateSites } from "../src/engine/inverse.js";
+import { candidateSites, solve } from "../src/engine/inverse.js";
+import { expectedFindings } from "../src/engine/forward.js";
 import { plainSiteName } from "../app/labels.js";
+import { answerFor } from "../app/answer.js";
 
 let pass = 0, fail = 0;
 const log = [];
@@ -145,15 +147,27 @@ ok("the scan is not vacuous: 30+ exported tables read exactly, the phonebook and
 
 // ---- 3. what the duplicates hid ----
 const site = id => candidateSites().find(s => s.id === id);
+// The answer card for a place's own picture (a left-dominant patient, no onset): the red line the reader SEES, wherever the
+// flag is stored — the phonebook today, the flag's cause once the card follows its cause (that round moves C11 there).
+const cardFor = s => {
+  const tokens = new Set(expectedFindings(s, { dominantSide: "left" })), r = solve(tokens, { dominantSide: "left" });
+  const sel = r.display.find(x => x.site.id === s.id);
+  return sel ? answerFor({ r, sel, total: tokens.size, tokens, onset: "", course: "", dominant: "left", sensoryLevel: "",
+    pinned: new Set(), scope: "site", selectedPathology: undefined, selectedEntity: undefined }) : null;
+};
 { // the temporoparietal entry names each hemisphere (D1); the dominant side is the aphasia round's entry, unchanged (D2)
   const dom = site("left_cortex_temporoparietal"), non = site("right_cortex_temporoparietal"), opts = { dominantSide: "left" };
+  const SUBTLE = "Subtle; the deficit is in emotional communication rather than words.";
+  const JARGON = "Fluent jargon aphasia without weakness is easily missed as an acute stroke — image and consider thrombolysis.";
   ok("D1: a non-dominant temporoparietal lesion is named sensory aprosodia, not Wernicke's aphasia",
      nameForSite(non, opts).name === "Non-dominant temporoparietal syndrome (sensory aprosodia)" && plainSiteName(non, opts).name === nameForSite(non, opts).name, plainSiteName(non, opts).name);
-  ok("D1: …and its red flag is not the jargon-aphasia stroke flag", nameForSite(non, opts).red === "Subtle; the deficit is in emotional communication rather than words.", nameForSite(non, opts).red);
+  const nc = cardFor(non);
+  ok("D1: …its own red flag, on the card too — not the jargon-aphasia stroke flag, though the infarct leads",
+     nameForSite(non, opts).red === SUBTLE && nc?.lines.red === SUBTLE, nc?.lines.red);
   ok("D1: with right dominance set, the left side is the non-dominant one", nameForSite(dom, { dominantSide: "right" }).name === "Non-dominant temporoparietal syndrome (sensory aprosodia)");
-  ok("D2: the dominant side keeps the aphasia round's name and flag",
-     nameForSite(dom, opts).name === "Wernicke's aphasia (fluent; comprehension + repetition impaired)"
-     && nameForSite(dom, opts).red === "Fluent jargon aphasia without weakness is easily missed as an acute stroke — image and consider thrombolysis.");
+  const dc = cardFor(dom);
+  ok("D2: the dominant side keeps the aphasia round's name, and its card the jargon-aphasia flag",
+     nameForSite(dom, opts).name === "Wernicke's aphasia (fluent; comprehension + repetition impaired)" && dc?.lines.red === JARGON, dc?.lines.red);
 }
 ok("D3: the medial prefrontal entry is the abulic-syndrome entry", BY_SITE.cortex_medial_pfc.name === "Medial prefrontal / anterior cingulate (abulic) syndrome");
 ok("D4: the orbitofrontal entry is the disinhibition-syndrome entry", BY_SITE.cortex_orbitofrontal.name === "Orbitofrontal disinhibition syndrome");
