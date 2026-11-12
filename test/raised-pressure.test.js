@@ -65,6 +65,7 @@ ok("row 1 guard: a single VI palsy leads with the left VI, and the bilateral sit
 // ---- B. The uncal reading of the compressive III (rows 5–8, 11) ----
 const UNCAL = "reduced_consciousness@none fixed_dilated_pupil@left extensor_posturing@none";
 const RED = "A new dilated pupil with a falling conscious level is uncal herniation until proven otherwise — CT head now and call neurosurgery; start lowering the pressure while you wait.";
+const CN3_FLAG = "A fixed dilated pupil with a third-nerve palsy is a SURGICAL EMERGENCY — image the vessels (CTA/MRA) for an aneurysm now.";
 { const r = solve(T(UNCAL)), c = r.display[0];
   ok("row 5: coma + a blown L pupil + posturing → the left compressive III, one lesion (R1 #13)",
      c?.site.id === "left_pupil_cn3_compressive" && r.multi === null, `${ids(r)[0]} multi=${!!r.multi}`);
@@ -81,7 +82,9 @@ const RED = "A new dilated pupil with a falling conscious level is uncal herniat
   ok("row 6: the What line leads with uncal herniation",
      ans?.lines.what === "Most likely Uncal herniation (must not miss). Must not miss: Posterior communicating artery aneurysm.", ans?.lines.what);
   ok("row 6: the Next line stays the site's plan", /^IMMEDIATE neurosurgery/.test(ans?.lines.next || ""), ans?.lines.next);
-  ok("rows 7, 11: the reading's red flag", ans?.lines.red === RED, ans?.lines.red); }
+  // Since the card follows its cause (2026-11-11) the reading's flag lives on its cause, "Uncal herniation", and the red line
+  // shows the card's cause's flag and then the place's own, which no longer gives way to the reading's.
+  ok("rows 7, 11: the reading's red flag, then the compressive III's own", ans?.lines.red === `${RED} ${CN3_FLAG}`, ans?.lines.red); }
 { const c = solve(T(UNCAL)).display[0];
   ok("row 6: within the reading it reads as common, so the What card's own 'Most likely' line names it first",
      !!c && (causesFor(c.site).all.filter(x => x.likelihood === "common")[0] || {}).name === "Uncal herniation"); }

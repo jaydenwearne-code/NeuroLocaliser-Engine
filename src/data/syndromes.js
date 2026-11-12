@@ -32,13 +32,11 @@ export const BY_SITE = {
     name: "Bilateral internuclear ophthalmoplegia (both MLFs)",
     note: "The two medial longitudinal fasciculi lie side by side in the paramedian tegmentum, so one small paramedian lesion takes both: neither eye adducts on lateral gaze, with nystagmus of the abducting eye on each side; convergence may be spared.",
     ddx: ["Demyelination (MS) — the commonest cause in a younger patient", "Brainstem infarct (basilar perforators) in an older patient", "Wernicke's encephalopathy", "Tumour", "Myasthenia gravis (pseudo-INO)"],
-    red: "A bilateral INO in an older patient, or with any other brainstem sign, is a posterior-circulation stroke until imaging says otherwise."
   },
   pons_lateral: {
     name: "Lateral pontine syndrome (Marie-Foix)",
     note: "Middle cerebellar peduncle, spinothalamic tract and vestibular nuclei laterally (AICA territory).",
     ddx: ["AICA infarct", "Demyelination", "Tumour"],
-    red: "AICA strokes can cause deafness — the labyrinthine artery is a branch."
   },
   medulla_medial: {
     name: "Medial medullary syndrome (Dejerine)",
@@ -56,7 +54,6 @@ export const BY_SITE = {
     name: "Hemimedullary syndrome (Reinhold)",
     note: "Medial + lateral medulla together on one side — Dejerine plus Wallenberg features.",
     ddx: ["Vertebral artery occlusion/dissection"],
-    red: "A large vertebral territory event — high stakes, image the vessels."
   },
 
   // ---- SPINAL CORD ----
@@ -110,20 +107,17 @@ export const BY_SITE = {
     name: "Anterior cerebral artery (ACA) syndrome",
     note: "Medial hemisphere: contralateral leg-predominant weakness and cortical sensory loss, with abulia/apathy (medial prefrontal). Arm and face relatively spared.",
     ddx: ["ACA infarct", "Parasagittal meningioma or metastasis", "Anterior communicating artery aneurysm", "Superior sagittal sinus thrombosis"],
-    red: "Bilateral ACA territory (azygos ACA) causes paraparesis + abulia that can mimic a cord or psychiatric picture — image the vessels."
   },
   cortex_mca_superior: {
     dominant: {
       name: "Dominant MCA superior division syndrome (Broca)",
       note: "Fronto-opercular: contralateral face/arm-predominant weakness, cortical sensory loss, non-fluent (Broca's) aphasia, and conjugate gaze deviation toward the lesion.",
       ddx: ["MCA superior division infarct", "Intracerebral haemorrhage", "Tumour", "Focal seizure with Todd's paresis"],
-      red: "A gaze-deviated, aphasic, face/arm-weak patient is a large-vessel stroke until proven otherwise — time-critical."
     },
     nondominant: {
       name: "Non-dominant MCA superior division syndrome",
       note: "Fronto-opercular: contralateral face/arm-predominant weakness and cortical sensory loss with motor aprosodia (flat, unmodulated speech) and gaze deviation toward the lesion.",
       ddx: ["MCA superior division infarct", "Haemorrhage", "Tumour", "Focal seizure"],
-      red: "Same large-vessel urgency as the dominant side; the language exam looks deceptively normal."
     }
   },
   cortex_mca_inferior: {
@@ -131,7 +125,6 @@ export const BY_SITE = {
       name: "Dominant MCA inferior division syndrome (Wernicke)",
       note: "Temporoparietal: fluent (Wernicke's) receptive aphasia, contralateral quadrantanopia, ± Gerstmann features, with little or no weakness.",
       ddx: ["MCA inferior division infarct", "Haemorrhage", "Tumour", "Herpes simplex encephalitis (temporal)"],
-      red: "Fluent-but-nonsensical speech without weakness is easily mistaken for delirium/psychiatric — it is a stroke syndrome."
     },
     nondominant: {
       name: "Non-dominant MCA inferior division syndrome (neglect)",
@@ -145,13 +138,11 @@ export const BY_SITE = {
       name: "Complete dominant MCA syndrome (global aphasia)",
       note: "Whole MCA territory: dense contralateral face/arm-predominant hemiparesis and hemisensory loss, global aphasia, homonymous field loss and gaze deviation toward the lesion.",
       ddx: ["Proximal MCA / carotid-T occlusion", "Large intracerebral haemorrhage", "Malignant MCA infarction"],
-      red: "Malignant MCA infarction risks fatal oedema — monitor conscious level; consider decompressive hemicraniectomy early."
     },
     nondominant: {
       name: "Complete non-dominant MCA syndrome",
       note: "Whole MCA territory: dense contralateral hemiparesis and hemisensory loss, profound neglect/anosognosia, homonymous field loss and gaze deviation toward the lesion.",
       ddx: ["Proximal MCA / carotid-T occlusion", "Large haemorrhage", "Malignant MCA infarction"],
-      red: "Malignant MCA infarction risk as for the dominant side; neglect masks the severity."
     }
   },
   // Dominant / non-dominant since the PCA reaches the fusiform (content-gap fix, rows 10 and 17, 2026-11-01).
@@ -160,7 +151,6 @@ export const BY_SITE = {
       name: "Posterior cerebral artery (PCA) syndrome",
       note: "Occipital: contralateral homonymous hemianopia (often with macular sparing). In the dominant hemisphere, alexia without agraphia (the fusiform with the splenium).",
       ddx: ["PCA infarct", "Occipital haemorrhage", "Tumour", "Posterior reversible encephalopathy (PRES)", "Migrainous / seizure aura"],
-      red: "New pure alexia with a right hemianopia is a left PCA stroke until proven otherwise."
     },
     nondominant: {
       name: "Posterior cerebral artery (PCA) syndrome",
@@ -199,7 +189,6 @@ export const BY_SITE = {
     name: "Anton's syndrome (bilateral occipital)",
     note: "Cortical blindness with denial of blindness (visual anosognosia) — pupils and fundi normal, patient confabulates vision.",
     ddx: ["Bilateral PCA infarction (top-of-basilar)", "PRES / eclampsia", "Hypoxic-ischaemic injury", "Bilateral occipital tumour"],
-    red: "Top-of-the-basilar embolism is a treatable cause of bilateral occipital stroke — image the posterior circulation urgently."
   },
   bilateral_auditory: {
     name: "Cortical deafness (bilateral primary auditory)",
@@ -211,20 +200,18 @@ export const BY_SITE = {
     name: "Klüver-Bucy syndrome (bilateral anterior temporal)",
     note: "Bilateral anterior temporal / amygdala injury — placidity, hyperorality, hypersexuality, hypermetamorphosis and visual (or multimodal) agnosia.",
     ddx: ["Herpes simplex encephalitis", "Frontotemporal dementia", "Bilateral temporal trauma / surgery", "Anoxic injury"],
-    red: "Acute Klüver-Bucy features with fever / confusion — treat empirically for HSV encephalitis while imaging and doing an LP."
+    red: "Acute Klüver-Bucy features with fever / confusion — treat empirically for HSV encephalitis; image, then do an LP."
   },
   bilateral_fusiform: {
     name: "Ventral occipitotemporal (fusiform) syndrome — visual agnosia / achromatopsia",
     note: "Bilateral ventral occipitotemporal ('what' stream) — visual object agnosia (cannot recognise seen objects) and cerebral achromatopsia (loss of colour vision), often with prosopagnosia and alexia.",
     ddx: ["Bilateral PCA infarction", "Posterior cortical atrophy", "Anoxic injury", "PRES"],
-    red: "Bilateral ventral occipitotemporal lesions imply a posterior-circulation or degenerative process — image the PCA territories."
   },
   cortex_fusiform: {
     dominant: {
       name: "Alexia without agraphia (pure alexia) — dominant fusiform / visual word form area",
       note: "Can write but not read own writing; a left occipital + splenial (or fusiform / VWFA) disconnection — the seen word cannot reach the language cortex. Classically with a right homonymous hemianopia.",
       ddx: ["Left PCA infarct (occipital + splenium)", "Tumour (splenial / medial occipitotemporal)", "Neurodegeneration"],
-      red: "New pure alexia with a right hemianopia is a left PCA stroke until proven otherwise."
     },
     nondominant: {
       name: "Prosopagnosia — non-dominant fusiform",
@@ -237,18 +224,16 @@ export const BY_SITE = {
     name: "Balint's syndrome (bilateral parieto-occipital)",
     note: "Simultanagnosia, optic ataxia and oculomotor apraxia from bilateral parieto-occipital dysfunction.",
     ddx: ["Watershed infarction (bilateral)", "Posterior cortical atrophy", "PRES", "Hypoxic-ischaemic injury"],
-    red: "Bilateral watershed infarcts imply global hypoperfusion — look for a cardiac/haemodynamic cause."
   },
 
   // ---- SUBCORTEX (deep grey + deep white; the cortical-vs-subcortical distinction) ----
   subcortex_internal_capsule: {
-    name: "Pure motor lacune (internal capsule)",
+    name: "Pure motor hemiparesis (internal capsule)",
     note: "Lenticulostriate perforator: dense, proportional contralateral face + arm + leg weakness with NO cortical signs (no aphasia, neglect, gaze deviation or field defect). The absence of cortical signs is the localiser.",
     ddx: ["Small-vessel (lacunar) infarct", "Deep (capsular/putaminal) haemorrhage", "Demyelination", "Small deep metastasis"],
-    red: "A stuttering or fluctuating pure-motor deficit is the capsular warning syndrome — a lacune in evolution; treat and monitor closely."
   },
   subcortex_thalamus: {
-    name: "Pure sensory lacune / Déjerine–Roussy (thalamic VPL)",
+    name: "Pure sensory syndrome / Déjerine–Roussy (thalamic VPL)",
     note: "Ventral posterolateral thalamus: contralateral loss of all sensory modalities on the face, arm and leg, with no weakness; a larger thalamogeniculate infarct reaching the ventral lateral nucleus adds contralateral hemiataxia; a delayed contralateral central post-stroke pain (Déjerine–Roussy) may follow.",
     ddx: ["Thalamic lacunar infarct", "Thalamic haemorrhage", "Demyelination", "Small tumour / metastasis"],
     red: "Central post-stroke pain is often refractory and misattributed — it is a thalamic sign, not functional."
@@ -279,7 +264,6 @@ export const BY_SITE = {
     name: "Central acute vestibular syndrome (HINTS-central)",
     note: "Acute continuous vertigo with a NORMAL head-impulse test, direction-changing (gaze-evoked) or vertical nystagmus, and/or skew deviation — the 'INFARCT' pattern (Impulse Normal, Fast-phase Alternating, Refixation on Cover Test) of a posterior-circulation (cerebellar / brainstem) stroke. A normal head impulse in an acutely, continuously vertiginous patient is the danger sign.",
     ddx: ["Cerebellar infarct (PICA / AICA)", "Lateral medullary / pontine stroke", "MS plaque", "Vertebrobasilar TIA"],
-    red: "Vertigo with a NORMAL head impulse, a skew deviation, or direction-changing nystagmus is a stroke until proven otherwise — MRI-DWI; do not discharge as labyrinthitis."
   },
   craniocervical_junction_foramen_magnum: {
     name: "Downbeat nystagmus — craniocervical junction",
@@ -377,10 +361,9 @@ export const BY_SITE = {
     red: "Young-onset dystonia needs Wilson's disease excluded (copper studies, slit-lamp) — it is treatable."
   },
   subcortex_sensorimotor: {
-    name: "Sensorimotor lacune (thalamocapsular)",
+    name: "Sensorimotor syndrome (thalamocapsular)",
     note: "One perforator spanning the internal capsule and the adjacent VPL thalamus: contralateral weakness AND hemisensory loss together, still with no cortical signs.",
     ddx: ["Thalamocapsular lacunar infarct", "Deep haemorrhage", "Demyelination"],
-    red: "A deep sensorimotor stroke without cortical signs is small-vessel until proven otherwise — but image to exclude haemorrhage."
   },
   subcortex_anterior_choroidal: {
     name: "Anterior choroidal artery syndrome",
@@ -443,7 +426,7 @@ export const BY_SITE = {
     ddx: ["Herpes zoster", "Diabetic thoracic radiculopathy (truncal)", "Vertebral metastasis / disc", "Post-thoracotomy"]
   },
   subcortex_corona_radiata: {
-    name: "Corona radiata lacune (pure motor)",
+    name: "Pure motor hemiparesis (corona radiata)",
     note: "A pure-motor hemiparesis (face + arm + leg, contralateral, with pyramidal signs, no cortical or sensory features) from a small-vessel lacune in the corona radiata — clinically indistinguishable from an internal-capsule lacune. The lacunar syndromes (pure motor, ataxic hemiparesis, dysarthria-clumsy-hand) localise across the corona radiata, internal capsule and basis pontis.",
     ddx: ["Lacunar (small-vessel) infarct", "Internal-capsule lacune", "Basis-pontis lacune"]
   },
@@ -474,7 +457,7 @@ export const BY_SITE = {
     ddx: ["MCA infarct (insular)", "Glioma", "Herpes / limbic encephalitis"]
   },
   pons_basis_pontis: {
-    name: "Ventral pontine (basis pontis) lacune",
+    name: "Ventral pontine (basis pontis) syndrome",
     note: "A small-vessel lacune of the ventral pons. Two classic pictures emerge: ATAXIC HEMIPARESIS (pyramidal weakness with crossed pontocerebellar ataxia on the same side, out of proportion to the weakness) and DYSARTHRIA-CLUMSY-HAND (corticobulbar dysarthria + central facial weakness + a clumsy hand). Gaze, CN VI and CN VII are SPARED (the tegmentum is dorsal).",
     ddx: ["Lacunar (small-vessel) infarct", "Basilar perforator disease", "Small pontine haemorrhage / demyelination"]
   },
@@ -488,7 +471,6 @@ export const BY_SITE = {
     name: "Geniculate ganglion syndrome (Ramsay Hunt)",
     note: "Facial palsy with reduced lacrimation (greater petrosal), hyperacusis (stapedius) and loss of taste (chorda tympani) — hearing intact, so proximal-intratemporal but distal to the IAM. Herpes zoster oticus adds vesicles.",
     ddx: ["Ramsay Hunt syndrome (herpes zoster oticus)", "Geniculate schwannoma", "Bell's palsy (proximal)"],
-    red: "Ramsay Hunt has worse recovery than Bell's — treat zoster early (aciclovir + steroids)."
   },
   skull_base_vii_tympanic: {
     name: "Tympanic-segment facial palsy",
@@ -598,7 +580,6 @@ export const BY_SITE = {
     name: "Collet-Sicard syndrome",
     note: "IX, X, XI AND XII together — the jugular foramen syndrome plus tongue involvement, without a Horner's (that would make it Villaret).",
     ddx: ["Skull-base tumour / metastasis", "Nasopharyngeal carcinoma", "Carotid dissection", "Trauma (occipital condyle)"],
-    red: "Four unilateral lower-cranial-nerve palsies point to a skull-base or nasopharyngeal malignancy — image and consider ENT referral."
   },
   skull_base_villaret: {
     name: "Villaret syndrome",
@@ -630,7 +611,6 @@ export const BY_SITE = {
     name: "Lambert-Eaton myasthenic syndrome (pre-synaptic NMJ)",
     note: "Proximal weakness that transiently IMPROVES with brief exercise (post-exercise facilitation) with autonomic features (dry mouth) and depressed reflexes that potentiate. Ocular sparing early.",
     ddx: ["Paraneoplastic LEMS (small-cell lung cancer, anti-VGCC)", "Autoimmune LEMS", "Botulism"],
-    red: "Lambert-Eaton is paraneoplastic until proven otherwise — screen for small-cell lung cancer (CT chest, smoking history)."
   },
   motor_unit_muscle: {
     name: "Myopathy (muscle)",
@@ -689,7 +669,7 @@ export const BY_SITE = {
   nerve_ulnar_wrist: { name: "Ulnar nerve palsy at the wrist (Guyon's canal)", note: "Weak interossei and thumb adduction (Froment) with a MORE pronounced claw (intact FDP 4/5), sparing the FDP, FCU and dorsal-hand sensation — the ulnar paradox.", ddx: ["Guyon's canal compression (handlebar palsy, ganglion)", "Hook-of-hamate fracture", "Trauma"], red: "A worse claw with spared FDP and dorsal-hand sensation localises the ulnar lesion to the wrist — the paradox that the distal lesion looks worse." },
   nerve_femoral: { name: "Femoral nerve palsy", note: "Weak hip flexion and knee extension with a depressed knee jerk and anterior-thigh / saphenous (medial leg) sensory loss.", ddx: ["Retroperitoneal / iliopsoas haematoma", "Pelvic surgery or lithotomy positioning", "Diabetic amyotrophy", "Femoral catheterisation"], red: "Femoral palsy with anticoagulation is a retroperitoneal haematoma until proven otherwise — image urgently." },
   nerve_obturator: { name: "Obturator nerve palsy", note: "Weak hip adduction with medial-thigh sensory loss.", ddx: ["Pelvic surgery / obstetric injury", "Obturator hernia", "Pelvic tumour"], red: "Medial-thigh pain with adductor weakness — consider an obturator hernia or pelvic mass." },
-  nerve_lat_fem_cutaneous: { name: "Meralgia paraesthetica (lateral femoral cutaneous nerve)", note: "Pure sensory: burning / numbness over the lateral thigh, with no weakness and no reflex change.", ddx: ["Inguinal-ligament entrapment (obesity, tight belts, pregnancy)", "Diabetes", "Iliac-crest bone-graft harvest"], red: "Purely sensory and benign — but new cases warrant a diabetes check and a look for a compressive cause." },
+  nerve_lat_fem_cutaneous: { name: "Meralgia paraesthetica (lateral femoral cutaneous nerve)", note: "Pure sensory: burning / numbness over the lateral thigh, with no weakness and no reflex change.", ddx: ["Inguinal-ligament entrapment (obesity, tight belts, pregnancy)", "Diabetes", "Iliac-crest bone-graft harvest"] },
   nerve_superior_gluteal: { name: "Superior gluteal nerve palsy (Trendelenburg)", note: "Weak hip abduction (gluteus medius) → a Trendelenburg gait/sign; motor only, no sensory loss.", ddx: ["Intramuscular injection injury", "Hip surgery", "Pelvic fracture"], red: "A Trendelenburg gait localises to gluteus medius (superior gluteal) or an L5 root — the sensory exam separates them." },
   nerve_sciatic: { name: "Sciatic nerve palsy", note: "Weak knee flexion and all movements below the knee (foot drop and plantarflexion) with below-knee sensory loss sparing the medial leg (saphenous), and a lost ankle jerk.", ddx: ["Hip surgery / dislocation", "Deep gluteal injection", "Piriformis / pelvic mass", "Prolonged pressure"], red: "A dense sciatic palsy after hip surgery needs early recognition — the peroneal division is the most vulnerable and may look like an isolated foot drop." },
   nerve_peroneal_common: { name: "Common peroneal (fibular) nerve palsy", note: "Foot drop — weak ankle dorsiflexion, great-toe extension AND eversion — with dorsum-of-foot sensory loss; inversion, plantarflexion and the ankle jerk are spared.", ddx: ["Fibular-neck compression (crossed legs, plaster, weight loss)", "Trauma", "Ganglion", "Vasculitis (mononeuritis)"], red: "Foot drop with SPARED inversion and hip abduction is peroneal, not L5 — the spared movements are the whole discriminator." },
@@ -700,8 +680,8 @@ export const BY_SITE = {
   visual_pathway_optic_tract: { name: "Optic tract lesion", note: "Contralateral incongruous homonymous hemianopia WITH a relative afferent pupillary defect (the pupil fibres are still in the tract).", ddx: ["Craniopharyngioma / parasellar tumour", "Anterior/posterior choroidal infarct", "Demyelination"], red: "A homonymous hemianopia WITH an RAPD localises to the optic tract (pre-geniculate), not the occipital cortex." },
   visual_pathway_lgn: { name: "Lateral geniculate lesion", note: "Contralateral (often incongruous / sectoranopic) homonymous hemianopia with NO RAPD; look for thalamic sensory company (choroidal blood supply).", ddx: ["Anterior/posterior choroidal artery infarct", "Tumour", "Demyelination"], red: "A wedge/sectoranopia with thalamic sensory signs points to the lateral geniculate." },
   pupil_cn3_compressive: { name: "Compressive (pupil-involving) CN III palsy", note: "A CN III palsy WITH a fixed dilated pupil — the surface parasympathetic fibres are compressed first.", ddx: ["Posterior communicating artery aneurysm", "Uncal herniation", "Tumour / cavernous mass"], red: "A fixed dilated pupil with a third-nerve palsy is a SURGICAL EMERGENCY — image the vessels (CTA/MRA) for an aneurysm now." },
-  pupil_cn3_ischaemic: { name: "Ischaemic (pupil-sparing) CN III palsy", note: "A CN III palsy that SPARES the pupil — the core is infarcted (vasa nervorum) but the surface parasympathetic fibres survive; typically microvascular.", ddx: ["Diabetic / hypertensive microvascular infarct", "Giant cell arteritis", "Migraine"], red: "Pupil-sparing is reassuring, but recheck the pupil over days and review vascular risk (and ESR/CRP for GCA)." },
-  pupil_ciliary_ganglion: { name: "Adie (tonic) pupil", note: "A dilated pupil with light-near dissociation and slow tonic re-dilation from a ciliary-ganglion (postganglionic parasympathetic) lesion; with absent deep-tendon reflexes it is Holmes-Adie.", ddx: ["Post-viral / idiopathic ciliary ganglionitis", "Orbital trauma / surgery", "Autonomic neuropathy"], red: "Benign — but confirm with dilute pilocarpine (denervation supersensitivity) and exclude an efferent CN III cause." },
+  pupil_cn3_ischaemic: { name: "Ischaemic (pupil-sparing) CN III palsy", note: "A CN III palsy that SPARES the pupil — the core is infarcted (vasa nervorum) but the surface parasympathetic fibres survive; typically microvascular.", ddx: ["Diabetic / hypertensive microvascular infarct", "Giant cell arteritis", "Migraine"] },
+  pupil_ciliary_ganglion: { name: "Adie (tonic) pupil", note: "A dilated pupil with light-near dissociation and slow tonic re-dilation from a ciliary-ganglion (postganglionic parasympathetic) lesion; with absent deep-tendon reflexes it is Holmes-Adie.", ddx: ["Post-viral / idiopathic ciliary ganglionitis", "Orbital trauma / surgery", "Autonomic neuropathy"] },
   pupil_pretectum: { name: "Argyll Robertson pupils", note: "Small, irregular, bilateral pupils with light-near dissociation (accommodate but do not react to light) from a dorsal-midbrain / pretectal lesion.", ddx: ["Neurosyphilis (classic)", "Diabetes", "Dorsal midbrain lesion"], red: "Bilateral light-near dissociation warrants syphilis serology and a look at the dorsal midbrain." },
   dorsal_midbrain_tectum: {
     name: "Dorsal-midbrain (tectal) vertical gaze palsy",
@@ -758,7 +738,6 @@ export const BY_SITE = {
       name: "Broca's aphasia (non-fluent; repetition impaired)",
       note: "Dominant frontal operculum / posterior inferior frontal gyrus. Non-fluent, effortful, agrammatic output with relatively preserved comprehension and impaired repetition; often with right face/arm weakness.",
       ddx: ["MCA superior-division infarct", "Haemorrhage", "Tumour"],
-      red: "Acute non-fluent aphasia + right hemiparesis is a dominant MCA stroke — time-critical."
     },
     nondominant: {
       name: "Motor aprosodia (non-dominant frontal operculum)",
@@ -772,7 +751,6 @@ export const BY_SITE = {
       name: "Wernicke's aphasia (fluent; comprehension + repetition impaired)",
       note: "Dominant posterior superior temporal gyrus. Fluent, paraphasic (empty) speech with impaired comprehension and repetition; often no weakness (can be mistaken for confusion / psychosis).",
       ddx: ["MCA inferior-division infarct", "Haemorrhage", "Tumour", "Encephalitis"],
-      red: "Fluent jargon aphasia without weakness is easily missed as an acute stroke — image and consider thrombolysis."
     },
     nondominant: {
       name: "Non-dominant temporoparietal syndrome (sensory aprosodia)",
@@ -791,13 +769,11 @@ export const BY_SITE = {
     name: "Transcortical motor aphasia (anterior watershed)",
     note: "Non-fluent with intact comprehension but PRESERVED repetition — an anterior watershed (ACA-MCA border) / supplementary-motor-area lesion sparing the perisylvian core.",
     ddx: ["Anterior watershed (border-zone) infarct — hypotension / carotid stenosis", "SMA / medial frontal lesion"],
-    red: "Preserved repetition with non-fluent aphasia suggests a border-zone infarct — check for carotid stenosis / hypoperfusion."
   },
   cortex_watershed_posterior: {
     name: "Transcortical sensory aphasia (posterior watershed)",
     note: "Fluent with impaired comprehension but PRESERVED repetition (echolalia) — a posterior watershed (MCA-PCA border) lesion sparing the perisylvian core.",
     ddx: ["Posterior watershed (border-zone) infarct", "Neurodegeneration (logopenic / semantic)", "Tumour"],
-    red: "Preserved repetition with poor comprehension suggests a border-zone infarct or a degenerative aphasia."
   },
   cortex_angular: {
     name: "Anomic aphasia (angular gyrus)",
@@ -809,13 +785,11 @@ export const BY_SITE = {
     name: "Global aphasia (perisylvian)",
     note: "Non-fluent, impaired comprehension and impaired repetition — a large dominant perisylvian lesion (Broca + Wernicke + the arcuate between). Usually with dense right hemiparesis and hemianopia.",
     ddx: ["Large dominant MCA infarct (proximal M1)", "Haemorrhage", "Tumour"],
-    red: "Global aphasia with hemiplegia is a large dominant MCA stroke — urgent imaging / reperfusion assessment."
   },
   cortex_aphasia_mixed_transcortical: {
     name: "Mixed transcortical aphasia (isolation of the speech area)",
     note: "Non-fluent, impaired comprehension, but PRESERVED repetition (echolalia) — both watershed zones affected, isolating an intact perisylvian core (isolation of the speech area).",
     ddx: ["Complete border-zone (watershed) infarction — severe hypotension / carotid occlusion", "Anoxic injury"],
-    red: "Echolalia with otherwise severe aphasia suggests global border-zone hypoperfusion — look for a haemodynamic cause."
   },
   aphasia_subcortical_thalamic: {
     name: "Thalamic aphasia (dominant thalamus)",
@@ -875,7 +849,6 @@ export const BY_SITE = {
     name: "Lateral hypothalamic syndrome — narcolepsy / cachexia",
     note: "Lateral hypothalamic area: orexin (hypocretin) loss → narcolepsy-cataplexy / hypersomnia; a destructive lesion → aphagia and wasting (diencephalic cachexia of infancy).",
     ddx: ["Autoimmune hypocretin loss (narcolepsy type 1)", "Hypothalamic tumour", "Trauma / infarct"],
-    red: "Excessive daytime sleepiness with cataplexy — consider CSF hypocretin and MRI."
   },
   hypothalamus_suprachiasmatic: {
     name: "Suprachiasmatic (circadian) syndrome",
@@ -884,7 +857,7 @@ export const BY_SITE = {
     red: "Persistent circadian disruption with other hypothalamic features warrants imaging."
   },
   hypothalamus_mammillary: {
-    name: "Mammillary body syndrome (Wernicke-Korsakoff)",
+    name: "Mammillary body syndrome (diencephalic amnesia)",
     note: "Mammillary bodies (Papez): amnesia with confabulation (Korsakoff), classically with the Wernicke triad (ophthalmoplegia, ataxia, confusion) from thiamine deficiency.",
     ddx: ["Thiamine deficiency (alcohol, malnutrition, hyperemesis, bariatric surgery)", "Tumour", "Infarct"],
     red: "Give parenteral thiamine BEFORE glucose in any at-risk patient with confusion / amnesia — Wernicke is a treatable emergency."
@@ -905,7 +878,6 @@ export const BY_SITE = {
     name: "Splenial callosal disconnection",
     note: "Splenium (posterior corpus callosum): left-hand tactile anomia — objects felt with the left hand cannot be named (though they can be used). The splenium is also the visual half of alexia without agraphia (the word-form deficit itself sits at the dominant fusiform / VWFA).",
     ddx: ["Left PCA infarct (splenium + occipital)", "Tumour", "Demyelination (MS — splenial lesions)", "Callosotomy"],
-    red: "Splenial signs travel with a left PCA territory lesion (right hemianopia, pure alexia) — image the posterior circulation."
   },
   guillain_mollaret_triangle: {
     name: "Guillain-Mollaret triangle (dentato-rubro-olivary) — palatal / oculopalatal tremor",
@@ -935,7 +907,6 @@ export const BY_SITE = {
     name: "Lateral pontine syndrome (Marie-Foix) with trigeminal (V) involvement",
     note: "The AICA / lateral-pontine cluster (spinothalamic, middle cerebellar peduncle, vestibular) reaching the trigeminal nuclei — adds ipsilateral facial touch loss + jaw weakness.",
     ddx: ["AICA infarct", "Demyelination", "Pontine tumour"],
-    red: "AICA territory can cause deafness (labyrinthine artery) — a lateral pontine picture warrants posterior-circulation imaging."
   },
   skull_base_trochlear_cisternal: {
     name: "Trochlear (CN IV) nerve palsy — ipsilateral superior oblique",
@@ -953,19 +924,17 @@ export const BY_SITE = {
     name: "Diffuse bihemispheric / cortical dysfunction (encephalopathy)",
     note: "Impaired arousal from bilateral / diffuse cortical dysfunction with no focal signs.",
     ddx: ["Metabolic (hypoglycaemia, hepatic / uraemic, Na / Ca)", "Hypoxic-ischaemic injury", "Drug / toxin", "Sepsis", "Non-convulsive status epilepticus", "Bilateral cortical stroke"],
-    red: "Coma with no focal signs and intact brainstem reflexes is metabolic / diffuse until proven otherwise — check glucose, sodium and a blood gas immediately."
+    red: "Coma with no focal signs: check glucose, sodium and a blood gas immediately."
   },
   brainstem_aras: {
     name: "Brainstem ARAS (rostral tegmental) arousal failure",
     note: "A paramedian upper-pons / midbrain tegmental lesion knocks out the ascending reticular activating system; decerebrate (extensor) posturing and other brainstem signs accompany it.",
     ddx: ["Top-of-basilar / midbrain infarct", "Pontine haemorrhage", "Central (transtentorial) herniation", "Demyelination"],
-    red: "Impaired arousal with brainstem signs (extensor posturing, asymmetric / fixed pupils, gaze palsy) is a posterior-circulation emergency — image the vessels."
   },
   top_of_basilar: {
     name: "Top-of-the-basilar syndrome (basilar apex)",
     note: "An embolus at the basilar tip blocks both P1 segments, with the thalamoperforators to both paramedian thalami, and both PCAs beyond: reduced arousal, vertical gaze palsy and amnesia with cortical blindness or bilateral field loss — often with PRESERVED power.",
     ddx: ["Top-of-the-basilar embolism (cardiac or vertebral source)", "Basilar artery thrombosis", "PRES", "Deep cerebral venous thrombosis (mimics the thalamic half)"],
-    red: "Drowsiness with vertical gaze palsy and visual loss is a basilar-tip occlusion until proven otherwise — CTA now; it is a thrombectomy target, and it is regularly called delirium."
   },
   thalamus_bilateral_percheron: {
     name: "Bilateral paramedian thalamic syndrome (artery of Percheron)",
@@ -987,8 +956,8 @@ export const BY_SITE = {
   },
   cord_lateral: { name: "Central (first-order) Horner's — cervical cord", note: "Descending sympathetic in the lateral cervical cord (syringomyelia, cord tumour/infarct); ipsilateral hemibody anhidrosis. Only a lesion at/above ~T1 gives a Horner.", ddx: ["Syringomyelia", "Intramedullary tumour", "Cord infarct", "Demyelination"], red: "A Horner with suspended sensory loss or long-tract signs → image the cervical cord." },
   sympathetic_preganglionic: { name: "Preganglionic (second-order) Horner's", note: "A Horner from the preganglionic oculosympathetic (ciliospinal centre → stellate ganglion); facial anhidrosis with the body spared.", ddx: ["Pancoast (apical lung) tumour", "Thyroid / mediastinal mass", "Iatrogenic (CVC, surgery)", "Trauma"], red: "A preganglionic Horner with C8/T1 wasting or arm pain → image the lung apex for a Pancoast tumour." },
-  sympathetic_pancoast: { name: "Pancoast syndrome (superior sulcus tumour)", note: "A preganglionic Horner PLUS lower-trunk (C8/T1) involvement — hand-intrinsic wasting, T1 sensory loss and aching arm/shoulder pain — from an apical lung tumour.", ddx: ["Bronchogenic (superior sulcus) carcinoma", "Apical TB / infection", "Metastasis"], red: "A Horner with hand wasting and arm pain is a Pancoast tumour until proven otherwise — image the lung apex urgently." },
-  skull_base_carotid_space: { name: "Postganglionic (third-order) Horner's — carotid", note: "A Horner from the postganglionic fibres on the internal carotid (carotid dissection, cavernous lesion); often painful, with NO anhidrosis (the facial sudomotor fibres left with the external carotid) — with a XII palsy in some (the hypoglossal crosses the internal carotid).", ddx: ["Internal carotid artery dissection", "Cavernous sinus lesion", "Cluster headache"], red: "A painful Horner, alone or with a XII palsy, is a carotid dissection until proven otherwise — urgent vessel imaging (stroke risk)." }
+  sympathetic_pancoast: { name: "Pancoast syndrome (superior sulcus)", note: "A preganglionic Horner PLUS lower-trunk (C8/T1) involvement — hand-intrinsic wasting, T1 sensory loss and aching arm/shoulder pain — from an apical lung tumour.", ddx: ["Bronchogenic (superior sulcus) carcinoma", "Apical TB / infection", "Metastasis"] },
+  skull_base_carotid_space: { name: "Postganglionic (third-order) Horner's — carotid", note: "A Horner from the postganglionic fibres on the internal carotid (carotid dissection, cavernous lesion); often painful, with NO anhidrosis (the facial sudomotor fibres left with the external carotid) — with a XII palsy in some (the hypoglossal crosses the internal carotid).", ddx: ["Internal carotid artery dissection", "Cavernous sinus lesion", "Cluster headache"] }
 };
 
 // Recognise the eponym for a chosen site. Falls back to a plain anatomical description.

@@ -67,11 +67,11 @@ export function solverSites(opts = {}, observed = null) {
   return out;
 }
 // A reading may carry its own side (the ARAS's basilar reading is bilateral, though the ARAS is midline) and its own
-// station on the Why line (that reading sits in the pons) — composite-sites round, row 2 — and its own lead cause and red
-// flag (the uncal reading — raised-pressure round, rows 6 and 11).
+// station on the Why line (that reading sits in the pons) — composite-sites round, row 2 — and its own lead cause (the uncal
+// reading — raised-pressure round, row 6; its red flag now lives on that cause, the card follows its cause, 2026-11-11).
 const variantOf = (site, v) => ({ ...site, ...(v.side ? { side: v.side } : {}), ...(v.station ? { station: v.station } : {}),
   variant: v.key, structures: v.structures, atLevel: v.atLevel, segments: v.segments, variants: undefined,
-  leads: v.leads, red: v.red });
+  leads: v.leads });
 const firstPerId = list => { const seen = new Set(); return list.filter(x => { const id = (x.site || x).id; return !seen.has(id) && !!seen.add(id); }); };
 
 function localisingObserved(observedSet) {

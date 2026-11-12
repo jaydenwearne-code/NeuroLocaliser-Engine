@@ -26,7 +26,7 @@ import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { offersFor, tokensForRow, currentTokens } from "./sides.js";
 import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence, PRESSURE_ONLY, PRESSURE_BAND, PRESSURE_LEADS_NOTE,
-  followNote, demotionReason, pressureLeads, strokeWindowHolds } from "./answer.js";
+  followNote, demotionReason, pressureLeads, strokeWindowHolds, cardCause, redLine } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
@@ -1004,11 +1004,10 @@ function whatBlock(site) {
   // a second line, as on the answer card.
   const held = pressed && strokeWindowHolds(site, S.onset);
   const res = causesFor(site, { onset: S.onset || undefined, pressure: pressed && !held });
-  // Nothing here can raise the pressure (pressure follows the cause, row 10): the card follows the pressure itself, and the
-  // banner is the red line, as on the answer card.
+  // Nothing here can raise the pressure (pressure follows the cause, row 10): the card follows the pressure itself.
   const leads = pressed && pressureLeads(site, S.onset);
-  const ph = nameForSite(site, { dominantSide: domView() });
-  const redText = leads ? null : (site.red || ph.red); // a reading's own red flag (the uncal reading, raised-pressure round, row 11)
+  // The red flag follows the cause this card names, as on the answer card (the card follows its cause, 2026-11-11).
+  const redText = redLine(site, cardCause({ res, selected: S.selectedPathology, pressureLeads: leads }), domView());
   const red = redText ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(redText)}</div>` : "";
   // Curated causes only — a category with nothing plausible at this site is simply not shown.
   const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));

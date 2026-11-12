@@ -197,9 +197,11 @@ ok("row 10: nothing at the diffuse cerebrum can raise the pressure; the corona r
   ok("row 14 guard: without papilloedema the chronic card keeps its old-stroke clause",
      /Could represent an old stroke\./.test(card("weak_arm@right weak_leg@right", "chronic")?.lines.what || "")); }
 { const a = card(`reduced_consciousness@none ${P}`);
-  ok("row 10: coma + papilloedema follows the pressure itself — the pressure-only lines, emergency, and the banner as the red line",
+  // Row 10's blank red line reversed by the card follows its cause (2026-11-11): the place's own flag, true whatever the cause.
+  ok("row 10: coma + papilloedema follows the pressure itself — the pressure-only lines, emergency, and the place's own flag as the red line",
      a?.lines.what === ANS.PRESSURE_ONLY.what && a?.lines.next === ANS.PRESSURE_ONLY.next && a?.nx.urgency === "emergency"
-     && a?.lines.red === null && a?.nx.pressureLeads === true, `${a?.lines.what} [${a?.nx.urgency}] red=${a?.lines.red}`); }
+     && a?.lines.red === "Coma with no focal signs: check glucose, sodium and a blood gas immediately." && a?.nx.pressureLeads === true,
+     `${a?.lines.what} [${a?.nx.urgency}] red=${a?.lines.red}`); }
 { const a = card(`${P} fixed_dilated_pupil@left`);
   ok("row 10: an awake dilated pupil with papilloedema follows the pressure, urgent (it was Adie's pupil, routine)",
      a?.lines.what === ANS.PRESSURE_ONLY.what && a?.nx.urgency === "urgent" && a?.lines.red === null, `${a?.lines.what} [${a?.nx.urgency}]`); }

@@ -255,14 +255,14 @@ const BUILDING_BLOCK_PARTS = new Set(["cord|anterior", "cord|posterior", "cord|c
 //           (contralateral weakness and Babinski). Every row is REUSED.
 // The gate: offered only with reduced consciousness entered (`needs`) AND one of the III's own signs (`needsOwn`). Ungated it
 // took the awake Weber picture (7 assertions); with the consciousness condition alone, coma + a weak arm read a compressed
-// III with no III sign entered (spec §3.3). `leads`: the cause its What line leads with (row 6); `red`: its red flag (row 11).
+// III with no III sign entered (spec §3.3). `leads`: the cause its What line leads with (row 6). Its red flag (row 11) lives on that cause, "Uncal herniation" in the
+// compressive III's list (the card follows its cause, 2026-11-11).
 const READINGS = {
   "pupil|cn3_compressive": structures => [{
     key: "uncal",
     structures: [...structures, "aras_brainstem", "aras_posturing", "cst_midbrain_arm", "cst_midbrain_leg", "cst_midbrain_bab"],
     needs: "reduced_consciousness", needsOwn: true,
     leads: "Uncal herniation",
-    red: "A new dilated pupil with a falling conscious level is uncal herniation until proven otherwise — CT head now and call neurosurgery; start lowering the pressure while you wait.",
   }],
 };
 

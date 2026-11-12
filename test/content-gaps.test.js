@@ -7,7 +7,10 @@ import { unifyingDiagnoses } from "../src/engine/multifocal.js";
 import { enteredToken } from "../src/engine/families.js";
 import { FINDINGS } from "../src/model/findings.js";
 import { nameForSite } from "../src/data/syndromes.js";
-import { answerFor } from "../app/answer.js";
+import { answerFor, redLine } from "../app/answer.js";
+import { causesFor, leadingCause } from "../src/data/causes.js";
+// The dominant MCA's red flag (row 15), on the M1 occlusion since the card follows its cause (2026-11-11).
+const MCA_DOMINANT_FLAG = "Malignant MCA infarction risks fatal oedema — monitor conscious level; consider decompressive hemicraniectomy early.";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, detail = "") => { cond ? pass++ : fail++; console.log((cond ? "PASS  " : "FAIL  ") + label + (cond ? "" : `  ${detail}`)); };
@@ -132,15 +135,18 @@ const cardFor = (toks, dominant) => {
   ok("row 14: the Where line names the assumption",
      lines.where.endsWith("This assumes the left hemisphere is dominant, though right dominance is set (atypical dominance). If that is unlikely for this patient, no single place explains these findings."), lines.where);
   ok("row 14: the Why line reads with the assumed dominance", /only the left cerebral cortex/.test(lines.why), lines.why);
-  ok("row 15: the red flag follows the assumed dominance", lines.red === nameForSite(r.display[0].site, { dominantSide: "left" }).red); }
+  // The flag now lives on the M1 occlusion, restricted to the dominant hemisphere (the card follows its cause, 2026-11-11).
+  ok("row 15: the red flag follows the assumed dominance", lines.red === MCA_DOMINANT_FLAG, lines.red); }
 { const { r, lines } = cardFor("speech_nonfluent@none comprehension_impaired@none weak_arm@left facial_weakness@left forehead_spared@left homonymous_hemianopia@left", "right");
   ok("row 15: with right dominance set, a right MCA aphasia shows the DOMINANT red flag (the live bug)",
-     r.dominance === null && lines.red === nameForSite(r.display[0].site, { dominantSide: "right" }).red, lines.red); }
+     r.dominance === null && lines.red === MCA_DOMINANT_FLAG, lines.red); }
 
 // ---- F. Wording (rows 16, 17) ----
 ok("row 16: gaze deviation is described by the side the eyes look toward", /record the side the eyes look toward/.test(FINDINGS.gaze_deviation.desc));
-ok("row 17: the carotid space's red flag names the XII palsy", /alone or with a XII palsy/.test(nameForSite(SITE["left_skull_base_carotid_space"]).red));
-ok("row 17: the dominant PCA's red flag is the pure-alexia flag", /pure alexia/.test(nameForSite(SITE["left_cortex_pca"], { dominantSide: "left" }).red));
+// Both flags now live on the place's usual cause (the card follows its cause, 2026-11-11): read them as the card shows them.
+const usualRed = (id, dominantSide = "left") => redLine(SITE[id], leadingCause(causesFor(SITE[id]).all), dominantSide) || "";
+ok("row 17: the carotid space's red flag names the XII palsy", /alone or with a XII palsy/.test(usualRed("left_skull_base_carotid_space")));
+ok("row 17: the dominant PCA's red flag is the pure-alexia flag", /pure alexia/.test(usualRed("left_cortex_pca")));
 ok("row 17: the non-dominant PCA names prosopagnosia", /prosopagnosia/i.test(nameForSite(SITE["right_cortex_pca"], { dominantSide: "left" }).note));
 ok("row 17: the elbow's note says the claw is milder", /claw is milder/.test(nameForSite(SITE["left_nerve_ulnar_elbow"]).note));
 ok("row 17: the thalamus's note names the hemiataxia", /hemiataxia/.test(nameForSite(SITE["left_subcortex_thalamus"]).note));

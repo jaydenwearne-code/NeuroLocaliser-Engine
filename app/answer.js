@@ -208,11 +208,14 @@ export function answerFor(st) {
       oldStroke: !pressed && !!(nx.followed && nx.followed.onset === "chronic"),
     }) + (held ? ` ${PRESSURE_ONLY.what}` : ""),
     next: nx.referral || "",
-    red: entityRed || st.sel.site.red || nameForSite(st.sel.site, { dominantSide: dom }).red || null, // a reading's own flag first
+    // The card's cause's own flags here, then the place's (the card follows its cause): a two-place card's selected disease
+    // speaks for itself.
+    red: entityRed || redLine(st.sel.site, cardCause({ res, selected: twoLesions ? null : st.selectedPathology,
+      twoLesions, pressureLeads: !!nx.pressureLeads }), dom),
   };
-  // The card follows the pressure itself (row 10): the pressure-only card's What line, and the banner as the red line — the
-  // site's red flag was written for causes now set aside. resolveNext has already given the Next line and the badge.
-  if (nx.pressureLeads) { lines.what = PRESSURE_ONLY.what; lines.red = null; }
+  // The card follows the pressure itself (row 10): the pressure-only card's What line. No cause is named, so the red line is the
+  // place's own flag, true whatever the cause (row 10's blank reversed, 2026-11-11). resolveNext gave the Next line and badge.
+  if (nx.pressureLeads) lines.what = PRESSURE_ONLY.what;
   return { lines, nx, combined, twoLesions };
 }
 
