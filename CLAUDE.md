@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**92 test suites / 7756 assertions green** (`fix/card-follows-cause`: the integration branch `integrate/all-open-fixes` with the owner's two rulings of 2026-11-11, plus the duplicate-keys round of 2026-11-12 — see "Integration of the open fixes" and "Duplicate keys and the non-dominant names") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**93 test suites / 7793 assertions green** (`fix/card-follows-cause`: the integration branch `integrate/all-open-fixes` with the owner's two rulings of 2026-11-11, plus the duplicate-keys round and the card follows its cause, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names" and "The card follows its cause") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1723,6 +1723,60 @@ the non-dominant operculum (motor aprosodia alone) read "Broca's aphasia", "(Bro
 
 Spec: `docs/superpowers/specs/2026-11-12-duplicate-keys-design.md`.
 
+## The card follows its cause (DONE 2026-11-12, round 1) — ✅ owner-approved rulings (every row)
+
+On `fix/card-follows-cause`, built on the duplicate-keys round (the plan was amended for it, row D8). Not pushed.
+
+**The defect.** What, Next and the badge follow one `leadingCause`, which onset, papilloedema and the reader's selection all
+move. The red flag and the title did not: they were written per PLACE. On every axis that moves the card's cause, the place's
+flag stayed beside a different cause on 100% of moved cards:
+- onset: 103 of 103 (live since v0.10.1);
+- selection: 868 of 868 (since 2026-08-18);
+- papilloedema: 281 of 281 (PR #25).
+
+Each axis had grown its own special case instead: the uncal reading's flag, the Together card's disease flag, and the blank
+red line when the pressure leads.
+
+**The root cause: cause claims were written on the place.** Of 166 phonebook flags, 37 (and 7 titles) asserted the place's
+usual cause.
+
+**Mechanics:**
+- **`flagged(cause, ...flags)` (`causes.js`).** A warning about one cause lives on that cause, at that place. `only`
+  restricts it to one place reading a shared list (its site kind) or to one hemisphere, as `phonebookVariant` resolves it.
+- **`cardCause` / `redLine` (`app/answer.js`).** The card's cause is the selection, else the What line's most likely cause.
+  It is none on a two-place card or when the pressure leads. The red line is that cause's applicable flags, then the place's
+  own flag. The answer card and the What card both read it.
+- **The content move** (one script, word for word):
+  - 38 flags onto 35 cause entries, 13 of them restricted;
+  - the diffuse cerebrum split into a cause half and a place half;
+  - P22 reworded ("image, then do an LP");
+  - 7 titles renamed so none names a pathology;
+  - the uncal reading's flag moved onto "Uncal herniation".
+- **Row 10's blank is reversed:** when the pressure leads, the place's own flag shows.
+
+**The authoring rule:** for a red flag, ask "is it true whatever the cause?" If yes, it is the place's (`syndromes.js` `red`);
+if not, it goes on the cause (`flagged`).
+
+**The guards (`test/card-follows-cause.test.js`):**
+- **The reviewed snapshot is the gate.** It holds 132 place flags: 131 kept plus the diffuse cerebrum's place half.
+- **No wording test can tell a place fact from a cause claim.** Measured: a claim-form floor misses 19 of 37, and a
+  "names its own causes" check would need 92 of 129 allowlisted.
+- **A structural sweep.** No card shows a cause's flag beside another cause, and every card whose cause has a flag shows it.
+  It sweeps both sides wherever the phonebook names each hemisphere.
+- **Titles name no pathology.**
+- **Every restriction is real.**
+
+**Measured:**
+- npm 92 suites / 7756 → 93 / 7793, with the six planned re-pins only.
+- The audit is unchanged: 127/127 probes, 1097/0.
+- The dry run of 5,317 cards (every site id, both sides) changes only red lines (680) and titles (208). Where, Why, What,
+  Next and the badge change on 0. Every red-line change is an expected kind; unexplained: 0.
+- **The uncal card** (20 cards) now shows herniation's flag, then the compressive III's own place flag (P96). The reading's
+  flag used to replace it.
+- **Browser-checked on port 8146:** top of the basilar (the basilar-tip flag; with papilloedema, deep cerebral venous thrombosis and no basilar-tip flag); Broca's area (its MCA flag word for word, none with the tumour selected, the What card agreeing); the uncal reading (herniation's flag, then the III's); the lateral medulla with papilloedema at subacute onset (its own swallowing flag, row 10 reversed); the renamed "Pure motor hemiparesis (internal capsule)"; and both non-dominant cards (their own place flag only, though the infarct leads); no console errors.
+
+Spec/plan: `docs/superpowers/specs/2026-11-11-card-follows-cause-design.md`, `docs/superpowers/plans/2026-11-11-card-follows-cause.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1803,7 +1857,8 @@ src/engine/    generic solver code (rarely changes when adding a region)
                  tempo/course only demote); forcingFindings(observed,opts) is the parsimony guard — for
                  each LOCALISING finding, does removing it collapse the picture to one site?
 src/data/
-  syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags
+  syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags; a place's `red` is true
+                 whatever the cause (the card follows its cause, 2026-11-12); `phonebookVariant` names the variant a site reads
   causes.js      THE PATHOLOGY LAYER. tempo-aware surgical-sieve DDx: causesFor(site,{onset,pressure}) ->
                  {byCategory, demoted, all, source}. Precedence: curated CAUSES[site] → phonebook ddx
                  (categorised live) → attribute-derived fallback. Each cause via `c(name,cat,tempo,
@@ -1816,6 +1871,8 @@ src/data/
                  combinedCauses(sites,{onset}) + canonicalKey(name) merge causes across sites for the
                  Together/What-all-sites views — canonicalised through the MULTIFOCAL roster's own `matches`
                  regex (a name matching 2+ regexes is left uncanonicalised rather than guessed).
+                 `flagged(cause, …flags)`: a warning about one cause, at that place, `only` for a shared list or a
+                 hemisphere — the red line is the card's cause's flags, then the place's own (`redLine`, app/answer.js).
   nextSteps.js   THE WORKUP LAYER (educational). nextStepsFor(site) -> {immediate, investigations,
                  confirmatory, monitoring, urgency, referral, curated}. Curated NEXT[site] carries specifics;
                  tiers derive from urgency + region (bulbar/cord/arousal/nmu/optic/vestibular) otherwise.

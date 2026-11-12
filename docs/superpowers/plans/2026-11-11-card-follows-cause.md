@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: NOT STARTED.** Spec: `docs/superpowers/specs/2026-11-11-card-follows-cause-design.md`. Round 1 was RULED
+**Status: IMPLEMENTED (2026-11-12)** — `1408136` (Task 1), `aa77dd8` (Task 2), `5ddc434` (Task 3), docs (Task 4); every
+measurement equalled this plan's. Spec: `docs/superpowers/specs/2026-11-11-card-follows-cause-design.md`. Round 1 was RULED
 2026-11-11, "approve as proposed" (`582311b`).
 
 **AMENDED 2026-11-12** (the duplicate-keys round, row D8, ruled "approve as proposed"; spec
@@ -314,8 +315,8 @@ Run: `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" node <scratchpad>
 Expected (exactly): `moved 38 flags onto 35 cause entries; removed 31 phonebook lines; split 1; reworded P22; renamed 7 titles; uncal flag moved`
 
 The script refuses to run twice. Each anchor must match exactly once, so a second run stops with
-`Error: bilateral_pons_mlf: 0 matches …`. It edits the LAST definition of a duplicated phonebook key: three keys are defined
-twice, and the later definition is the live one (see "Found, not fixed" below).
+`Error: bilateral_pons_mlf: 0 matches …`. It reads the LAST definition of a phonebook key, which is the live one; the three
+keys once defined twice were fixed by the duplicate-keys round (see "Found, not fixed" below).
 
 - [ ] **Step 2: The answer card reads the rule.** In `app/answer.js` `answerFor`, replace
 

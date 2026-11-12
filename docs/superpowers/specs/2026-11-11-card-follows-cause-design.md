@@ -1,6 +1,7 @@
 # The card follows its cause — every sentence on a card has one owner (design, 2026-11-11)
 
-**Status: RULED 2026-11-11 — round 1 "approve as proposed".** Every row of §4 is approved as recommended:
+**Status: IMPLEMENTED (2026-11-12) on fix/card-follows-cause** — RULED 2026-11-11 "approve as proposed" (commits `1408136`,
+`aa77dd8`, `5ddc434`; measured and browser-checked as the plan expects). Every row of §4 is approved as recommended:
 - M1–M6, including M4's reversal of pressure-follows row 10's blank;
 - C1–C37 to the proposed (usual-cause) targets, not the alternatives;
 - C15 to the list's infarct;
