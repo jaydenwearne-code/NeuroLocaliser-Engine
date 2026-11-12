@@ -69,7 +69,7 @@ const TERRITORY = {
   "conus|medullaris": "conus medullaris (distal cord tip, S2–S5)",
   "cortex|motor_leg":        "ACA (paracentral — leg motor)",
   "cortex|motor_facearm":    "MCA superior division (precentral — face/arm motor)",
-  "cortex|operculum":        "MCA superior division (frontal operculum / Broca's area)",
+  "cortex|operculum":        "MCA superior division (frontal operculum)", // no "Broca's area": a territory serves both hemispheres
   "cortex|frontal_eye_field":"MCA superior division (frontal eye field)",
   "cortex|dlpfc":            "MCA (dorsolateral prefrontal cortex)",
   "cortex|medial_pfc":       "ACA (medial prefrontal cortex)",
@@ -77,7 +77,7 @@ const TERRITORY = {
   "cortex|sensory_facearm":  "MCA superior division (postcentral — face/arm sensory)",
   "cortex|sensory_leg":      "ACA (paracentral — leg sensory)",
   "cortex|parietal":         "MCA inferior division (inferior parietal lobule)",
-  "cortex|temporoparietal":  "MCA inferior division (temporoparietal / Wernicke's area)",
+  "cortex|temporoparietal":  "MCA inferior division (temporoparietal)", // nor "Wernicke's area"
   "cortex|temporal":         "MCA inferior division (temporal lobe)",
   "cortex|occipital":        "PCA (primary visual cortex)",
   "cortex|insula":           "insular cortex (MCA insular arteries)",

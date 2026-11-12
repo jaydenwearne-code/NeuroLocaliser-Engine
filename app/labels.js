@@ -229,8 +229,19 @@ const LEVEL_IMPLIED = new Set(["cortex", "subcortex", "cerebrum", "motor_unit", 
 
 const humaniseLevel = level => humanisePart(level);
 
-export function siteLabel(site) {
+// Broca's and Wernicke's areas are the DOMINANT hemisphere's language areas: the same gyrus in the other hemisphere is
+// not one (owner, 2026-11-12). PART_LABEL is keyed by place, never by hemisphere, so a one-sided site in the non-dominant
+// hemisphere reads its label here — the PART_LABEL entry without the eponym (asserted in test/hemisphere-names.test.js).
+export const NONDOMINANT_PART_LABEL = {
+  "cortex|operculum": "frontal operculum",
+  "cortex|temporoparietal": "posterior superior temporal gyrus",
+};
+
+export function siteLabel(site, opts = {}) {
   const key = `${site.level}|${site.part}`;
+  // nameForSite()'s rule: a one-sided site is in the dominant hemisphere when its side is the dominant side.
+  const nondominant = (site.side === "left" || site.side === "right") && site.side !== (opts.dominantSide || "left");
+  if (nondominant && NONDOMINANT_PART_LABEL[key]) return NONDOMINANT_PART_LABEL[key];
   if (PART_LABEL[key]) return PART_LABEL[key];
   const part = humanisePart(site.part);
   if (LEVEL_IMPLIED.has(site.level)) return part;
@@ -272,7 +283,7 @@ export function readingLabel(site) {
 }
 
 export function plainSiteName(site, opts = {}) {
-  const label = siteLabel(site);
+  const label = siteLabel(site, opts);
   const plain = [sideWord(site.side), label].filter(Boolean).join(" ");
   const raw = `${site.side} · ${site.level} · ${site.part}`;
   const terr = site.territory || "";

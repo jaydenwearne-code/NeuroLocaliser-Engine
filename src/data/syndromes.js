@@ -751,11 +751,21 @@ export const BY_SITE = {
     ddx: ["Orbitofrontal contusion (head injury)", "Frontotemporal dementia", "Olfactory-groove / subfrontal meningioma", "Tumour"],
     red: "New disinhibition / personality change is a frontal sign — image the orbitofrontal region (and consider subfrontal masses)."
   },
+  // Broca's area is the DOMINANT operculum's; the non-dominant operculum gives motor aprosodia (owner, 2026-11-12). Not
+  // "…opercular syndrome", which would read as the bilateral (Foix–Chavany–Marie) opercular syndrome.
   cortex_operculum: {
-    name: "Broca's aphasia (non-fluent; repetition impaired)",
-    note: "Dominant frontal operculum / posterior inferior frontal gyrus. Non-fluent, effortful, agrammatic output with relatively preserved comprehension and impaired repetition; often with right face/arm weakness.",
-    ddx: ["MCA superior-division infarct", "Haemorrhage", "Tumour"],
-    red: "Acute non-fluent aphasia + right hemiparesis is a dominant MCA stroke — time-critical."
+    dominant: {
+      name: "Broca's aphasia (non-fluent; repetition impaired)",
+      note: "Dominant frontal operculum / posterior inferior frontal gyrus. Non-fluent, effortful, agrammatic output with relatively preserved comprehension and impaired repetition; often with right face/arm weakness.",
+      ddx: ["MCA superior-division infarct", "Haemorrhage", "Tumour"],
+      red: "Acute non-fluent aphasia + right hemiparesis is a dominant MCA stroke — time-critical."
+    },
+    nondominant: {
+      name: "Motor aprosodia (non-dominant frontal operculum)",
+      note: "Non-dominant frontal operculum / posterior inferior frontal gyrus. Flat, unmodulated speech that cannot carry emotion, with words, grammar and comprehension intact; often with contralateral face/arm weakness.",
+      ddx: ["MCA superior-division infarct", "Haemorrhage", "Tumour"],
+      red: "New flat, unmodulated speech is easily mistaken for depression — it is a focal sign that needs imaging."
+    }
   },
   cortex_temporoparietal: {
     dominant: {
