@@ -994,6 +994,16 @@ export const BY_SITE = {
 // Recognise the eponym for a chosen site. Falls back to a plain anatomical description.
 // For cortex sites the eponym can depend on hemisphere, so an entry may be a
 // { dominant, nondominant, bilateral } variant object; resolve by the site side vs dominantSide.
+// Which of a phonebook entry's variants a site reads: "dominant" | "nondominant" | "bilateral", or null when the entry has
+// none. A bilateral site with no bilateral variant reads the dominant one. One rule, read by nameForSite and by a cause flag
+// restricted to a hemisphere (causes.js `flagged`, `only`) — the card follows its cause, 2026-11-11.
+export function phonebookVariant(site, opts = {}) {
+  const entry = BY_SITE[BY_SITE[site.id] ? site.id : `${site.level}_${site.part}`];
+  if (!entry || !(entry.dominant || entry.nondominant || entry.bilateral)) return null;
+  if (site.side === "bilateral") return entry.bilateral ? "bilateral" : "dominant";
+  return site.side === (opts.dominantSide || "left") ? "dominant" : "nondominant";
+}
+
 export function nameForSite(site, opts = {}) {
   // Prefer an exact site-id entry (e.g. the bilateral cortex sites, whose level+part collides with a
   // unilateral subregion); otherwise key by level_part as usual.
@@ -1001,11 +1011,8 @@ export function nameForSite(site, opts = {}) {
   const entry = BY_SITE[key];
   const anatomical = `${site.side} ${site.level}, ${site.part}`;
   if (entry) {
-    const variant = (entry.dominant || entry.nondominant || entry.bilateral)
-      ? (site.side === "bilateral"
-          ? (entry.bilateral || entry.dominant)
-          : (site.side === (opts.dominantSide || "left") ? entry.dominant : entry.nondominant))
-      : entry;
+    const v = phonebookVariant(site, opts);
+    const variant = v ? entry[v] : entry;
     return { ...variant, anatomical };
   }
   return {

@@ -5,7 +5,7 @@
 import { whyChain, whyClues } from "../src/engine/why.js";
 import { causesFor, rankCauses, leadingCause, pressureDemotesAt } from "../src/data/causes.js";
 import { pathologyNextStepsFor, combinedNextSteps, hyperacuteVascular } from "../src/data/nextSteps.js";
-import { nameForSite } from "../src/data/syndromes.js";
+import { nameForSite, phonebookVariant } from "../src/data/syndromes.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
 import { MULTIFOCAL } from "../src/data/multifocal.js";
 import { combinedSites } from "./combined-sites.js";
@@ -214,4 +214,27 @@ export function answerFor(st) {
   // site's red flag was written for causes now set aside. resolveNext has already given the Next line and the badge.
   if (nx.pressureLeads) { lines.what = PRESSURE_ONLY.what; lines.red = null; }
   return { lines, nx, combined, twoLesions };
+}
+
+// ---- the red line: the card follows its cause (owner-ruled 2026-11-11; spec 2026-11-11-card-follows-cause-design.md) ----
+// The cause the card names: the reader's selection, else the What line's most likely cause (which the plan follows). None on a
+// two-place card (the Together card's disease speaks there) or when the pressure itself leads. One rule for the answer card and
+// the What card, so a future axis that moves the What line's cause moves the flag with it.
+export function cardCause({ res, selected = null, twoLesions = false, pressureLeads = false }) {
+  if (twoLesions || pressureLeads) return null;
+  if (selected) return [...res.all, ...(res.demoted || [])].find(c => c.name === selected) || null;
+  return leadingCause(res.all) || null;
+}
+// A cause's flag shows at this place unless it is restricted to another place reading the same list, or to the other
+// hemisphere (as the phonebook resolves it).
+export function flagApplies(flag, site, dominantSide) {
+  if (!flag.only) return true;
+  if (flag.only === "dominant" || flag.only === "nondominant") return phonebookVariant(site, { dominantSide }) === flag.only;
+  return site.id.replace(/^(left|right)_/, "") === flag.only;
+}
+// The red line: the cause's flags at this place, then the place's own flag (true whatever the cause). Null when neither.
+export function redLine(site, cause, dominantSide) {
+  const own = ((cause && cause.flags) || []).filter(f => flagApplies(f, site, dominantSide)).map(f => f.text);
+  const all = [...own, nameForSite(site, { dominantSide }).red].filter(Boolean);
+  return all.length ? all.join(" ") : null;
 }

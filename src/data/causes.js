@@ -64,6 +64,12 @@ export const LIKELIHOOD = ["common", "uncommon", "rare"];
 //   its own "After a previous {after} here" clause, and it stays listed and selectable.
 const c = (name, cat, tempo, likelihood, red = false, feature = "", pathognomonic = "") =>
   ({ name, cat, tempo, likelihood, red, feature, pathognomonic });
+// A WARNING ABOUT ONE CAUSE lives on that cause, at that place (the card follows its cause, owner-ruled 2026-11-11). The card
+// shows a cause's flags only when it names that cause: the reader's selection, else the What line's most likely cause (which
+// the plan follows). A warning true WHATEVER the cause stays the place's own (syndromes.js `red`) — so when you author a red
+// flag, ask "is it true whatever the cause?": if not, it goes here. `only` restricts a flag to one place reading this list
+// (its site kind, e.g. "bilateral_occipital") or to one hemisphere ("dominant" / "nondominant", as the phonebook resolves it).
+export const flagged = (cause, ...flags) => ({ ...cause, flags: flags.map(f => typeof f === "string" ? { text: f } : f) });
 
 // ---- family builder: the shared skull-base spine (depth spec, 2026-08-11) ----
 // Every skull-base key is a bony or dural corridor, so the same small set of processes reaches all of them.
