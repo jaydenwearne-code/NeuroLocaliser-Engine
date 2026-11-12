@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**90 test suites / 7676 assertions green** (integration branch `integrate/all-open-fixes`, with the owner's two rulings of 2026-11-11 — see "Integration of the open fixes") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**92 test suites / 7756 assertions green** (`fix/card-follows-cause`: the integration branch `integrate/all-open-fixes` with the owner's two rulings of 2026-11-11, plus the duplicate-keys round of 2026-11-12 — see "Integration of the open fixes" and "Duplicate keys and the non-dominant names") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1661,6 +1661,67 @@ not. It is the same class as #25's two unruled wording points.
 - composite: the PARASAG widening (row 7) is the audit's yardstick.
 
 The storage guard's code applied cleanly; only the status counter line conflicted.
+
+## Duplicate keys and the non-dominant names (DONE 2026-11-12) — ✅ owner-approved rulings (every row)
+
+On `fix/card-follows-cause` (`56aff33`, `3d195f0`, `b173e7e`), landed BEFORE that round is built (row D8). Not pushed.
+
+**The defect: a JS object literal keeps the LAST definition of a repeated key, without a word.** The earlier one is dead
+content that still reads as reviewed. A scan of all 138 object tables in `src/` and `app/` found four, all on `main`:
+- **`BY_SITE.cortex_temporoparietal`.** The dead copy held the NON-DOMINANT variant (cortex mapping, 2026-07-12). The aphasia
+  round re-declared the key as one entry, though its spec said "keep any existing non-dominant naming". A non-dominant lesion
+  (sensory aprosodia alone) was titled "Wernicke's aphasia", with the jargon-aphasia stroke flag.
+- **`NEXT.subcortex_internal_capsule`.** Region B's signed-off plan (2026-08-10) had NEVER rendered: a one-line
+  initial-commit entry further down won (urgent, "Stroke team / TIA clinic."). The owner's 2026-08-11 sign-off reviewed
+  content no card showed.
+- **`cortex_medial_pfc`, `cortex_orbitofrontal`.** The dead copies held nothing the cause lists lack.
+
+**Then the owner: "fix the nondominant labelling error for wernickes and brocas".** The same error had no duplicate behind it:
+the non-dominant operculum (motor aprosodia alone) read "Broca's aphasia", "(Broca's area)" and "…a dominant MCA stroke".
+
+**Mechanics:**
+- **Duplicates.** The live temporoparietal entry gains the dead non-dominant variant. The dead copies and the one-line capsule
+  workup go.
+- **The re-pin (D6).** `accuracy-mechanisms` pinned the capsule's no-onset badge at "urgent". It is now emergency, and the
+  onset-gating check moves to the striatum, still curated urgent.
+- **The operculum names each hemisphere.** The non-dominant side is "Motor aprosodia (non-dominant frontal operculum)".
+- **`NONDOMINANT_PART_LABEL`** (`app/labels.js`): `siteLabel(site, opts)` reads a non-dominant one-sided site's label without
+  the eponym, by `nameForSite()`'s rule.
+- **The territory strings** drop "/ Broca's area" and "/ Wernicke's area": a territory serves both hemispheres.
+
+**Guards:**
+- **`test/duplicate-keys.test.js`** reads the SOURCE, because a duplicate is invisible at runtime. Its tokenizer handles
+  strings, templates, comments, regexes and nesting. Each exported table's scan is checked against its runtime keys, so it
+  cannot pass vacuously. The pathology plans are checked across category files and family members.
+- **`test/hemisphere-names.test.js`:**
+  - a place whose picture depends on dominance names each hemisphere, or has a reviewed neutral name (the temporal lobe);
+  - no non-dominant title, place, subtitle or red flag names Broca's or Wernicke's area or aphasia, under either dominance;
+  - two OPEN items are printed, not allowed silently.
+
+**Traps worth knowing:**
+- "Wernicke" alone is also the encephalopathy (the thiamine warning), which is right on either side. Match "Wernicke's
+  area/aphasia".
+- Avoid "…opercular syndrome" for the non-dominant title: it reads as the bilateral (Foix–Chavany–Marie) syndrome.
+- A dry run or sweep that builds ONE side per place never sees a non-dominant card. The card-follows-cause plan's did both
+  (amended).
+
+**Measured:**
+- npm 90 suites / 7676 → 92 / 7756.
+- Audit unchanged: 127/127 probes, 1097/0.
+- Of 5,317 cards (every site id, both sides), 39 change:
+  - 17 right-temporoparietal: title, red flag, Where;
+  - 16 right-operculum: title, Where, red flag;
+  - 6 capsule: Next line, and 4 badges urgent → emergency.
+- 244 Together pairings with the capsule rise to emergency.
+- Browser-checked on port 8146 (launch entry "NeuroLocaliser card-cause worktree").
+
+**Still open:**
+- **The shared lists.** The cause features and workups at those two places are keyed by place, so the non-dominant What and
+  Next cards still describe the aphasia ("…especially common in Broca's aphasia").
+- **The aphasia composites.** The thalamic and striatocapsular composites' non-dominant copies need a ruling: name them, or
+  stop offering them.
+
+Spec: `docs/superpowers/specs/2026-11-12-duplicate-keys-design.md`.
 
 ## Commands
 

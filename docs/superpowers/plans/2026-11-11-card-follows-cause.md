@@ -6,6 +6,16 @@
 **Status: NOT STARTED.** Spec: `docs/superpowers/specs/2026-11-11-card-follows-cause-design.md`. Round 1 was RULED
 2026-11-11, "approve as proposed" (`582311b`).
 
+**AMENDED 2026-11-12** (the duplicate-keys round, row D8, ruled "approve as proposed"; spec
+`docs/superpowers/specs/2026-11-12-duplicate-keys-design.md`). This plan now builds on `3d195f0`, where the operculum and the
+temporoparietal cortex name each hemisphere. So:
+- C11 and C25 move dominant-only;
+- the two non-dominant flags join the reviewed snapshot (130 → 132);
+- the guard's sweep reads both sides wherever the phonebook names each hemisphere;
+- the dry run reads every site id.
+
+Every number below was re-measured on the amended prototype.
+
 **Goal:** Every sentence on the answer card has one owner, the place or the cause. So the red flag always belongs to the cause
 the card names, on every axis that moves that cause (onset, papilloedema, the reader's selection, and any future one).
 
@@ -44,17 +54,23 @@ exit code). Node lives off PATH, so prefix every command with `PATH="$HOME/.loca
 
 ## Measured on a prototype before this plan was written
 
-A scratch copy of `582311b` had this exact change set applied.
-- **Tests:** `npm test` gave 91 suites, 7713 passed, 0 failed. The audit stayed at 127/127, 1097/0.
-- **Cards:** of 3,180, Where, Why, What, Next and the badge changed on **0**.
-- **Red-line changes, 472 in all**, each of an expected kind:
-  - a moved flag no longer beside another cause: 383;
-  - the place flag where the pressure leads: 46;
+A scratch copy of `582311b` had this exact change set applied. **Re-measured 2026-11-12:** a scratch copy of `b173e7e` with the
+amended change set (Appendices A–C as they now stand), task by task:
+- **Task by task:** the guard went 7/30 → 14/23 (the other 92 suites green, 7,756) → 37/37.
+- **Tests:** at the end, `npm test` gave 93 suites, 7793 passed, 0 failed. The audit stayed at 127/127, 1097/0.
+- **The guard** takes about 86s (as before): its sweep adds both sides only where the phonebook names each hemisphere.
+- **Cards:** of 5,317 (every site id, both sides), Where, Why, What, Next and the badge changed on **0**.
+- **Red-line changes, 680 in all**, each of an expected kind:
+  - a moved flag no longer beside another cause: 549;
+  - the place flag where the pressure leads: 77;
   - P22: 16;
   - the split: 16;
-  - the uncal card now also shows the compressive III's own place flag: 10;
-  - selecting "Uncal herniation" shows its own flag: 1.
-- **Titles:** 112 card titles changed, across the 7 renamed places.
+  - the uncal card now also shows the compressive III's own place flag: 20;
+  - selecting "Uncal herniation" shows its own flag: 2.
+- **Titles:** 208 card titles changed, across the 7 renamed places.
+- **The non-dominant cards** of the operculum and the temporoparietal cortex keep their own flag only. C11 and C25 stay off them,
+  though the infarct leads.
+- **For reference**, the original one-side-per-place figures were 3,180 cards, red 472, titles 112, and the uncal 10 and 1.
 
 The build must equal this (Task 4).
 
@@ -95,18 +111,18 @@ Copies live in `side-session-notes/local_3d719466…/card-cause-prototype/`.
 - Produces: the suite every later task must turn green.
 
 - [ ] **Step 1: Create the suite.** Write `test/card-follows-cause.test.js` with exactly the content of Appendix A (including the
-  130-row `PLACE_FLAGS` snapshot).
+  132-row `PLACE_FLAGS` snapshot).
 
 - [ ] **Step 2: Add it to the chain.** In `package.json`, in the `test` script, replace
 
 ```
-node test/pressure-follows.test.js"
+node test/hemisphere-names.test.js"
 ```
 
 with
 
 ```
-node test/pressure-follows.test.js && node test/card-follows-cause.test.js"
+node test/hemisphere-names.test.js && node test/card-follows-cause.test.js"
 ```
 
 - [ ] **Step 3: Run it and watch it fail for the right reasons.**
@@ -121,7 +137,7 @@ Expected: exit 1, last line `7 passed, 30 failed`. The 7 that pass are the pins 
 - "a hemisphere's flag…";
 - "a shared list…".
 
-Every other check fails: the helpers are missing, there are no cause flags, the snapshot reads 166 flags not 130, cause claims
+Every other check fails: the helpers are missing, there are no cause flags, the snapshot reads 168 flags not 132, cause claims
 sit on places, the titles name a lacune, and the pinned cards show stale flags.
 
 - [ ] **Step 4: Commit.**
@@ -261,8 +277,8 @@ Expected: exit 1, `14 passed, 23 failed`. All seven "helper:" checks now PASS.
 
 Run: `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
 
-Expected: exit 1, failing only in the last suite (card-follows-cause, 23 FAIL lines). Every one of the 90 suites before it passes:
-7,676 PASS lines from them.
+Expected: exit 1, failing only in the last suite (card-follows-cause, 23 FAIL lines). Every one of the 92 suites before it passes:
+7,756 PASS lines from them.
 
 - [ ] **Step 5: Commit.**
 
@@ -287,7 +303,7 @@ because no cause has a flag yet. Like the composite round's rows 1–2, they lan
 
 **Interfaces:**
 - Consumes: `flagged`, `cardCause`, `redLine`, `phonebookVariant` (Task 2).
-- Produces: 38 flags on 35 cause entries (11 restricted), 130 place flags, 7 renamed titles. `answerFor().lines.red` and the
+- Produces: 38 flags on 35 cause entries (13 restricted), 132 place flags, 7 renamed titles. `answerFor().lines.red` and the
   What card's "Red flag" both come from `redLine`.
 
 - [ ] **Step 1: Move the content.** Save Appendix B as `move-flags.mjs` OUTSIDE the repo (the session's scratchpad), then
@@ -487,7 +503,7 @@ Expected: exit 0, `37 passed, 0 failed`.
 
 Run: `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
 
-Expected: exit 0; 91 suites; 7,713 PASS lines and 0 FAIL lines.
+Expected: exit 0; 93 suites; 7,793 PASS lines and 0 FAIL lines.
 
 Run: `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm run test:audit`
 
@@ -503,7 +519,7 @@ git add src/data/causes.js src/data/syndromes.js src/model/sites.js src/engine/i
 git commit -m "feat(card): the card follows its cause — 38 flags onto their causes, one rule for the red line
 
 Round 1 (RULED 2026-11-11, approve as proposed):
-- 36 flags move word for word to their place's usual cause (11 restricted to a place or a
+- 36 flags move word for word to their place's usual cause (13 restricted to a place or a
   hemisphere), the diffuse cerebrum splits, P22 is reworded, 7 titles are renamed, and the
   uncal reading's flag moves onto its cause;
 - the red line is the card's cause's flags, then the place's own;
@@ -531,32 +547,37 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   both trees:
 
 ```bash
-mkdir -p <scratchpad>/base && git archive 582311b | tar -x -C <scratchpad>/base
+mkdir -p <scratchpad>/base && git archive b173e7e | tar -x -C <scratchpad>/base
 PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" node <scratchpad>/dry-run-cards.mjs <scratchpad>/base > <scratchpad>/before.jsonl
 PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" node <scratchpad>/dry-run-cards.mjs . > <scratchpad>/after.jsonl
 PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" node <scratchpad>/dry-run-compare.mjs <scratchpad>/before.jsonl <scratchpad>/after.jsonl
 ```
 
+`b173e7e` is the code this round builds on; the commits after it, before Task 1, change only docs. The dry run reads every
+site id, both sides (amended 2026-11-12), so the counts are not the original plan's one-side-per-place 3,180 / 472 / 112.
+
 Expected (exactly):
 
 ```
-cards: 3180 (before 3180)
-fields that differ: {"red":472,"title":112}
+cards: 5317 (before 5317)
+fields that differ: {"red":680,"title":208}
 red-line changes by kind: {
- "a moved flag no longer beside another cause": 383,
- "gained: the place flag where the pressure leads": 46,
- "selecting Uncal herniation shows its own flag": 1,
- "uncal card: + the compressive III place flag": 10,
+ "a moved flag no longer beside another cause": 549,
+ "gained: the place flag where the pressure leads": 77,
+ "selecting Uncal herniation shows its own flag": 2,
+ "uncal card: + the compressive III place flag": 20,
  "P22 reworded": 16,
  "the split (C33)": 16
 }
 unexplained: 0
 ```
 
+`unexplained: 0` also proves the hemisphere restrictions. If C11 or C25 showed on a non-dominant card, that card's red line would
+change from its own flag to the moved flag plus its own flag, which is none of the kinds above.
+
 - [ ] **Step 2: Browser check.**
-  - Add a launch entry to `Code/.claude/launch.json`: `"NeuroLocaliser card-cause worktree"`, `runtimeExecutable`
-    `/usr/bin/env`, `runtimeArgs` `["PORT=8146", "/Users/jaydenwearne/.local/node-v24.18.0-darwin-arm64/bin/node",
-    "neurolocaliser-card-cause/app/serve.mjs"]`, `port` 8146.
+  - The launch entry `"NeuroLocaliser card-cause worktree"` (port 8146) already exists in `Code/.claude/launch.json` (added
+    2026-11-12 for the duplicate-keys round).
   - Start it with `preview_start`, open `/app/`, and reload after every hash change (a hash-only navigation does not re-run
     boot).
   - Check each of these, reading `.ans-row` and the opened What card:
@@ -570,12 +591,17 @@ unexplained: 0
     - the lateral medulla's picture + papilloedema at subacute onset: "Swallowing can fail early — keep nil by mouth until
       assessed."
     - a renamed title: "Pure motor hemiparesis (internal capsule)".
+    - the non-dominant operculum (`motor_dysprosody@none`; amended 2026-11-12): its own flag only, "New flat, unmodulated
+      speech is easily mistaken for depression — it is a focal sign that needs imaging." The infarct leads, but its flag
+      (C25) is dominant-only.
+    - the non-dominant temporoparietal cortex (`sensory_dysprosody@none`): "Subtle; the deficit is in emotional communication
+      rather than words." only, and not C11's jargon-aphasia flag.
   - Expect no console errors.
 
 - [ ] **Step 3: Document.**
-  - In `CLAUDE.md`, change the status line's count to **91 test suites / 7713 assertions green**. Then add a section
-    `## The card follows its cause (DONE 2026-11-11, round 1) — ✅ owner-approved rulings (every row)` after "Integration of
-    the open fixes", recording:
+  - In `CLAUDE.md`, change the status line's count to **93 test suites / 7793 assertions green**. Then add a section
+    `## The card follows its cause (DONE 2026-11-11, round 1) — ✅ owner-approved rulings (every row)` after "Duplicate keys
+    and the non-dominant names", recording:
     - **the defect:** the place's flag stayed beside a different cause on 100% of moved cards: onset 103, selection 868,
       papilloedema 281;
     - **the root cause:** cause claims were written on the place;
@@ -603,10 +629,14 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ## Found, not fixed (report to the owner)
 
-`src/data/syndromes.js` defines **three keys twice**: `cortex_temporoparietal`, `cortex_medial_pfc` and `cortex_orbitofrontal`.
-In an object literal the later definition silently wins, so the earlier ones are dead content the engine never reads. That
-includes `cortex_temporoparietal`'s dominant / non-dominant variants and their flags. It is not this round's root cause. It is
-its own small fix, with a "no duplicate phonebook keys" guard.
+- **The duplicated phonebook keys are FIXED** (2026-11-12, `56aff33`, before this round). The scan found a fourth: the
+  internal capsule's workup. The duplicate-keys round also named both hemispheres at the operculum and the temporoparietal
+  cortex (`3d195f0`), which is why C11 and C25 are now dominant-only.
+- **Still open** (`docs/superpowers/specs/2026-11-12-duplicate-keys-design.md` §6):
+  - the cause features and workups at those two places are keyed by place, so the non-dominant card's What and Next cards
+    still describe the aphasia;
+  - the thalamic and striatocapsular aphasia composites' non-dominant copies need a ruling, either to name them or to stop
+    offering them.
 
 ## Appendix A — `test/card-follows-cause.test.js`
 
@@ -698,7 +728,9 @@ ok("helper: flagApplies — unrestricted; a hemisphere; a place reading the list
   const causeOfWhat = (what, names) => names.filter(n => what.startsWith(`Most likely ${n}`) || what === `Selected: ${n}.`)
     .sort((a, b) => b.length - a.length)[0] || null;
   for (const s of candidateSites()) {
-    const kind = kindOf(s); if (seen.has(kind)) continue; seen.add(kind);
+    // One side per place: the other side reads the same flags. Except where the phonebook names each hemisphere — there a
+    // hemisphere restriction only shows on the non-dominant side, so both sides are swept (amended 2026-11-12).
+    const kind = kindOf(s); if (seen.has(kind) && !phonebookVariant(s, { dominantSide: "left" })) continue; seen.add(kind);
     const all = [...causesFor(s).all, ...(causesFor(s).demoted || [])], names = all.map(c => c.name);
     const applicable = all.flatMap(c => (c.flags || []).filter(f => flagApplies(f, s, "left")).map(f => ({ text: f.text, cause: c.name })));
     const pictures = [[...expectedFindings(s)], ...(s.variants || []).map(v => [...expectedFindings({ ...s, structures: v.structures, variants: undefined })])];
@@ -753,6 +785,7 @@ const PLACE_FLAGS = [
   ["cortex_fusiform.nondominant", "Acquired prosopagnosia points to the right (or bilateral) fusiform — image the medial occipitotemporal region."],
   ["cortex_mca_inferior.nondominant", "Dense neglect with anosognosia underestimates the deficit — the patient denies it; corroborate and image."],
   ["cortex_medial_pfc", "Profound apathy / akinetic mutism after SAH or ACA stroke — image the medial frontal lobes."],
+  ["cortex_operculum.nondominant", "New flat, unmodulated speech is easily mistaken for depression — it is a focal sign that needs imaging."],
   ["cortex_occipital", "Confrontation-test the fields — an isolated hemianopia is easily overlooked; posterior circulation imaging is warranted."],
   ["cortex_orbitofrontal", "New disinhibition / personality change is a frontal sign — image the orbitofrontal region (and consider subfrontal masses)."],
   ["cortex_paracentral", "Bilateral leg weakness with urinary incontinence is a parasagittal lesion until proven otherwise — image the interhemispheric fissure."],
@@ -761,6 +794,7 @@ const PLACE_FLAGS = [
   ["cortex_pca.nondominant", "An isolated hemianopia is easily missed — confrontation-test fields; consider a posterior-circulation cause."],
   ["cortex_premotor", "Apraxia with normal power is a cortical (premotor / parietal) sign — image the frontoparietal cortex."],
   ["cortex_sma", "A medial frontal / parasagittal lesion — image the interhemispheric frontal region and the ACA territory."],
+  ["cortex_temporoparietal.nondominant", "Subtle; the deficit is in emotional communication rather than words."],
   ["cortex_temporal", "New olfactory/gustatory hallucinations or episodic fear may be focal seizures — consider EEG and imaging."],
   ["craniocervical_junction_foramen_magnum", "New downbeat nystagmus warrants craniocervical-junction imaging — a Chiari or foramen-magnum lesion is surgically treatable."],
   ["dorsal_midbrain_tectum", "A supranuclear vertical gaze palsy warrants dorsal-midbrain imaging — look for a tectal lesion or early hydrocephalus."],
@@ -854,8 +888,8 @@ const PLACE_FLAGS = [
   const keyed = rows => new Map(rows.map(([k, t]) => [k, t]));
   const N = keyed(now), W = keyed(want);
   const added = [...N.keys()].filter(k => !W.has(k)), removed = [...W.keys()].filter(k => !N.has(k)), reworded = [...N.keys()].filter(k => W.has(k) && W.get(k) !== N.get(k));
-  ok("snapshot: the 130 place flags are exactly the reviewed ones (129 kept + the diffuse cerebrum's place half)",
-     now.length === 130 && !added.length && !removed.length && !reworded.length,
+  ok("snapshot: the 132 place flags are exactly the reviewed ones (131 kept + the diffuse cerebrum's place half)",
+     now.length === 132 && !added.length && !removed.length && !reworded.length,
      `${now.length} flags; added: ${added.join(", ") || "—"}; removed: ${removed.join(", ") || "—"}; reworded: ${reworded.join(", ") || "—"}`); }
 
 // ---- D. A floor for the dangerous phrasings ----
@@ -912,8 +946,8 @@ for (const [k, n] of [
       ? readers.some(s => ["left", "right"].some(d => phonebookVariant(s, { dominantSide: d }) === f.only))
       : readers.some(s => kindOf(s) === f.only);
     if (!real) bad.push(`${f.list} / ${f.cause}: only ${f.only}`); }
-  ok("restrictions: 38 cause flags, 11 restricted, every restriction names a place or hemisphere reading that list",
-     flags.length === 38 && flags.filter(x => x.only).length === 11 && bad.length === 0, `${flags.length} flags; ${bad.join(" | ")}`); }
+  ok("restrictions: 38 cause flags, 13 restricted, every restriction names a place or hemisphere reading that list",
+     flags.length === 38 && flags.filter(x => x.only).length === 13 && bad.length === 0, `${flags.length} flags; ${bad.join(" | ")}`); }
 
 // ---- G. The cards that showed the defect ----
 const BASILAR_TIP = "Drowsiness with vertical gaze palsy and visual loss is a basilar-tip occlusion until proven otherwise — CTA now; it is a thrombectomy target, and it is regularly called delirium.";
@@ -978,7 +1012,7 @@ const MOVES = Object.fromEntries([
   ["pons_lateral", "pons_lateral", "AICA territory infarct"],
   ["medulla_hemi", "medulla_hemi", "Vertebral artery occlusion or dissection"],
   ["cortex_aca", "cortex_aca", "ACA infarct"],
-  ["cortex_temporoparietal", "cortex_temporoparietal", "MCA inferior division infarct"],
+  ["cortex_temporoparietal.dominant", "cortex_temporoparietal", "MCA inferior division infarct", "dominant"],
   ["bilateral_occipital", "cortex_occipital", "PCA infarct", "bilateral_occipital"],
   ["bilateral_fusiform", "cortex_fusiform", "PCA territory infarct", "bilateral_fusiform"],
   ["bilateral_parietal", "cortex_parietal", "MCA inferior division infarct", "bilateral_parietal"],
@@ -991,7 +1025,7 @@ const MOVES = Object.fromEntries([
   ["nerve_lat_fem_cutaneous", "nerve_lat_fem_cutaneous", "Meralgia paraesthetica (inguinal ligament entrapment)"],
   ["pupil_cn3_ischaemic", "pupil_cn3_ischaemic", "Microvascular (diabetic / hypertensive) third-nerve palsy"],
   ["pupil_ciliary_ganglion", "pupil_ciliary_ganglion", "Holmes-Adie (tonic) pupil"],
-  ["cortex_operculum", "cortex_operculum", "MCA (superior division) infarct"],
+  ["cortex_operculum.dominant", "cortex_operculum", "MCA (superior division) infarct", "dominant"],
   ["cortex_watershed_anterior", "cortex_watershed_anterior", "Border-zone (watershed) infarct from hypoperfusion"],
   ["cortex_watershed_posterior", "cortex_watershed_posterior", "Border-zone (watershed) infarct from hypoperfusion"],
   ["cortex_aphasia_global", "cortex_aphasia_global", "Large MCA territory (or ICA) infarct"],
@@ -1124,9 +1158,8 @@ const card = (ctx, tokens, id, onset, selectedPathology) => {
   out.push(JSON.stringify({ ctx, title: a.pressureOnly ? "(pressure only)" : plainSiteName(sel.site, { dominantSide: "left" }).name,
     where: a.lines.where, why: a.lines.why, what: a.lines.what, next: a.lines.next, urgency: a.nx.urgency, red: a.lines.red || null }));
 };
-const seen = new Set();
 for (const s of candidateSites()) {
-  const kind = s.id.replace(/^(left|right)_/, ""); if (seen.has(kind)) continue; seen.add(kind);
+  const kind = s.id; // EVERY site id, both sides (amended 2026-11-12), so the non-dominant hemisphere's cards are counted
   const pictures = [["own", [...expectedFindings(s)]]];
   for (const v of s.variants || []) pictures.push([`reading:${v.key}`, [...expectedFindings({ ...s, structures: v.structures, variants: undefined })]]);
   for (const [pic, exp] of pictures) {
@@ -1156,12 +1189,12 @@ for (const b of B) {
   const a = A.get(b.ctx); if (!a) { odd.push(`missing before: ${b.ctx}`); continue; }
   for (const f of ["title", "where", "why", "what", "next", "urgency", "red"]) if (a[f] !== b[f]) fields[`${f}`] = (fields[f] || 0) + 1;
   if (a.red === b.red) continue;
-  const [place, pic] = b.ctx.split("|");
+  const [id, pic] = b.ctx.split("|"), place = id.replace(/^(left|right)_/, ""); // a card is keyed by its site id
   let k;
   if (place === "bilateral_anterior_temporal") k = "P22 reworded";
   else if (place === "cerebrum_diffuse") k = "the split (C33)";
   else if (pic === "reading:uncal") k = "uncal card: + the compressive III place flag";
-  else if (b.ctx === "pupil_cn3_compressive|own|sel:Uncal herniation") k = "selecting Uncal herniation shows its own flag";
+  else if (place === "pupil_cn3_compressive" && b.ctx.endsWith("|own|sel:Uncal herniation")) k = "selecting Uncal herniation shows its own flag";
   else if (a.red && !b.red) k = "a moved flag no longer beside another cause";
   else if (!a.red && b.red) k = "gained: the place flag where the pressure leads";
   else { k = "UNEXPLAINED"; odd.push(`${b.ctx} :: ${a.red} → ${b.red}`); }

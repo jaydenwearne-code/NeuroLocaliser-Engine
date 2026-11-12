@@ -14,6 +14,20 @@ had been approved in conversation earlier the same day.
 - Branch `fix/card-follows-cause`, cut from `integrate/all-open-fixes` at `b6fdb73`; worktree `Code/neurolocaliser-card-cause/`.
 - Nothing is pushed, and no fix branch is touched.
 
+**AMENDED 2026-11-12** — the duplicate-keys round, ruled "approve as proposed"
+(`docs/superpowers/specs/2026-11-12-duplicate-keys-design.md`). It landed first, on this branch, and two of its changes reach
+these rows:
+- **Hemisphere names.** A dead duplicate had hidden the temporoparietal cortex's non-dominant name, which row D1 restored. Row
+  D9 named the non-dominant operculum. Both places now name each hemisphere, so:
+  - **C11** (the jargon-aphasia flag → MCA inferior division infarct) and **C25** (the "dominant MCA stroke" flag → MCA
+    (superior division) infarct) move from the dominant variant, **only the dominant hemisphere**, as C5 does. Without the
+    restriction, each would return on the non-dominant card whenever the infarct leads.
+  - **P130** `cortex_temporoparietal.nondominant` (*"Subtle; the deficit is in emotional communication rather than words."*)
+    and **P131** `cortex_operculum.nondominant` (*"New flat, unmodulated speech is easily mistaken for depression — it is a
+    focal sign that needs imaging."*) stay. Both are true whatever the cause, so the reviewed snapshot holds 132 place flags.
+- **The sweep and the dry run read both hemispheres.** Before, each built one side per place, so neither could see a
+  non-dominant card. Restricted flags: 11 → 13.
+
 **In one paragraph.** The answer card's What line, Next line and badge follow the cause the card names, read with the onset,
 papilloedema and the reader's selection. Its red flag and its title do not. They are written once per place, and some of them
 assert the place's usual cause: "…is a dominant MCA stroke — time-critical", "pupil-sparing is reassuring". So whenever
