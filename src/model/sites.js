@@ -830,8 +830,9 @@ export function composeGuillainMollaretSites() {
 export function composeAphasiaSites() {
   const perisylvian = ["ctx_broca_fluency", "ctx_broca_repetition", "ctx_broca_naming", "ctx_wernicke_comp", "ctx_wernicke_repetition", "ctx_wernicke_naming", "ctx_arcuate", "ctx_arcuate_naming"];
   const bothWatersheds = ["ctx_tcma", "ctx_tcma_naming", "ctx_tcsa", "ctx_tcsa_naming"];
-  // thal_face keeps this composite in step with the VPL site (B11): without it the NON-dominant composite —
-  // whose dominant-only rows emit nothing — is a VPL lesion missing the face, and out-ranks the real one.
+  // thal_face keeps this composite in step with the VPL site (B11): without it the composite is a VPL lesion missing the face.
+  // (The NON-dominant copy, whose dominant-only rows emit nothing, once out-ranked the real thalamus that way; since the
+  // non-dominant-content round, J1, every aphasia composite is `dominantOnly` and that copy is never offered.)
   // thal_ataxia too (content-gap fix, row 12) — the same trap: a stale copy out-ranks the real thalamus.
   const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face", "thal_ataxia"];
   // ic_hyper keeps this composite in step with the capsule (brisk reflexes, 2026-09-29) — the same trap as thal_face.
@@ -839,13 +840,13 @@ export function composeAphasiaSites() {
   const out = [];
   for (const side of SIDES) {
     out.push({ id: `aphasia_global_${side}`, side, level: "cortex", part: "aphasia_global",
-      territory: "perisylvian (dominant) — global aphasia", structures: perisylvian, composite: true });
+      territory: "perisylvian (dominant) — global aphasia", structures: perisylvian, composite: true, dominantOnly: true });
     out.push({ id: `aphasia_mixed_transcortical_${side}`, side, level: "cortex", part: "aphasia_mixed_transcortical",
-      territory: "both watershed zones (dominant) — isolation of the speech area", structures: bothWatersheds, composite: true });
+      territory: "both watershed zones (dominant) — isolation of the speech area", structures: bothWatersheds, composite: true, dominantOnly: true });
     out.push({ id: `thalamic_aphasia_${side}`, side, level: "aphasia_subcortical", part: "thalamic",
-      territory: TERRITORY["aphasia_subcortical|thalamic"], structures: thalamic, composite: true });
+      territory: TERRITORY["aphasia_subcortical|thalamic"], structures: thalamic, composite: true, dominantOnly: true });
     out.push({ id: `striatocapsular_aphasia_${side}`, side, level: "aphasia_subcortical", part: "striatocapsular",
-      territory: TERRITORY["aphasia_subcortical|striatocapsular"], structures: striatocapsular, composite: true });
+      territory: TERRITORY["aphasia_subcortical|striatocapsular"], structures: striatocapsular, composite: true, dominantOnly: true });
   }
   return out;
 }

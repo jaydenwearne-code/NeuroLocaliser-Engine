@@ -51,6 +51,9 @@ export function solverSites(opts = {}, observed = null) {
   const level = normaliseLevel(opts.sensoryLevel);
   const out = [];
   for (const site of candidateSites()) {
+    // A dominant-only place (the aphasia composites) is not offered in the non-dominant hemisphere: there it is the same
+    // place without its aphasia, a duplicate of a real one.
+    if (site.dominantOnly && site.side !== (opts.dominantSide || "left")) continue;
     out.push(site);
     for (const v of site.variants || []) {
       // Spinal shock needs a stated level (spinal cord fix, row 1c): the level is the bedside discriminator from GBS,

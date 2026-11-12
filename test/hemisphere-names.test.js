@@ -4,7 +4,7 @@
 // hemisphere shows on both unless the entry names each one. Found 2026-11-12: the non-dominant operculum (motor aprosodia
 // alone) was titled "Broca's aphasia" with "…a dominant MCA stroke — time-critical.", and the non-dominant
 // temporoparietal cortex read "(Wernicke's area)" on its Where line (its title was the duplicate-keys round's row D1).
-import { candidateSites, solve } from "../src/engine/inverse.js";
+import { candidateSites, solve, solverSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { BY_SITE, nameForSite } from "../src/data/syndromes.js";
 import { PART_LABEL, NONDOMINANT_PART_LABEL, siteLabel, plainSiteName } from "../app/labels.js";
@@ -20,16 +20,15 @@ const keyOf = s => BY_SITE[s.id] ? s.id : `${s.level}_${s.part}`;
 // "Wernicke" alone is also Wernicke's encephalopathy (the thiamine warning), which is right on either side.
 const DOMINANT_EPONYM = /Broca's|Wernicke's (area|aphasia)/;
 
-// ---- 1. a place whose picture depends on dominance names each hemisphere ----
+// ---- 1. a place whose picture depends on dominance names each hemisphere — or is never offered on the other side ----
 // A reviewed exception is a name that is true of both hemispheres.
 const HEMISPHERE_NEUTRAL = {
   cortex_temporal: "names the lobe; its note gives verbal memory for the dominant side and non-verbal for the other",
 };
-// Open, not fixed: each needs a ruling, so it is listed here (and printed) rather than silently allowed.
-const OPEN = {
-  aphasia_subcortical_thalamic: "the non-dominant copy is the thalamus without its aphasia — name it, or stop offering it",
-  aphasia_subcortical_striatocapsular: "the non-dominant copy is the striatum/capsule without its aphasia — name it, or stop offering it",
-};
+// DOMINANT-ONLY places (the non-dominant-content round, J1, owner-ruled 2026-11-12): the aphasia composites. Language lives in
+// the dominant hemisphere, so their non-dominant copy was the same place without its aphasia — a duplicate of the VPL thalamus
+// or the capsule, listed beside it as "thalamus (language)". The solver no longer offers it (`dominantOnly`, solverSites).
+const APHASIA_COMPOSITE = /^(thalamic_aphasia|striatocapsular_aphasia|aphasia_global|aphasia_mixed_transcortical)_(left|right)$/;
 {
   const dependent = new Map(); // phonebook key -> a one-sided site whose picture changes with dominance (both non-empty)
   for (const s of cs) {
@@ -39,16 +38,25 @@ const OPEN = {
     if (asDom && asNon && asDom !== asNon && !dependent.has(keyOf(s))) dependent.set(keyOf(s), s);
   }
   const named = k => { const e = BY_SITE[k]; return !!(e && e.dominant && e.nondominant); };
-  const bad = [...dependent.keys()].filter(k => !named(k) && !HEMISPHERE_NEUTRAL[k] && !OPEN[k]);
-  ok("every place whose picture depends on dominance names each hemisphere (or has a reviewed neutral name)", !bad.length, bad.join(", "));
+  const dominantOnly = k => cs.filter(s => keyOf(s) === k).every(s => s.dominantOnly);
+  const bad = [...dependent.keys()].filter(k => !named(k) && !HEMISPHERE_NEUTRAL[k] && !dominantOnly(k));
+  ok("every place whose picture depends on dominance names each hemisphere, has a reviewed neutral name, or is dominant-only", !bad.length, bad.join(", "));
   ok("the rule is not vacuous: it reaches the language, parietal and fusiform places and the MCA divisions",
      ["cortex_operculum", "cortex_temporoparietal", "cortex_parietal", "cortex_fusiform", "cortex_mca_superior", "cortex_mca_inferior"].every(k => dependent.has(k)),
      [...dependent.keys()].join(", "));
   const staleNeutral = Object.keys(HEMISPHERE_NEUTRAL).filter(k => !dependent.has(k) || named(k));
   ok("every neutral exception is still a dominance-dependent place with one name", !staleNeutral.length, staleNeutral.join(", "));
-  const staleOpen = Object.keys(OPEN).filter(k => !dependent.has(k) || named(k));
-  ok("every open item is still open (delete it once it is fixed)", !staleOpen.length, staleOpen.join(", "));
-  for (const [k, why] of Object.entries(OPEN)) console.log(`OPEN  ${k}: ${why}`);
+  const composites = cs.filter(s => APHASIA_COMPOSITE.test(s.id));
+  ok("J1: the four aphasia composites are dominant-only, on both sides", composites.length === 8 && composites.every(s => s.dominantOnly),
+     composites.filter(s => !s.dominantOnly).map(s => s.id).join(", ") || `${composites.length} sites`);
+  const leaks = [], kept = [];
+  for (const dominantSide of ["left", "right"]) {
+    const offered = solverSites({ dominantSide });
+    leaks.push(...offered.filter(s => s.dominantOnly && s.side !== dominantSide).map(s => `${s.id} (${dominantSide} dominant)`));
+    kept.push(offered.some(s => s.id === `thalamic_aphasia_${dominantSide}`) && offered.some(s => s.id === `striatocapsular_aphasia_${dominantSide}`));
+  }
+  ok("J5: no dominant-only place is offered in the non-dominant hemisphere, with either hemisphere dominant — and the dominant copy still is",
+     !leaks.length && kept.every(Boolean), leaks.join(", ") || `kept: ${kept}`);
 }
 
 // ---- 2. no non-dominant card names Broca's or Wernicke's; the dominant side keeps both ----

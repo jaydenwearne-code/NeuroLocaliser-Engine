@@ -30,7 +30,7 @@
 //
 // Tokens are what the app can ENTER (side offers from app/sides.js) — the harness section asserts it, so a renamed or
 // re-sided finding fails loudly here instead of turning a probe vacuous.
-import { solve, candidateSites } from "../src/engine/inverse.js";
+import { solve, candidateSites, solverSites } from "../src/engine/inverse.js";
 import { expectedFindings } from "../src/engine/forward.js";
 import { unifyingDiagnoses } from "../src/engine/multifocal.js";
 import { functionalFlag } from "../src/engine/patterns.js";
@@ -337,7 +337,14 @@ const SWAP_GROUPS = [
 ];
 const lateral = candidateSites().filter(s => s.side === "left" || s.side === "right");
 const swapStats = { tried: 0, lostTop3: 0, multi: 0, msMets: 0, byGroup: {}, examples: [] };
+// Owner ruling 2026-11-12 (non-dominant content, row J3): "site stays in the top 3" is asserted only for a site the solver
+// OFFERS. A dominant-only place (the aphasia composites, J1) is not offered in the non-dominant hemisphere — there it was the
+// same place without its aphasia — so the check would ask whether a place that does not exist stays in the top 3. The "no
+// multifocal claim" check is about the PICTURE, so it still runs for every site. The audit asks the engine what it offers
+// rather than restating the rule.
+const offeredLeft = new Set(solverSites({ dominantSide: "left" }).map(s => s.id));
 for (const site of lateral) {
+  const offered = offeredLeft.has(site.id);
   const exp = [...expectedFindings(site)];
   if (exp.length < 2) continue;
   for (const g of SWAP_GROUPS) {
@@ -352,7 +359,7 @@ for (const site of lateral) {
       const inTop3 = ids(r).slice(0, 3).includes(site.id);
       const gs = swapStats.byGroup[g.name] ||= { tried: 0, multi: 0, lostTop3: 0 };
       swapStats.tried++; gs.tried++;
-      if (!inTop3) { swapStats.lostTop3++; gs.lostTop3++; }
+      if (offered && !inTop3) { swapStats.lostTop3++; gs.lostTop3++; }
       let lead = null;
       if (r.multi) {
         swapStats.multi++; gs.multi++;
@@ -361,7 +368,7 @@ for (const site of lateral) {
         lead = u.concordant[0]?.name || "(none)";
         if (swapStats.examples.length < 8) swapStats.examples.push(`${site.id}: ${f}→${alt} ⇒ ${r.multi.sites.map(s => s.id).join(" + ")} [${lead}]`);
       }
-      const label = `swap ${site.id}: ${f}→${alt}`, top3 = g.top3(f, alt, exp, side);
+      const label = `swap ${site.id}: ${f}→${alt}`, top3 = offered ? g.top3(f, alt, exp, side) : null;
       if (top3) ok("Metamorphic: synonym swap", top3, `${label}: site stays in the top 3`, inTop3, `got ${ids(r).slice(0, 3).join(", ")}`, true);
       ok("Metamorphic: synonym swap", "counted", `${label}: no multifocal claim`, r.multi === null, r.multi ? `multi = ${r.multi.sites.map(s => s.id).join(" + ")} [${lead}]` : "", true);
     }
@@ -430,12 +437,18 @@ for (const m of mirrorCases) {
   const first = a.display[0].site.id, want = flip(first), gotId = b.display[0]?.site.id || "(nothing)";
   const multiA = a.multi ? a.multi.sites.map(s => flip(s.id)).sort().join(" + ") : "", multiB = b.multi ? b.multi.sites.map(s => s.id).sort().join(" + ") : "";
   const multiAsIs = a.multi ? a.multi.sites.map(s => s.id).sort().join(" + ") : "";
-  const answerOk = gotId === want || (gotId === first && tiedWithMirror(a, first));
+  // Owner ruling 2026-11-12 (non-dominant content, row J4): a picture with NO localising claim (papilloedema alone: every place
+  // explains nothing, so all tie, and the last tie-break is the site id, which is not mirror-symmetric: sides are a prefix in
+  // most ids and a suffix in the aphasia composites') has no answer to mirror. The check compares the claim: no place on
+  // either side. It once passed only because both sides' tie-break first was an aphasia composite.
+  const noClaim = r => r.display.length > 0 && r.display[0].n === 0;
+  const answerOk = noClaim(a) ? noClaim(b) : (gotId === want || (gotId === first && tiedWithMirror(a, first)));
   const multiOk = multiA === multiB || (multiB === multiAsIs && a.multi.sites.every(s => flip(s.id) === s.id || tiedWithMirror(a, s.id)));
   const good = answerOk && multiOk;
   if (!good) mirrorFailed++;
   ok("Metamorphic: mirror", "counted", `mirror ${m.label}: answer and any multifocal claim mirror`, good,
-     `want ${want}${multiA ? ` (multi ${multiA})` : ""}, got ${gotId}${multiB ? ` (multi ${multiB})` : ""}`, true);
+     noClaim(a) ? `no localising claim on the original; mirrored: ${noClaim(b) ? "none either" : `a claim at ${gotId}`}`
+                : `want ${want}${multiA ? ` (multi ${multiA})` : ""}, got ${gotId}${multiB ? ` (multi ${multiB})` : ""}`, true);
 }
 
 // ======================================================================================================
