@@ -224,18 +224,25 @@ ok("§6: papilloedema + a chronic hemianopia drops the old-stroke clause",
     if (a.nx.pressureLeads && a.lines.what !== ANS.PRESSURE_ONLY.what) bad.push(s.id); }
   ok("rows 9–10: on every in-play place's own picture with papilloedema, the What line names the cause the plan follows", bad.length === 0, bad.slice(0, 5).join(", ")); }
 
-// ---- E. The wording (rows 16–18) ----
+// ---- E. The wording (rows 16–18; re-ruled 2026-11-14: a set-aside cause RARELY CAUSES papilloedema — "cannot raise the
+// pressure" was false read alone, since a head injury, a large MCA infarct or a hypoxic brain can raise it) ----
 ok("row 16: the What card's papilloedema band",
    same(ANS.PRESSURE_BAND, { title: "less likely with papilloedema",
-     note: "Papilloedema means the intracranial pressure is raised. These causes do not raise it: they can explain the deficit, but not the papilloedema.",
-     tag: "does not raise the pressure" }));
+     note: "Papilloedema means the intracranial pressure is raised. These causes can explain the deficit, but rarely cause papilloedema.",
+     tag: "rarely causes papilloedema" }));
 ok("row 16: a demoted cause's reason — the tempo, the pressure, or both",
    demotionReason({ axis: "tempo", expected: ["hyperacute", "acute"] }) === "usually hyperacute / acute"
-   && demotionReason({ axis: "pressure", expected: [] }) === "does not raise the pressure"
-   && demotionReason({ axis: "tempo", expected: ["chronic"], pressure: true }) === "usually chronic · does not raise the pressure");
+   && demotionReason({ axis: "pressure", expected: [] }) === "rarely causes papilloedema"
+   && demotionReason({ axis: "tempo", expected: ["chronic"], pressure: true }) === "usually chronic · rarely causes papilloedema");
 ok("row 17: the Next card's note when papilloedema sets the cause aside",
    followNote({ cause: "X", setAside: "Y", onset: null, pressure: true, by: { onset: false, pressure: true } })
-   === "Following the most likely cause, X. Papilloedema sets aside Y, which cannot raise the intracranial pressure and is what this site's usual plan is written for.");
+   === "Following the most likely cause, X. Papilloedema sets aside Y, which rarely causes papilloedema and is what this site's usual plan is written for.");
+ok("row 17: an acute onset reads 'An acute onset', in both onset sentences (it read 'A acute onset')",
+   followNote({ cause: "X", setAside: "Y", onset: "acute", pressure: true, by: { onset: true, pressure: true } })
+   === "Following the most likely cause, X. An acute onset and papilloedema set aside Y, which this site's usual plan is written for."
+   && followNote({ cause: "X", setAside: "Y", onset: "acute" }) === "Following the most likely cause, X. An acute onset rules out Y, which this site's usual plan is written for."
+   && followNote({ cause: "X", setAside: "Y", onset: "hyperacute", pressure: true, by: { onset: true, pressure: true } })
+   === "Following the most likely cause, X. A hyperacute onset and papilloedema set aside Y, which this site's usual plan is written for.");
 ok("row 17: …when the onset and papilloedema both do",
    followNote({ cause: "X", setAside: "Y", onset: "chronic", pressure: true, by: { onset: true, pressure: true } })
    === "Following the most likely cause, X. A chronic onset and papilloedema set aside Y, which this site's usual plan is written for.");
@@ -244,7 +251,7 @@ ok("row 17: …and the approved onset sentence where only the onset does",
    === "Following the most likely cause, X. A chronic onset rules out Y, which this site's usual plan is written for."
    && followNote({ cause: "X", setAside: "Y", onset: "subacute" }) === "Following the most likely cause, X. A subacute onset rules out Y, which this site's usual plan is written for.");
 ok("row 18: the Next card's note when the pressure leads",
-   ANS.PRESSURE_LEADS_NOTE === "No cause usually found here raises the intracranial pressure, so the plan follows the papilloedema itself.");
+   ANS.PRESSURE_LEADS_NOTE === "The causes usually found here rarely cause papilloedema, so the plan follows the papilloedema itself.");
 
 // ---- F. The IV (row 15) ----
 ok("row 15: the IV's cisternal course is in PRESSURE_REACHES, and the pressure demotes there",
