@@ -20,6 +20,7 @@
 
 import { MULTIFOCAL } from "./multifocal.js";
 import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS, PRESSURE_REACHES } from "../model/compartments.js";
+import { hemisphereOf, sideText, onItsSide } from "../model/hemisphere.js";
 
 // ---- the surgical sieve ----
 export const CATEGORIES = [
@@ -70,6 +71,10 @@ const c = (name, cat, tempo, likelihood, red = false, feature = "", pathognomoni
 // flag, ask "is it true whatever the cause?": if not, it goes here. `only` restricts a flag to one place reading this list
 // (its site kind, e.g. "bilateral_occipital") or to one hemisphere ("dominant" / "nondominant", as the phonebook resolves it).
 export const flagged = (cause, ...flags) => ({ ...cause, flags: flags.map(f => typeof f === "string" ? { text: f } : f) });
+// A cause that exists in ONE hemisphere only (non-dominant content round, K1, owner-ruled 2026-11-12): a speech-arrest seizure
+// or postictal aphasia is the dominant hemisphere's, developmental prosopagnosia mimics the non-dominant fusiform's picture.
+// A feature that differs by hemisphere is written `{ dominant, nondominant }` instead (src/model/hemisphere.js).
+export const onSide = (hemisphere, cause) => ({ ...cause, hemisphere });
 
 // ---- family builder: the shared skull-base spine (depth spec, 2026-08-11) ----
 // Every skull-base key is a bony or dural corridor, so the same small set of processes reaches all of them.
@@ -1150,20 +1155,20 @@ export const CAUSES = {
   ],
   cortex_temporoparietal: [ // Wernicke's
     flagged(c("MCA inferior division infarct", "vascular", ["hyperacute","acute"], "common", false,
-      "Sudden FLUENT but empty speech with impaired comprehension and repetition, and no weakness — the absence of weakness is why it is so often mistaken for confusion or a psychiatric presentation, and the time window is lost"),
+      { dominant: "Sudden FLUENT but empty speech with impaired comprehension and repetition, and no weakness — the absence of weakness is why it is so often mistaken for confusion or a psychiatric presentation, and the time window is lost", nondominant: "Sudden confusion or agitation with neglect and a field cut, and no weakness — the absence of weakness is why it is so often mistaken for delirium or a psychiatric presentation, and the time window is lost" }),
       { text: "Fluent jargon aphasia without weakness is easily missed as an acute stroke — image and consider thrombolysis.", only: "dominant" }),
     c("Intracerebral haemorrhage", "vascular", ["hyperacute","acute"], "uncommon", true,
       "Abrupt onset with headache, vomiting and reduced consciousness"),
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
-      "Language failure progressing over weeks, often with seizures and headache"),
+      { dominant: "Language failure progressing over weeks, often with seizures and headache", nondominant: "Neglect, a field cut or a change in behaviour progressing over weeks, often with seizures and headache" }),
     c("Herpes simplex encephalitis", "infective", ["acute"], "uncommon", true,
       "Fever, confusion and seizures with temporal lobe change on MRI — give aciclovir empirically"),
     c("Delirium", "mimic", ["acute","subacute"], "common", false,
-      "Fluctuating attention with a systemic trigger — unlike Wernicke's aphasia, comprehension and naming are not SELECTIVELY lost in an otherwise fully alert patient"),
+      { dominant: "Fluctuating attention with a systemic trigger — unlike Wernicke's aphasia, comprehension and naming are not SELECTIVELY lost in an otherwise fully alert patient", nondominant: "Fluctuating attention with a systemic trigger — a non-dominant temporoparietal stroke imitates it, so look for a CONSISTENT one-sided neglect and a field cut before accepting delirium" }),
     c("Transverse or sigmoid sinus thrombosis (vein of Labbe)", "vascular", ["acute","subacute"], "uncommon", true,
-      "Fluent aphasia with headache and seizures, with temporal oedema or haemorrhage that does NOT respect the MCA territory — image the VENOUS sinuses, because the arterial study will be normal and the diagnosis is treatable"),
-    c("Postictal aphasia after a focal temporal seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
-      "Language failure that fluctuates and improves over minutes to hours after a witnessed seizure or automatisms"),
+      { dominant: "Fluent aphasia with headache and seizures, with temporal oedema or haemorrhage that does NOT respect the MCA territory — image the VENOUS sinuses, because the arterial study will be normal and the diagnosis is treatable", nondominant: "Headache and seizures with confusion or neglect, and temporal oedema or haemorrhage that does NOT respect the MCA territory — image the VENOUS sinuses, because the arterial study will be normal and the diagnosis is treatable" }),
+    onSide("dominant", c("Postictal aphasia after a focal temporal seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Language failure that fluctuates and improves over minutes to hours after a witnessed seizure or automatisms")),
   ],
   cortex_temporal: [
     c("Herpes simplex encephalitis", "infective", ["acute"], "common", true,
@@ -1328,8 +1333,10 @@ export const CAUSES = {
       "Progressive visual recognition difficulty over weeks with an enhancing occipitotemporal lesion"),
     c("Migraine or occipital seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
       "Transient recognition failure or visual distortion that resolves completely, rather than a fixed deficit"),
-    c("Developmental prosopagnosia", "congenital", ["chronic"], "uncommon", false,
-      "LIFELONG difficulty recognising faces — the patient relies on voice, gait or hairstyle and has always done so — with normal acuity, normal cognition and often a family history; there is no lesion to find, so the history of lifelong difficulty is the diagnosis"),
+    onSide("nondominant", c("Developmental prosopagnosia", "congenital", ["chronic"], "uncommon", false,
+      "LIFELONG difficulty recognising faces — the patient relies on voice, gait or hairstyle and has always done so — with normal acuity, normal cognition and often a family history; there is no lesion to find, so the history of lifelong difficulty is the diagnosis")),
+    onSide("dominant", c("Developmental dyslexia", "congenital", ["chronic"], "uncommon", false,
+      "LIFELONG difficulty with reading AND spelling, often with a family history — pure alexia is NEW and spares writing, so a patient who can write but not read back what they wrote has an acquired lesion")),
   ],
   cortex_aphasia_global: [
     flagged(c("Large MCA territory (or ICA) infarct", "vascular", ["hyperacute","acute"], "common", true,
@@ -2797,16 +2804,18 @@ export const CAUSES = {
       "Abrupt hand weakness with headache and vomiting; a small lobar bleed in an older patient suggests cerebral amyloid angiopathy"),
   ],
   cortex_operculum: [ // Broca
-    flagged(c("MCA (superior division) infarct", "vascular", ["hyperacute","acute"], "common", false, "Abrupt non-fluent aphasia with face/arm weakness and gaze deviation toward the lesion"),
+    flagged(c("MCA (superior division) infarct", "vascular", ["hyperacute","acute"], "common", false, { dominant: "Abrupt non-fluent aphasia with face/arm weakness and gaze deviation toward the lesion", nondominant: "Abrupt flat, unmodulated speech (motor aprosodia) with face/arm weakness and gaze deviation toward the lesion" }),
       { text: "Acute non-fluent aphasia + right hemiparesis is a dominant MCA stroke — time-critical.", only: "dominant" }),
     c("Haemorrhage", "vascular", ["acute"], "uncommon", true, "Headache and vomiting with a deficit that worsens over minutes to hours rather than being maximal at onset"),
     c("Tumour (glioma / metastasis)", "neoplastic", ["chronic"], "uncommon", false, "Weeks of progressive speech difficulty, often announced by a focal seizure"),
     c("Cerebral abscess", "infective", ["acute","subacute"], "rare", true,
-      "Fever and headache with a rapidly progressive non-fluent aphasia and raised inflammatory markers; a ring-enhancing frontal lesion — hunt for the source in the sinuses, teeth, heart or a right-to-left shunt"),
-    c("Focal seizure with speech arrest", "mimic", ["hyperacute","acute"], "uncommon", false,
-      "Brief, stereotyped, repeated episodes of speech arrest with PRESERVED comprehension and awareness, resolving in seconds to minutes — an opercular seizure rather than a fixed aphasia, which persists between events"),
+      { dominant: "Fever and headache with a rapidly progressive non-fluent aphasia and raised inflammatory markers; a ring-enhancing frontal lesion — hunt for the source in the sinuses, teeth, heart or a right-to-left shunt", nondominant: "Fever and headache with rapidly progressive face/arm weakness and raised inflammatory markers; a ring-enhancing frontal lesion — hunt for the source in the sinuses, teeth, heart or a right-to-left shunt" }),
+    onSide("dominant", c("Focal seizure with speech arrest", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Brief, stereotyped, repeated episodes of speech arrest with PRESERVED comprehension and awareness, resolving in seconds to minutes — an opercular seizure rather than a fixed aphasia, which persists between events")),
+    c("Focal motor seizure with Todd's paresis", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Witnessed jerking of the face or arm, then weakness that fades over hours — Todd's paresis imitates the stroke, and the jerking is the clue"),
     c("Demyelination", "inflammatory", ["subacute"], "rare", false,
-      "A younger patient whose non-fluent speech difficulty evolves over days, with prior demyelinating episodes and lesions disseminated in time and space"),
+      { dominant: "A younger patient whose non-fluent speech difficulty evolves over days, with prior demyelinating episodes and lesions disseminated in time and space", nondominant: "A younger patient whose weakness or flat, unmodulated speech evolves over days, with prior demyelinating episodes and lesions disseminated in time and space" }),
   ],
   // --- cortex: anterior & posterior circulation territories (Region A) ---
   // The phonebook keys these dominant/nondominant (no flat `ddx`), so before curation they fell through to
@@ -2859,9 +2868,11 @@ export const CAUSES = {
     c("Glioma / metastasis", "neoplastic", ["subacute","chronic"], "uncommon", false,
       "Weeks of progressive language or spatial failure, often with seizures; an enhancing mass on MRI"),
     c("Delirium", "mimic", ["acute","subacute"], "common", false,
-      "Fluctuating attention with a systemic trigger (infection, drugs, metabolic upset) — alertness waxes and wanes, whereas Wernicke's aphasia selectively destroys comprehension and naming in a fully alert patient"),
-    c("Focal temporal seizure with postictal aphasia", "mimic", ["hyperacute","acute"], "uncommon", false,
-      "Language failure that fluctuates and improves over minutes to hours, often after a witnessed seizure or with automatisms"),
+      { dominant: "Fluctuating attention with a systemic trigger (infection, drugs, metabolic upset) — alertness waxes and wanes, whereas Wernicke's aphasia selectively destroys comprehension and naming in a fully alert patient", nondominant: "Fluctuating attention with a systemic trigger (infection, drugs, metabolic upset) — alertness waxes and wanes, whereas a non-dominant inferior-division stroke gives a CONSISTENT one-sided neglect in a fully alert patient" }),
+    onSide("dominant", c("Focal temporal seizure with postictal aphasia", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Language failure that fluctuates and improves over minutes to hours, often after a witnessed seizure or with automatisms")),
+    onSide("nondominant", c("Focal seizure", "mimic", ["hyperacute","acute"], "uncommon", false,
+      "Stereotyped episodes followed by confusion or neglect that fades over hours — a postictal deficit imitates the stroke")),
   ],
   cortex_aca: [
     flagged(c("ACA infarct", "vascular", ["hyperacute","acute"], "common", false,
@@ -3271,7 +3282,7 @@ export function pressureDemotesAt(site) {
 // Three sources, in priority: (1) hand-curated CAUSES (best); (2) the phonebook ddx, categorised live so all
 // ~185 named sites get structured causes from one source of truth; (3) attribute-derived fallback so a site
 // with neither still returns plausible categories.
-export function causesFor(site, { onset, pressure } = {}) {
+export function causesFor(site, { onset, pressure, dominantSide } = {}) {
   const key = CAUSES[site.id] ? site.id : `${site.level}_${site.part}`;
   const pbKey = BY_SITE[site.id] ? site.id : `${site.level}_${site.part}`;
   let list, source;
@@ -3284,6 +3295,10 @@ export function causesFor(site, { onset, pressure } = {}) {
   // enrich with pathognomonic "confirm on exam" flags — any cause whose name matches the keyword table and
   // that has no inline flag yet (covers curated, phonebook and derived from one source of truth).
   list = list.map(x => x.pathognomonic ? x : { ...x, pathognomonic: pathognomonicFor(x.name) });
+  // HEMISPHERE CONTENT (non-dominant content round, K1, owner-ruled 2026-11-12): a cause tagged `hemisphere` is listed on that
+  // side only, and a feature written `{ dominant, nondominant }` reads the card's hemisphere — nameForSite's rule.
+  const hemi = hemisphereOf(site, dominantSide);
+  list = list.filter(x => onItsSide(x, hemi)).map(x => ({ ...x, feature: sideText(x.feature, hemi) }));
   const derived = source === "derived";
   // TEMPO DEMOTES, IT DOES NOT DROP (owner ruling, 2026-08-14). A cause whose tempo does not match the
   // entered onset is still a real cause at this site — hiding it entirely is the same failure the sieve
@@ -3363,9 +3378,9 @@ export function canonicalKey(name) {
 // A shared entry is demoted iff EVERY site that contributes it does so via a demoted (tempo-mismatched)
 // cause — one concordant source anywhere is enough to keep the merged entry out of the demoted band,
 // exactly as a single site's own concordant/demoted split works.
-export function combinedCauses(sites, { onset, pressure } = {}) {
+export function combinedCauses(sites, { onset, pressure, dominantSide } = {}) {
   const perSite = sites.map(site => {
-    const r = causesFor(site, { onset, pressure });
+    const r = causesFor(site, { onset, pressure, dominantSide });
     return { site, causes: r.all.concat(r.demoted) };
   });
   const buckets = new Map();

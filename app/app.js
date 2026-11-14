@@ -957,7 +957,7 @@ function whatCard(site, r, list) {
   // the user's pinned pair, and the two cards silently describe DIFFERENT sites on the same screen.
   const { sites } = combinedSites(r, list, S.pinned);
   if (sites.length >= 2 && S.scope === "all") {
-    const cc = combinedCauses(sites, { onset: S.onset || undefined, pressure: raisedPressureAxis(S.tokens).present });
+    const cc = combinedCauses(sites, { onset: S.onset || undefined, pressure: raisedPressureAxis(S.tokens).present, dominantSide: domView() });
     // Tempo mismatches DEMOTE, never drop (owner ruling) — a shared cause is demoted iff EVERY contributing
     // site's own source was demoted. The "no shared cause" message must only fire when there is truly
     // nothing shared, never merely because everything that IS shared got demoted — that's a different,
@@ -1003,7 +1003,7 @@ function whatBlock(site) {
   // Inside the stroke window (owner, 2026-11-11) the place's own causes stand, read without the papilloedema, and the pressure is
   // a second line, as on the answer card.
   const held = pressed && strokeWindowHolds(site, S.onset);
-  const res = causesFor(site, { onset: S.onset || undefined, pressure: pressed && !held });
+  const res = causesFor(site, { onset: S.onset || undefined, pressure: pressed && !held, dominantSide: domView() });
   // Nothing here can raise the pressure (pressure follows the cause, row 10): the card follows the pressure itself.
   const leads = pressed && pressureLeads(site, S.onset);
   // The red flag follows the cause this card names, as on the answer card (the card follows its cause, 2026-11-11).
@@ -1071,7 +1071,7 @@ function nextCard(site, r, list) {
   // The SAME resolution the answer card uses (app/answer.js), so the badge, the Next line and this card can never
   // describe different plans. S.pinned is passed through — see the note in whatCard().
   const { nx, combined } = resolveNext({ site, r, pinned: S.pinned, scope: S.scope,
-    selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity, onset: S.onset });
+    selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity, onset: S.onset, dominant: S.dominant });
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
   return card(cap, nextBlock(nx, combined), "next", "— the full workup");
 }
@@ -1148,7 +1148,7 @@ function renderAtlasDetail() {
   const rows = exp.map(t => { const [f,s]=t.split("@");
     const cls = s==="left"||s==="right" ? "bc" : s==="bilateral" ? "bb" : s==="midline" ? "bm" : "bnone";
     return `<div class="why-item"><span class="badge ${cls}">${sideTag(s)}</span><span class="t">${esc(f)}</span><span class="d">${esc(desc(f))}</span></div>`; }).join("");
-  const res = causesFor(site, {});
+  const res = causesFor(site, { dominantSide: domView() });
   const groups = res.byCategory.map(g=>`<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>${g.causes.map(c=>`<div class="cause"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>`).join("")}</div>`).join("");
   document.getElementById("adetail").innerHTML = `<h3>${esc(siteName(site))}</h3>
     <div class="where-best" style="margin-bottom:10px"><div class="loc">${esc(siteSub(site) || siteRaw(site))}</div><div class="terr">${esc(siteRaw(site))}</div></div>

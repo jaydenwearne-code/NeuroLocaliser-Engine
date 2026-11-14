@@ -15,6 +15,7 @@
 //   Tranche 3 (round 13, 2026-08-21) — the lacunar-infarct and post-stroke-sequela
 //   families, microvascular cranial nerve palsy, 19 further territory members on the infarct spine, and
 //   the trigeminal neuralgia / cluster headache / cavernous sinus singletons. 48 names, none of them red.
+// Non-dominant content round 1 (owner-ruled 2026-11-12, "approve as proposed"): MCA inferior division infarct's temporoparietal entry reads per hemisphere (row T10).
 import { dz, family } from "./builders.js";
 
 // ---- the INFARCT family (tranche 2, round 1) ----
@@ -1221,7 +1222,7 @@ export default {
       slots: { level: "comprehension, neglect and the visual field",
                flavour: "an inferior division infarct SPARES POWER — the deficit is comprehension, neglect or a field cut, which is why it is repeatedly admitted as delirium or a psychiatric presentation" },
       bySite: {
-        cortex_temporoparietal: { level: "comprehension and repetition — fluent but empty speech" },
+        cortex_temporoparietal: { level: { dominant: "comprehension and repetition — fluent but empty speech", nondominant: "neglect and the visual field" } },
         cortex_temporal: { level: "comprehension, and memory once the patient can cooperate" },
         cortex_parietal: { level: "neglect, cortical sensation and the inferior field" },
         cortex_mca_inferior: { level: "comprehension, neglect and the superior quadrant" },

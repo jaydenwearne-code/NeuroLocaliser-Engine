@@ -89,11 +89,12 @@ export function whatLine({ causes = [], demotedCount = 0, selected = null, entit
 // the onset does (pressure follows the cause, rows 9 and 11); and where no cause at the place can raise the pressure, the plan
 // follows the pressure itself: the pressure-only card's Next line, badged at least urgent (row 10). A selection, the
 // all-sites view and a two-place card are left as they are.
-export function resolveNext({ site, r, pinned, scope, selectedPathology, selectedEntity, onset }) {
+export function resolveNext({ site, r, pinned, scope, selectedPathology, selectedEntity, onset, dominant }) {
   const { sites } = combinedSites(r, r.display, pinned);
   const combined = sites.length >= 2 && scope === "all";
   const pressure = !!(r.pressure && r.pressure.present);
-  const o = { onset: onset || undefined, pressure };
+  // The card's hemisphere reads its own workup lines (non-dominant content, K1): the dominance the card reads, assumed or set.
+  const o = { onset: onset || undefined, pressure, dominantSide: r.dominance ? r.dominance.assumed : (dominant || "left") };
   const nx = combined
     ? combinedNextSteps(sites, selectedEntity || null, o)
     : pathologyNextStepsFor(site, selectedPathology || null, o);
@@ -189,7 +190,7 @@ export function answerFor(st) {
   // Inside the stroke window the place's own causes stand, read without the papilloedema, and the pressure is the What line's
   // second sentence (owner, 2026-11-11) — on the same cards the pressure would otherwise lead.
   const held = pressed && !combined && !twoLesions && !st.selectedPathology && strokeWindowHolds(st.sel.site, st.onset);
-  const res = causesFor(st.sel.site, { onset: st.onset || undefined, pressure: pressed && !held });
+  const res = causesFor(st.sel.site, { onset: st.onset || undefined, pressure: pressed && !held, dominantSide: dom });
   const entityRed = st.selectedEntity ? ((MULTIFOCAL.find(e => e.name === st.selectedEntity) || {}).red || null) : null;
   const lines = {
     where: whereLine({

@@ -6,6 +6,7 @@
 // REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
 //   Tranche 2 — the hindbrain/craniocervical malformation family (round 2b) and seven singletons
 //   (round 9). The congenital red set is complete.
+// Non-dominant content round 1 (owner-ruled 2026-11-12, "approve as proposed"): Developmental dyslexia is added, the dominant fusiform's developmental mimic (row F2).
 //
 // NOTE ON SCOPE: tranche 2 targets the 337 RED must-not-miss causes, and only 2 of the 7 here are red.
 // The other 5 were added at the owner's request (2026-08-18) because the group is only coherent whole —
@@ -491,6 +492,21 @@ export default {
     ],
     urgency: "routine",
     referral: "Neuropsychology; neurology only if acquired.",
+  }),
+
+  // Non-dominant content round 1, row F2 (owner-ruled 2026-11-12): the DOMINANT fusiform's own developmental mimic.
+  "Developmental dyslexia": dz("Developmental dyslexia", {
+    confirmatory: [
+      "IT IS DEVELOPMENTAL: lifelong, with no injury and normal structural imaging; a NEW reading difficulty is an acquired lesion and needs imaging urgently",
+      "Ask the patient to write a sentence and read it back: in pure alexia they can write but not read it; in developmental dyslexia both are affected",
+      "Formal literacy assessment rather than self-report",
+    ],
+    monitoring: [
+      "Reassure that it does not progress",
+      "Reasonable adjustments in education and work; text-to-speech helps",
+    ],
+    urgency: "routine",
+    referral: "Educational psychology or neuropsychology; neurology only if acquired.",
   }),
 
   "Primary / genetic dystonia (e.g. DYT1)": dz("Primary / genetic dystonia (e.g. DYT1)", {

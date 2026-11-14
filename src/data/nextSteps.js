@@ -12,6 +12,7 @@
 import { expectedFindings } from "../engine/forward.js";
 import { CAUSES, causesFor, leadingCause } from "./causes.js";
 import { compartmentOf } from "../model/compartments.js";
+import { hemisphereOf, sideText, allText } from "../model/hemisphere.js";
 import { pathologyPlanFor } from "./pathologyNextSteps.js";
 import { multifocalPlanFor } from "./multifocalNextSteps.js";
 
@@ -64,7 +65,7 @@ function hasFieldDefect(site) {
 function raisesPapilloedema(site) {
   const key = CAUSES[site.id] ? site.id : `${site.level}_${site.part}`;
   return (CAUSES[key] || []).some(c =>
-    !NOT_RAISED.test(c.name) && RAISES_PRESSURE.test(`${c.name} ${c.feature || ""} ${c.pathognomonic || ""}`));
+    !NOT_RAISED.test(c.name) && RAISES_PRESSURE.test(`${c.name} ${allText(c.feature)} ${c.pathognomonic || ""}`));
 }
 
 export function ophthalmicImaging(site) {
@@ -240,16 +241,16 @@ export const NEXT = {
   // --- Legacy gap-closure: sites curated in causes.js before this project began, which had rich cause
   // lists sitting beside a GENERIC derived workup. Asserted by the global invariant in next-steps.test.js.
   cortex_operculum: ns(
-    ["Urgent CT head then MRI (DWI) — an acute non-fluent aphasia is a stroke until proven otherwise",
+    [{ dominant: "Urgent CT head then MRI (DWI) — an acute non-fluent aphasia is a stroke until proven otherwise", nondominant: "Urgent CT head then MRI (DWI) — acute flat speech with face/arm weakness is a stroke until proven otherwise" },
      "Bedside glucose first"],
     "emergency", "Acute stroke team — hyperacute pathway.",
     { immediate: ["Bedside glucose; establish time last known well",
-                  "Characterise the aphasia: effortful, non-fluent speech with relatively preserved comprehension, and the patient is usually FRUSTRATED AND AWARE — which is distressing and needs acknowledging",
+                  { dominant: "Characterise the aphasia: effortful, non-fluent speech with relatively preserved comprehension, and the patient is usually FRUSTRATED AND AWARE — which is distressing and needs acknowledging", nondominant: "Characterise the speech: words, grammar and comprehension are intact but the tone is flat and unmodulated (motor aprosodia) — easily mistaken for low mood, so ask how the patient feels rather than reading it from their voice" },
                   "Check face and arm power; the operculum sits beside the face-arm motor strip"],
       confirmatory: ["Vascular risk-factor work-up: ECG/telemetry, lipids, HbA1c", "Carotid imaging and echocardiography"],
-      monitoring: ["SPEECH AND LANGUAGE THERAPY early, for communication and swallow safety",
-                   "Give the patient TIME and use yes/no questions and writing — insight is preserved, so rushing them causes real distress",
-                   "Screen for post-stroke depression, which is especially common in Broca's aphasia"] }),
+      monitoring: [{ dominant: "SPEECH AND LANGUAGE THERAPY early, for communication and swallow safety", nondominant: "SPEECH AND LANGUAGE THERAPY early, for swallow safety and any dysarthria" },
+                   { dominant: "Give the patient TIME and use yes/no questions and writing — insight is preserved, so rushing them causes real distress", nondominant: "Tell staff and family that the flat tone is the deficit, not the patient's mood or attitude" },
+                   { dominant: "Screen for post-stroke depression, which is especially common in Broca's aphasia", nondominant: "Screen for post-stroke depression by asking directly — flat speech can both hide it and imitate it" }] }),
   cortex_hand_knob: ns(
     ["Urgent MRI brain (DWI) — a small hand-knob infarct is easily invisible on CT",
      "Treat a transient episode as a TIA: carotid imaging, ECG and vascular risk-factor work-up",
@@ -772,15 +773,15 @@ export const NEXT = {
                    "Carer support and behavioural management strategies; avoid antipsychotics as first line",
                    "Capacity and driving assessment"] }),
   cortex_temporoparietal: ns(
-    ["Urgent CT head then MRI (DWI) — fluent aphasia WITHOUT weakness is a stroke that is repeatedly missed as confusion",
+    [{ dominant: "Urgent CT head then MRI (DWI) — fluent aphasia WITHOUT weakness is a stroke that is repeatedly missed as confusion", nondominant: "Urgent CT head then MRI (DWI) — acute confusion with neglect and NO weakness is a stroke that is repeatedly missed as delirium" },
      "Bedside glucose first", "EEG if the deficit fluctuates or a seizure is suspected"],
     "emergency", "Acute stroke team — hyperacute pathway; do not dismiss as delirium.",
     { immediate: ["Bedside glucose; establish time last known well — the window is often lost because there is no weakness to prompt a stroke call",
-                  "Test comprehension, repetition and naming separately to characterise the aphasia",
+                  { dominant: "Test comprehension, repetition and naming separately to characterise the aphasia", nondominant: "Test for neglect and extinction, and whether the patient can tell the emotion in a spoken sentence — the words are understood but the tone is not (sensory aprosodia)" },
                   "Check the visual fields for a superior quadrantanopia"],
       confirmatory: ["Vascular risk-factor work-up: ECG/telemetry, lipids, HbA1c", "EEG if fluctuating; MRI if the CT is normal"],
-      monitoring: ["SPEECH AND LANGUAGE THERAPY assessment early, for both communication and swallow safety",
-                   "Communication strategies for staff and family — the patient may not understand explanations or consent discussions",
+      monitoring: [{ dominant: "SPEECH AND LANGUAGE THERAPY assessment early, for both communication and swallow safety", nondominant: "Swallow screen and SPEECH AND LANGUAGE THERAPY for swallow safety; occupational therapy for neglect before mobilising" },
+                   { dominant: "Communication strategies for staff and family — the patient may not understand explanations or consent discussions", nondominant: "The patient may deny the deficit (anosognosia) and miss the tone of what is said — check understanding and capacity directly" },
                    "Screen for post-stroke depression, which is common and treatable"] }),
   cortex_temporal: ns(
     ["START INTRAVENOUS ACICLOVIR IMMEDIATELY on suspicion of encephalitis — do NOT wait for the LP, the PCR or the MRI, because delay is what causes the poor outcomes",
@@ -2361,7 +2362,7 @@ function causeEntry(site, causeName) {
 export function resolveUrgency(site, causeName, opts = {}) {
   const siteUrgency = sitePlan(site, opts).urgency || "routine";
   if (!causeName) return siteUrgency;
-  const plan = pathologyPlanFor(causeName, site);
+  const plan = pathologyPlanFor(causeName, site, opts.dominantSide);
   const chosen = (plan && plan.urgency) || siteUrgency;
   const entry = causeEntry(site, causeName);
   // B16 (owner, 2026-09-25): a VASCULAR cause selected at hyperacute onset in a CNS compartment keeps the
@@ -2379,10 +2380,10 @@ export function resolveUrgency(site, causeName, opts = {}) {
 // hand-listed. Peripheral compartments are excluded on purpose: a peripheral HINTS pattern is the reassuring
 // one, and a microvascular cranial neuropathy is not a thrombolysis question.
 const STROKE_WINDOW_COMPARTMENTS = new Set(["brain", "brainstem", "cerebellum", "cord", "optic"]);
-export function hyperacuteVascular(site, onset) {
+export function hyperacuteVascular(site, onset, dominantSide) {
   if (onset !== "hyperacute" || !STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return false;
   let lead;
-  try { lead = causesFor(site, { onset }).all.find(c => c.cat !== "mimic"); } catch { return false; }
+  try { lead = causesFor(site, { onset, dominantSide }).all.find(c => c.cat !== "mimic"); } catch { return false; }
   return !!lead && lead.cat === "vascular";
 }
 
@@ -2393,15 +2394,17 @@ export function hyperacuteVascular(site, onset) {
 export function sitePlan(site, opts = {}) {
   const key = NEXT[site.id] ? site.id : `${site.level}_${site.part}`;
   const base = NEXT[key] ? { ...NEXT[key], curated: true } : { ...derive(site), curated: false };
+  // A line written `{ dominant, nondominant }` reads the card's hemisphere (non-dominant content round, K1, 2026-11-12).
+  const hemi = hemisphereOf(site, opts.dominantSide), side = lines => lines && lines.map(l => sideText(l, hemi));
   // The ophthalmic prompt is appended (never spliced into the curated array in place, which would mutate
   // the module-level data and leak across calls).
   return {
-    immediate: base.immediate || deriveImmediate(site, base.urgency),
-    investigations: [...(base.investigations || []), ...ophthalmicImaging(site)],
-    confirmatory: base.confirmatory || deriveConfirmatory(site),
-    monitoring: base.monitoring || deriveMonitoring(site, base.urgency),
-    urgency: hyperacuteVascular(site, opts.onset) ? "emergency" : base.urgency,
-    referral: base.referral,
+    immediate: side(base.immediate) || deriveImmediate(site, base.urgency),
+    investigations: [...(side(base.investigations) || []), ...ophthalmicImaging(site)],
+    confirmatory: side(base.confirmatory) || deriveConfirmatory(site),
+    monitoring: side(base.monitoring) || deriveMonitoring(site, base.urgency),
+    urgency: hyperacuteVascular(site, opts.onset, opts.dominantSide) ? "emergency" : base.urgency,
+    referral: sideText(base.referral, hemi),
     curated: base.curated,
   };
 }
@@ -2425,12 +2428,12 @@ export function sitePlan(site, opts = {}) {
 // potentially missed stroke ("do not dismiss as delirium"), not an acute-medicine referral. Once the clinician has
 // said the deficit is CHRONIC, the mimic may lead the plan. (leadingCause already skips a sequel such as central
 // post-stroke pain.)
-export function onsetFollows(site, onset) {
+export function onsetFollows(site, onset, dominantSide) {
   if (!onset || !STROKE_WINDOW_COMPARTMENTS.has(compartmentOf(site))) return null;
   try {
-    const lead = causesFor(site).all.find(c => c.cat !== "mimic");
+    const lead = causesFor(site, { dominantSide }).all.find(c => c.cat !== "mimic");
     if (!lead || lead.cat !== "vascular") return null;
-    const at = causesFor(site, { onset }).all;
+    const at = causesFor(site, { onset, dominantSide }).all;
     if (at.some(c => c.name === lead.name)) return null;
     const cause = leadingCause(at);
     if (!cause || (cause.cat === "mimic" && onset !== "chronic") || !pathologyPlanFor(cause.name, site)) return null;
@@ -2447,13 +2450,13 @@ export function onsetFollows(site, onset) {
 // Otherwise the site's own plan stands. Like onsetFollows it only chooses between signed-off plans, and it requires the
 // followed cause to have an authored plan. Where NO cause at the place can raise the pressure nothing is followed here: the
 // card follows the pressure itself (app/answer.js resolveNext, row 10).
-export function pressureFollows(site, { onset, pressure } = {}) {
+export function pressureFollows(site, { onset, pressure, dominantSide } = {}) {
   if (!pressure) return null;
   try {
-    const lead = causesFor(site).all.find(c => c.cat !== "mimic");
-    const kept = !!lead && causesFor(site, { pressure: true }).all.some(c => c.name === lead.name);
-    if (kept && !onsetFollows(site, onset)) return null;
-    const at = causesFor(site, { onset, pressure: true }).all;
+    const lead = causesFor(site, { dominantSide }).all.find(c => c.cat !== "mimic");
+    const kept = !!lead && causesFor(site, { pressure: true, dominantSide }).all.some(c => c.name === lead.name);
+    if (kept && !onsetFollows(site, onset, dominantSide)) return null;
+    const at = causesFor(site, { onset, pressure: true, dominantSide }).all;
     if (lead && at.some(c => c.name === lead.name)) return null;
     const cause = leadingCause(at);
     if (!cause || !pathologyPlanFor(cause.name, site)) return null;
@@ -2474,9 +2477,9 @@ const pressureFloor = (plan, opts = {}) => (opts.pressure && plan.urgency === "r
 // pressure rule decides instead (it contains the onset rule) and the floor applies.
 export function nextStepsFor(site, opts = {}) {
   const base = sitePlan(site, opts);
-  const followed = opts.pressure ? pressureFollows(site, opts) : onsetFollows(site, opts.onset);
+  const followed = opts.pressure ? pressureFollows(site, opts) : onsetFollows(site, opts.onset, opts.dominantSide);
   if (!followed) return pressureFloor(base, opts);
-  const plan = pathologyPlanFor(followed.cause, site);
+  const plan = pathologyPlanFor(followed.cause, site, opts.dominantSide);
   return pressureFloor({
     ...base,
     confirmatory: plan.confirmatory,
@@ -2501,7 +2504,7 @@ export function nextStepsFor(site, opts = {}) {
 export function pathologyNextStepsFor(site, causeName, opts = {}) {
   if (!causeName) return { ...nextStepsFor(site, opts), pathology: null, pathologyCurated: false };
   const base = sitePlan(site, opts);
-  const plan = pathologyPlanFor(causeName, site);
+  const plan = pathologyPlanFor(causeName, site, opts.dominantSide);
   return pressureFloor({
     ...base,
     confirmatory: plan ? plan.confirmatory : base.confirmatory,
