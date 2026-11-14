@@ -533,6 +533,7 @@ export default {
       bySite: {
         plexus_middle_trunk: { level: "elbow and wrist extension" },
         plexus_lateral_cord: { level: "elbow flexion and pronation, with lateral forearm sensation" },
+        plexus_lumbosacral_plexus: { level: "hip flexion, knee extension and the ankle, and the other leg" },
       },
     },
     "Giant cell arteritis": {

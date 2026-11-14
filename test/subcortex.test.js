@@ -27,16 +27,16 @@ const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 ok("internal_capsule -> face+arm+leg (dense hemiparesis) + Babinski + Hoffmann + brisk reflexes + spasticity",
    eq(subOf("internal_capsule"), ["babinski","facial_weakness","forehead_spared","hoffmann","hyperreflexia","spasticity","weak_arm","weak_leg"].sort()));
 // + VPM face since accuracy round 1 (B11, 2026-09-26): the pure-sensory lacune is face, arm and leg.
-ok("thalamus -> dorsal+spinothalamic+face",
-   eq(subOf("thalamus"), ["dorsal_sensory","face_sensory_loss","spinothalamic"].sort()));
+ok("thalamus -> dorsal+spinothalamic+face + hemiataxia (VL, content-gap fix row 12)",
+   eq(subOf("thalamus"), ["dorsal_sensory","face_sensory_loss","limb_ataxia","spinothalamic"].sort()));
 ok("optic_radiation -> homonymous_hemianopia", eq(subOf("optic_radiation"), ["homonymous_hemianopia"]));
 // Approach A invariant: no bespoke dense-hemiparesis token; reuse the somatotopic findings.
 ok("no dense_hemiparesis finding invented", !isFinding("dense_hemiparesis"));
 // subcortex structures carry NO crosses override and NO cortical gates
 {
   const subStructs = STRUCTURES.filter(s => s.level === "subcortex");
-  ok("no subcortex structure sets a crosses override",
-     subStructs.every(s => !Object.prototype.hasOwnProperty.call(s, "crosses")));
+  ok("no subcortex structure sets a crosses override, except thal_ataxia (the cerebellar relay, crossed in the midbrain)",
+     subStructs.every(s => !Object.prototype.hasOwnProperty.call(s, "crosses") || s.id === "thal_ataxia"));
   ok("no subcortex structure is hemisphere/bilateral gated",
      subStructs.every(s => !s.hemisphere && !s.bilateralOnly));
 }
@@ -128,7 +128,7 @@ import { solve } from "../src/engine/inverse.js";
   // 2026-09-26) — so it is the displayed answer that is asserted, as the accuracy round did for the same tie.
   const res = solve(new Set(["dorsal_sensory@right","spinothalamic@right","face_sensory_loss@right"]));
   ok("face + arm + leg sensory loss -> left_subcortex_thalamus first", res.display[0].site.id === "left_subcortex_thalamus", res.display[0].site.id);
-  ok("the pure sensory lacune over-predicts nothing", res.display[0].over === 0, String(res.display[0].over));
+  ok("the pure sensory lacune over-predicts only the hemiataxia (content-gap fix row 12)", res.display[0].over === 1, String(res.display[0].over));
 }
 // Sensorimotor lacune: weakness AND hemisensory loss, no cortical signs -> the composite,
 // outranking capsule-alone and thalamus-alone.

@@ -8,6 +8,7 @@
 //
 // REVIEW STATUS: ✅ ALL SIGNED OFF by the owner (a clinician), 2026-08-18.
 //   Tranche 1 — hypoglycaemia. Tranche 2 (round 9) — the not-a-lesion-here family.
+// Non-dominant content round 1 (owner-ruled 2026-11-12, "approve as proposed"): Delirium's temporoparietal entry reads per hemisphere (T11); Todd's paresis gains an operculum entry (O6); Focal seizure gains an MCA inferior division entry (M2).
 import { dz, family } from "./builders.js";
 
 
@@ -114,7 +115,7 @@ export default {
   "Delirium": dz("Delirium", {
     slots: { flavour: "the deficit is one of ATTENTION rather than of a domain" },
     bySite: {
-      cortex_temporoparietal: { flavour: "delirium imitates a fluent aphasia — but the language is INCOHERENT rather than paraphasic, and the giveaway is that ATTENTION fails first: test it before concluding aphasia" },
+      cortex_temporoparietal: { flavour: { dominant: "delirium imitates a fluent aphasia — but the language is INCOHERENT rather than paraphasic, and the giveaway is that ATTENTION fails first: test it before concluding aphasia", nondominant: "an acute confusional state imitates a non-dominant temporoparietal stroke, and both produce neglect-like inattention — the fluctuation over hours is what separates them" } },
       cortex_mca_inferior: { flavour: "an acute confusional state imitates a non-dominant inferior-division stroke, and both produce neglect-like inattention — the fluctuation over hours is what separates them" },
       cortex_parietal: { flavour: "inattention in delirium is GLOBAL, where parietal neglect is SPATIAL and lateralised: a patient who ignores one side consistently has neglect, one who ignores everything intermittently has delirium" },
     },
@@ -297,7 +298,11 @@ export default {
   // ---- FOCAL SEIZURE ----
   ...family("focal-seizure", FOCAL_SEIZURE, {
     "Focal seizure": {
-      slots: { flavour: "MRI with an epilepsy protocol — a standard sequence misses hippocampal sclerosis and focal cortical dysplasia, which are exactly what is being looked for", level: "document the semiology in the patient's own words; it localises better than any investigation" } },
+      slots: { flavour: "MRI with an epilepsy protocol — a standard sequence misses hippocampal sclerosis and focal cortical dysplasia, which are exactly what is being looked for", level: "document the semiology in the patient's own words; it localises better than any investigation" },
+      bySite: {
+        cortex_mca_inferior: { flavour: "confusion with neglect after a seizure imitates a non-dominant inferior-division stroke; the witnessed episode and the fade over hours are what separate them",
+          level: "document the semiology, and re-test neglect and the field as the patient recovers" },
+      } },
     "Focal seizure with Todd's paresis": {
       slots: { flavour: "the weakness FOLLOWS the seizure rather than causing it, and it can last hours — during which the patient looks exactly like a stroke", level: "re-examine at intervals: resolution confirms Todd's, and persistence refutes it" },
       bySite: {
@@ -311,6 +316,8 @@ export default {
     "Focal motor seizure with Todd's paresis": {
       slots: { flavour: "ask whether the movement STARTED somewhere and SPREAD — a Jacksonian march over seconds is close to diagnostic and no imaging shows it", level: "track the resolving weakness hourly rather than daily" },
       bySite: {
+        cortex_operculum: { flavour: "an opercular focus jerks the face and mouth, and the weakness after it imitates an opercular stroke; ask about the march, which no infarct produces",
+          level: "face and arm power, and speech, as they recover" },
         cortex_mca_superior: { flavour: "a superior-division picture — face and arm weak, leg spared — reproduced by a postictal deficit; ask about the march, which no infarct produces",
           level: "face and arm power hourly; a leg that becomes involved later argues against both explanations" },
         cortex_motor_facearm: { flavour: "the motor strip is where focal motor seizures begin, so a lesion FOUND here is as likely to be the seizure's cause as its mimic — image with an epilepsy protocol rather than a stroke protocol",

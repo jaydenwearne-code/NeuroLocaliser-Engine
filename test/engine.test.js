@@ -12,7 +12,7 @@ const results = [];
 
 function check(label, observed, expectSiteId, opts = {}) {
   const observedSet = new Set(observed);
-  const { best, single, multi, singleExplainsAll } = solve(observedSet);
+  const { best, single, multi, singleExplainsAll, explainAll } = solve(observedSet);
   const gotId = best ? best.site.id : "(none)";
   const name = best ? nameForSite(best.site).name : "(none)";
   let ok = opts.anySite ? true : (gotId === expectSiteId);
@@ -28,6 +28,8 @@ function check(label, observed, expectSiteId, opts = {}) {
   if (opts.singleShouldExplainAll !== undefined) {
     ok = ok && singleExplainsAll === opts.singleShouldExplainAll;
   }
+  // The emergence claim, where two places explain the picture and the prior picks between them.
+  if (opts.explainedBy) ok = ok && explainAll.some(c => c.site.id === opts.explainedBy);
 
   results.push({ label, gotId, expectSiteId, name, ok,
     multi: multi ? multi.sites.map(s => s.id) : null,
@@ -83,9 +85,12 @@ check("Two lesions: L midbrain + R lateral medulla",
 
 // ============ EMERGENCE OF AN UNNAMED COMBINATION ============
 // A lesion the eponyms don't cleanly name should still localise anatomically.
+// The lateral pons explains all four (the emergence claim). Which of the two places explaining them leads is the prior's
+// job: the lateral medulla is COMMON (owner ruling 2026-09-26) and was already the displayed answer; since AICA's
+// inner-ear rows (content-gap fix, row 8) it is the scored best too.
 check("Lateral pons (Marie-Foix: L ataxia + R body STT + L vertigo)",
   ["limb_ataxia@left", "spinothalamic@right", "cn8_vertigo@left", "nystagmus_gaze_evoked@none"],
-  "left_pons_lateral");
+  "left_pons_lateral", { anySite: true, explainedBy: "left_pons_lateral" });
 
 // ---- report ----
 console.log("\nNeuroLocaliser anatomical engine — emergence tests\n" + "=".repeat(52));

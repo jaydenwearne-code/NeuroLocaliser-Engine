@@ -223,7 +223,7 @@ export const FINDINGS = {
   cortical_sensory_hand: { desc: "Loss of discriminative sense — hand (± perioral: cheiro-oral)", group: "Cortical" },
   cortical_sensory_arm: { desc: "Loss of discriminative sense (stereognosis / 2-point) — arm", group: "Cortical" },
   cortical_sensory_leg: { desc: "Loss of discriminative sense (stereognosis / 2-point) — leg", group: "Cortical" },
-  gaze_deviation: { desc: "Conjugate gaze deviation toward the lesion (away from the weak side)", group: "Cortical" },
+  gaze_deviation: { desc: "Conjugate gaze deviation — record the side the eyes look toward (toward a frontal lesion, away from a pontine one)", group: "Cortical" },
   neglect:        { desc: "Hemispatial neglect / inattention to the contralesional side", group: "Cortical" },
   homonymous_hemianopia:   { desc: "Homonymous hemianopia (± macular sparing)", group: "Cortical" },
   bitemporal_hemianopia:   { desc: "Bitemporal hemianopia (optic chiasm — decussating nasal fibres)", group: "Visual pathway" },

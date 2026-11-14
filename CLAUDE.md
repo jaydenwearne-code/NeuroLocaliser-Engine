@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**82 test suites / 7134 assertions green** — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**94 test suites / 7814 assertions green** (v0.11.0, released 2026-11-14 by merging PR #26 into `main`: the integration of the open fixes with the owner's two rulings of 2026-11-11, plus the duplicate-keys round, the card follows its cause and the non-dominant hemisphere content, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names", "The card follows its cause" and "Non-dominant hemisphere content") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -485,10 +485,11 @@ copy** that had promised examples ever since presets were removed in the 2026-07
 Chosen so **each demonstrates a different output card**, not to be the four commonest presentations:
 Wallenberg → *Where*; **Foot drop → the narrowing**; Cauda equina → *Next steps*; Two lesions → *Together*.
 
-**Foot drop is the important one:** it loads ONLY the findings L5 and peroneal share, so three candidates
-appear and none wins — adding weak hip abduction pins the root, adding deep peroneal sensory pins the
+**Foot drop is the important one:** it loads ONLY the findings L5 and peroneal share, so several candidates
+appear and none wins — adding weak hip abduction puts the root first, adding deep peroneal sensory pins the
 nerve. Verified in the browser: **3 candidates → 1 on one click.** The interaction model shown rather than
-described.
+described. (Since the plexus round, 2026-11-06, there are FOUR candidates: the whole lumbosacral plexus joined; first
+web-space numbness still narrows to the nerve alone.)
 
 **`test/examples.test.js` asserts BEHAVIOUR, not just that tokens parse** — candidate counts, urgency,
 cover size, and that adding a discriminator actually narrows. Hand-typed tokens were wrong first time
@@ -919,6 +920,14 @@ on the *property access* when cookies are blocked, which is the exact case the m
 Caught in review, before it shipped; node would never have caught it, because `globalThis.localStorage` is
 simply `undefined` there.
 
+**THE SAME BUG HAD SHIPPED TWICE ELSEWHERE (fixed 2026-10-18).** `startGate()` read the unlock flag with a
+bare `localStorage.getItem` before the gate was shown — `#gate` and `#app-shell` are both `display:none`
+until a class is added, so with cookies blocked the page stayed BLANK. And `recordOpen()` took both stores
+as default parameters, so it threw from `reveal()` even after a correct passphrase. Now `isUnlocked()` /
+`rememberUnlock()` in `gate.js` and `recordOpen()` resolve the store inside the try. **Node CAN test it**:
+define `globalThis.localStorage` with a getter that throws (`test/usage.test.js` §5, `test/gate.test.js`),
+and `gate.test.js` asserts `app.js` never names `localStorage.`/`sessionStorage.` directly.
+
 **`paintFavicon()` split out of `paintBrand()`** — the favicon is the only brand surface that must be
 repainted on toggle, because a data URI cannot inherit `currentColor` so the accent is baked in. A
 `matchMedia` listener does the same while following the OS. Known and accepted: the tab strip is browser
@@ -1216,6 +1225,624 @@ root pain → only the cauda equina".
 
 Spec/plan: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md`, `docs/superpowers/plans/2026-09-29-conus-cauda-bilateral.md`.
 
+## Spinal cord fix (DONE 2026-10-22, round 1) — ✅ owner-approved rulings (all 13 rows)
+
+The first fix from the 2026-10-18 clinical audit. **The defect:** one generic cord predicted arm signs for every cord
+lesion and had no segment, the conus outranked it, and spinal shock did not exist. So a thoracic paraparesis read as
+"conus", whose plan images T12–L1, while the cord plans image the whole spine.
+
+**Mechanics:**
+- `cordVariants` derives the readings of the bilateral anterior, the transverse and the hemicords:
+  - arms-spared;
+  - at-level spans from the root rows, per side;
+  - spinal shock, with six `cord|shock` rows, Babinski kept, and only with a stated level.
+- `solverSites(opts)` scores them and `firstPerId` keeps each id once.
+- `candidateSites()` is unchanged.
+- The bilateral cord takes the cord's own tier; the conus is RARE.
+- An UMN release sign on a side excuses that side's missing corticospinal signs. Weakness never excuses.
+- The transverse cord takes the saddle (`cord_saddle`).
+- The central cord adds `cst_cord_arm` + `ah_wasting`.
+- A stated level:
+  - demotes non-cord sites (`levelAgainst`);
+  - restricts variants (`top`);
+  - is described from the DISPLAYED answer.
+- `app/level-axis.js` holds when the field shows and what the level line says. The field shows for a cord FIRST
+  answer, not anywhere in the list (owner refinement of row 10, so a single weak limb keeps the field hidden).
+
+**Rulings that are traps:**
+- New site ids FAIL the audit's exact-id regexes (measured: cord 4/16), so variants keep the id.
+- Spinal shock without the level gate steals GBS's picture.
+- Saddle loss on the anterior cord beats the conus for the classic conus picture.
+- The segment constraint without the demotion puts the conus first for spastic legs + C4.
+
+**Content round 1 (RULED 2026-10-22, all 22 rows, spec §10).** Capturing the real card showed every anterior-cord
+reading leading its What line with "Anterior spinal artery infarct", even a spastic paraparesis. Now:
+- **Compression first.** `cord_anterior` lists "Compressive myelopathy (disc / mass / abscess)" first, with an acute
+  tempo too. The ASA infarct still leads at a hyperacute onset. So the anterior cord leaves the onset-follows rule:
+  re-pinned 36/41, and no more "Could represent an old stroke" for a cord.
+- **New causes.** Cervical spondylotic myelopathy joins the anterior and transverse lists; it reuses its workup and
+  does not lead. The transverse compressive cause is chronic too.
+- **A4.** The anterior cord's red flag reads "compression until whole-spine MRI says otherwise" first.
+- **A1–A2.** The answer's Where line names the reading in brackets (`readingLabel`, app/labels.js); the "also fit"
+  places stay plain.
+- **B3.** The typed-level note no longer says "at or just above": a compression can sit several segments higher, so the
+  level does not replace whole-spine imaging.
+- **C1.** The contradiction sentence leads with the place.
+
+The seven new structure notes and anatomy rows were approved as written. The central cord's "generalised" wasting
+wording is fixed with the syrinx.
+
+**Deferred:** the syrinx's leg signs and the basilar coma picture go to the composite-sites round. The syrinx's leg
+signs conflict with R1 #12 until a bilateral parasagittal site exists.
+
+Spec/plan: `docs/superpowers/specs/2026-10-22-spinal-cord-fix-design.md`, `docs/superpowers/plans/2026-10-22-spinal-cord-fix.md`.
+
+## False-multifocal fix (DONE 2026-10-22, round 1) — ✅ owner-approved rulings (all 20 rows)
+
+The second fix from the 2026-10-18 clinical audit. **The defect:** the engine claimed two lesions, and named a disease
+to join them, when one place explained the picture. It held 269 of the 302 failing audit checks. A Wallenberg entered
+with past-pointing read "lateral medulla + cerebellar hemisphere — Together: Multiple sclerosis", and the app's own
+follow-ups list offers past-pointing as the refinement of limb ataxia.
+
+**Mechanics:**
+- **Word families** (`src/model/families.js` content, `src/engine/families.js` matching). The solver matches every
+  entered word through its family and NEVER rewrites it:
+  - the cerebellar limb signs are one finding;
+  - hand weakness is arm weakness only with leg or facial weakness on that side;
+  - a place giving scanning speech explains "slurred speech".
+- **The same-family near-fit** (in `solveOne`) is the one exception to "a LOCALISING sign is never relaxed away"
+  (owner-approved overturn, row 5). A word entered INSTEAD of a family word that a place predicts on that side, and that
+  was not entered, makes that place a near-fit: it leads, `r.nearFit.instead` names the word, and `multi` is null.
+  - Only the facial sensory words and plain → scanning speech qualify, not hand weakness outside a hemiparesis.
+  - "As well as" is not "instead of": with both words entered, the claim stands.
+- **Background (Hickam).** `backgroundAside` wraps `solve`. Absent ankle jerks, or glove-and-stocking numbness, on BOTH
+  sides are set aside when they are what stops one place explaining the rest.
+  - They are kept when a place in the answer predicts both sides, so GBS keeps its absent ankle jerks.
+  - They go as a pair, never one side.
+  - They never join a multifocal cover.
+  - `r.background.tokens` carries them, and the card names them.
+- **The cover counts a family once**, or one cerebellar sign on each side wins the greedy first pick.
+- **The card** (`app/answer.js`) names both words for a near-fit and adds the set-aside sentence, plus a B12 line for a
+  cord answer. The Why line leaves out what was set aside, and `app.js` counts the rows without it.
+- **The roster is unchanged.**
+
+**Traps worth knowing:**
+- Equivalence must be MATCHING-level. Teaching every limb-ataxia structure to also produce the other three words would
+  make the audit's swap loop skip them, silently removing 54 counted checks.
+- Relaxing ANY one localising sign was measured and rejected. It hides 3,934 of 9,226 sampled genuine two-lesion claims,
+  including x-mets/x-embolic, x-paraneo and x-syphilis. The archetype suite pins both places, so it cannot see this.
+- The first background prototype set aside GBS's OWN absent ankle jerks, because it checked what was entered rather than
+  what the place predicts. Only reading the real card showed it.
+
+**Measured:**
+- Audit 79 → 86/108 probes, with 3 probes added by row 19. Counted checks 679/302 → 960/30. Swaps 223/224, background
+  292/292, mirror 270/270.
+- `npm test`: 85 suites, 7289 assertions, no re-pins.
+- Of 9,226 sampled genuine two-lesion claims, 15 become one lesion, all read clinically as one lesion: crossed brainstem
+  syndromes, a hemiparesis with the hand in it, and a cord lesion with background ankle jerks. None are added.
+- Past-pointing alone now fits 10 places along the cerebellar limb pathway (it was 2).
+
+Spec/plan: `docs/superpowers/specs/2026-10-22-false-multifocal-design.md`, `docs/superpowers/plans/2026-10-22-false-multifocal.md`.
+
+## Content-gap fix (DONE 2026-11-01, round 1) — ✅ owner-approved rulings (every row)
+
+The third fix from the 2026-10-18 clinical audit. **The defect:** 16 counted checks failed because a place was missing
+one of its own signs, a word had no pyramidal reading, or a setting acted as a hard gate. Two of them sent the reader the
+wrong way: a C6 radiculopathy read as an obstetric upper-trunk injury (urgent nerve-transfer surgery), and a thalamic
+lacune with hemiataxia read as a top-of-the-basilar occlusion.
+
+**Mechanics:**
+- **Nine one-finding rows:** the claw at the ulnar elbow (the paradox is about degree), the C6 biceps jerk, the L4
+  adductors, the tongue in the anterior horn's bulbar neurones, XII in the carotid space, AICA's inner ear (abnormal head
+  impulse + peripheral nystagmus on the lateral pons), the PPRF's resting deviation away from the lesion (wrong-way eyes,
+  `crosses: true`), and the thalamogeniculate hemiataxia (`thal_ataxia`, `crosses: true`).
+- **Composites:** the upper trunk reuses `axil_sens` (`composePlexusSites` `nerves`); the fusiform is PCA territory
+  (`DIVISION`), so the dominant PCA gives alexia without agraphia and the non-dominant prosopagnosia; the hand-listed
+  thalamic-aphasia composite carries `thal_ataxia`.
+- **The `pyramidal` family relation** (`leg_foot`): a place that gives pyramidal leg weakness explains a foot drop entered
+  with an UMN sign or other pyramidal weakness on that side. It reads the PLACE's word (`predictedToken`), never the
+  entered one, so a root or nerve keeps the foot drop (option A2).
+- **Dominance is a prior** (`solveOne`): only when NO place explains the picture with the dominance set, the places that
+  do with the other dominance lead, no second lesion is claimed, and `r.dominance = { assumed, set }`. The card reads the
+  place, Why line and red flag with the assumed dominance and adds the row-14 sentence; `app.js` reads it through
+  `domView()` (reset on every render). The red flag now follows the dominance setting at all — it ignored it before.
+
+**Rulings that are traps:**
+- The thalamic-aphasia composite is hand-listed: without `thal_ataxia` the stale copy out-ranks the thalamus (the B11
+  trap, a third time).
+- `subcortex.test` allows exactly one crossing override, `thal_ataxia`.
+- Option A (re-reading the entered foot drop, row-20 style) takes it away from the L5 root whenever a Babinski is on that
+  side; A2 does not.
+- Accepted cost: AICA is an "also fits" for every peripheral-HINTS picture, with or without hearing loss (the model
+  cannot condition on it). A recorded normal hearing would remove it — not built.
+- The dominance fallback turns crossed pictures (one hemisphere's signs with the other's language or neglect signs) into
+  one lesion; the card names the assumption.
+- Isolated ptosis now leads with the orbital III superior division; it used to tie with the carotid space and win on
+  alphabetical order.
+
+**Deferred:** the upper trunk's musculocutaneous row (row 5) goes to the plexus round, with "a trunk takes every row of
+its roots" (spec O1). The cover's larger-place tie-break (O3) is its own design (`fix/cover-tiebreak`).
+
+**Measured:** audit 86/108 → 101/111 probes (3 probes added by row 19); counted checks 960/30 → 1034/13, the 13 being
+exactly the composite-sites and raised-pressure rounds; swaps 272/272 (48 new cerebellar swaps), background 292/292,
+mirror 273/273. The 1,037 checks shared with the prototype are identical. `npm test`: 86 suites, 7355 assertions; new
+suite `test/content-gaps.test.js`; the re-pins are exactly spec row 18. Browser-checked on port 8140.
+
+Spec/plan: `docs/superpowers/specs/2026-11-01-content-gaps-design.md`, `docs/superpowers/plans/2026-11-01-content-gaps.md`.
+
+## Composite sites (DONE 2026-11-05, round 1) — ✅ owner-approved rulings (all 16 rows)
+
+The fourth fix from the 2026-10-18 clinical audit. **The defect:** one lesion spanned places the model held only
+separately, so it claimed two lesions and named a disease to join them. Three cards sent the reader the wrong way:
+- a basilar coma got the cord's plan (*"Spinal surgery — cord compression is time-critical"*);
+- so did a parasagittal meningioma, the very mimic its own cause list warns about;
+- a comatose pontine haemorrhage showed the locked-in red flag, *"the patient is fully aware"*.
+
+**The principle (spec §3.1):** the same lesion grown larger is a READING of its site (same id, content and links, the
+cord fix's idiom); a different place is a NEW SITE. Either way it is DERIVED from its source rows, never hand-listed.
+
+**Mechanics:**
+- **Locked-in re-derived** (`composeConsciousnessSites`): both sides of the basis pontis + the paramedian pons's
+  horizontal-gaze rows (`PONS_GAZE`) + preserved vertical gaze.
+- **Two readings:**
+  - the ARAS's `basis` reading: bilateral, `station: "pons"`; coma with quadriparesis, both Babinski signs and gaze palsies;
+  - the central cord's `syrinx` reading: the leg corticospinal rows, `needs: ["suspended_sensory"]`.
+  `variantOf` carries a reading's `side` and `station`. `solverSites(opts, entered)` offers a `needs` reading only when its
+  finding is entered.
+- **Three new sites:** `bilateral_pons_mlf` (content from the medial pons); `bilateral_paracentral` (content from
+  `cortex_paracentral`); `top_of_basilar` (Percheron's rows + both PCA cortical territories, its own content key
+  `thalamus_arousal|basilar_apex`).
+- **The Why line:** a place spanning two stations (`carrierStations`, the top of the basilar) sits where the rows carrying
+  the entered findings are (`stationsAt` in why.js). So Anton's alone still reads "only the cerebral cortex".
+
+**Rulings that are traps:**
+- **The locked-in hand list went stale** — the B11 trap a fourth time. It had no Babinski, face, speech or gaze.
+- **The pontine haemorrhage probe passed by accident.** Its cover needed four places, one over the limit. Re-deriving
+  locked-in alone makes it a two-place claim; the basilar reading makes it one place. Ship them together.
+- **R1 #12's top 3 passed only because exactly two cord sites outranked the one-sided ACA.** Any new place explaining
+  "both legs + Babinski" pushes it out. The audit's PARASAG regex now admits `bilateral_paracentral` (owner's ruling on
+  the yardstick, row 7).
+- **The syrinx reading ungated** takes "spastic legs + a cervical level" from the anterior cord. Its gate is the cape.
+- **A new id for the basilar reading** fails the audit's PONS regex (measured −2), so it stays a reading of
+  `brainstem_aras`.
+- **The raised-pressure round** (`fix/raised-pressure`) gates its uncal reading the same way. Whichever lands second
+  reuses the first's gate.
+
+**Measured:**
+- Audit 101 → 112/115 probes (4 added by row 15). Counted checks 1034/13 → 1055/4; the 4 are the raised-pressure round.
+- Swaps 272/272, background 292/292, mirror 277/277.
+- `npm test`: 87 suites, 7420 assertions, no re-pins. The new suite is `test/composite-sites.test.js`.
+- Frozen-input safety sample: 2 two-lesion claims become one place (both basis pontis → locked-in; both fusiform gyri +
+  coma → the top of the basilar), 0 new, 21 covers move (the cover's larger-place tie-break), and no site picture
+  changes its first answer.
+
+Spec/plan: `docs/superpowers/specs/2026-11-05-composite-sites-design.md`, `docs/superpowers/plans/2026-11-05-composite-sites.md`.
+
+## Plexus round (DONE 2026-11-06: round 1 + content round 2) — ✅ owner-approved rulings (every row)
+
+Content-gap observation O1 found that `composePlexusSites` built every trunk and plexus as a plain union of its root rows.
+**The defect this round fixes:** a plexopathy entered in the nerve-territory words a clinician tests read as two lesions:
+- Erb + lateral-forearm numbness read "upper trunk + musculocutaneous — Vasculitis";
+- a lumbar plexopathy with front- and inner-thigh numbness read "femoral + obturator — Mononeuritis multiplex", EMERGENCY;
+- sciatic numbness + a weak gluteus medius read "sciatic + sacral plexus";
+- little-finger + T1 numbness read "T1 root + medial cord".
+
+**Mechanics (one composer change).** Each element carries the cutaneous row of every MIXED nerve that arises wholly from
+it. The rows are reused through the `nerves` lists, the content-gap row-4 idiom:
+- upper trunk: `axil_sens`, `mcut_sens` (`mcut_sens` is content-gap row 5);
+- lower trunk: `uln_el_sens`;
+- lumbar plexus: `fem_sens`, `obt_sens`;
+- sacral plexus: `sci_sens`.
+
+No new structure, finding, site id or solver step.
+
+**Rulings that are traps:**
+- **Branch and pure-sensory rows stay out** (deep and superficial peroneal, tibial, sural, saphenous, LFCN, dorsal ulnar).
+  The broad version breaks the foot-drop worked example: first web-space numbness stops pinning the peroneal nerve
+  (3 checks). Meralgia, sural and saphenous numbness would each list a plexus.
+- **Radicular pain stays shared with the plexus (row 2: NOT root-only).** Measured, root-only adds 9 sampled two-lesion
+  claims and grows 381 covers to three places. A painful plexopathy entered with root pain reads "root + plexus —
+  Vasculitis". It needs 4 re-pins, and it makes the middle trunk a strict subset of the C7 root.
+- **L4 divides, and a whole lumbosacral plexus place exists (rows 1, 8–9; built 2026-11-06 with content round 2).**
+  The eight L4 rows name the plexus they travel in (`plexus` on the structure): quadriceps, knee jerk, adductors and
+  medial shin → lumbar; tibialis anterior and posterior → sacral; wasting and root pain → both. `composePlexusSites`
+  reads the tag, and a `whole` group (`lumbosacral_plexus`, L2–S1 + femoral, obturator, sciatic) takes every row.
+  - Never build the split alone. It adds 9 sampled two-lesion claims, and knee + ankle jerk lost on one side reads
+    "femoral + tibial — Mononeuritis multiplex", EMERGENCY.
+  - **Accepted cost (C12):** any two lumbosacral roots read as one lumbosacral plexopathy. "L2 numbness + S1 numbness →
+    only the left plexus". The cause list's mimic, "Several lumbosacral roots (multilevel spondylosis or canal
+    stenosis)", names the alternative. A whole place WITHOUT dermatome rows was measured and rejected: 100 pictures
+    lose their claim and 9 new claims appear.
+  - The whole place is an "also fits" for every lumbar root and plexus picture. The foot-drop worked example now shows
+    four places (two re-pins, C13).
+  - **No whole brachial plexus place (row 10 / C14).** It made 14 sampled two-lesion claims one place, including a C8
+    root with a posterior interosseous palsy, and broke the pinned "C5 + C7 numbness = two roots". The flail arm
+    stays three places, an open observation.
+- **Read sample growth with care when a row takes a sign away from a place.** Frozen pictures still carry the old sign,
+  so the growth is definitional. The spec explains it.
+
+**Measured:**
+- Audit 101/111 → 105/115 probes (4 probes added by row 15, each failing on `4d781bd`); counted checks 1034/13 → 1047/13
+  (the new place's own mirror check passes).
+- Swaps 272/272, background 292/292, mirror 278/278.
+- `npm test`: 87 suites, 7440 assertions. New suite `test/plexus-round.test.js` (74).
+- Re-pins: the content-gap suite's "row 5 deferred", and C13's foot-drop pins (`discriminators` four candidates;
+  `answer` Where line; the example's comment).
+- Safety sample:
+  - rows 3–7: 11 claims become one plexus, none added; 41 covers swap a nerve for its plexus element (the tie-break,
+    O3); no first answer changes;
+  - rows 8–9: 7 more become the lumbosacral plexus, none added; 291 covers move to it (O3).
+- The real cards equal the prototype's on every captured picture (119 for rows 3–7; 132 for rows 8–9). The 9,490-pair
+  sample is identical to the prototype's.
+- Browser-checked on port 8141 (launch entry "NeuroLocaliser plexus worktree"). Six left-sided row taps (front- and
+  inner-thigh numbness, weak hip flexion, knee extension and hip adduction, absent knee jerk) read "Left lumbar plexus."
+  with no Together line, and the console has no errors. Rows 8–9: knee + ankle jerk lost on the left by two row taps reads
+  "Left lumbosacral plexus." with the approved What, Next and red-flag lines.
+
+Spec/plans: `docs/superpowers/specs/2026-11-04-plexus-round-design.md`, `docs/superpowers/plans/2026-11-05-plexus-round.md`,
+`docs/superpowers/plans/2026-11-06-plexus-round-rows-8-9.md`.
+
+## Raised-pressure round (DONE 2026-11-09, round 1) — ✅ owner-approved rulings (every row)
+
+The fourth fix from the 2026-10-18 clinical audit. **The defect:** a false-localising or herniation sign read as two
+lesions (R1 #7, #8, #13), and three cards were unsafe beyond those checks: coma + a blown pupil read as Adie's pupil
+("outpatient reassurance, routine"), papilloedema alone as a large MCA infarct (stroke pathway), and a VI palsy with
+papilloedema as a pontine infarct.
+
+**Mechanics:**
+- **Both VI nerves** are one bilateral site, `bilateral_skull_base_vi_cisternal` (`composeBilateralAbducensSites`), from the
+  existing `vi_cisternal` row, so it keeps every table keyed by the place.
+- **`PRESSURE_REACHES`** (`compartments.js`): under papilloedema the compartment filter also keeps the VI's cisternal course and
+  the VI at the petrous apex, the nerve courses the pressure itself injures. The IV's cisternal course was deferred (its card
+  would badge routine) and joined in the pressure-follows round (2026-11-10), once its card followed the pressure.
+  `test/raised-pressure.test.js` checks the set against the causes.
+- **The false-localising set-aside** (`falseLocalisingAside`, run before the background step) is the second narrow overturn of
+  "a LOCALISING sign is never relaxed away". With papilloedema, a VI palsy (`FALSE_LOCALISING_SIGNS`) is set aside when:
+  (a) papilloedema is entered; (b) no place explains every finding; (c) one place explains the rest, or nothing is left;
+  (d) that place is the rest's own answer without the papilloedema. It never joins a cover; `r.pressure.falseLocalising.tokens`
+  carries it and the card names it.
+- **The pressure-only card** (`PRESSURE_ONLY`, `app/answer.js`): papilloedema with nothing else localised names no place, and
+  `app.js` draws only the answer card, the banner and the Where list.
+- **READINGS of a primitive site** (`sites.js`): the uncal reading of the compressive III, a variant with the same id, adds the
+  ARAS, extensor posturing and the midbrain peduncle (contralateral arm, leg, Babinski). `solverSites(opts, observed)` gates
+  it: reduced consciousness entered AND one of the III's own signs. It leads with uncal herniation (`leads` → `lead: true`,
+  read as common within the reading) and carries its own red flag.
+
+**Traps worth knowing:**
+- An ungated reading takes the awake Weber picture (7 assertions). The consciousness gate alone lets coma + a weak arm read a
+  compressed III, and lets the reading take the coma in 23 covers of the safety sample.
+- A herniation site with its own id fails the approved top-3 check: a place that explains every finding is shown alone.
+- The What card's "Most likely:" line lists only common causes. A lead flag alone left it naming the aneurysm under an answer
+  card naming herniation (found in the plan's dry run).
+- `minimalSet` is solved without the papilloedema, so the cover can use places the list excludes (spec O2). That is how R1
+  #7's card mixed two places.
+- `why.js`'s station index calls `solverSites(opts)` without findings, so it never sees a gated reading.
+
+**Measured:** audit 101/111 → 108/115 probes (4 probes added by row 13); counted checks 1034/13 → 1050/9, the 9 being the
+composite-sites round; swaps 272/272, background 292/292, mirror 277/277. `npm test`: 87 suites, 7413 assertions; new suite
+`test/raised-pressure.test.js`; the one re-pin is `fundus.test` (row 12). Safety sample: 3 claims fewer, 0 new. Pressure
+sample (papilloedema added): 84 claims fewer, 0 new. Browser-checked on port 8143.
+
+Spec/plan: `docs/superpowers/specs/2026-11-05-raised-pressure-design.md`, `docs/superpowers/plans/2026-11-05-raised-pressure.md`.
+
+## Pressure follows the cause (DONE 2026-11-10, round 1) — ✅ owner-approved rulings (every row)
+
+Observation O1 of the raised-pressure round. **The defect:** papilloedema narrowed the PLACES but not their CAUSES. The What
+line, the Next plan and the badge still followed each place's usual cause, most often an infarct that cannot raise the
+pressure. With papilloedema and no onset, 316 of 434 cards led with such a cause; 202 of them badged emergency, mostly on a
+hyperacute stroke pathway, and 11 routine. Papilloedema + a right hemiparesis read *"Lacunar infarct"* with the hyperacute
+stroke pathway; coma + papilloedema read *"Metabolic or toxic encephalopathy"*.
+
+**Mechanics:**
+- **A second demotion axis** in `causesFor(site, { onset, pressure })`, beside the tempo: with papilloedema a cause that cannot
+  raise the intracranial pressure is DEMOTED, never dropped (`demotion: { axis: "pressure", entered: "papilloedema" }`). A
+  cause both axes demote keeps the tempo axis and adds `pressure: true`. `combinedCauses` passes it. The result gains
+  `pressure: true` only when the pressure acted, so every output without papilloedema is byte-identical (asserted).
+- **`CAN_RAISE_PRESSURE`** (`causes.js`) is ONE table: category defaults (neoplastic, infective and traumatic can; the rest
+  cannot) plus named `can` / `cannot` patterns, `cannot` read first. An infarct can only when it is named space-occupying
+  (malignant MCA) or sits in the posterior fossa and takes the cerebellum (PICA, SCA, cerebellar) — not a large MCA or
+  carotid-T, not AICA. Hypoxic-ischaemic injury cannot. Appendix A of the spec is the clinical content;
+  `test/pressure-follows.test.js` snapshots it.
+- **`pressureDemotesAt(site)`**: only where the compartment filter keeps the place (intracranial, or `PRESSURE_REACHES`). The
+  retina is exempt, so giant cell arteritis keeps its lead (row 7).
+- **`pressureFollows`** (`nextSteps.js`, the mirror of `onsetFollows`): the plan follows the cause the What line names when the
+  pressure sets the site's usual cause aside, or when the approved onset rule fires — never elsewhere. `followed.by` records
+  which axis did it, and the Next card's note says so (rows 17–18).
+- **`pressureFloor`**: nothing is routine with papilloedema — in `nextStepsFor`, `pathologyNextStepsFor` and the entity path of
+  `combinedNextSteps`. **The hyperacute escalation is untouched**: it still reads only the onset.
+- **The pressure leads** (`resolveNext`, `pressureLeads` in `app/answer.js`): where no cause at the place can raise it, the
+  What and Next lines are `PRESSURE_ONLY`'s, the badge is at least urgent, and the banner is the red line. Never on a
+  two-place card, a selection or the all-sites view.
+- With papilloedema the What line drops *"Could represent an old stroke."* (row 14).
+- **The IV's cisternal course joins `PRESSURE_REACHES`**: its card now leads *"Tumour or raised intracranial pressure"*
+  [emergency], not the trochlear nucleus's demyelination (row 15; three re-pins in `raised-pressure.test.js`).
+- **The cards:** the What card's *"Set aside — less likely with papilloedema"* band is selectable, because the papilloedema may
+  be unrelated: the lacune can still be chosen, and its plan is floored at urgent. The all-sites view splits demoted shared
+  causes the same way. The tempo band is unchanged.
+
+**Traps worth knowing:**
+- Letting the hyperacute escalation read the pressure drops 19 hyperacute cards from emergency. Keep it on the onset.
+- Following whenever EITHER axis sets the usual cause aside silently extends the onset rule to non-stroke places (the pretectum
+  at acute onset followed hydrocephalus). The approved onset rule is the GATE; the plan always follows the What line's cause.
+- A What-line probe must read the "Most likely" clause only: on the base, the IV probe passed by matching the must-not-miss.
+- The retina never follows the pressure, even when an onset alone empties its list (plan decision 1), so at chronic onset the
+  pressure leads on 71 cards, not the spec's 83.
+- The `RAISES_PRESSURE` regex (the ophthalmic prompt) is not the attribute: it names 24 of 641 rows, and as the attribute 351
+  of 436 cards named no cause at all.
+
+**Measured:** with no onset, 385 of 436 papilloedema cards change. The plan follows on 292 and the pressure leads on 24; none
+badge routine, and What and Next agree on every card. 59 leave emergency, 40 rise to it and 21 rise from routine. At hyperacute
+onset no card loses emergency. Without papilloedema 0 of 3,765 cards differ. The build equals the plan's dry run on all 7,530
+sample cards, all 1,226 pairs and the 46 + 41 captured cards. `npm test`: 88 suites, 7495 assertions; new suite
+`test/pressure-follows.test.js`; the re-pins are exactly row 19's three. Audit: the existing checks do not move (1050/9); with
+row 20's four probes and the new `lead` check, 1063/9 (probes 112/119); swaps 272/272, background 292/292, mirror 281/281.
+Browser-checked on port 8144.
+
+**Not fixed (spec §7, for later):** the place ranking and the Together card's disease still ignore the pressure (O1, O2), and
+the cover still ignores the compartment filter (O4). Two wording points from the browser check await a ruling (spec status).
+
+**Re-ruled 2026-11-11, in the integration of the open fixes (`integrate/all-open-fixes` only):**
+- PRES cannot raise the pressure (row 4).
+- Inside the stroke window the pressure never leads (row 10 narrowed): at hyperacute onset, a place whose lead is vascular
+  keeps its stroke card, with the pressure as a second line.
+
+See "Integration of the open fixes" below.
+
+Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`, `docs/superpowers/plans/2026-11-09-pressure-follows-cause.md`.
+
+## Integration of the open fixes (2026-11-10, rulings 2026-11-11) — released in v0.11.0 (PR #26, 2026-11-14)
+
+Every open engine fix in one tree, measured before they land as one release. It starts at PR #25's tip (`bda1113`, which
+already holds #18 → #20 → #21 → #19 → #24) and merges #23 composite sites (`a24453e`), #22 plexus round (`39b4957`) and
+#17 storage-accessor guard (`72a5c52`), in that order, one merge commit each, each measured. No fix branch was changed.
+`fix/cover-tiebreak` (O3) is a design awaiting its ruling, not a fix, so it is not in.
+
+**One reading gate.** The composite-sites and raised-pressure rounds each added a `needs` gate to `solverSites`. Git merged
+them into TWO gates with two parameter names (one would have thrown) and two shapes: the syrinx's `needs` is a list
+(`["suspended_sensory"]`), the uncal reading's a string (`"reduced_consciousness"`, plus `needsOwn`). Now one gate reads
+both, `[v.needs].flat().includes(t.split("@")[0])`. It equals each branch's own test on every real token, because every token
+carries a side (`@none` for a midline finding). Neither branch's site declarations changed. `variantOf` carries both rounds'
+fields (`side` and `station`; `leads` and `red`).
+
+**Measured on the merges** (`npm test`, `npm run test:audit`, and every suite one by one):
+- `npm test`: 90 suites, 7669 assertions, 7667 pass and 2 fail.
+- Audit: probes 127/127; counted checks 1097 passed, 0 failed, 0 pending; swaps 272/272, comorbidity 292/292, mirror
+  290/290. Composite's 4 failures and raised pressure's 9 are each fixed by the other round.
+- Every count was the exact union of the branches' own, each measured on its own tip.
+
+**The 2 failures were `pressure-follows` pins** (row 21's snapshot, row 1's ratchet). They moved only because the composite
+sites bring three places into play under papilloedema.
+- Both MLFs and both paracentral lobules repeat their content source's approved rows.
+- The top of the basilar was new. The browser found a card neither branch alone can draw: coma + vertical gaze palsy + a
+  hemianopia on each side + papilloedema led with PRES, with Next sending the patient to "obstetrics, nephrology, oncology
+  or transplant medicine". Below that sat the place's basilar-tip red flag (CTA now; a thrombectomy target).
+
+**The owner's rulings (2026-11-11), built on this branch (`6e1daba`):**
+- **PRES cannot raise the pressure** (pressure-follows row 4 re-ruled). Its intracranial pressure is usually normal, and the
+  swollen discs beside it are hypertensive retinopathy. It stays listed and selectable, demoted.
+  - 17 of 575 in-play papilloedema cards change, all at the six places listing PRES.
+  - The top of the basilar leads with deep cerebral venous thrombosis (no onset, acute, subacute), as the paramedian thalami
+    do.
+  - Subacute occipital and PCA pictures lead with glioma/metastasis: 3 cards go from emergency to urgent, none to routine.
+- **Inside the stroke window the pressure never leads** (row 10 narrowed). The condition: hyperacute onset, a vascular lead
+  at the place (`hyperacuteVascular`), and no cause there that can raise the pressure. Papilloedema then predates the event.
+  - The card keeps the place's own stroke card (causes, plan, badge, red flag) and adds the pressure-only What sentence as a
+    second line.
+  - `strokeWindowHolds` (app/answer.js) is the one test, read by `resolveNext` through `pressureLeads`, the answer card and
+    the What card.
+  - It reaches 21 place kinds, 19 with a picture of their own, every one EMERGENCY. On #25 alone the pressure replaced the
+    stroke pathway at 15. Outside hyperacute onset nothing changes.
+- **Re-pinned under the rulings** (`test/pressure-follows.test.js`):
+  - row 4, both spellings;
+  - row 21: 100 lists, 655 rows, 438 names, 262 can; 158 names;
+  - the ratchet: 115 kinds, `82/7 54/45 68/21 42/15 23/18`;
+  - §6's hemianopia line (must not miss: AVM).
+
+  Section G pins both rulings. The row-21 and ratchet pins carry the composite places, so on #25 alone they would need
+  #25's own values.
+
+**Measured now:** `npm test` 90 suites, 7676 assertions, all green; the audit 127/127, 1097 passed, 0 failed.
+
+**Browser-checked on port 8145** (launch entry "NeuroLocaliser integration worktree"; no console errors).
+- Both readings render through the one gate: the uncal card reads *"Left CN III (compressive) — uncal herniation"* with its
+  own lead and red flag, and the syrinx card *"Bilateral central cord (reaching the corticospinal tracts)"*.
+- Knee + ankle jerk still reads *"Left lumbosacral plexus"*.
+- The top of the basilar with papilloedema reads deep cerebral venous thrombosis with no onset. At hyperacute onset it reads
+  its stroke card plus the pressure line, and the What card agrees (the embolism first, no papilloedema band). At chronic
+  onset it reads the pressure itself.
+
+**Still open (PR #25's, not the integration's):** where the plan follows a pressure-raising cause, the place's own red flag
+still shows (288 of 575 cards). 101 of those flags name a stroke or occlusion: some agree with the followed cause, some do
+not. It is the same class as #25's two unruled wording points.
+
+**Superseded, not failing:** an assertion one branch re-pinned under its own ruling runs in its new form:
+- plexus: four foot-drop candidates, the upper trunk's musculocutaneous row;
+- raised pressure: the fundus row 12;
+- composite: the PARASAG widening (row 7) is the audit's yardstick.
+
+The storage guard's code applied cleanly; only the status counter line conflicted.
+
+## Duplicate keys and the non-dominant names (DONE 2026-11-12) — ✅ owner-approved rulings (every row)
+
+On `fix/card-follows-cause` (`56aff33`, `3d195f0`, `b173e7e`), landed BEFORE that round is built (row D8). Released in v0.11.0 (PR #26, 2026-11-14).
+
+**The defect: a JS object literal keeps the LAST definition of a repeated key, without a word.** The earlier one is dead
+content that still reads as reviewed. A scan of all 138 object tables in `src/` and `app/` found four, all on `main`:
+- **`BY_SITE.cortex_temporoparietal`.** The dead copy held the NON-DOMINANT variant (cortex mapping, 2026-07-12). The aphasia
+  round re-declared the key as one entry, though its spec said "keep any existing non-dominant naming". A non-dominant lesion
+  (sensory aprosodia alone) was titled "Wernicke's aphasia", with the jargon-aphasia stroke flag.
+- **`NEXT.subcortex_internal_capsule`.** Region B's signed-off plan (2026-08-10) had NEVER rendered: a one-line
+  initial-commit entry further down won (urgent, "Stroke team / TIA clinic."). The owner's 2026-08-11 sign-off reviewed
+  content no card showed.
+- **`cortex_medial_pfc`, `cortex_orbitofrontal`.** The dead copies held nothing the cause lists lack.
+
+**Then the owner: "fix the nondominant labelling error for wernickes and brocas".** The same error had no duplicate behind it:
+the non-dominant operculum (motor aprosodia alone) read "Broca's aphasia", "(Broca's area)" and "…a dominant MCA stroke".
+
+**Mechanics:**
+- **Duplicates.** The live temporoparietal entry gains the dead non-dominant variant. The dead copies and the one-line capsule
+  workup go.
+- **The re-pin (D6).** `accuracy-mechanisms` pinned the capsule's no-onset badge at "urgent". It is now emergency, and the
+  onset-gating check moves to the striatum, still curated urgent.
+- **The operculum names each hemisphere.** The non-dominant side is "Motor aprosodia (non-dominant frontal operculum)".
+- **`NONDOMINANT_PART_LABEL`** (`app/labels.js`): `siteLabel(site, opts)` reads a non-dominant one-sided site's label without
+  the eponym, by `nameForSite()`'s rule.
+- **The territory strings** drop "/ Broca's area" and "/ Wernicke's area": a territory serves both hemispheres.
+
+**Guards:**
+- **`test/duplicate-keys.test.js`** reads the SOURCE, because a duplicate is invisible at runtime. Its tokenizer handles
+  strings, templates, comments, regexes and nesting. Each exported table's scan is checked against its runtime keys, so it
+  cannot pass vacuously. The pathology plans are checked across category files and family members.
+- **`test/hemisphere-names.test.js`:**
+  - a place whose picture depends on dominance names each hemisphere, or has a reviewed neutral name (the temporal lobe);
+  - no non-dominant title, place, subtitle or red flag names Broca's or Wernicke's area or aphasia, under either dominance;
+  - two OPEN items are printed, not allowed silently.
+
+**Traps worth knowing:**
+- "Wernicke" alone is also the encephalopathy (the thiamine warning), which is right on either side. Match "Wernicke's
+  area/aphasia".
+- Avoid "…opercular syndrome" for the non-dominant title: it reads as the bilateral (Foix–Chavany–Marie) syndrome.
+- A dry run or sweep that builds ONE side per place never sees a non-dominant card. The card-follows-cause plan's did both
+  (amended).
+
+**Measured:**
+- npm 90 suites / 7676 → 92 / 7756.
+- Audit unchanged: 127/127 probes, 1097/0.
+- Of 5,317 cards (every site id, both sides), 39 change:
+  - 17 right-temporoparietal: title, red flag, Where;
+  - 16 right-operculum: title, Where, red flag;
+  - 6 capsule: Next line, and 4 badges urgent → emergency.
+- 244 Together pairings with the capsule rise to emergency.
+- Browser-checked on port 8146 (launch entry "NeuroLocaliser card-cause worktree").
+
+**Still open:**
+- **The shared lists.** The cause features and workups at those two places are keyed by place, so the non-dominant What and
+  Next cards still describe the aphasia ("…especially common in Broca's aphasia").
+- **The aphasia composites.** The thalamic and striatocapsular composites' non-dominant copies need a ruling: name them, or
+  stop offering them.
+
+Spec: `docs/superpowers/specs/2026-11-12-duplicate-keys-design.md`.
+
+## The card follows its cause (DONE 2026-11-12, round 1) — ✅ owner-approved rulings (every row)
+
+On `fix/card-follows-cause`, built on the duplicate-keys round (the plan was amended for it, row D8). Released in v0.11.0 (PR #26, 2026-11-14).
+
+**The defect.** What, Next and the badge follow one `leadingCause`, which onset, papilloedema and the reader's selection all
+move. The red flag and the title did not: they were written per PLACE. On every axis that moves the card's cause, the place's
+flag stayed beside a different cause on 100% of moved cards:
+- onset: 103 of 103 (live since v0.10.1);
+- selection: 868 of 868 (since 2026-08-18);
+- papilloedema: 281 of 281 (PR #25).
+
+Each axis had grown its own special case instead: the uncal reading's flag, the Together card's disease flag, and the blank
+red line when the pressure leads.
+
+**The root cause: cause claims were written on the place.** Of 166 phonebook flags, 37 (and 7 titles) asserted the place's
+usual cause.
+
+**Mechanics:**
+- **`flagged(cause, ...flags)` (`causes.js`).** A warning about one cause lives on that cause, at that place. `only`
+  restricts it to one place reading a shared list (its site kind) or to one hemisphere, as `phonebookVariant` resolves it.
+- **`cardCause` / `redLine` (`app/answer.js`).** The card's cause is the selection, else the What line's most likely cause.
+  It is none on a two-place card or when the pressure leads. The red line is that cause's applicable flags, then the place's
+  own flag. The answer card and the What card both read it.
+- **The content move** (one script, word for word):
+  - 38 flags onto 35 cause entries, 13 of them restricted;
+  - the diffuse cerebrum split into a cause half and a place half;
+  - P22 reworded ("image, then do an LP");
+  - 7 titles renamed so none names a pathology;
+  - the uncal reading's flag moved onto "Uncal herniation".
+- **Row 10's blank is reversed:** when the pressure leads, the place's own flag shows.
+
+**The authoring rule:** for a red flag, ask "is it true whatever the cause?" If yes, it is the place's (`syndromes.js` `red`);
+if not, it goes on the cause (`flagged`).
+
+**The guards (`test/card-follows-cause.test.js`):**
+- **The reviewed snapshot is the gate.** It holds 132 place flags: 131 kept plus the diffuse cerebrum's place half.
+- **No wording test can tell a place fact from a cause claim.** Measured: a claim-form floor misses 19 of 37, and a
+  "names its own causes" check would need 92 of 129 allowlisted.
+- **A structural sweep.** No card shows a cause's flag beside another cause, and every card whose cause has a flag shows it.
+  It sweeps both sides wherever the phonebook names each hemisphere.
+- **Titles name no pathology.**
+- **Every restriction is real.**
+
+**Measured:**
+- npm 92 suites / 7756 → 93 / 7793, with the six planned re-pins only.
+- The audit is unchanged: 127/127 probes, 1097/0.
+- The dry run of 5,317 cards (every site id, both sides) changes only red lines (680) and titles (208). Where, Why, What,
+  Next and the badge change on 0. Every red-line change is an expected kind; unexplained: 0.
+- **The uncal card** (20 cards) now shows herniation's flag, then the compressive III's own place flag (P96). The reading's
+  flag used to replace it.
+- **Browser-checked on port 8146:** top of the basilar (the basilar-tip flag; with papilloedema, deep cerebral venous thrombosis and no basilar-tip flag); Broca's area (its MCA flag word for word, none with the tumour selected, the What card agreeing); the uncal reading (herniation's flag, then the III's); the lateral medulla with papilloedema at subacute onset (its own swallowing flag, row 10 reversed); the renamed "Pure motor hemiparesis (internal capsule)"; and both non-dominant cards (their own place flag only, though the infarct leads); no console errors.
+
+Spec/plan: `docs/superpowers/specs/2026-11-11-card-follows-cause-design.md`, `docs/superpowers/plans/2026-11-11-card-follows-cause.md`.
+
+## Non-dominant hemisphere content (DONE 2026-11-12) — ✅ owner-approved rulings (every row)
+
+On `fix/card-follows-cause`, after "the card follows its cause" (row K5). Released in v0.11.0 (PR #26, 2026-11-14).
+
+**The defect.** The duplicate-keys round fixed every card FACE for the non-dominant hemisphere. Beneath it, the cause lists
+(`CAUSES`), site workups (`NEXT`) and plans' per-place wording (`bySite`) are keyed by PLACE, so both hemispheres shared them.
+- A non-dominant operculum's What and Next cards still described the aphasia: *"Characterise the aphasia…"*, *"…especially
+  common in Broca's aphasia"*, *"this is dominant-hemisphere language cortex"*.
+- A word list over the 11 dominance-dependent places flagged ~100 lines. Read by hand, 25 are real errors (28 lines), at the
+  operculum, the temporoparietal cortex, the MCA inferior division and the fusiform gyrus.
+- The thalamic and striatocapsular aphasia composites' non-dominant copies were exact duplicates of real places, listed as
+  "Right thalamus (language)".
+
+**Mechanics:**
+- **Item 2 (rows J1–J5, `a175405`).** The four aphasia composites are `dominantOnly`, and `solverSites` skips them in the
+  non-dominant hemisphere. `test/hemisphere-names.test.js` closes its OPEN list. Two audit yardstick rulings (J3, J4) are
+  recorded in the audit spec.
+- **Item 1 (K1).** `src/model/hemisphere.js` (`hemisphereOf`, `sideText`, `onItsSide`, `allText`):
+  - a cause may carry `hemisphere` (`onSide(hemi, c(...))`, `causes.js`), listed on that side only;
+  - any text may be `{ dominant, nondominant }`: a cause's feature, a workup line, a plan's slot;
+  - `causesFor`, `sitePlan` / `nextStepsFor`, `pathologyPlanFor` / `pathologyNextStepsFor`, `combinedCauses` and
+    `combinedNextSteps` resolve them by `nameForSite()`'s rule. The dominance travels in their `opts`, default left;
+    `answer.js` and `app.js` pass the card's (`dom` / `domView()`, assumed when the dominance fallback applied);
+  - a bilateral site sits in neither hemisphere, so it keeps both tagged causes and reads the dominant text.
+- **Content round 1 (rows O1–O13, T1–T11, M1–M3, F1–F2), word for word as ruled:**
+  - 21 two-version lines;
+  - 6 tagged causes (the speech-arrest seizure and both postictal-aphasia causes are dominant-only; developmental
+    prosopagnosia is non-dominant-only);
+  - Todd's paresis at the operculum (both sides);
+  - a focal seizure at the non-dominant MCA inferior division;
+  - developmental dyslexia, with a new plan, at the dominant fusiform.
+
+  Each side keeps at least 6 causes.
+
+**Guards (`test/nondominant-content.test.js`):**
+- a reviewed SNAPSHOT of the 6 tags and 21 two-version lines, word for word (the gate);
+- tags only where the picture depends on dominance;
+- at least 6 causes and an authored plan for every cause, on each side;
+- every two-version line shows its own side's text, with either hemisphere dominant;
+- a non-dominant card at the language places names the aphasia only in a line that names both sides.
+
+**Traps worth knowing:**
+- A test that reads raw `CAUSES` / `NEXT` text must read BOTH versions (`causes-depth` and `causes` do; `raisesPapilloedema`
+  scans `allText`).
+- J3 first removed whole swaps, which also dropped 6 passing "no multifocal claim" checks. The ruled change skips only "stays in
+  the top 3".
+- A provenance line that repeats the round's own name trips an "already noted" check: write the header note first.
+
+**Measured:**
+- npm 93 suites / 7794 -> 94 / 7814, all green.
+- Audit 127/127 probes, 1093/0 (the J3 count), mirror 290/290.
+- **Answer cards:** 0 changes from item 1. Features and workup lines live in the What and Next cards.
+- **What/Next text** (every site, both dominances, 14,468 units): 46 changed, 20 added, 16 gone, all at the four places:
+  - the non-dominant side;
+  - the dominant operculum's Todd's paresis;
+  - the dominant fusiform's dyslexia;
+  - the bilateral fusiform, which keeps both tags.
+- **Browser-checked on port 8146:**
+  - the non-dominant operculum and temporoparietal What/Next cards;
+  - the dominant operculum, unchanged plus Todd's;
+  - right dominance, where the left operculum reads the non-dominant content;
+  - no console errors.
+
+Spec: `docs/superpowers/specs/2026-11-12-nondominant-content-design.md`; audit rulings:
+`docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1226,6 +1853,16 @@ Spec/plan: `docs/superpowers/specs/2026-09-29-conus-cauda-bilateral-design.md`, 
   `solve()`, asserts with a tiny local `ok(label, cond)` helper, prints `PASS`/`FAIL` lines, and
   `process.exit(fail === 0 ? 0 : 1)`. When you add a suite, also add it to the `test` script in
   `package.json` and to the README/`npm test` chain.
+- **Clinical audit (SEPARATE, EXPECTED TO FAIL):** `PATH=… npm run test:audit` runs `test/clinical-audit.test.js`
+  — the 2026-10-18 audit's 101 bedside probes (+ 4 added by the spinal cord fix and 3 by the false-multifocal fix, 2026-10-22, and 3 by the content-gap fix, 2026-11-01, and 4 by the composite-sites round, 2026-11-05, and 4 by the plexus round, 2026-11-05, and 4 by the raised-pressure round, 2026-11-09, and 4 with a new `lead` check by the pressure-follows round, 2026-11-10) + three metamorphic properties (synonym swap, background
+  comorbidity, mirror). It is the EXTERNAL accuracy baseline the engine fixes are measured against, so it is
+  deliberately NOT in `npm test`: never wire it in, and never loosen an assertion to make it pass. Expectations
+  are `T(...)` (textbook or owner-approved, counted) or `R(...)` (awaiting the owner's ruling — prints `PEND`, not
+  counted); the owner approves rulings one round at a time. **Round 1 was RULED 2026-10-18** — all 17 proposed
+  answers approved (each marked `owner-approved` in the file; do not re-flag them as unreviewed) and the synonym
+  groups settled, including row 20 (`weak_hand` = `weak_arm` INSIDE A HEMIPARESIS; weak hand alone still means the
+  hand knob; weak arm entered for an isolated weak hand is a DIFFERENT finding). Nothing is pending.
+  Baseline: 66/101 probes correct (66/105 with the cord fix's four). After the cord and false-multifocal fixes: 86/108; after the content-gap fix: 101/111; after the composite-sites round: 112/115 (on its own branch); after the plexus round: 105/115 (on its own branch); after the raised-pressure round: 108/115; after the pressure-follows round: 112/119 (on the raised-pressure branch); with every open fix integrated (`integrate/all-open-fixes`, 2026-11-10): 127/127, every counted check passing. Baseline + rulings: `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 ## Architecture — derive, don't store
 
@@ -1246,15 +1883,24 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
                  structure `crosses` override when a pathway crosses differently here
   sites.js       SITES derived from structures by (level, part, side); plus composers (hemi,
                  bilateral cord, cauda/conus midline). `buildingBlock` flags composite-only parts
-                 (cord anterior/posterior/central) so they feed composers but aren't standalone candidates
-  levels.js      ordered dermatome coordinate C2..S5 — an axis ORTHOGONAL to localisation
+                 (cord anterior/posterior/central) so they feed composers but aren't standalone candidates;
+                 READINGS of a primitive site (the uncal reading of the compressive III, gated — 2026-11-09)
+  levels.js      ordered dermatome coordinate C2..S5 (+ spanName) — WHERE along the cord; a stated level is evidence
+                 since 2026-10-22 (it demotes, constrains and gates — see "Orthogonal axes")
   prevalence.js  prevalenceOf(site) -> 2|1|0 (common/uncommon/rare) coarse per-site prior; TIEBREAK only
+  families.js    WORD FAMILIES (bedside words for one examination, each citing its ruling; incl. the `pyramidal`
+                 foot-drop relation, 2026-11-01) + BACKGROUND_FINDINGS
+                 (Hickam: set aside on both sides) — content only (false-multifocal fix, 2026-10-22)
   tracts.js      the long tracts (corticospinal/spinothalamic/dorsal-column/corticobulbar): findings,
                  rostro-caudal course (level + detail + supply), decussation, direction; + NEURAXIS ordering
   compartments.js  level -> COMPARTMENT axis (brain/brainstem/cerebellum/cord/cauda/optic/skull_base/
                  root/plexus/nerve/motor_unit); compartmentOf(site). Finer than regionOf() in causes.js —
                  keeps brain and cord apart, which the multifocal roster needs. INTRACRANIAL_LEVELS in
-                 inverse.js DERIVES from this table (single source of truth for "inside the skull")
+                 inverse.js DERIVES from this table (single source of truth for "inside the skull"); plus
+                 PRESSURE_REACHES and FALSE_LOCALISING_SIGNS (the raised-pressure round, 2026-11-09; the IV's cisternal
+                 course joined PRESSURE_REACHES in the pressure-follows round, 2026-11-10)
+  hemisphere.js  content written per hemisphere: hemisphereOf(site, dominantSide) by nameForSite's rule; sideText() reads a
+                 `{ dominant, nondominant }` text; onItsSide() lists a `hemisphere`-tagged cause on its side only (2026-11-12)
   course.js      COURSES vocabulary (single/simultaneous/stepwise/relapsing/progressive) — HOW an illness
                  unfolded, orthogonal to onset tempo. Annotates/demotes only, like the sensory level
 src/engine/    generic solver code (rarely changes when adding a region)
@@ -1264,33 +1910,44 @@ src/engine/    generic solver code (rarely changes when adding a region)
                  it's deliberately excused; test/localising-audit.test.js asserts every single-level
                  finding is one or the other)
   inverse.js     THE single localiser. candidateSites() (reflection over compose*, drops buildingBlock);
+                 solverSites() = candidates + their cord VARIANTS, each id kept once by the rankings;
                  differential() = the broad count/superset narrowing list (known-negative exclusion +
                  prevalence tiebreak); solve() returns {differential,explainAll,display,defaultSite,ruledOut}
-                 AND the scored single/best/nearFit/multi/level/length; knownNegatives(); ruledOutSites()
+                 AND the scored single/best/nearFit/multi/level/length + `dominance` (the dominance fallback,
+                 2026-11-01); knownNegatives(); ruledOutSites()
   tracts.js      tractsFor() (which tracts a finding-set implicates + candidate sites along each);
                  tractNarrative() (composed Course prose); whyNotOthers() (derived per-level discrimination)
   patterns.js    cross-cutting SYNTHESIS (NOT localisation): umnLmnPattern() and functionalFlag()
+  families.js    matching through the word families: an entered word is READ through its family, never rewritten
+                 (enteredToken / predictedToken / sameFamilyInstead) — used by inverse, score, why and the app
   multifocal.js  LOGIC ONLY (content lives in data/multifocal.js). unifyingDiagnoses(sites,observed,
                  {onset,course}) matches the MULTIFOCAL roster against a site set (hard constraints filter,
                  tempo/course only demote); forcingFindings(observed,opts) is the parsimony guard — for
                  each LOCALISING finding, does removing it collapse the picture to one site?
 src/data/
-  syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags
-  causes.js      THE PATHOLOGY LAYER. tempo-aware surgical-sieve DDx: causesFor(site,{onset}) ->
+  syndromes.js   thin descriptive phonebook keyed by emergent site id -> eponym + ddx + red flags; a place's `red` is true
+                 whatever the cause (the card follows its cause, 2026-11-12); `phonebookVariant` names the variant a site reads
+  causes.js      THE PATHOLOGY LAYER. tempo-aware surgical-sieve DDx: causesFor(site,{onset,pressure}) ->
                  {byCategory, demoted, all, source}. Precedence: curated CAUSES[site] → phonebook ddx
                  (categorised live) → attribute-derived fallback. Each cause via `c(name,cat,tempo,
                  likelihood,red,feature,pathognomonic)`: `feature` = a "what points to it" clue; `pathognomonic`
                  = a bedside "🔎 Confirm on exam" sign. A central `PATHOGNOMONIC` keyword→sign table enriches
                  causes from ALL sources by name (Ramsay Hunt vesicles, Argyll Robertson, KF rings, …).
-                 A cause whose tempo misses the entered onset moves to `demoted`, it is never dropped.
+                 A cause whose tempo misses the entered onset moves to `demoted`, it is never dropped. With
+                 papilloedema (`pressure`), so does a cause that cannot raise the ICP (`CAN_RAISE_PRESSURE`: category
+                 defaults + named exceptions), where `pressureDemotesAt` (the retina exempt) — the second axis, 2026-11-10.
                  combinedCauses(sites,{onset}) + canonicalKey(name) merge causes across sites for the
                  Together/What-all-sites views — canonicalised through the MULTIFOCAL roster's own `matches`
                  regex (a name matching 2+ regexes is left uncanonicalised rather than guessed).
+                 `flagged(cause, …flags)`: a warning about one cause, at that place, `only` for a shared list or a
+                 hemisphere — the red line is the card's cause's flags, then the place's own (`redLine`, app/answer.js).
   nextSteps.js   THE WORKUP LAYER (educational). nextStepsFor(site) -> {immediate, investigations,
                  confirmatory, monitoring, urgency, referral, curated}. Curated NEXT[site] carries specifics;
                  tiers derive from urgency + region (bulbar/cord/arousal/nmu/optic/vestibular) otherwise.
                  combinedNextSteps(sites) unions per-site plans for the cross-site view; urgency = the
-                 MOST urgent site, never an average.
+                 MOST urgent site, never an average. With papilloedema, pressureFollows() (the mirror of
+                 onsetFollows) has the plan follow the cause the What line names, and pressureFloor() keeps every
+                 plan off routine (2026-11-10).
   multifocal.js  CONTENT ONLY (matching logic lives in engine/multifocal.js), reviewable on its own: the
                  13-entity MULTIFOCAL roster (ALS/MS/mets/vasculitis/sarcoid/mononeuritis multiplex/
                  leptomeningeal disease/NMOSD/CNS lymphoma/NF2/paraneoplastic/neurosyphilis-HIV/embolic
@@ -1324,10 +1981,13 @@ app/             zero-build teaching web app (pure consumer of the engine; no mo
   syndrome free. Larger lesions come from **composers** (`composeHemiLevelSites`,
   `composeBilateralCordSites`, `composeCaudaConusSites`) that union parts into composite candidate
   sites; `inverse.candidateSites()` concatenates them all.
-- **Orthogonal axes.** The cross-sectional pattern says *which* syndrome; the sensory level
-  (`levels.js` + `describeLevel`) says *where along the cord* — it annotates the winner, never changes
-  it. New per-region mechanisms follow this shape: add a small, well-contained axis rather than
-  branching the solver.
+- **Orthogonal axes.** The cross-sectional pattern says *which* syndrome; the sensory level says *where along the
+  neuraxis* — and since the spinal cord fix (2026-10-22, owner-approved, overturning "annotates, never changes") it is
+  EVIDENCE: a stated level demotes (never excludes) every site that cannot produce it, restricts the cord's readings
+  to those at or above it, and gates spinal shock. It never adds or removes a candidate or a multifocal claim.
+  The cord's own WHERE is carried by VARIANTS of the same cord sites (`sites.js` `cordVariants`, `inverse.js`
+  `solverSites`): arms-spared, at-level spans (C5–6 … C8–T1, per side) and spinal shock. New per-region mechanisms
+  still follow this shape: a small, well-contained axis rather than a branch in the solver.
 
 ### Extending coverage (the recipe)
 

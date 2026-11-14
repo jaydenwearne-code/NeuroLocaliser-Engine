@@ -8,6 +8,9 @@ import { BY_SITE } from "../src/data/syndromes.js";
 import { SITES } from "../src/model/sites.js";
 import * as sitesMod from "../src/model/sites.js";
 import { candidateSites } from "../src/engine/inverse.js";
+import { isHemiText } from "../src/model/hemisphere.js";
+// A feature written per hemisphere (non-dominant content round, K1, 2026-11-12) is held to the same bar in BOTH versions.
+const versions = f => isHemiText(f) ? [f.dominant, f.nondominant] : [f];
 
 let pass = 0, fail = 0;
 const log = [];
@@ -280,7 +283,7 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
      (CAUSES.cortex_mca_inferior || []).some(c => c.cat === "mimic"));
   // mimics obey the same content norms as every other cause
   const allMimics = Object.keys(CAUSES).flatMap(k => CAUSES[k].filter(c => c.cat === "mimic"));
-  ok(`mimics carry a discriminating feature (${allMimics.length} mimics)`, allMimics.length > 0 && allMimics.every(c => c.feature && c.feature.length > 10));
+  ok(`mimics carry a discriminating feature (${allMimics.length} mimics)`, allMimics.length > 0 && allMimics.every(c => versions(c.feature).every(f => f && f.length > 10)));
   ok("mimics have a valid tempo", allMimics.every(c => c.tempo.every(t => tempoIds.includes(t))));
   // a mimic surfaces through causesFor as its own group
   const supRes = causesFor(S("cortex_mca_superior", "mca_superior"));
@@ -708,7 +711,7 @@ ok("causes are tempo-filtered by onset", icHyper.length > 0 && icHyper.every(x =
   for (const key of REGION_G) {
     const list = CAUSES[key] || [];
     ok(`Region G curated: ${key}`, Array.isArray(CAUSES[key]) && list.length >= 3);
-    ok(`Region G ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => x.feature && x.feature.length > 10));
+    ok(`Region G ${key} — every cause carries a discriminating feature`, list.length > 0 && list.every(x => versions(x.feature).every(f => f && f.length > 10)));
     ok(`Region G ${key} spans >= 2 categories`, new Set(list.map(x => x.cat)).size >= 2);
     ok(`Region G ${key} — valid categories and tempo`, list.every(x => catIds.includes(x.cat) && x.tempo.every(t => tempoIds.includes(t))));
   }

@@ -111,6 +111,7 @@ export const VASCULAR = {
 
   // ---- brainstem composites and functional levels (5) ----
   "thalamus_arousal|paramedian":        { vessel: "PCA", segment: "P1", branch: "paramedian (artery of Percheron)", zone: "perforator" },
+  "thalamus_arousal|basilar_apex":      { vessel: "BA",  segment: null, branch: "basilar apex (both P1 perforators and both PCAs)", zone: "cortical" },
   "brainstem_aras|paramedian_tegmentum":{ vessel: "BA",  segment: null, branch: "paramedian tegmental", zone: "brainstem" },
   "dorsal_midbrain|tectum":             { vessel: "SCA", segment: null, branch: "quadrigeminal", zone: "brainstem" },
   "pontomesencephalic|tegmentum":       { vessel: "BA",  segment: null, branch: "paramedian tegmental", zone: "brainstem" },
@@ -169,6 +170,7 @@ export const VASCULAR = {
 // that the part is not defined by a single arterial segment — never an unfilled cell. The invariant in
 // test/vascular.test.js asserts the two sets match exactly, in both directions.
 export const SEGMENT_NULL_REASON = {
+  "thalamus_arousal|basilar_apex": "The basilar tip feeds both PCAs from P1 onward; no single segment.",
   "cortex|mca": "A whole-territory site, not one branch — it IS the MCA territory.",
   "cortex|aca": "A whole-territory site, not one branch.",
   "cortex|pca": "A whole-territory site, not one branch.",

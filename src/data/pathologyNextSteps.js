@@ -22,6 +22,7 @@
 // recreate exactly the blandness this layer exists to remove. Exact synonyms are handled narrowly by
 // PATHOLOGY_ALIAS instead.
 import { DEFAULTS, fill } from "./pathology/builders.js";
+import { hemisphereOf, sideText } from "../model/hemisphere.js";
 import vascular from "./pathology/vascular.js";
 import neoplastic from "./pathology/neoplastic.js";
 import infective from "./pathology/infective.js";
@@ -139,14 +140,16 @@ export const PATHOLOGY_NEXT = {
   ...congenital, ...traumatic, ...degenerative,
 };
 
-export function pathologyPlanFor(name, site) {
+export function pathologyPlanFor(name, site, dominantSide) {
   const key = PATHOLOGY_ALIAS[name] || name;
   const p = PATHOLOGY_NEXT[key];
   if (!p) return null;
   // DEFAULTS < the plan's own slots < the per-site override. A family member carries its slots on the
-  // plan rather than baked into the text, so bySite still has placeholders to fill.
-  const slots = { ...DEFAULTS, ...(p.slots || {}),
-                  ...(p.bySite[site?.id] || p.bySite[`${site?.level}_${site?.part}`] || {}) };
+  // plan rather than baked into the text, so bySite still has placeholders to fill. A slot written
+  // `{ dominant, nondominant }` reads the card's hemisphere (non-dominant content round, K1, 2026-11-12).
+  const hemi = hemisphereOf(site, dominantSide);
+  const slots = Object.fromEntries(Object.entries({ ...DEFAULTS, ...(p.slots || {}),
+                  ...(p.bySite[site?.id] || p.bySite[`${site?.level}_${site?.part}`] || {}) }).map(([k, v]) => [k, sideText(v, hemi)]));
   return {
     confirmatory: p.confirmatory.map(s => fill(s, slots)),
     monitoring: p.monitoring.map(s => fill(s, slots)),

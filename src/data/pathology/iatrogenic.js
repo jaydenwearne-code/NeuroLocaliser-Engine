@@ -317,6 +317,10 @@ export default {
         level: "hip flexion and knee extension",
         flavour: "after pelvic radiotherapy the competing diagnoses are recurrence and, where the picture is bilateral, radiation-induced damage to the cauda equina",
       },
+      plexus_lumbosacral_plexus: {
+        level: "the whole leg, from hip flexion to the ankle",
+        flavour: "after pelvic or para-aortic radiotherapy a whole-leg picture may be the plexus or the cauda equina, and symptoms in both legs favour the cauda",
+      },
       plexus_sacral_plexus: {
         level: "ankle movement and sphincter function",
         flavour: "sacral involvement after pelvic radiotherapy warrants explicit questions about bladder, bowel and sexual function, which are rarely volunteered",

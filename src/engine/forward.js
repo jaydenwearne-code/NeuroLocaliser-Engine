@@ -76,6 +76,12 @@ export function expectedFindings(site, opts = {}) {
       if (!lvl || isBelow(lvl, struct.emitAtOrAbove)) continue;
     }
     const f = struct.produces;
+    // A cord variant's AT-LEVEL rows (sites.js cordVariants) go on that variant's own side(s): a disc-level lesion
+    // can catch the roots on one side while the long tracts below it are caught on both.
+    if (site.atLevel && site.atLevel.structures.includes(structId)) {
+      for (const s of site.atLevel.sides) out.add(signed(f, s));
+      continue;
+    }
     if (NON_LATERALISED.has(f)) {
       out.add(signed(f, "none"));
     } else if (struct.emit === "midline") {
@@ -109,7 +115,8 @@ export function explain(site, opts = {}) {
       if (!lvl || isBelow(lvl, s.emitAtOrAbove)) return [];
     }
     const f = s.produces;
-    const sides = NON_LATERALISED.has(f) ? ["none"]
+    const sides = site.atLevel && site.atLevel.structures.includes(structId) ? site.atLevel.sides
+      : NON_LATERALISED.has(f) ? ["none"]
       : s.emit === "midline" ? ["midline"]
       : s.emit === "bilateral" ? ["left", "right"]
       : site.side === "midline" ? ["midline"]

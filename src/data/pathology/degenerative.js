@@ -425,6 +425,7 @@ export default {
     ],
     urgency: "urgent",
     referral: "Neurology urgently with the national prion surveillance service; palliative care early",
+    bySite: { top_of_basilar: { level: "the visual fields, conscious level and vertical gaze" } },
   }),
 
   "Narcolepsy with cataplexy (orexin/hypocretin loss)": dz("Narcolepsy with cataplexy (orexin/hypocretin loss)", {
@@ -592,6 +593,11 @@ export default {
         root_s2: { level: "posterior thigh sensation, plantarflexion endurance, and the ANAL REFLEX and sphincter tone" },
         root_s3: { level: "PERINEAL sensation and bladder function specifically — this is a level where the deficit that matters is the one the patient will not raise unless asked" },
       },
+    },
+    "Several lumbosacral roots (multilevel spondylosis or canal stenosis)": {
+      urgency: "routine",
+      slots: { level: "the dermatome, reflex and muscles of EACH root, with the root-stretch signs",
+               flavour: "the commonest mimic of a lumbosacral plexopathy: BACK pain, root pain in more than one dermatome, and symptoms worse on standing and walking. A lumbar MRI usually shows the multilevel compression, and abnormal paraspinals on EMG put it in the roots rather than the plexus" },
     },
     "Lumbar spondylosis / foraminal or lateral recess stenosis": {
       urgency: "routine",

@@ -186,7 +186,8 @@ export default {
       bySite: {
         root_l2: { level: "hip flexion and the anterior thigh; the pain often begins here before the weakness spreads" },
         root_l3: { level: "knee extension and the knee jerk — the quadriceps is where the wasting is most obvious" },
-        root_l4: { level: "knee extension with ankle dorsiflexion and inversion, which is what separates this from a femoral neuropathy" } },
+        root_l4: { level: "knee extension with ankle dorsiflexion and inversion, which is what separates this from a femoral neuropathy" },
+        plexus_lumbosacral_plexus: { level: "the quadriceps AND the ankle — weakness on both sides of the knee is what makes it lumbosacral rather than femoral — and the other leg, which it often reaches later" } },
       confirmatoryExtra: ["EMG confirms a radiculoplexus rather than a femoral neuropathy, and MRI lumbar spine excludes the compressive alternative that this most resembles"],
       urgency: "urgent" },
     "Diabetic thoracic radiculopathy": {

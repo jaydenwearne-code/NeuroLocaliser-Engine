@@ -12,6 +12,9 @@
 // Run: node test/causes-depth.test.js
 import { CAUSES, CATEGORIES, causesFor } from "../src/data/causes.js";
 import { candidateSites } from "../src/engine/inverse.js";
+import { isHemiText } from "../src/model/hemisphere.js";
+// A feature written per hemisphere (non-dominant content round, K1, 2026-11-12) is held to the same bar in BOTH versions.
+const versions = f => isHemiText(f) ? [f.dominant, f.nondominant] : [f];
 
 let pass = 0, fail = 0;
 const log = [];
@@ -54,7 +57,7 @@ const MIN_CAUSES = 6;
   const bare = [];
   for (const k of KEYS)
     for (const c of CAUSES[k])
-      if (!(typeof c.feature === "string" && c.feature.trim().length > 0)) bare.push(`${k}: ${c.name}`);
+      if (!versions(c.feature).every(f => typeof f === "string" && f.trim().length > 0)) bare.push(`${k}: ${c.name}`);
   ok(`every cause carries a discriminating feature (${bare.length} bare)`, bare.length === 0, bare.slice(0, 5).join(" · "));
 }
 
@@ -97,7 +100,7 @@ const MIN_CAUSES = 6;
   const doubled = [];
   for (const k of KEYS)
     for (const c of CAUSES[k]) {
-      const hit = (c.feature || "").match(/\b(\w+)\s+\1\b/i);
+      const hit = versions(c.feature).map(f => (f || "").match(/\b(\w+)\s+\1\b/i)).find(Boolean);
       if (hit) doubled.push(`${k}: ${c.name} ("${hit[0]}")`);
     }
   ok(`no feature repeats a word at a builder join (${doubled.length})`, doubled.length === 0, doubled.slice(0, 5).join(" · "));

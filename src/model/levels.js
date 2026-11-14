@@ -49,3 +49,8 @@ export function landmarkOf(raw) {
   const name = normaliseLevel(raw);
   return name === null ? null : (LANDMARKS[name] || null);
 }
+
+// A two-segment span as a name: ["C5","C6"] → "C5-6", ["C8","T1"] → "C8-T1" (dash "–" for prose).
+export function spanName([a, b], dash = "-") {
+  return a[0] === b[0] ? `${a}${dash}${b.slice(1)}` : `${a}${dash}${b}`;
+}

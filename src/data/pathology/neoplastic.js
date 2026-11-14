@@ -16,6 +16,7 @@
 //   Tranche 3 (round 15, 2026-08-21) — the benign-skull-base-tumour and
 //   peripheral-nerve-mass families, 31 further members on the intra-axial spine, 7 on the sellar spine,
 //   6 on the dural spine, and three singletons. 74 names, none of them red.
+// Non-dominant content round 1 (owner-ruled 2026-11-12, "approve as proposed"): Tumour (glioma / metastasis)'s operculum entry reads per hemisphere (rows O12, O13).
 import { dz, family } from "./builders.js";
 
 // ---- ROUND 3a (tranche 2) ----
@@ -581,6 +582,10 @@ export default {
     "Pelvic or retroperitoneal tumour": {
       slots: { level: "hip flexion, knee extension, adduction and thigh sensation",
                flavour: "the lumbar plexus lies WITHIN the psoas, so a retroperitoneal mass reaches it early — and the psoas sign, a hip held flexed and painful to extend, is the bedside clue" },
+      bySite: {
+        plexus_lumbosacral_plexus: { level: "the whole leg — hip flexion and knee extension as well as ankle movement and sphincter function",
+                                     flavour: "a whole-plexus picture means tumour along both the psoas and the pelvic sidewall, so image from the kidneys to the pelvic floor rather than the pelvis alone" },
+      },
     },
     "Pelvic malignancy (cervical, rectal, prostate, sarcoma)": {
       slots: { level: "ankle movement, hip extension, and sphincter function",
@@ -779,8 +784,8 @@ export default {
                flavour: "a hemispheric lesion where the EDGE matters as much as the centre: eloquent cortex nearby decides whether resection is possible, so the pre-operative mapping question is asked at the first discussion rather than at the last" },
       bySite: {
         subcortex_optic_radiation: { level: "the visual QUADRANTS formally — a lesion in the radiation can present with a field defect the patient has not noticed" },
-        cortex_operculum: { level: "language in full — fluency, comprehension, repetition and naming — plus face and arm power",
-                            flavour: "this is dominant-hemisphere language cortex, so awake mapping and functional imaging bear directly on what can be removed; the language assessment before surgery is a baseline as well as a description" },
+        cortex_operculum: { level: { dominant: "language in full — fluency, comprehension, repetition and naming — plus face and arm power", nondominant: "face and arm power and the tone of speech" },
+                            flavour: { dominant: "this is dominant-hemisphere language cortex, so awake mapping and functional imaging bear directly on what can be removed; the language assessment before surgery is a baseline as well as a description", nondominant: "this is non-dominant frontal cortex beside the face-arm motor strip, so motor mapping bears directly on what can be removed; the pre-operative examination of power is a baseline as well as a description" } },
       },
     },
     "Midbrain tumour / metastasis": {

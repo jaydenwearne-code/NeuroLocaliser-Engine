@@ -13,11 +13,13 @@ import * as sitesMod from "../model/sites.js";
 const { SITES } = sitesMod;
 import { scoreSite, LOCALISING, findingIdOf } from "./score.js";
 import { expectedFindings } from "./forward.js";
-import { normaliseLevel, regionOf, landmarkOf } from "../model/levels.js";
+import { normaliseLevel, regionOf, landmarkOf, levelIndex, spanName } from "../model/levels.js";
 import { describeReach } from "../model/nerveLength.js";
 import { prevalenceOf } from "../model/prevalence.js";
-import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS } from "../model/compartments.js";
+import { LEVEL_COMPARTMENT, INTRACRANIAL_COMPARTMENTS, PRESSURE_REACHES, FALSE_LOCALISING_SIGNS } from "../model/compartments.js";
 import { EXPLICIT_NORMAL } from "../model/findings.js";
+import { BACKGROUND_FINDINGS } from "../model/families.js";
+import { enteredToken, enteredSet, predictedSet, sameFamilyInstead } from "./families.js";
 
 // One enumeration of every candidate lesion site, shared by the engine and the app. Reflection over
 // the sites module auto-includes any new `compose*` — no hand-maintained list to drift out of sync.
@@ -34,16 +36,57 @@ export function candidateSites() {
   return out;
 }
 
+// The SOLVER'S enumeration: every candidate site plus its VARIANTS — the same cord lesion read at another segment or
+// in spinal shock (sites.js cordVariants; spinal cord fix, round 1). A variant keeps its site's id, so content, links
+// and pins are untouched, and every ranked list keeps each site once, as its best variant (firstPerId).
+// candidateSites() stays one site per id for everything that enumerates sites (the atlas, the per-site tests).
+// `observed`: what the clinician entered. A READING that NEEDS its defining finding (`needs`) is offered only when it is
+// entered — as spinal shock is offered only with a stated level. Callers without an entered set (the Why index) never see a
+// gated reading. ONE gate for every reading (integration of the composite-sites and raised-pressure rounds, which each
+// added it); `needs` names one finding, or a list of which any one will do:
+//   - the expanding syrinx needs the cape (composite-sites round, row 5: `needs: ["suspended_sensory"]`);
+//   - the uncal reading needs reduced consciousness (raised-pressure round, row 5: `needs: "reduced_consciousness"`) and,
+//     with `needsOwn`, the place itself implicated (one of its own findings entered).
+export function solverSites(opts = {}, observed = null) {
+  const level = normaliseLevel(opts.sensoryLevel);
+  const out = [];
+  for (const site of candidateSites()) {
+    // A dominant-only place (the aphasia composites) is not offered in the non-dominant hemisphere: there it is the same
+    // place without its aphasia, a duplicate of a real one.
+    if (site.dominantOnly && site.side !== (opts.dominantSide || "left")) continue;
+    out.push(site);
+    for (const v of site.variants || []) {
+      // Spinal shock needs a stated level (spinal cord fix, row 1c): the level is the bedside discriminator from GBS,
+      // and without it the shock reading takes GBS's own picture (measured: the GBS probe, vignette and Why clue).
+      if (v.needsLevel && !level) continue;
+      // A stated level means a lesion at or above it (row 1b): a reading whose highest segment lies below it is out.
+      if (level && v.top && levelIndex(v.top) > levelIndex(level)) continue;
+      // A READING's gate (composite-sites round, row 5; raised-pressure round, row 5) — see above.
+      if (v.needs && !(observed && [...observed].some(t => [v.needs].flat().includes(t.split("@")[0])))) continue;
+      if (v.needsOwn && !(observed && [...expectedFindings(site, opts)].some(t => observed.has(t)))) continue;
+      out.push(variantOf(site, v));
+    }
+  }
+  return out;
+}
+// A reading may carry its own side (the ARAS's basilar reading is bilateral, though the ARAS is midline) and its own
+// station on the Why line (that reading sits in the pons) — composite-sites round, row 2 — and its own lead cause (the uncal
+// reading — raised-pressure round, row 6; its red flag now lives on that cause, the card follows its cause, 2026-11-11).
+const variantOf = (site, v) => ({ ...site, ...(v.side ? { side: v.side } : {}), ...(v.station ? { station: v.station } : {}),
+  variant: v.key, structures: v.structures, atLevel: v.atLevel, segments: v.segments, variants: undefined,
+  leads: v.leads });
+const firstPerId = list => { const seen = new Set(); return list.filter(x => { const id = (x.site || x).id; return !seen.has(id) && !!seen.add(id); }); };
+
 function localisingObserved(observedSet) {
   return [...observedSet].filter(s => LOCALISING.has(findingIdOf(s)));
 }
 
 // ---- SINGLE-LESION RANKING ----
 export function rankSingle(observedSet, opts = {}) {
-  return candidateSites()
+  return firstPerId(solverSites(opts, observedSet)
     .map(site => scoreSite(site, observedSet, opts))
     .filter(r => r.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score));
 }
 
 // ---- NARROWING DIFFERENTIAL (count / superset) ----
@@ -56,6 +99,12 @@ export function rankSingle(observedSet, opts = {}) {
 // a KNOWN NEGATIVE. Any site that predicts a known-negative would produce a sign the patient demonstrably
 // lacks, so it is not a candidate. Only left↔right have a homolog; midline / bilateral / none are skipped.
 const OPPOSITE_SIDE = { left: "right", right: "left" };
+// UPPER MOTOR NEURONE SIGNS COME BEFORE WEAKNESS (spinal cord fix, row 5, 2026-10-22). A Babinski, brisk reflexes,
+// spasticity or Hoffmann's entered on a side means that side's corticospinal tract IS involved, so its other
+// corticospinal signs there are a matter of degree, not a known normal: "right leg weak + both plantars up" no longer
+// rules out every bilateral cord lesion. Weakness never excuses — "right arm + left leg weak" stays two lesions.
+const CORTICOSPINAL_SIGNS = new Set(["weak_arm", "weak_leg", "babinski", "hyperreflexia", "spasticity", "hoffmann"]);
+const UMN_RELEASE_SIGNS = ["babinski", "hyperreflexia", "spasticity", "hoffmann"];
 // An EXPLICIT NORMAL (a down-going plantar — EXPLICIT_NORMAL in findings.js) is never a known negative: it does
 // not exclude. It COUNTS AGAINST the lesions that predict the abnormal finding on that side — see normalNegatives()
 // and the `against` demotion in differential(). Built first as an exclusion; driving it showed leg weakness + a
@@ -69,6 +118,7 @@ export function knownNegatives(observedSet) {
     const [f, side] = tok.split("@");
     const other = OPPOSITE_SIDE[side];
     if (!other) continue;
+    if (CORTICOSPINAL_SIGNS.has(f) && UMN_RELEASE_SIGNS.some(g => observedSet.has(`${g}@${other}`))) continue;
     const homolog = `${f}@${other}`;
     if (!observedSet.has(homolog)) neg.add(homolog);
   }
@@ -97,7 +147,8 @@ export function normalNegatives(observedSet) {
 //
 // Excluded deliberately: cord, roots, plexus, peripheral nerves, polyneuropathy, motor unit, combined
 // degenerations, the peripheral vestibular apparatus and the sympathetic chain — and the skull-base
-// CORRIDORS, which are extra-axial nerve-in-a-canal lesions rather than mass within the compartment.
+// CORRIDORS, which are extra-axial nerve-in-a-canal lesions rather than mass within the compartment. The nerve courses the
+// pressure itself injures stay in play (PRESSURE_REACHES in compartments.js — raised-pressure round, row 2).
 // DERIVED from the compartment table (compartments.js) so there is exactly one definition of "inside the
 // skull". Previously a hand-listed set here, which was a second source of truth waiting to drift.
 export const INTRACRANIAL_LEVELS = new Set(
@@ -135,51 +186,65 @@ export function differential(observedSet, opts = {}) {
   // Explicit normals are stripped too: they act only through knownNegatives(), never as a finding to explain.
   const observed = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
   const pressure = raisedPressureAxis(observedSet);
-  const negatives = knownNegatives(observedSet);
-  const againstNormal = normalNegatives(observedSet);
+  // WORD FAMILIES (false-multifocal fix, rows 1–4): each entered word is read through its family, in the context of
+  // everything entered, and each place's prediction is read the same way. The entered token itself is what is counted,
+  // shown and returned in `explained`; `exp` holds the place's tokens as read.
+  const read = enteredSet(observedSet);
+  const readOf = new Map(observed.map(t => [t, enteredToken(t, observedSet)]));
+  const negatives = knownNegatives(read);
+  const againstNormal = normalNegatives(read);
+  const level = normaliseLevel(opts.sensoryLevel);
   const cands = [];
-  for (const site of candidateSites()) {
-    if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level)) continue; // compartment filter
-    let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
+  for (const site of solverSites(opts, observedSet)) {
+    if (pressure.present && !INTRACRANIAL_LEVELS.has(site.level) && !PRESSURE_REACHES.has(`${site.level}|${site.part}`)) continue; // compartment filter
+    let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
     let contradicted = false;
     // An ASYMMETRIC site (motor-unit disease, cauda equina) may present on one side: the un-entered side is
     // not evidence against it, so the known-negative exclusion does not apply to it.
     if (!site.asymmetric) for (const neg of negatives) if (exp.has(neg)) { contradicted = true; break; } // known-negative → not a candidate
     if (contradicted) continue;
-    const explained = observed.filter(t => exp.has(t));
+    const explained = observed.filter(t => exp.has(readOf.get(t)));
     // Papilloedema on its own explains nothing site-specific, but it is still informative: every
     // intracranial site stays in play rather than the list collapsing to empty.
     if (!explained.length && !(pressure.present && !observed.length)) continue;
     // `against`: the first abnormal token an entered normal counts against — the site stays a candidate, demoted.
     const against = [...againstNormal].find(t => exp.has(t)) || null;
-    cands.push({ site, exp, explained, over: [...exp].filter(t => !observedSet.has(t)).length,
-                 n: explained.length, prevalence: prevalenceOf(site), against });
+    // A STATED SENSORY LEVEL means a cord lesion at or above it (spinal cord fix, row 1a). A site that cannot produce
+    // one — anything outside the cord; the conus and cauda lie below every cord level — sorts below every site that
+    // explains as much and can: demoted like a recorded normal, never excluded, so no multifocal claim changes.
+    const levelAgainst = level && site.level !== "cord" ? level : null;
+    cands.push({ site, exp, explained, over: [...exp].filter(t => !read.has(t)).length,
+                 n: explained.length, prevalence: prevalenceOf(site), against, levelAgainst });
   }
   // coverage first (localisation), then anything a recorded normal counts against goes below the rest, then fit
   // weighed against prior (rankKey), then prevalence, tightness, id.
-  cands.sort((a, b) => b.n - a.n || (!!a.against - !!b.against) || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence
-    || a.over - b.over || a.site.id.localeCompare(b.site.id));
-  return cands;
+  cands.sort((a, b) => b.n - a.n || (!!(a.against || a.levelAgainst) - !!(b.against || b.levelAgainst))
+    || rankKey(a) - rankKey(b) || b.prevalence - a.prevalence || a.over - b.over || a.site.id.localeCompare(b.site.id));
+  return firstPerId(cands);
 }
 
 // The sites the known-negative filter removed — but only those that WOULD have explained something (so the
 // footnote lists relevant near-misses like locked-in, not every unrelated bilateral site). Each is paired
 // with the first known-negative token that contradicted it, for a teaching note.
 export function ruledOutSites(observedSet, opts = {}) {
-  const negatives = knownNegatives(observedSet);
+  const read = enteredSet(observedSet);   // word families, as in differential()
+  const negatives = knownNegatives(read);
   if (!negatives.size) return [];
-  const out = [];
-  for (const site of candidateSites()) {
-    let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
+  // Per site, across its variants: ruled out only when EVERY variant that would explain something is contradicted.
+  const byId = new Map();
+  for (const site of solverSites(opts, observedSet)) {
+    let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
     let explainsSomething = false;
-    for (const t of observedSet) if (exp.has(t)) { explainsSomething = true; break; }
+    for (const t of read) if (exp.has(t)) { explainsSomething = true; break; }
     if (!explainsSomething) continue;
     if (site.asymmetric) continue; // never excluded by a known negative, so never "ruled out" by one
     let contradictedBy = null;
     for (const neg of negatives) if (exp.has(neg)) { contradictedBy = neg; break; }
-    if (contradictedBy) out.push({ site, contradictedBy });
+    const seen = byId.get(site.id);
+    if (!seen) byId.set(site.id, { site, contradictedBy });
+    else if (!contradictedBy) seen.contradictedBy = null;
   }
-  return out;
+  return [...byId.values()].filter(e => e.contradictedBy).map(e => ({ site: e.site, contradictedBy: e.contradictedBy }));
 }
 
 // ---- MINIMAL-SET SEARCH (multifocal) ----
@@ -210,8 +275,10 @@ export function minimalSet(observedSet, opts = {}) {
   // ruled out: `weak_arm@right` + `weak_leg@left` was "covered" by locked-in alone — a bilateral site that
   // also predicts a weak LEFT arm and a weak RIGHT leg, both recorded as normal — so the cover collapsed to
   // one site and no multifocal hypothesis was offered (owner bug report, 2026-08-15).
+  const readOf = new Map([...needAll].map(t => [t, enteredToken(t, observedSet)]));   // word families
+  const read = new Set(readOf.values());
   const sites = differential(observedSet, opts)
-    .map(c => ({ site: c.site, exp: c.exp, covers: new Set([...needAll].filter(f => c.exp.has(f))) }))
+    .map(c => ({ site: c.site, exp: c.exp, covers: new Set([...needAll].filter(f => c.exp.has(readOf.get(f)))) }))
     .filter(s => s.covers.size > 0);
 
   const remaining = new Set(needAll);
@@ -223,10 +290,12 @@ export function minimalSet(observedSet, opts = {}) {
     // then on fewest over-predictions (tightest fit).
     let best = null;
     for (const s of sites) {
-      const gain = [...s.covers].filter(f => remaining.has(f)).length;
+      // A family is ONE finding (false-multifocal fix, row 17): its words count once in the gain. Otherwise one
+      // cerebellar sign on each side covers eight words, and a hemipons wins the first pick of a two-place cover.
+      const gain = new Set([...s.covers].filter(f => remaining.has(f)).map(f => readOf.get(f))).size;
       if (gain === 0) continue;
-      const matched = [...s.exp].filter(f => observedSet.has(f)).length;
-      const overPredict = [...s.exp].filter(f => !observedSet.has(f)).length;
+      const matched = [...s.exp].filter(f => read.has(f)).length;
+      const overPredict = [...s.exp].filter(f => !read.has(f)).length;
       if (!best || gain > best.gain
           || (gain === best.gain && matched > best.matched)
           || (gain === best.gain && matched === best.matched && overPredict < best.overPredict)) {
@@ -245,14 +314,17 @@ export function minimalSet(observedSet, opts = {}) {
 // "Slight relaxation of parameters": if no single site explains EVERY entered finding, retry allowing exactly
 // ONE non-localising finding to go unexplained. If a single site then explains all the rest, that is a
 // near-fit — surfaced (naming the odd finding) BEFORE the multifocal hypothesis. A LOCALISING sign is never
-// relaxed away: it is too specific to ignore. Superset-based, matching the app's "explains all" differential.
+// relaxed away here: it is too specific to ignore. Superset-based, matching the app's "explains all" differential.
+// The ONE exception (owner ruling 2026-10-22) lives in solveOne(): a word entered INSTEAD of a same-family word that
+// a place predicts on that side — see "THE SAME-FAMILY NEAR-FIT" there.
 export function nearFit(observedSet, opts = {}) {
   const observed = [...observedSet];
-  const sites = candidateSites();
+  const sites = solverSites(opts, observedSet);
+  const read = enteredSet(observedSet);   // word families, as in differential()
   const explainsAll = tokens => {
     for (const site of sites) {
-      let exp; try { exp = expectedFindings(site, opts); } catch { continue; }
-      if (tokens.every(t => exp.has(t))) return site;
+      let exp; try { exp = predictedSet(expectedFindings(site, opts), read); } catch { continue; }
+      if (tokens.every(t => exp.has(enteredToken(t, observedSet)))) return site;
     }
     return null;
   };
@@ -265,20 +337,25 @@ export function nearFit(observedSet, opts = {}) {
   return null;
 }
 
-// ---- SENSORY LEVEL (orthogonal to which site wins) ----
-// The cross-sectional pattern says WHICH syndrome; the sensory level says WHERE along the cord.
-// It never changes the localisation — it annotates it. Reports the segment when the best site is
-// in the cord and a valid level was given; otherwise explains why the level does not apply.
+// ---- SENSORY LEVEL ----
+// The cross-sectional pattern says WHICH syndrome; the sensory level says WHERE along the neuraxis. Since the
+// spinal cord fix (2026-10-22, owner-approved) a stated level is EVIDENCE as well as an annotation: it demotes what
+// cannot produce it (differential), restricts the cord's readings to those at or above it and gates spinal shock
+// (solverSites). This function annotates the DISPLAYED answer: the segment when it is a cord site and a valid level was
+// given; otherwise why the level does not apply, or — with no level typed — the segment the cord reading implies.
 export function describeLevel(best, sensoryLevel) {
   const raw = (typeof sensoryLevel === "string" && sensoryLevel.trim() !== "") ? sensoryLevel : null;
   const isCord = !!best && best.site.level === "cord";
   const segment = normaliseLevel(raw);
-  const base = { given: raw, applies: false, segment: null, region: null, landmark: null, note: "" };
+  // A stated level the answer cannot produce (spinal cord fix, row 9): flagged, so the app can say so in words with
+  // the site's plain name. The engine's own notes below keep their wording.
+  const contradicts = !!segment && !!best && !isCord;
+  const base = { given: raw, applies: false, segment: null, region: null, landmark: null, note: "", contradicts };
 
   // Central (syrinx) lesions cause a SUSPENDED cape, not a below-the-level deficit — the single
   // "below the level" sensory level does not apply. Checked before the generic cord branches.
   if (isCord && best.site.part === "central") {
-    return { given: raw, applies: false, segment,
+    return { given: raw, applies: false, segment, contradicts,
       region: segment ? regionOf(segment) : null, landmark: segment ? landmarkOf(segment) : null,
       note: "suspended (cape-like) distribution — the sensory loss spans the lesion's segments and is spared above and below, so a single below-the-level sensory level does not apply" };
   }
@@ -287,23 +364,33 @@ export function describeLevel(best, sensoryLevel) {
   // distribution is the localiser. Placed before the non-cord "inconsistency" branch so a
   // stated level here is reported gently rather than flagged as contradicting a cord lesion.
   if (best && (best.site.level === "cauda" || best.site.level === "conus")) {
-    return { given: raw, applies: false, segment,
+    return { given: raw, applies: false, segment, contradicts,
       region: segment ? regionOf(segment) : null, landmark: segment ? landmarkOf(segment) : null,
       note: "below the cord — a cauda equina / conus lesion; the saddle (S2–S5) distribution is the localiser, not a single sensory level" };
   }
 
   if (isCord && segment) {
-    return { given: raw, applies: true, segment, region: regionOf(segment), landmark: landmarkOf(segment),
-      note: `lesion at or just above ${segment} (the sensory level typically sits a segment or two below the lesion)` };
+    // "At or just above" could send the scan to the wrong segment — the error the spinal cord fix exists to stop: a
+    // level can sit several segments below a compression (owner, 2026-10-22, content round B3).
+    return { given: raw, applies: true, segment, region: regionOf(segment), landmark: landmarkOf(segment), contradicts,
+      note: `lesion at or above ${segment} — usually just above it, but a compression can sit several segments higher (a cervical lesion can give a thoracic level), so the level does not replace whole-spine imaging` };
   }
   if (isCord && raw && !segment) {
     return { ...base, note: `unrecognised sensory level '${raw}'; expected a segment such as T10` };
   }
   if (isCord && !raw) {
+    // No level typed, but the chosen READING of the cord can still say where (spinal cord fix, row 9). Never
+    // "thoracic": a legs-only myelopathy can be cervical, and the plans keep the imaging at the whole spine.
+    const s = best.site;
+    // Wording approved in the content round (owner, 2026-10-22, B1–B2).
+    if (s.segments) return { ...base, fromVariant: true,
+      note: `root signs ${s.atLevel.sides.length > 1 ? "on both sides" : `on the ${s.atLevel.sides[0]}`} place the lesion at about ${spanName(s.segments, "–")}; the long-tract signs below it come from the same lesion` };
+    if (s.variant === "arms-spared") return { ...base, fromVariant: true,
+      note: "arms spared — the lesion is below the arm segments, or cervical and not yet reaching the arm fibres; a sensory level will narrow it" };
     return { ...base, note: "level undetermined — a sensory level is needed to localise the segment" };
   }
   if (!isCord && raw) {
-    return { given: raw, applies: false, segment, region: segment ? regionOf(segment) : null,
+    return { given: raw, applies: false, segment, region: segment ? regionOf(segment) : null, contradicts,
       landmark: segment ? landmarkOf(segment) : null,
       note: `a sensory level suggests a spinal cord lesion, but the findings localise to ${best ? best.site.id : "(no site)"}` };
   }
@@ -329,8 +416,8 @@ export function describeLength(best, distalReach) {
   return describeReach(raw); // { reach, threshold, involved, glove, applies, note, severity }
 }
 
-// ---- TOP-LEVEL SOLVE ----
-export function solve(observedSet, options = {}) {
+// ---- SOLVING ONE PICTURE ---- (solve(), below, sets background aside first, then calls this)
+function solveOne(observedSet, options = {}) {
   const opts = { dominantSide: options.dominantSide || "left", sensoryLevel: options.sensoryLevel };
   // The raised-pressure token is an AXIS, not a site finding — no site's expectedFindings contain it. It is
   // therefore stripped from every SCORED path (which would otherwise count it as permanently unexplained and
@@ -369,12 +456,108 @@ export function solve(observedSet, options = {}) {
     if (ms && ms.sites.length > 1 && ms.sites.length <= MAX_COVER_SITES) multi = ms;
   }
 
-  const nf = nearFit(localising, opts);
-  const level = describeLevel(best, options.sensoryLevel);
+  // THE SAME-FAMILY NEAR-FIT (owner ruling 2026-10-22, false-multifocal fix rows 5–9) — the one exception to "a
+  // LOCALISING sign is never relaxed away". A word entered INSTEAD of a family word that a place predicts on that
+  // side, and that was not entered (face numbness for the face pain loss a lateral medulla gives): that place is a
+  // near-fit, it leads the list, and NO multifocal claim is made — a single non-equivalent word gives one place, not
+  // two lesions plus MS (audit round 1). Both words entered is not a substitution, so the claim stands (row 7).
+  // DOMINANCE AS A PRIOR (owner ruling 2026-11-01, content-gap fix row 9; audit R1 #10). The setting gates every dominant
+  // and non-dominant structure. When NO place explains every finding with the dominance set, the places that do with
+  // the other dominance are the answer: atypical (crossed) dominance. They lead, no second lesion is claimed, and the
+  // card names the assumption. Whenever any place explains the picture with the setting, this never runs, so an aphasia
+  // the left hemisphere explains never lists a right-hemisphere place. It runs before the same-family near-fit: a place
+  // that explains everything beats one that explains all but one finding.
+  let atypical = null;
+  if (!singleExplainsAll) {
+    const assumed = opts.dominantSide === "left" ? "right" : "left";
+    const alt = differential(observedSet, { ...opts, dominantSide: assumed }).filter(c => c.n === total);
+    if (alt.length) atypical = { assumed, sites: alt };
+  }
+  let sameFamily = null;
+  if (!singleExplainsAll && !atypical) {
+    const read = enteredSet(localising);
+    for (const c of diff) {
+      if (c.n !== total - 1) break;
+      const missing = [...localising].find(t => !c.explained.includes(t));
+      const instead = sameFamilyInstead(enteredToken(missing, localising), c.exp, read);
+      if (instead) { sameFamily = { site: c.site, missing, instead }; break; }
+    }
+  }
+  if (sameFamily || atypical) multi = null;
+  const nf = atypical ? null : sameFamily || nearFit(localising, opts);
+  const display = explainAll.length ? explainAll
+    : atypical ? atypical.sites
+    : sameFamily ? [diff.find(c => c.site.id === sameFamily.site.id), ...diff.filter(c => c.site.id !== sameFamily.site.id)]
+    : diff;
+  // The level note describes the answer the reader SEES (spinal cord fix, row 9). It used to read the scored ranking,
+  // which can disagree with the display — a GBS answer whose note named Friedreich's.
+  const level = describeLevel(display[0] || best, options.sensoryLevel);
   const length = describeLength(best, options.distalReach);
-  const display = explainAll.length ? explainAll : diff;
   const defaultSite = display[0]?.site.id ?? null;
   const ruledOut = ruledOutSites(localising, opts);
   return { single, best, singleExplainsAll, multi, nearFit: nf, level, length, dominantSide: opts.dominantSide,
-           differential: diff, explainAll, display, defaultSite, ruledOut, pressure };
+           differential: diff, explainAll: atypical ? atypical.sites : explainAll, display, defaultSite, ruledOut, pressure,
+           dominance: atypical ? { assumed: atypical.assumed, set: opts.dominantSide } : null };
+}
+
+// ---- BACKGROUND (Hickam) — owner ruling 2026-10-22, false-multifocal fix rows 11–13 ----
+// A common finding on BOTH sides (BACKGROUND_FINDINGS: absent ankle jerks, glove-and-stocking numbness) is set aside as
+// a probably separate condition when it is what stops one place explaining the rest. It is KEPT when a place in the
+// answer predicts it on both sides (GBS keeps its absent ankle jerks); it goes as a pair, never one side; and it never
+// joins a multifocal cover, so a genuine two-lesion picture keeps its claim without a background place.
+// Returns the tokens to set aside: [] when nothing is.
+export function backgroundAside(observedSet, options = {}) {
+  const opts = { dominantSide: options.dominantSide || "left", sensoryLevel: options.sensoryLevel };
+  const entered = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
+  const pairs = BACKGROUND_FINDINGS.filter(f => entered.includes(`${f}@left`) && entered.includes(`${f}@right`));
+  if (!pairs.length) return [];
+  const bg = new Set(pairs.flatMap(f => [`${f}@left`, `${f}@right`]));
+  const rest = entered.filter(t => !bg.has(t));
+  if (!rest.length) return [];                                 // the background IS the picture
+  const full = differential(observedSet, opts);
+  if (full.some(c => c.n === entered.length)) return [];       // one place explains it all, background included
+  // The places in the answer: those explaining everything else, or else the cover of everything else.
+  let answer = differential(new Set([...observedSet].filter(t => !bg.has(t))), opts).filter(c => c.n === rest.length);
+  if (!answer.length) {
+    const ms = minimalSet(new Set(rest), opts);
+    answer = ms ? full.filter(c => ms.sites.some(s => s.id === c.site.id)) : [];
+  }
+  const kept = pairs.filter(f => answer.some(c => c.exp.has(`${f}@left`) && c.exp.has(`${f}@right`)));
+  return pairs.filter(f => !kept.includes(f)).flatMap(f => [`${f}@left`, `${f}@right`]);
+}
+
+// ---- FALSE-LOCALISING SIGNS (raised-pressure round, row 3, owner-approved 2026-11-05) ----
+// The second narrow overturn of "a LOCALISING sign is never relaxed away" (the first is the same-family near-fit). With
+// papilloedema, a sixth-nerve palsy (FALSE_LOCALISING_SIGNS) is set aside as a false-localising sign of the pressure when:
+//   (a) papilloedema is entered; (b) no place explains every finding;
+//   (c) one place explains the rest, or nothing is left but the papilloedema;
+//   (d) that place is the rest's own answer read without the papilloedema — a jugular-foramen or carotid-space picture
+//       that papilloedema replaces with a brainstem place keeps its claim.
+// Like background it never joins a cover, and the card names it. Returns the tokens to set aside: [] when nothing is.
+export function falseLocalisingAside(observedSet, options = {}) {
+  if (![...observedSet].some(t => PRESSURE_TOKEN.test(t))) return [];                       // (a)
+  const opts = { dominantSide: options.dominantSide || "left", sensoryLevel: options.sensoryLevel };
+  const entered = [...observedSet].filter(t => !PRESSURE_TOKEN.test(t) && !isNormalToken(t));
+  const fl = entered.filter(t => FALSE_LOCALISING_SIGNS.has(t.split("@")[0]));
+  if (!fl.length) return [];
+  if (differential(observedSet, opts).some(c => c.n === entered.length)) return [];         // (b)
+  const rest = entered.filter(t => !fl.includes(t));
+  if (!rest.length) return fl;                                                                // (c), nothing left
+  const fits = differential(new Set([...observedSet].filter(t => !fl.includes(t))), opts).filter(c => c.n === rest.length);
+  if (!fits.length) return [];                                                                // (c)
+  const own = differential(new Set(rest), opts).find(c => c.n === rest.length);
+  return own && fits.some(c => c.site.id === own.site.id) ? fl : [];                          // (d)
+}
+
+// ---- TOP-LEVEL SOLVE ----
+// The false-localising step runs first, then the background step: what they set aside is not localised at all, and the rest
+// is solved as usual. `background` is null, or { tokens }; `pressure.falseLocalising` is null, or { tokens } — for the card.
+export function solve(observedSet, options = {}) {
+  const fl = falseLocalisingAside(observedSet, options);
+  const kept = fl.length ? new Set([...observedSet].filter(t => !fl.includes(t))) : observedSet;
+  const aside = backgroundAside(kept, options);
+  const r = aside.length
+    ? { ...solveOne(new Set([...kept].filter(t => !aside.includes(t))), options), background: { tokens: aside } }
+    : { ...solveOne(kept, options), background: null };
+  return { ...r, pressure: { ...r.pressure, falseLocalising: fl.length ? { tokens: fl } : null } };
 }

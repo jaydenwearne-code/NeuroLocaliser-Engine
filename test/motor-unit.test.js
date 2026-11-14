@@ -33,8 +33,9 @@ import { STRUCTURES, STRUCTURE_BY_ID } from "../src/model/structures.js";
 const muOf = part => STRUCTURES.filter(s => s.level === "motor_unit" && s.part === part).map(s => s.produces).sort();
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-ok("anterior_horn -> lmn_weakness + fasciculations + bulbar (dysphagia+dysarthria) + hypotonia + wasting (PURE LMN)",
-   eq(muOf("anterior_horn"), ["dysphagia","dysarthria","fasciculations","hypotonia","lmn_weakness","wasting"].sort()));
+// The tongue joined the bulbar motor neurones on 2026-11-01 (content-gap fix, row 6).
+ok("anterior_horn -> lmn_weakness + fasciculations + bulbar (dysphagia+dysarthria+tongue) + hypotonia + wasting (PURE LMN)",
+   eq(muOf("anterior_horn"), ["cn12_palsy","dysphagia","dysarthria","fasciculations","hypotonia","lmn_weakness","wasting"].sort()));
 ok("anterior_horn produces no UMN sign (ALS is not a site — pathology layer)",
    !muOf("anterior_horn").some(f => ["hyperreflexia", "babinski", "hoffmann", "spasticity"].includes(f)));
 // + ptosis since 2026-09-26 (accuracy round 1 follow-up): the commonest presenting sign of myasthenia.
@@ -73,10 +74,12 @@ import { expectedFindings } from "../src/engine/forward.js";
 import { solve } from "../src/engine/inverse.js";
 const bilat = (...ids) => new Set(ids.flatMap(f => [`${f}@left`, `${f}@right`]));
 
-// Anterior horn — pure LMN, no sensory.
+// Anterior horn — pure LMN, no sensory. The DISPLAYED answer: since the anterior horn gives the tongue (content-gap fix,
+// row 6), one more bilateral prediction takes this picture's scored `best` below zero; the display, which the app shows,
+// is unchanged.
 {
-  const { best } = solve(bilat("lmn_weakness", "fasciculations"));
-  ok("pure-LMN (weakness + fasciculations) -> anterior horn", best && best.site.id === "motor_unit_anterior_horn");
+  const r = solve(bilat("lmn_weakness", "fasciculations"));
+  ok("pure-LMN (weakness + fasciculations) -> anterior horn (displayed answer)", r.display[0]?.site.id === "motor_unit_anterior_horn");
 }
 // Myasthenia gravis — fatigability is the hallmark; ocular predominance separates it from LEMS.
 {
@@ -107,7 +110,8 @@ const bilat = (...ids) => new Set(ids.flatMap(f => [`${f}@left`, `${f}@right`]))
 // --- Task 7: phonebook ---
 import { nameForSite } from "../src/data/syndromes.js";
 {
-  const name = set => nameForSite(solve(set).best.site).name;
+  // The displayed answer when the scored `best` is empty (the pure-LMN picture since content-gap fix row 6).
+  const name = set => { const r = solve(set); return nameForSite((r.best || r.display[0]).site).name; };
   const ah = name(bilat("lmn_weakness", "fasciculations"));
   ok("anterior horn names lower motor neurone / anterior horn disease", /anterior horn|lower motor/i.test(ah));
   ok("...and does NOT claim ALS (that's the pathology layer)", !/amyotrophic lateral/i.test(ah));

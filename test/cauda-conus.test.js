@@ -49,13 +49,16 @@ const conus = [...B("babinski"), ...B("hyperreflexia"), "saddle_anaesthesia@midl
 {
   const opts = { dominantSide: "left" };
   const saddle = ["saddle_anaesthesia@midline", "sphincter_dysfunction@midline"];
-  const one = (label, toks, id) => {
+  // "One lesion" = no multifocal claim and this site first. Owner ruling 2026-10-22 (spinal cord fix, rows 6 + 11): the
+  // conus picture also lists the complete cord SECOND — a complete lesion above the conus takes the saddle too, so look
+  // for a level. Every other picture here is still the ONLY site that explains it.
+  const one = (label, toks, id, { alone = true } = {}) => {
     const r = solve(new Set([...saddle, ...toks]), opts);
-    ok(`${label} → one lesion, ${id}`, r.explainAll.length === 1 && r.display[0].site.id === id);
+    ok(`${label} → one lesion, ${id}`, (alone ? r.explainAll.length === 1 : r.multi === null) && r.display[0].site.id === id);
   };
   one("sciatica on both sides", B("radicular_pain"), "cauda_equina");
   one("sciatica on one side", ["radicular_pain@left"], "cauda_equina");
-  one("both plantars up + brisk reflexes", [...B("babinski"), ...B("hyperreflexia")], "conus_medullaris");
+  one("both plantars up + brisk reflexes", [...B("babinski"), ...B("hyperreflexia")], "conus_medullaris", { alone: false });
   one("both legs flaccid-weak + wasting", [...B("lmn_weakness"), ...B("wasting")], "cauda_equina");
   one("one leg flaccid-weak + floppy", ["lmn_weakness@left", "hypotonia@left"], "cauda_equina");
 }

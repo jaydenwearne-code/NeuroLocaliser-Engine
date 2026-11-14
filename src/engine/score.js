@@ -9,6 +9,7 @@
 // inspectable, which matters for a teaching tool and for clinician review.
 
 import { expectedFindings } from "./forward.js";
+import { enteredSet, enteredToken, predictedSet } from "./families.js";
 
 // Findings that strongly pin location (nuclear/fascicular CN signs, gaze, INO, Horner, ataxia,
 // face pain). Long-tract signs (hemiparesis, dorsal columns, spinothalamic) are less localising
@@ -80,7 +81,8 @@ const LOCALISING = new Set([
   // territory does the pinning; pure-motor nerves localise by parsimony on their movement pattern).
   "axillary_sensory","musculocutaneous_sensory","radial_sensory","median_sensory","ulnar_sensory",
   "femoral_sensory","obturator_sensory","lat_fem_cutaneous_sensory","sciatic_sensory","peroneal_sensory","tibial_sensory",
-  // nerve-segment cutaneous branches + the ulnar claw — each pins a nerve SEGMENT (level). Movements
+  // nerve-segment cutaneous branches pin a nerve SEGMENT (level); the ulnar claw pins the ulnar nerve (elbow or wrist —
+  // content-gap fix, row 1: the dorsal branch and FDP/FCU decide which). Movements
   // (weak_forearm_pronation / weak_thumb_adduction) stay NON-localising, like every other movement.
   "deep_peroneal_sensory","ulnar_dorsal_sensory","median_palmar_sensory","ulnar_claw",
   // non-muscle reflexes: sacral arc + frontal grasp localise. Babinski/Hoffmann are NON-localising (they
@@ -132,15 +134,18 @@ export const NOT_LOCALISING_BY_DESIGN = {
 function findingIdOf(signed) { return signed.split("@")[0]; }
 
 export function scoreSite(site, observedSet, opts = {}) {
-  const expected = expectedFindings(site, opts);
+  // Word families (false-multifocal fix): an entered word is matched through its family; the entered token is still
+  // what is listed as matched or unexplained.
+  const read = enteredSet(observedSet);
+  const expected = predictedSet(expectedFindings(site, opts), read);
   let matched = [], missedByPatient = [], unexplained = [];
 
   for (const obs of observedSet) {
-    if (expected.has(obs)) matched.push(obs);
+    if (expected.has(enteredToken(obs, observedSet))) matched.push(obs);
     else unexplained.push(obs); // patient has it, this site doesn't explain it
   }
   for (const exp of expected) {
-    if (!observedSet.has(exp)) missedByPatient.push(exp); // site predicts it, patient lacks it
+    if (!read.has(exp)) missedByPatient.push(exp); // site predicts it, patient lacks it
   }
 
   // Weight matches: localising findings count more.

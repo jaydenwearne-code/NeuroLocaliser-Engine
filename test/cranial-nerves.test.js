@@ -91,7 +91,7 @@ ok("cpa -> VII + hearing + V1 + ataxia", eq(baseOf("cpa"), ["facial_weakness","f
 // damage is established, and acuity loss that does NOT correct with a pinhole (i.e. organic)
 ok("optic_canal -> optic + RAPD + disc pallor + non-correcting acuity",
    eq(baseOf("optic_canal"), ["optic_neuropathy","rapd","optic_atrophy","va_reduced_no_pinhole"]));
-ok("carotid_space -> Horner", eq(baseOf("carotid_space"), ["miosis","ptosis"]));
+ok("carotid_space -> Horner + XII (content-gap fix, row 7)", eq(baseOf("carotid_space"), ["cn12_palsy","miosis","ptosis"]));
 
 // hygiene: no crosses override, no gate, all ipsilateral, cn11_weakness has no producer
 {

@@ -71,7 +71,7 @@ const ex = id => EXAMPLES.find(e => e.id === id);
 }
 {
   const a = answerFor(stateFor(ex("footdrop"))).lines;
-  eq("Foot drop — Where names the other two", a.where, "Left common peroneal nerve. 2 other places also fit: Left L5 root, Left sacral plexus.");
+  eq("Foot drop — Where names the other two", a.where, "Left common peroneal nerve. 3 other places also fit: Left L5 root, Left sacral plexus, and 1 more.");
   eq("Foot drop — Why says several", a.why, "Left foot drop (weak ankle dorsiflexion) → the left nerve root, plexus or peripheral nerve; see Where for what separates them.");
 }
 {

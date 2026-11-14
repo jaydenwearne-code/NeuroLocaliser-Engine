@@ -12,6 +12,7 @@
 // together (Wallenberg) — they share a blood supply, not a lookup-table entry.
 
 import { STRUCTURES } from "./structures.js";
+import { spanName } from "./levels.js";
 
 // subcortex is built AFTER cortex so an isolated-hemianopia tie resolves to the earlier-built
 // occipital cortex site by stable sort (the deep optic radiation stays a co-equal candidate).
@@ -68,7 +69,7 @@ const TERRITORY = {
   "conus|medullaris": "conus medullaris (distal cord tip, S2–S5)",
   "cortex|motor_leg":        "ACA (paracentral — leg motor)",
   "cortex|motor_facearm":    "MCA superior division (precentral — face/arm motor)",
-  "cortex|operculum":        "MCA superior division (frontal operculum / Broca's area)",
+  "cortex|operculum":        "MCA superior division (frontal operculum)", // no "Broca's area": a territory serves both hemispheres
   "cortex|frontal_eye_field":"MCA superior division (frontal eye field)",
   "cortex|dlpfc":            "MCA (dorsolateral prefrontal cortex)",
   "cortex|medial_pfc":       "ACA (medial prefrontal cortex)",
@@ -76,7 +77,7 @@ const TERRITORY = {
   "cortex|sensory_facearm":  "MCA superior division (postcentral — face/arm sensory)",
   "cortex|sensory_leg":      "ACA (paracentral — leg sensory)",
   "cortex|parietal":         "MCA inferior division (inferior parietal lobule)",
-  "cortex|temporoparietal":  "MCA inferior division (temporoparietal / Wernicke's area)",
+  "cortex|temporoparietal":  "MCA inferior division (temporoparietal)", // nor "Wernicke's area"
   "cortex|temporal":         "MCA inferior division (temporal lobe)",
   "cortex|occipital":        "PCA (primary visual cortex)",
   "cortex|insula":           "insular cortex (MCA insular arteries)",
@@ -212,6 +213,7 @@ const TERRITORY = {
   "dorsal_midbrain|tectum": "dorsal midbrain / tectum (posterior commissure — Parinaud)",
   "cerebrum|diffuse": "diffuse bihemispheric cortex (metabolic / anoxic encephalopathy)",
   "thalamus_arousal|paramedian": "bilateral paramedian / intralaminar thalamus (artery of Percheron)",
+  "thalamus_arousal|basilar_apex": "basilar apex — both P1 thalamoperforators and both posterior cerebral arteries (top of the basilar)",
   "brainstem_aras|paramedian_tegmentum": "paramedian rostral brainstem tegmentum (ARAS)",
   "locked_in|ventral_pons": "ventral pons / basis pontis (basilar territory — locked-in)",
   "pons|trigeminal": "pontine trigeminal complex (main sensory + motor V)",
@@ -246,6 +248,24 @@ const TERRITORY = {
 // standalone site (preganglionic cord Horner) and is deliberately absent from this set.)
 const BUILDING_BLOCK_PARTS = new Set(["cord|anterior", "cord|posterior", "cord|central"]);
 
+// READINGS OF A PRIMITIVE SITE (raised-pressure round, row 5, owner-approved 2026-11-05). A reading is a variant, as the
+// cord's are: the same place, id, causes and plans, read in another state, so it predicts a different set of signs.
+//   uncal — the compressive III at the tentorial edge: the herniating uncus presses the III (the pupil first) and the
+//           midbrain beside it: the ARAS (reduced consciousness), extensor posturing, and the cerebral peduncle
+//           (contralateral weakness and Babinski). Every row is REUSED.
+// The gate: offered only with reduced consciousness entered (`needs`) AND one of the III's own signs (`needsOwn`). Ungated it
+// took the awake Weber picture (7 assertions); with the consciousness condition alone, coma + a weak arm read a compressed
+// III with no III sign entered (spec §3.3). `leads`: the cause its What line leads with (row 6). Its red flag (row 11) lives on that cause, "Uncal herniation" in the
+// compressive III's list (the card follows its cause, 2026-11-11).
+const READINGS = {
+  "pupil|cn3_compressive": structures => [{
+    key: "uncal",
+    structures: [...structures, "aras_brainstem", "aras_posturing", "cst_midbrain_arm", "cst_midbrain_leg", "cst_midbrain_bab"],
+    needs: "reduced_consciousness", needsOwn: true,
+    leads: "Uncal herniation",
+  }],
+};
+
 function buildSites() {
   const sites = [];
   for (const level of LEVELS) {
@@ -259,7 +279,8 @@ function buildSites() {
           side, level, part,
           territory: TERRITORY[`${level}|${part}`],
           structures, // structure ids present at this site, derived not hand-listed
-          ...(buildingBlock ? { buildingBlock: true } : {})
+          ...(buildingBlock ? { buildingBlock: true } : {}),
+          ...(READINGS[`${level}|${part}`] ? { variants: READINGS[`${level}|${part}`](structures) } : {})
         });
       }
     }
@@ -287,11 +308,49 @@ export const DIVISION = {
   temporoparietal:{ territory: "MCA", division: "inferior" },
   temporal:       { territory: "MCA", division: "inferior" },
   occipital:      { territory: "PCA" },
+  // The ventral occipitotemporal (fusiform) gyrus is PCA territory (P4, as vascular.js already says) — content-gap fix,
+  // row 10: the dominant PCA gives alexia without agraphia, the non-dominant prosopagnosia.
+  fusiform:       { territory: "PCA" },
   // ADDED 2026-09-26 (B10, owner-approved): the paracentral lobule (micturition, gait) and the SMA (alien limb)
   // are medial frontal ACA territory. Without them an ACA stroke with incontinence read as two lesions.
   paracentral:    { territory: "ACA" },
   sma:            { territory: "ACA" }
 };
+
+// ---- WHERE ALONG THE CORD: variants of one cord lesion (spinal cord fix, round 1 — spec 2026-10-22) ----
+// The cross-section says WHICH cord syndrome; a VARIANT says WHERE along the cord. A variant is the same lesion — the
+// same id, causes, plans and links — read at another segment or in another state, so it predicts a different set of
+// signs. inverse.js solverSites() scores every variant and shows each site once, as its best; candidateSites() still
+// lists one site per id. Everything is DERIVED from the structure catalogue.
+//   arms-spared — below the arm segments, or cervical and not yet reaching the arm fibres: no arm weakness, no
+//                 Hoffmann's. `top` is the highest segment it can occupy, for the sensory-level constraint.
+//   at-level    — a two-segment span (a disc-level lesion takes two segments: the biceps jerk is a C5 row, the
+//                 supinator jerk a C6 row) whose anterior horn cells and exiting roots are caught: the span's root
+//                 motor, reflex and wasting rows, on the left, the right or both — reused, not duplicated.
+//   shock       — an acute lesion in spinal shock: flaccid and areflexic below the level, the sacral reflexes lost; the
+//                 release signs (brisk reflexes, spasticity, Hoffmann's) have not appeared. Babinski is kept — the
+//                 plantars may be mute, flexor or already extensor. `needsLevel`: offered only with a stated level.
+const CORD_ARM_ROWS = new Set(["cst_cord_arm", "cst_cord_hof"]);
+const CORD_RELEASE_ROWS = new Set(["cst_cord_hyper", "cst_cord_spast", "cst_cord_hof"]);
+const AT_LEVEL_SPANS = [["C5", "C6"], ["C6", "C7"], ["C7", "C8"], ["C8", "T1"]];
+const armsSpared = structures => ({ key: "arms-spared", top: "T2", structures: structures.filter(id => !CORD_ARM_ROWS.has(id)) });
+const atLevelRows = span => STRUCTURES
+  .filter(s => s.level === "root" && span.includes(s.part.toUpperCase()) && !/_(derm|pain)$/.test(s.id))
+  .map(s => s.id);
+function cordVariants(structures) {
+  const variants = [armsSpared(structures)];
+  for (const span of AT_LEVEL_SPANS) {
+    const rows = atLevelRows(span);
+    for (const sides of [["left"], ["right"], ["left", "right"]])
+      variants.push({ key: `${spanName(span)}:${sides.join("+")}`, top: span[0], segments: span,
+        structures: [...structures, ...rows], atLevel: { structures: rows, sides } });
+  }
+  const shockRows = STRUCTURES.filter(s => s.level === "cord" && s.part === "shock").map(s => s.id);
+  const shock = [...structures.filter(id => !CORD_RELEASE_ROWS.has(id)), ...shockRows];
+  variants.push({ key: "shock", structures: shock, needsLevel: true });
+  variants.push({ ...armsSpared(shock), key: "shock:arms-spared", needsLevel: true });
+  return variants;
+}
 
 // A larger lesion can span medial+lateral at one level/side (a "hemi-level" lesion).
 // We expose these as composite candidate sites so the solver can consider them when a
@@ -313,7 +372,9 @@ export function composeHemiLevelSites() {
         side, level, part: "hemi",
         territory: `combined territory (${level}, ${side})`,
         structures: parts.flatMap(p => p.structures),
-        composite: true
+        composite: true,
+        // where along the cord: a hemicord below the arm segments spares the arm (spinal cord fix, row 2)
+        ...(level === "cord" ? { variants: [armsSpared(parts.flatMap(p => p.structures))] } : {})
       });
     }
   }
@@ -329,6 +390,14 @@ export function composeHemiLevelSites() {
 //   - transverse: the entire cord cross-section (every cord structure), bilaterally
 // The anterior-vs-transverse distinction (does vibration survive?) is exactly what lets the
 // solver tell ASA infarction from a complete transverse lesion — a derived consequence, no rule.
+// The central cord takes more than the commissure: the corticospinal ARM fibres (arms weaker than legs) and the
+// anterior horn cells at its level (wasting) — spinal cord fix, row 8, 2026-10-22. Both rows are reused. Leg signs
+// for an expanding syrinx are its syrinx READING (composite-sites round, rows 4–5), offered only with the cape; bladder
+// stays out (owner ruling 2026-09-26).
+const CENTRAL_REACH = ["cst_cord_arm", "ah_wasting"];
+// The cord's LEG corticospinal rows: the anterior cord's corticospinal rows other than the arm rows. An expanding syrinx
+// reaches them from the centre (composite-sites round, row 4).
+const SYRINX_REACH = () => STRUCTURES.filter(s => s.level === "cord" && s.part === "anterior" && s.id.startsWith("cst_cord_") && !CORD_ARM_ROWS.has(s.id)).map(s => s.id);
 export function composeBilateralCordSites() {
   const cordParts = ["anterior", "posterior", "central"];
   const structuresForPart = part =>
@@ -337,15 +406,22 @@ export function composeBilateralCordSites() {
   // Bladder/bowel control (cord|autonomic, composite-only) belongs to the ANTERIOR and TRANSVERSE bilateral
   // lesions only — accuracy round 1, B1.
   const autonomic = structuresForPart("autonomic");
+  // The saddle (cord|sacral) belongs to the complete TRANSVERSE lesion only (spinal cord fix, row 6).
+  const sacral = structuresForPart("sacral");
   const sites = [];
   for (const part of cordParts) {
-    const structures = [...structuresForPart(part), ...(part === "anterior" ? autonomic : [])];
+    const structures = [...structuresForPart(part), ...(part === "anterior" ? autonomic : []),
+      ...(part === "central" ? CENTRAL_REACH : [])];
     if (structures.length === 0) continue;
     sites.push({
       id: `bilateral_cord_${part}`,
       side: "bilateral", level: "cord", part,
       territory: TERRITORY[`cord|${part}`],
-      structures, composite: true
+      structures, composite: true,
+      ...(part === "anterior" ? { variants: cordVariants(structures) } : {}),
+      // the SYRINX READING (rows 4–5): the central lesion grown into the lateral columns — legs weak and spastic below it.
+      // Offered only with the cape that defines the central cord: ungated it takes "spastic legs + a cervical level".
+      ...(part === "central" ? { variants: [{ key: "syrinx", needs: ["suspended_sensory"], structures: [...structures, ...SYRINX_REACH()] }] } : {})
     });
   }
 
@@ -360,7 +436,8 @@ export function composeBilateralCordSites() {
       id: "bilateral_cord_transverse",
       side: "bilateral", level: "cord", part: "transverse",
       territory: "complete cord cross-section (transverse myelopathy)",
-      structures: [...belowLevel, ...autonomic], composite: true
+      structures: [...belowLevel, ...autonomic, ...sacral], composite: true,
+      variants: cordVariants([...belowLevel, ...autonomic, ...sacral])
     });
   }
   return sites;
@@ -560,6 +637,16 @@ export function composeSkullBaseSites() {
   return sites;
 }
 
+// BOTH VI NERVES (raised-pressure round, row 1, owner-approved 2026-11-05). The two nerves climb the clivus side by side in
+// the prepontine cistern to Dorello's canals, so one process there — raised or low CSF pressure, a clival tumour, basal
+// meningitis, trauma — catches both. ONE bilateral site from the same `vi_cisternal` row: it keeps every table keyed by the
+// place (causes, workup, label, vascular, topography), so it adds no content. buildSites still makes the left and right sites.
+export function composeBilateralAbducensSites() {
+  const structures = STRUCTURES.filter(s => s.level === "skull_base" && s.part === "vi_cisternal").map(s => s.id);
+  return structures.length ? [{ id: "bilateral_skull_base_vi_cisternal", side: "bilateral", level: "skull_base",
+    part: "vi_cisternal", territory: TERRITORY["skull_base|vi_cisternal"], structures, composite: true }] : [];
+}
+
 // MOTOR-UNIT SITES (pure-motor endings). These are generalized, symmetric conditions, so each part is
 // one BILATERAL site (the forward model emits every finding on both body sides) — NOT a left/right
 // primitive (a one-sided myopathy would be wrong). Like composeCaudaConusSites (midline sites), this is
@@ -651,6 +738,9 @@ export function composeDorsalMidbrainSites() {
 // single midline paramedian tegmental lesion) OR both hemispheres (bilateral thalamus / diffuse cortex) —
 // the bilateralOnly gate (Anton/Balint) makes a UNILATERAL thalamic/cortical lesion emit nothing. Locked-in
 // is the ventral-vs-tegmental contrast (bilateral basis pontis: quadriplegia, ARAS spared → awake).
+// The paramedian pons's horizontal-gaze rows (the PPRF and the abducens nucleus). Locked-in loses horizontal gaze and keeps
+// vertical gaze and blinking; the ARAS's basilar reading carries them too (composite-sites round, rows 1–2).
+const PONS_GAZE = () => STRUCTURES.filter(s => s.level === "pons" && s.part === "medial" && s.produces === "gaze_palsy").map(s => s.id);
 export function composeConsciousnessSites() {
   const byLevelPart = (lvl, part) => STRUCTURES.filter(s => s.level === lvl && s.part === part).map(s => s.id);
   const thalBilat = STRUCTURES.filter(s => s.level === "thalamus_arousal" && s.part === "paramedian").map(s => s.id);
@@ -659,13 +749,20 @@ export function composeConsciousnessSites() {
   if (diffuse.length) sites.push({ id: "cerebrum_diffuse", side: "bilateral", level: "cerebrum", part: "diffuse",
     territory: TERRITORY["cerebrum|diffuse"], structures: diffuse, composite: true });
   const aras = byLevelPart("brainstem_aras", "paramedian_tegmentum");
+  // Its BASILAR READING (composite-sites round, row 2, owner-approved 2026-11-05): the tegmental lesion grown into the basis
+  // pontis on both sides — coma with quadriparesis, both Babinski signs and horizontal gaze palsies (basilar occlusion,
+  // pontine haemorrhage). The same id, causes and plan; the reading is bilateral and sits in the pons on the Why line (its
+  // level's own station, "brainstem (several levels)", would put an isolated Babinski there too).
   if (aras.length) sites.push({ id: "brainstem_aras", side: "midline", level: "brainstem_aras", part: "paramedian_tegmentum",
-    territory: TERRITORY["brainstem_aras|paramedian_tegmentum"], structures: aras, composite: true });
+    territory: TERRITORY["brainstem_aras|paramedian_tegmentum"], structures: aras, composite: true,
+    variants: [{ key: "basis", side: "bilateral", station: "pons", structures: [...aras, ...byLevelPart("pons", "basis_pontis"), ...PONS_GAZE()] }] });
   if (thalBilat.length) sites.push({ id: "thalamus_bilateral_percheron", side: "bilateral", level: "thalamus_arousal", part: "paramedian",
     territory: TERRITORY["thalamus_arousal|paramedian"], structures: thalBilat, composite: true });
   const li = byLevelPart("locked_in", "ventral_pons");
   if (li.length) sites.push({ id: "locked_in", side: "bilateral", level: "locked_in", part: "ventral_pons",
-    territory: TERRITORY["locked_in|ventral_pons"], structures: ["cst_pons_arm", "cst_pons_leg", ...li], composite: true });
+    // BOTH SIDES OF THE BASIS PONTIS, derived (composite-sites round, row 1): the hand list it replaced (cst_pons_arm +
+    // cst_pons_leg) went stale as the pons gained its Babinski, face and speech rows — the B11 trap a fourth time.
+    territory: TERRITORY["locked_in|ventral_pons"], structures: [...byLevelPart("pons", "basis_pontis"), ...PONS_GAZE(), ...li], composite: true });
   return sites;
 }
 
@@ -733,21 +830,23 @@ export function composeGuillainMollaretSites() {
 export function composeAphasiaSites() {
   const perisylvian = ["ctx_broca_fluency", "ctx_broca_repetition", "ctx_broca_naming", "ctx_wernicke_comp", "ctx_wernicke_repetition", "ctx_wernicke_naming", "ctx_arcuate", "ctx_arcuate_naming"];
   const bothWatersheds = ["ctx_tcma", "ctx_tcma_naming", "ctx_tcsa", "ctx_tcsa_naming"];
-  // thal_face keeps this composite in step with the VPL site (B11): without it the NON-dominant composite —
-  // whose dominant-only rows emit nothing — is a VPL lesion missing the face, and out-ranks the real one.
-  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face"];
+  // thal_face keeps this composite in step with the VPL site (B11): without it the composite is a VPL lesion missing the face.
+  // (The NON-dominant copy, whose dominant-only rows emit nothing, once out-ranked the real thalamus that way; since the
+  // non-dominant-content round, J1, every aphasia composite is `dominantOnly` and that copy is never offered.)
+  // thal_ataxia too (content-gap fix, row 12) — the same trap: a stale copy out-ranks the real thalamus.
+  const thalamic = ["th_aphasia_comp", "th_aphasia_naming", "thal_dc", "thal_stt", "thal_face", "thal_ataxia"];
   // ic_hyper keeps this composite in step with the capsule (brisk reflexes, 2026-09-29) — the same trap as thal_face.
   const striatocapsular = ["sc_aphasia_nonfluent", "sc_aphasia_naming", "ic_cst_arm", "ic_cst_leg", "ic_cbt_face", "ic_cbt_forehead", "ic_bab", "ic_hof", "ic_hyper", "ic_spast"];
   const out = [];
   for (const side of SIDES) {
     out.push({ id: `aphasia_global_${side}`, side, level: "cortex", part: "aphasia_global",
-      territory: "perisylvian (dominant) — global aphasia", structures: perisylvian, composite: true });
+      territory: "perisylvian (dominant) — global aphasia", structures: perisylvian, composite: true, dominantOnly: true });
     out.push({ id: `aphasia_mixed_transcortical_${side}`, side, level: "cortex", part: "aphasia_mixed_transcortical",
-      territory: "both watershed zones (dominant) — isolation of the speech area", structures: bothWatersheds, composite: true });
+      territory: "both watershed zones (dominant) — isolation of the speech area", structures: bothWatersheds, composite: true, dominantOnly: true });
     out.push({ id: `thalamic_aphasia_${side}`, side, level: "aphasia_subcortical", part: "thalamic",
-      territory: TERRITORY["aphasia_subcortical|thalamic"], structures: thalamic, composite: true });
+      territory: TERRITORY["aphasia_subcortical|thalamic"], structures: thalamic, composite: true, dominantOnly: true });
     out.push({ id: `striatocapsular_aphasia_${side}`, side, level: "aphasia_subcortical", part: "striatocapsular",
-      territory: TERRITORY["aphasia_subcortical|striatocapsular"], structures: striatocapsular, composite: true });
+      territory: TERRITORY["aphasia_subcortical|striatocapsular"], structures: striatocapsular, composite: true, dominantOnly: true });
   }
   return out;
 }
@@ -826,6 +925,40 @@ export function composePolyneuropathySites() {
     part: "length_dependent", territory: TERRITORY["polyneuropathy|length_dependent"], structures, composite: true }];
 }
 
+// THE PARASAGITTAL LESION — both paracentral lobules (composite-sites round, row 6, owner-approved 2026-11-05). A falx
+// meningioma, a superior sagittal sinus thrombosis or an azygos ACA takes both medial hemispheres at the vertex: both legs
+// (motor and cortical sensory) and the cortical micturition centre. Derived from the three paracentral parts, both sides.
+// Its causes, plan, label and tables fall back to cortex_paracentral (level cortex, part paracentral), already written for
+// both legs; its phonebook entry is its own.
+const PARACENTRAL_PARTS = ["motor_leg", "sensory_leg", "paracentral"];
+export function composeParasagittalSites() {
+  const structures = STRUCTURES.filter(s => s.level === "cortex" && PARACENTRAL_PARTS.includes(s.part)).map(s => s.id);
+  return structures.length ? [{ id: "bilateral_paracentral", side: "bilateral", level: "cortex", part: "paracentral",
+    territory: "both paracentral lobules (parasagittal — falx / superior sagittal sinus / both ACAs)", structures, composite: true }] : [];
+}
+
+// BILATERAL INO — both MLFs (composite-sites round, row 3, owner-approved 2026-11-05). The two fasciculi lie side by side in
+// the paramedian tegmentum, so one small paramedian lesion takes both. Derived: the paramedian pons's INO rows, emitted on
+// both sides. Its causes, plan, label and tables fall back to pons_medial; its phonebook entry is its own.
+export function composeBilateralMlfSites() {
+  const structures = STRUCTURES.filter(s => s.level === "pons" && s.part === "medial" && s.produces === "ino").map(s => s.id);
+  return structures.length ? [{ id: "bilateral_pons_mlf", side: "bilateral", level: "pons", part: "medial",
+    territory: "both medial longitudinal fasciculi (paramedian pontine tegmentum)", structures, composite: true }] : [];
+}
+
+// TOP OF THE BASILAR — the basilar apex (composite-sites round, row 8, owner-approved 2026-11-05): both P1s with their
+// thalamoperforators (the paramedian thalami, as the artery of Percheron) and both PCAs beyond (the occipital and ventral
+// occipitotemporal cortex). One embolus at the tip takes them all. Derived: the Percheron rows + the PCA cortical parts
+// (DIVISION), both sides. It spans two stations, so the Why line places it by the rows that carry what was entered
+// (carrierStations, row 9). Its own content key.
+export function composeTopOfBasilarSites() {
+  const thal = STRUCTURES.filter(s => s.level === "thalamus_arousal" && s.part === "paramedian").map(s => s.id);
+  const pcaParts = Object.keys(DIVISION).filter(p => DIVISION[p].territory === "PCA");
+  const pca = STRUCTURES.filter(s => s.level === "cortex" && pcaParts.includes(s.part)).map(s => s.id);
+  return thal.length && pca.length ? [{ id: "top_of_basilar", side: "bilateral", level: "thalamus_arousal", part: "basilar_apex",
+    territory: TERRITORY["thalamus_arousal|basilar_apex"], structures: [...thal, ...pca], composite: true, carrierStations: true }] : [];
+}
+
 // PLEXUS SITES. A trunk / plexus lesion affects exactly the roots that feed it, so each is a plain UNION
 // of the constituent root sites' structures — the same composer shape as the vascular composites. A
 // two-adjacent-root pattern is then explained by ONE trunk (Erb/Klumpke), which beats two separate root
@@ -853,18 +986,29 @@ export function composeBrachialCordSites() {
 }
 
 export function composePlexusSites() {
-  const structuresForRoots = segs =>
-    STRUCTURES.filter(s => s.level === "root" && segs.includes(s.part)).map(s => s.id);
+  // A root that divides between two elements (only L4) names the element each of its rows travels in (`plexus` on the
+  // structure; plexus round row 1); a WHOLE element takes every row of its roots (row 9).
+  const structuresForRoots = (segs, part, whole) =>
+    STRUCTURES.filter(s => s.level === "root" && segs.includes(s.part) && (whole || !s.plexus || s.plexus.includes(part))).map(s => s.id);
+  // Each element also carries the cutaneous row of every MIXED nerve that arises wholly from it — the patch a clinician
+  // tests for that plexopathy (content-gap fix row 4; plexus round rows 3–6, owner-ruled 2026-11-05). Nerve rows are
+  // REUSED, as the cords reuse them. Branch and pure-sensory nerves (deep and superficial peroneal, tibial, sural,
+  // saphenous, lateral femoral cutaneous, dorsal ulnar) keep pinning their own territory, so they stay out (row 7: the
+  // foot-drop worked example's first web space). Every root row travels in, radicular pain included (row 2: the pain is
+  // shared). L4 divides: its femoral and obturator rows travel in the lumbar plexus, its lumbosacral-trunk rows in the
+  // sacral plexus (rows 8–9, owner-ruled with content round 2, 2026-11-05).
   const groups = [
-    { part: "upper_trunk",   segs: ["c5", "c6"], terr: "brachial plexus upper trunk (C5-6) — Erb's palsy" },
+    { part: "upper_trunk",   segs: ["c5", "c6"], nerves: ["axil_sens", "mcut_sens"], terr: "brachial plexus upper trunk (C5-6) — Erb's palsy" },
     { part: "middle_trunk",  segs: ["c7"], terr: "brachial plexus middle trunk (C7)" },
-    { part: "lower_trunk",   segs: ["c8", "t1"], terr: "brachial plexus lower trunk (C8-T1) — Klumpke's palsy" },
-    { part: "lumbar_plexus", segs: ["l2", "l3", "l4"], terr: "lumbar plexus (L2-4)" },
-    { part: "sacral_plexus", segs: ["l4", "l5", "s1"], terr: "sacral plexus (L4-S1)" }
+    { part: "lower_trunk",   segs: ["c8", "t1"], nerves: ["uln_el_sens"], terr: "brachial plexus lower trunk (C8-T1) — Klumpke's palsy" },
+    { part: "lumbar_plexus", segs: ["l2", "l3", "l4"], nerves: ["fem_sens", "obt_sens"], terr: "lumbar plexus (L2-4)" },
+    { part: "sacral_plexus", segs: ["l4", "l5", "s1"], nerves: ["sci_sens"], terr: "sacral plexus (L4-S1)" },
+    // the whole leg plexus: every L2–S1 row and the three mixed nerves (plexus round rows 8–9, content round 2)
+    { part: "lumbosacral_plexus", segs: ["l2", "l3", "l4", "l5", "s1"], nerves: ["fem_sens", "obt_sens", "sci_sens"], whole: true, terr: "lumbosacral plexus (L2-S1)" }
   ];
   const sites = [];
   for (const g of groups) {
-    const structures = structuresForRoots(g.segs);
+    const structures = [...structuresForRoots(g.segs, g.part, g.whole), ...(g.nerves || [])];
     if (structures.length === 0) continue;
     for (const side of SIDES) {
       sites.push({ id: `${side}_plexus_${g.part}`, side, level: "plexus", part: g.part,

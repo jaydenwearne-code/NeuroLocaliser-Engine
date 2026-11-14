@@ -2,7 +2,7 @@
 // Content (which structures sit where) is asserted in the regional suites; this suite pins the machinery.
 import { STRUCTURE_BY_ID } from "../src/model/structures.js";
 import { expectedFindings, explain } from "../src/engine/forward.js";
-import { candidateSites, differential, ruledOutSites, solve, PREVALENCE_ALLOWANCE, rankKey } from "../src/engine/inverse.js";
+import { candidateSites, differential, ruledOutSites, solve, solverSites, PREVALENCE_ALLOWANCE, rankKey } from "../src/engine/inverse.js";
 import { prevalenceOf, COMMON, UNCOMMON, RARE } from "../src/model/prevalence.js";
 import { SITE_BY_ID } from "../src/model/sites.js";
 import { FINDINGS, CROSSES } from "../src/model/findings.js";
@@ -188,7 +188,13 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
   const lac = causesFor(ic, { onset: "hyperacute" }).all.map(c => c.name);
   ok("a lacunar infarct is CONCORDANT with hyperacute onset at the capsule (B15)", lac.includes("Small-vessel lacunar infarct"));
   ok("the capsule badges emergency at hyperacute onset", nextStepsFor(ic, { onset: "hyperacute" }).urgency === "emergency");
-  ok("…and keeps its curated badge with no onset", nextStepsFor(ic).urgency === "urgent");
+  // Re-pinned 2026-11-12 (duplicate keys, row D6): the capsule's curated plan is region B's own, emergency — the "urgent"
+  // this used to pin came from a terse duplicate entry that hid it. The onset gating it demonstrated moves to the striatum,
+  // which is still curated urgent: the escalation must never reach a card with no onset.
+  ok("…and keeps its curated badge with no onset (region B's: emergency)", nextStepsFor(ic).urgency === "emergency");
+  const st = byId("left_basal_ganglia_striatum");
+  ok("a deep stroke site curated urgent (the striatum) badges emergency at hyperacute onset", hyperacuteVascular(st, "hyperacute") && nextStepsFor(st, { onset: "hyperacute" }).urgency === "emergency");
+  ok("…and keeps its curated urgent badge with no onset", nextStepsFor(st).urgency === "urgent");
   ok("a peripheral vestibular site does NOT escalate (peripheral compartment)", nextStepsFor(byId("left_peripheral_vestibular_labyrinth"), { onset: "hyperacute" }).urgency !== "emergency");
   ok("a microvascular CN III does NOT escalate", nextStepsFor(byId("left_pupil_cn3_ischaemic"), { onset: "hyperacute" }).urgency !== "emergency");
   ok("hyperacuteVascular is false without hyperacute onset", !hyperacuteVascular(ic, "acute") && !hyperacuteVascular(ic, undefined));
@@ -237,12 +243,16 @@ const ok = (l, c, d = "") => { c ? pass++ : fail++; console.log((c ? "PASS  " : 
 // ---- every site's own complete picture localises back to it (true on 2026-09-25; now pinned) ----
 {
   const missing = [];
+  // Re-pinned 2026-11-12 (non-dominant content, row J2): over the sites the solver OFFERS. A dominant-only place (the aphasia
+  // composites, J1) is not offered in the non-dominant hemisphere — there it was the same place without its aphasia.
+  const offered = new Set(solverSites({ dominantSide: "left" }).map(s => s.id));
   for (const s of candidateSites()) {
+    if (!offered.has(s.id)) continue;
     let E; try { E = expectedFindings(s, { dominantSide: "left" }); } catch { continue; }
     if (!E.size) continue; // non-dominant mirrors of dominant-only cortex predict nothing, by design
     if (!solve(E, { dominantSide: "left" }).explainAll.some(c => c.site.id === s.id)) missing.push(s.id);
   }
-  ok("every non-empty site's complete picture is explained by that site", missing.length === 0, missing.join(", "));
+  ok("every non-empty site the solver offers has its complete picture explained by that site", missing.length === 0 && offered.size > 300, missing.join(", ") || `${offered.size} offered`);
 }
 
 console.log(`\naccuracy mechanisms: ${pass} passed, ${fail} failed`);

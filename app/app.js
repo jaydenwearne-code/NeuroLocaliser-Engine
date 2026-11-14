@@ -11,7 +11,7 @@ import { whyChain } from "../src/engine/why.js";
 import { COURSES } from "../src/model/course.js";
 import { discriminators, explainedBy } from "./discriminators.js";
 import { EXAM_TREE, flattenFindings } from "./exam-map.js";
-import { checkPassphrase, GATE_STORAGE_KEY } from "./gate.js";
+import { checkPassphrase, isUnlocked, rememberUnlock } from "./gate.js";
 import { readTheme, writeTheme, nextTheme, applyTheme, themeGlyph, themeLabel } from "./theme.js";
 import { encodeCase, decodeCase } from "./case-url.js";
 import { feedbackHref } from "./feedback.js";
@@ -25,10 +25,12 @@ import { plainSiteName } from "./labels.js";
 import { VERSION, markSVG, faviconDataURI } from "./brand.js";
 import { EXAMPLES, CROSS_SITE_EXAMPLES } from "./examples.js";
 import { offersFor, tokensForRow, currentTokens } from "./sides.js";
-import { answerFor, resolveNext } from "./answer.js";
+import { answerFor, resolveNext, backgroundSentence, falseLocalisingSentence, PRESSURE_ONLY, PRESSURE_BAND, PRESSURE_LEADS_NOTE,
+  followNote, demotionReason, pressureLeads, strokeWindowHolds, cardCause, redLine } from "./answer.js";
 import { PLAIN, displayLabel } from "./plain-labels.js";
 import { followUpLayout } from "./follow-ups.js";
 import { searchFindings } from "./synonyms.js";
+import { showLevelField, levelLine } from "./level-axis.js";
 
 // ---- all candidate sites (one enumeration, owned by the engine) ----
 const CANDIDATES = candidateSites();
@@ -90,17 +92,18 @@ function syncURL() {
 }
 
 // ================= LOCALISE =================
-// The sensory-level and distal-reach inputs annotate a cord / length-dependent picture and mean nothing
-// otherwise, so they only mount once such a finding is present. Onset, course and dominant hemisphere moved
-// into the card they act on (What / Together / the header) — see the 2026-08-16 UI-clarity spec.
-// Deliberately NOT weak_arm / weak_leg: limb weakness is the commonest finding in the app and is usually
-// cortical, so triggering on it put these inputs on screen for almost every case — the noise this pass
-// exists to remove. A sensory level or a length-dependent picture is what makes them mean anything.
-const CORD_AXIS_FINDINGS = new Set(["spinothalamic","dorsal_column","sensory_level","sensory_ataxia",
-  "sphincter_dysfunction","saddle_anaesthesia","glove_stocking","distal_sensory_loss"]);
+// The sensory-level and distal-reach inputs mount for a cord / length-dependent finding, and whenever the displayed
+// answer is a cord lesion — app/level-axis.js holds the rule (spinal cord fix, row 10). Onset, course and dominant
+// hemisphere moved into the card they act on (What / Together / the header) — see the 2026-08-16 UI-clarity spec.
+// The last displayed list, so the field's visibility can follow the answer without re-solving.
+let LAST_DISPLAY = [];
+// The dominance the displayed answer assumes (content-gap fix, row 15): null = the setting; the other side when the
+// engine's dominance fallback answered (r.dominance). Reset on every render; set after the localiser solves.
+let RESULT_DOM = null;
+const domView = () => RESULT_DOM || S.dominant;
 
 function renderLocalise() {
-  const hasCord = [...S.tokens].some(t => CORD_AXIS_FINDINGS.has(fid(t)));
+  const hasCord = showLevelField(S.tokens, LAST_DISPLAY);
   app.innerHTML = `
   <div class="grid">
     <div class="pane">
@@ -288,7 +291,7 @@ function toggleTokens(toks) {
 // than re-rendering renderLocalise() keeps the accordion's open sections and scroll position intact.
 function syncLevelCtrls() {
   const el = document.getElementById("levelctrls"); if (!el) return;
-  el.hidden = ![...S.tokens].some(t => CORD_AXIS_FINDINGS.has(fid(t)));
+  el.hidden = !showLevelField(S.tokens, LAST_DISPLAY);
 }
 function markSides() {
   const acc = document.getElementById("acc"); if (!acc) return;
@@ -339,6 +342,7 @@ function renderChips() {
 }
 
 function renderResults() {
+  RESULT_DOM = null; // it can return before solving
   const el = document.getElementById("results");
   const su = document.getElementById("setup"); if (su) su.innerHTML = setupRow();
   if (!S.tokens.size) {
@@ -347,6 +351,7 @@ function renderResults() {
     // 2026-09-26). The per-case selections go with them — a chosen lesion or cause means nothing without
     // findings. Settings (onset, dominant hemisphere, scope) are the reader's and are kept.
     S.selected = undefined; S.selectedPathology = undefined; S.selectedEntity = undefined;
+    LAST_DISPLAY = []; syncLevelCtrls();
     syncURL();
     el.innerHTML = `<h3>Possible lesions</h3><div class="empty">Add a finding — every lesion that could produce it appears, and the list narrows as you add more.</div>`;
     wireAnswerStrip();   // no card now — this unbinds the last case's scroll listener
@@ -361,6 +366,12 @@ function renderResults() {
   // solve() still receives the FULL set — differential() needs the pressure token to apply the compartment
   // filter, and strips it internally before matching.
   const r = solve(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined, distalReach: S.distalReach || undefined });
+  RESULT_DOM = r.dominance ? r.dominance.assumed : null;
+  // Background set aside (false-multifocal fix, rows 11–13) is not a finding to explain either: the rows count without
+  // it. answerFor() takes the full total and subtracts it itself.
+  const flCount = r.pressure && r.pressure.falseLocalising ? r.pressure.falseLocalising.tokens.length : 0;
+  const counted = total - (r.background ? r.background.tokens.length : 0) - flCount; // raised-pressure round, row 3
+  LAST_DISPLAY = r.display; syncLevelCtrls();
   const cands = r.differential;
   const refr = refractiveFlag(S.tokens);
   const rmsg = refr.refractive
@@ -393,15 +404,22 @@ function renderResults() {
   if (together) has.add("together");
   const ans = answerFor({ r, sel, total, tokens: S.tokens, onset: S.onset, course: S.course, dominant: S.dominant,
     sensoryLevel: S.sensoryLevel, pinned: S.pinned, scope: S.scope, selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity });
-  el.innerHTML = answerCard(sel, list, r, ans)
-    + sectionNav(has)
-    + pmsg + rmsg
-    + whereCard(list, cands, total, r)
-    + together
-    + whyCard(tf, sel, list)
-    + whatCard(sel.site, r, list)
-    + nextCard(sel.site, r, list)
-    + answerStrip(sel, list, total, ans.nx);
+  // Papilloedema with nothing else localised (raised-pressure round, row 4): the card names no place, so the cards that
+  // describe the selected place (Together, Why, What, Next) are not drawn; the Where list stays, as fundus.test pins it.
+  if (ans.pressureOnly) {
+    el.innerHTML = answerCard(sel, list, r, ans) + pmsg + rmsg + whereCard(list, cands, counted, r)
+      + answerStrip(sel, list, counted, ans.nx, PRESSURE_ONLY.head);
+  } else {
+    el.innerHTML = answerCard(sel, list, r, ans)
+      + sectionNav(has)
+      + pmsg + rmsg
+      + whereCard(list, cands, counted, r)
+      + together
+      + whyCard(tf, sel, list)
+      + whatCard(sel.site, r, list)
+      + nextCard(sel.site, r, list)
+      + answerStrip(sel, list, counted, ans.nx);
+  }
   wireCardControls();
   wireJumpLinks(el);
   wireSectionToggles(el);
@@ -482,9 +500,9 @@ function renderResults() {
 
 // siteName keeps returning a plain STRING — all 15 call sites (diagram labels, feedback payload, why
 // blocks, together rows, code-stroke) depend on that. Only the composition changed.
-function siteName(site){ return plainSiteName(site, { dominantSide: S.dominant }).name; }
-function siteSub(site){ return plainSiteName(site, { dominantSide: S.dominant }).sub; }
-function siteRaw(site){ return plainSiteName(site, { dominantSide: S.dominant }).raw; }
+function siteName(site){ return plainSiteName(site, { dominantSide: domView() }).name; }
+function siteSub(site){ return plainSiteName(site, { dominantSide: domView() }).sub; }
+function siteRaw(site){ return plainSiteName(site, { dominantSide: domView() }).raw; }
 
 // cap is trusted HTML (literal labels we control, e.g. "Why" or `Where <span…>(N)</span>`) — not user input.
 // `anchor` gives the section nav a jump target.
@@ -560,8 +578,8 @@ function answerCard(sel, list, r, ans) {
   const row = (k, v) => v ? `<div class="ans-row"><span class="ans-k">${k}</span><span class="ans-v">${esc(v)}</span></div>` : "";
   const red = L.red ? `<div class="ans-row ans-red"><span class="ans-k">⚑</span><span class="ans-v">${esc(L.red)}</span></div>` : "";
   return `<div class="out-head" id="answer">
-    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(siteName(sel.site))}</b>
-      <details class="oh-raw"><summary>site id</summary><code>${esc(siteRaw(sel.site))} · ${esc(sel.site.id)}</code></details>
+    <div class="oh-lead"><div class="oh-lead-txt"><b>${esc(ans.pressureOnly ? PRESSURE_ONLY.head : siteName(sel.site))}</b>
+      ${ans.pressureOnly ? "" : `<details class="oh-raw"><summary>site id</summary><code>${esc(siteRaw(sel.site))} · ${esc(sel.site.id)}</code></details>`}
     </div>${urg}${feedbackButton(list)}</div>
     <div class="ans">${row("Where", L.where)}${row("Why", L.why)}${row("What", L.what)}${row("Next", L.next)}${red}</div>
     ${scope}${funcFlag}</div>`;
@@ -570,11 +588,11 @@ function answerCard(sel, list, r, ans) {
 // The phone strip (spec 2026-09-27 §3.3). Below the single-column breakpoint the answer card sits under the whole
 // exam, so a slim bar pins the answer to the bottom of the screen while the card is out of view. A <button>, not
 // a link: THE HASH IS THE CASE, and an href would rewrite it.
-function answerStrip(sel, list, total, nx) {
-  const n = list.filter(c => c.n === total).length;
+function answerStrip(sel, list, total, nx, head = null) {
+  const n = head ? 0 : list.filter(c => c.n === total).length; // `head`: the pressure-only card names no place (row 4)
   const u = nx.urgency === "emergency" ? "Emergency" : nx.urgency === "urgent" ? "Urgent" : "Routine";
   // Urgency FIRST: on a narrow screen the line truncates, and the name is what may be cut, never the urgency.
-  return `<button class="ans-strip" id="ans-strip" type="button" hidden><span class="ans-strip-t">${u}${n > 1 ? ` · ${n} fit` : ""} · ${esc(siteName(sel.site))}</span><span class="ans-strip-go">View</span></button>`;
+  return `<button class="ans-strip" id="ans-strip" type="button" hidden><span class="ans-strip-t">${u}${n > 1 ? ` · ${n} fit` : ""} · ${esc(head || siteName(sel.site))}</span><span class="ans-strip-go">View</span></button>`;
 }
 // Visibility is measured on scroll and resize, not with an IntersectionObserver: its callbacks were measured NOT
 // to arrive in a throttled tab (the strip never appeared), and a strip that silently never shows is the failure
@@ -624,12 +642,23 @@ const idsOf = list => list.map(c => c.site.id);
 function whereCard(list, cands, total, r) {
   const nAll = r.explainAll.length;
   const near = (!nAll && r.nearFit)
-    ? `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but <code>${esc(r.nearFit.missing)}</code> — re-check that finding, or consider a second lesion.</div>` : "";
+    ? (r.nearFit.instead
+      // The same-family near-fit (false-multifocal fix row 10): both words, and no second lesion claimed.
+      ? `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but ${esc(displayLabel(fid(r.nearFit.missing)))} — it gives ${esc(displayLabel(fid(r.nearFit.instead)))} on that side. Re-examine that finding; no second lesion is claimed.</div>`
+      : `<div class="annot"><b>Near-fit:</b> ${esc(siteName(r.nearFit.site))} explains all but <code>${esc(r.nearFit.missing)}</code> — re-check that finding, or consider a second lesion.</div>`)
+    : "";
+  // Background set aside (rows 11–15): the same sentence as the answer card's Where line.
+  const bg = r.background
+    ? `<div class="annot"><b>Background:</b> ${esc(backgroundSentence([...new Set(r.background.tokens.map(fid))], !!list[0] && list[0].site.level === "cord"))}</div>` : "";
+  // The false-localising palsies (raised-pressure round, rows 3 and 9): the same sentence as the answer card's Where line.
+  const fl = r.pressure && r.pressure.falseLocalising
+    ? `<div class="annot"><b>False-localising:</b> ${esc(falseLocalisingSentence(r.pressure.falseLocalising.tokens.length))}</div>` : "";
   const multi = (!nAll && r.multi)
     // NB: minimalSet() yields RAW site objects (unlike r.nearFit, which is a {site,missing} wrapper).
     ? `<div class="multi"><b>⚠ Likely multifocal.</b> Minimal cover — ${r.multi.sites.length} sites: ${r.multi.sites.map(s=>esc(siteName(s))).join(" + ")}${r.multi.uncovered.length?`; still unexplained: ${r.multi.uncovered.map(esc).join(", ")}`:""}.</div>` : "";
   let annot = "";
-  if (r.level && r.level.applies) annot += `<div class="annot"><b>Sensory level:</b> ${esc(r.level.note || (r.level.landmark||r.level.segment||""))}</div>`;
+  const ll = levelLine(r.level, list[0] ? plainSiteName(list[0].site, { dominantSide: domView() }).place : "");
+  if (ll) annot += `<div class="annot"><b>Sensory level:</b> ${esc(ll)}</div>`;
   if (r.length && r.length.applies) annot += `<div class="annot"><b>Length:</b> ${esc(r.length.note||"")}${r.length.glove?" · stocking-glove":""}</div>`;
   const rows = list.map(c => {
     const on = c.site.id === S.selected ? " on" : "";
@@ -639,7 +668,7 @@ function whereCard(list, cands, total, r) {
     // TWO CONTROLS, TWO CLAIMS. The checkbox says "I am choosing between these" (one lesion, which one?);
     // the pin says "these are both real" (two lesions). Opposite claims, so they cannot share a control.
     const cmpOn = compareSet(idsOf(list)).has(c.site.id) ? " checked" : "";
-    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span>${c.against ? `<span class="dagainst">less likely — would give ${esc(displayLabel(fid(c.against)))} on the ${esc(c.against.split("@")[1])}</span>` : ""}</div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
+    return `<div class="drow${on}" data-k="${esc(c.site.id)}"><div class="dn"><b>${esc(siteName(c.site))}</b><span class="dloc">${esc(siteSub(c.site))}</span>${c.against ? `<span class="dagainst">less likely — would give ${esc(displayLabel(fid(c.against)))} on the ${esc(c.against.split("@")[1])}</span>` : ""}${c.levelAgainst ? `<span class="dagainst">less likely — cannot produce a sensory level at ${esc(c.levelAgainst)}</span>` : ""}</div><div class="dfit">${fit}<div class="dbar" style="width:${w}px"></div></div><label class="cmp" title="Compare this location with the others you tick"><input type="checkbox" data-cmp="${esc(c.site.id)}"${cmpOn}></label><button class="pin${pinned}" data-pin="${esc(c.site.id)}" title="Pin this site as a SECOND lesion, for the Together card">📌</button></div>`;
   }).join("");
   const ruled = (r.ruledOut && r.ruledOut.length)
     ? setAside("contradicted by a normal finding", r.ruledOut.length,
@@ -649,7 +678,7 @@ function whereCard(list, cands, total, r) {
         }).join("")}</div>`)
     : "";
   const cap = `Where <span class="oc-n">(${list.length})</span>`;
-  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${annot}${ruled}`, "where", "— every place that fits");
+  return card(cap, `<div class="difflist" id="difflist">${rows}</div>${near}${multi}${bg}${fl}${annot}${ruled}`, "where", "— every place that fits");
 }
 
 // A `spread`/`motor` clause has no single site — it is satisfied by the SET of sites, or by the observed
@@ -709,17 +738,17 @@ function unifyingRow(e, sites) {
 // event, including each keystroke in the sensory-level and distal-reach fields — and those fields do not
 // change the finding set, so the guard was recomputing an identical answer per keystroke.
 //
-// The memo is keyed on the finding set plus the dominant hemisphere ONLY. `sensoryLevel` and `distalReach`
-// are deliberately excluded: they are ANNOTATION axes (see CLAUDE.md — the sensory level annotates the
-// winner, it never changes it), and this was verified rather than assumed — 7 sensoryLevel variants and a
-// distalReach variant all produce a byte-identical forcingFindings result.
+// The memo is keyed on the finding set, the dominant hemisphere and the sensory level. The level joined the key on
+// 2026-10-22: since the spinal cord fix it changes the answer (it demotes what cannot produce it and gates spinal
+// shock). `distalReach` stays out — it only annotates a polyneuropathy.
 //
 // Kept in the app layer on purpose: the engine function stays simple and cache-free; the repeated
 // identical calls are an app-render concern, so the fix belongs where the repetition is.
 let _ffKey = null, _ffVal = null;
 function forcingFindingsMemo() {
-  const key = [...S.tokens].sort().join("|") + "#" + S.dominant;
-  if (key !== _ffKey) { _ffKey = key; _ffVal = forcingFindings(S.tokens, { dominantSide: S.dominant }); }
+  // The sensory level changes the answer since the spinal cord fix (row 10), so it is passed and memoised on.
+  const key = [...S.tokens].sort().join("|") + "#" + S.dominant + "#" + S.sensoryLevel;
+  if (key !== _ffKey) { _ffKey = key; _ffVal = forcingFindings(S.tokens, { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined }); }
   return _ffVal;
 }
 
@@ -853,7 +882,7 @@ function whyCard(tf, sel, list) {
   const umnlmn = pat.verdict
     ? `<div class="annot"><b>${pat.verdict === "mixed" ? "UMN + LMN (mixed)" : pat.verdict + " pattern"}:</b> ${esc(pat.note)}</div>`
     : "";
-  const opts = { dominantSide: S.dominant, sensoryLevel: S.sensoryLevel || undefined };
+  const opts = { dominantSide: domView(), sensoryLevel: S.sensoryLevel || undefined };
   const w = whyChain(S.tokens, sel.site, opts);
   const chain = w.steps.length
     ? `<p class="wc-h">Why ${esc(siteName(sel.site))}</p><div class="why-chain">${w.steps.map(whyStepHTML).join("")}</div><p class="wc-meet">${esc(meetSentence(w))}</p>`
@@ -879,8 +908,11 @@ function scopeToggle(n) {
 // One shared cause row, in the merged What card. `dem` adds the "usually X onset" line the demoted band
 // needs — the concordant list omits it, since a concordant entry needs no such caveat.
 function sharedCauseRow(s, nSites, dem) {
+  const d = s.demotion;
+  const why = dem ? [d.axis === "tempo" ? `usually ${d.expected.map(esc).join(" / ")} onset` : "",
+    d.axis === "pressure" || d.pressure ? esc(PRESSURE_BAND.tag) : ""].filter(Boolean).join(" · ") : "";
   const loc = dem
-    ? `at ${s.count} of ${nSites} sites · usually ${s.demotion.expected.map(esc).join(" / ")} onset`
+    ? `at ${s.count} of ${nSites} sites · ${why}`
     : `at ${s.count} of ${nSites} sites`;
   return `<div class="cause${s.red?" red":""}"><b>${esc(s.name)}</b>${s.red?` <span class="rf">⚑ RED</span>`:""} <span class="dloc">${loc}</span>${s.feature?` — ${esc(s.feature)}`:""}</div>`;
 }
@@ -910,7 +942,7 @@ function perSiteRemainderHTML(cc, sites) {
   const body = bySite.map(({ site, remainder }) =>
     `<div class="catgrp"><div class="cathead">${esc(siteName(site))}</div>${remainder.map(c =>
       renderCause(c) + (c.demotion
-        ? `<div class="annot" style="margin:-4px 0 6px">Less likely given <b>${esc(c.demotion.entered)}</b> onset — usually ${c.demotion.expected.map(esc).join(" / ")}.</div>`
+        ? `<div class="annot" style="margin:-4px 0 6px">${c.demotion.axis === "tempo" ? `Less likely given <b>${esc(c.demotion.entered)}</b> onset` : "Less likely with papilloedema"} — ${esc(demotionReason(c.demotion))}.</div>`
         : "")
     ).join("")}</div>`
   ).join("");
@@ -925,24 +957,31 @@ function whatCard(site, r, list) {
   // the user's pinned pair, and the two cards silently describe DIFFERENT sites on the same screen.
   const { sites } = combinedSites(r, list, S.pinned);
   if (sites.length >= 2 && S.scope === "all") {
-    const cc = combinedCauses(sites, { onset: S.onset || undefined });
+    const cc = combinedCauses(sites, { onset: S.onset || undefined, pressure: raisedPressureAxis(S.tokens).present, dominantSide: domView() });
     // Tempo mismatches DEMOTE, never drop (owner ruling) — a shared cause is demoted iff EVERY contributing
     // site's own source was demoted. The "no shared cause" message must only fire when there is truly
     // nothing shared, never merely because everything that IS shared got demoted — that's a different,
     // narrower claim ("no cause is plausible at more than one site" is false when one is, just at the wrong
     // tempo) and the code cannot support the stronger one.
     const concordantShared = cc.shared.filter(s => !s.demoted);
-    const demotedShared = cc.shared.filter(s => s.demoted);
+    // Papilloedema demotes beside the tempo, in its own band (pressure follows the cause, row 16).
+    const demotedShared = cc.shared.filter(s => s.demoted && s.demotion.axis === "tempo");
+    const pressureShared = cc.shared.filter(s => s.demoted && s.demotion.axis === "pressure");
     const shared = concordantShared.length
       ? concordantShared.map(s => sharedCauseRow(s, sites.length, false)).join("")
       : demotedShared.length
       ? `<div class="empty">Every shared cause is demoted given <b>${esc(S.onset)}</b> onset — see "Less likely given the tempo" below.</div>`
+      : pressureShared.length
+      ? `<div class="empty">Every shared cause is set aside with papilloedema — see "${esc(PRESSURE_BAND.title)}" below.</div>`
       : `<div class="empty">No cause is plausible at more than one of these sites — which argues for two unrelated processes.</div>`;
-    const dem = demotedShared.length
+    const dem = (demotedShared.length
       ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, demotedShared.length,
           `<div class="annot">A cause shared here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
            ${demotedShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}`)
-      : "";
+      : "") + (pressureShared.length
+      ? setAside(esc(PRESSURE_BAND.title), pressureShared.length,
+          `<div class="annot">${esc(PRESSURE_BAND.note)}</div>${pressureShared.map(s => sharedCauseRow(s, sites.length, true)).join("")}`)
+      : "");
     const remainder = perSiteRemainderHTML(cc, sites);
     return card(`What <span class="oc-n">(all sites)</span>`, shared + dem + remainder, "what", "— every cause, by onset");
   }
@@ -960,9 +999,16 @@ function renderCause(c) {
 }
 
 function whatBlock(site) {
-  const res = causesFor(site, { onset: S.onset || undefined });
-  const ph = nameForSite(site);
-  const red = ph.red ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(ph.red)}</div>` : "";
+  const pressed = raisedPressureAxis(S.tokens).present;
+  // Inside the stroke window (owner, 2026-11-11) the place's own causes stand, read without the papilloedema, and the pressure is
+  // a second line, as on the answer card.
+  const held = pressed && strokeWindowHolds(site, S.onset);
+  const res = causesFor(site, { onset: S.onset || undefined, pressure: pressed && !held, dominantSide: domView() });
+  // Nothing here can raise the pressure (pressure follows the cause, row 10): the card follows the pressure itself.
+  const leads = pressed && pressureLeads(site, S.onset);
+  // The red flag follows the cause this card names, as on the answer card (the card follows its cause, 2026-11-11).
+  const redText = redLine(site, cardCause({ res, selected: S.selectedPathology, pressureLeads: leads }), domView());
+  const red = redText ? `<div class="multi" style="border-style:solid;border-color:var(--red);background:var(--red-bg)"><b>Red flag:</b> ${esc(redText)}</div>` : "";
   // Curated causes only — a category with nothing plausible at this site is simply not shown.
   const bySpec = Object.fromEntries(res.byCategory.map(g => [g.cat, g]));
   // Per category the leading causes stay open, and EVERY red-flagged must-not-miss stays open regardless of
@@ -988,8 +1034,11 @@ function whatBlock(site) {
   }).join("");
   // Lead: the common causes to think of first (given the chosen tempo, if any).
   const leadCauses = res.all.filter(x => x.likelihood === "common").slice(0, 3).map(x => x.name);
-  const lead = leadCauses.length
+  const lead = leads
+    ? `<p class="what-lead">${esc(PRESSURE_ONLY.what)}</p>`
+    : leadCauses.length
     ? `<p class="what-lead">${S.onset ? `Given <b>${esc(S.onset)}</b> onset, think first of` : "Most likely"}: ${leadCauses.map(esc).join("; ")}.</p>` : "";
+  const pressureLine = held ? `<p class="what-lead">${esc(PRESSURE_ONLY.what)}</p>` : "";
   // The onset control lives HERE, in the card it acts on — it filters/demotes causes and nothing else.
   const cap = `<div class="card-ctrl"><label>Onset
       <select id="onset">
@@ -997,13 +1046,21 @@ function whatBlock(site) {
         ${TEMPO.map(t=>`<option value="${t.id}"${S.onset===t.id?" selected":""}>${esc(t.label)}</option>`).join("")}
       </select></label>${res.derived ? `<span class="derived">(derived from site type — not individually curated)</span>` : ""}</div>`;
   // Tempo mismatches are demoted, never deleted — the teaching line that used to REPLACE the content now
-  // heads the disclosure. Spec 2026-08-14 §7.
-  const dem = res.demoted && res.demoted.length
-    ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, res.demoted.length,
+  // heads the disclosure. Spec 2026-08-14 §7. Papilloedema demotes beside them in its own band (pressure follows the cause,
+  // row 16); a cause both demote stays in the tempo band with both reasons. The papilloedema band's causes stay selectable
+  // (row 1), so it is held open while the selection lives inside it.
+  const tempoDem = res.demoted.filter(x => x.demotion.axis === "tempo");
+  const pressDem = res.demoted.filter(x => x.demotion.axis === "pressure");
+  const dem = (tempoDem.length
+    ? setAside(`less likely given <b>${esc(S.onset)}</b> onset`, tempoDem.length,
         `<div class="annot">A lesion here does not typically present with <b>${esc(S.onset)}</b> onset — the mismatch between tempo and site is itself informative.</div>
-         ${res.demoted.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">usually ${x.demotion.expected.map(esc).join(" / ")}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}`)
-    : "";
-  return `${cap}${lead}${red}${groups}${dem}`;
+         ${tempoDem.map(x => `<div class="cause"><b>${esc(x.name)}</b> <span class="dloc">${esc(demotionReason(x.demotion))}</span>${x.feature ? ` — ${esc(x.feature)}` : ""}</div>`).join("")}`)
+    : "") + (pressDem.length
+    ? setAside(esc(PRESSURE_BAND.title), pressDem.length,
+        `<div class="annot">${esc(PRESSURE_BAND.note)}</div>${pressDem.map(x => renderCause(x) + `<div class="annot" style="margin:-4px 0 6px">${esc(PRESSURE_BAND.tag)}.</div>`).join("")}`,
+        pressDem.some(x => x.name === S.selectedPathology))
+    : "");
+  return `${cap}${lead}${pressureLine}${red}${groups}${dem}`;
 }
 
 // ④ Next steps — its own card, tiered (immediate → first-line → confirmatory → monitoring) + urgency/referral.
@@ -1014,7 +1071,7 @@ function nextCard(site, r, list) {
   // The SAME resolution the answer card uses (app/answer.js), so the badge, the Next line and this card can never
   // describe different plans. S.pinned is passed through — see the note in whatCard().
   const { nx, combined } = resolveNext({ site, r, pinned: S.pinned, scope: S.scope,
-    selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity, onset: S.onset });
+    selectedPathology: S.selectedPathology, selectedEntity: S.selectedEntity, onset: S.onset, dominant: S.dominant });
   const cap = combined ? `Next steps <span class="oc-n">(all sites)</span>` : "Next steps";
   return card(cap, nextBlock(nx, combined), "next", "— the full workup");
 }
@@ -1042,8 +1099,10 @@ function nextBlock(nx, combined) {
     : ux
     ? `<div class="px-line">Plan for: <button class="px-chip" data-ux="${esc(nx.entity)}" title="Clear the selected cross-site diagnosis">${esc(nx.entity)} <span class="px-x" aria-hidden="true">×</span></button></div>`
     : "";
+  // Papilloedema has its own sentences (pressure follows the cause, rows 17–18); the onset's stays as approved.
   const fxHead = fx
-    ? `<p class="derived">Following the most likely cause, ${esc(fx.cause)}. A ${esc(fx.onset)} onset rules out ${esc(fx.setAside)}, which this site's usual plan is written for.</p>` : "";
+    ? `<p class="derived">${esc(followNote(fx))}</p>`
+    : !combined && !px && nx.pressureLeads ? `<p class="derived">${esc(PRESSURE_LEADS_NOTE)}</p>` : "";
   // The honest fallback (spec 2026-08-18): an uncurated pathology shows the SITE plan and says so, rather
   // than deriving generic content to fill the gap. There is deliberately NO cross-site equivalent — every
   // entity has an authored plan (the gate in test/multifocal-next-steps.test.js), so `ux` never falls back.
@@ -1089,7 +1148,7 @@ function renderAtlasDetail() {
   const rows = exp.map(t => { const [f,s]=t.split("@");
     const cls = s==="left"||s==="right" ? "bc" : s==="bilateral" ? "bb" : s==="midline" ? "bm" : "bnone";
     return `<div class="why-item"><span class="badge ${cls}">${sideTag(s)}</span><span class="t">${esc(f)}</span><span class="d">${esc(desc(f))}</span></div>`; }).join("");
-  const res = causesFor(site, {});
+  const res = causesFor(site, { dominantSide: domView() });
   const groups = res.byCategory.map(g=>`<div class="catgrp"><div class="cathead"><span class="catdot" style="background:var(${g.tint})"></span>${esc(g.label)}</div>${g.causes.map(c=>`<div class="cause"><span class="cn">${esc(c.name)}</span><span class="tp">${c.tempo.map(x=>x[0].toUpperCase()).join("")}</span>${c.red?`<span class="rf">⚑ RED</span>`:""}</div>`).join("")}</div>`).join("");
   document.getElementById("adetail").innerHTML = `<h3>${esc(siteName(site))}</h3>
     <div class="where-best" style="margin-bottom:10px"><div class="loc">${esc(siteSub(site) || siteRaw(site))}</div><div class="terr">${esc(siteRaw(site))}</div></div>
@@ -1139,7 +1198,7 @@ function boot() {
     globalThis.matchMedia?.("(prefers-color-scheme:dark)")
       ?.addEventListener?.("change", () => { if (choice === "system") paintFavicon(); });
   }
-  try { S.mode==="atlas" ? renderAtlas() : S.mode==="stroke" ? renderStroke() : renderLocalise(); }
+  try { RESULT_DOM = null; S.mode==="atlas" ? renderAtlas() : S.mode==="stroke" ? renderStroke() : renderLocalise(); }
   catch (err) { app.innerHTML = errorPanel(err); }
 }
 
@@ -1181,7 +1240,7 @@ async function startGate() {
   applyTheme(readTheme());
   paintBrand();
   const gateEl = document.getElementById("gate");
-  if (localStorage.getItem(GATE_STORAGE_KEY) === "ok") { reveal({ first: false }); boot(); return; }
+  if (isUnlocked()) { reveal({ first: false }); boot(); return; }
   gateEl.classList.add("show");
   document.getElementById("gate-form").onsubmit = async ev => {
     ev.preventDefault();
@@ -1189,7 +1248,7 @@ async function startGate() {
     if (!document.getElementById("gate-ack").checked) { errEl.textContent = "Please tick the acknowledgment to continue."; return; }
     const okPass = await checkPassphrase(document.getElementById("gate-pass").value);
     if (!okPass) { errEl.textContent = "Incorrect passphrase."; return; }
-    try { localStorage.setItem(GATE_STORAGE_KEY, "ok"); } catch {}
+    rememberUnlock();
     reveal({ first: true }); boot();
   };
 }

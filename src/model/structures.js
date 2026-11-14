@@ -85,6 +85,9 @@ export const STRUCTURES = [
     note: "VII fascicle — LMN, so the forehead is weak too" },
   { id: "pprf",           level: "pons", part: "medial",  produces: "gaze_palsy",
     note: "paramedian pontine reticular formation / lateral gaze centre" },
+  // ADDED 2026-11-01 (content-gap fix, row 11): the eyes look toward a frontal lesion and AWAY from a pontine one.
+  { id: "pprf_deviation", level: "pons", part: "medial", produces: "gaze_deviation", crosses: true,
+    note: "PPRF / abducens nucleus, acute — the eyes rest deviated away from the lesion, toward the hemiparesis ('wrong-way eyes')" },
   { id: "mlf_pons",       level: "pons", part: "medial",  produces: "ino",
     note: "medial longitudinal fasciculus" },
   { id: "cst_pons_arm", level: "pons", part: "medial", produces: "weak_arm", note: "corticospinal (pons) — contra arm weakness" },
@@ -109,6 +112,13 @@ export const STRUCTURES = [
     note: "facial nucleus — LMN, so the forehead is weak too" },
   { id: "cochlear_pons", level: "pons", part: "lateral", produces: "hearing_loss",
     note: "cochlear nuclei / labyrinthine artery (an AICA branch) — IPSI sensorineural deafness" },
+  // ADDED 2026-11-01 (content-gap fix, row 8): an AICA infarct reaching the inner ear breaks the VOR like a peripheral
+  // lesion — why HINTS-plus asks about hearing. Accepted cost (owner ruling): AICA is an "also fits" for every
+  // peripheral-HINTS picture, with or without hearing loss.
+  { id: "lab_art_hit", level: "pons", part: "lateral", produces: "head_impulse_abnormal",
+    note: "labyrinthine artery (an AICA branch) — inner-ear infarct: the head impulse is abnormal, as in a peripheral lesion (why HINTS-plus asks about hearing)" },
+  { id: "lab_art_nyst", level: "pons", part: "lateral", produces: "nystagmus_peripheral",
+    note: "labyrinthine artery — inner-ear infarct: peripheral-type nystagmus" },
   { id: "sp5_pons", level: "pons", part: "lateral", produces: "face_pain_loss",
     note: "spinal trigeminal nucleus and tract (caudal pons) — IPSI facial pain/temperature loss" },
   { id: "sym_pons_miosis", level: "pons", part: "lateral", produces: "miosis",
@@ -197,6 +207,29 @@ export const STRUCTURES = [
     note: "central cord Horner — facial anhidrosis (≥ ~T1)" },
   { id: "sym_cord_anhbody", level: "cord", part: "lateral", produces: "anhidrosis_body", crosses: false, emitAtOrAbove: "T1",
     note: "central cord Horner — hemibody anhidrosis (≥ ~T1)" },
+
+  // ADDED 2026-10-22 (spinal cord fix, row 6): a COMPLETE lesion takes every modality below the level, the sacral
+  // dermatomes included. A composite-only part (not in sites.js PARTS, like cord|autonomic), pulled in by the
+  // TRANSVERSE composite only: the anterior, central and hemicord patterns keep sacral sparing. emit:"midline" —
+  // saddle numbness has no side, and must match the token the conus and cauda emit.
+  { id: "cord_saddle", level: "cord", part: "sacral", produces: "saddle_anaesthesia", crosses: false, emit: "midline",
+    note: "complete cord lesion — every modality lost below the level, the saddle included" },
+  // ADDED 2026-10-22 (spinal cord fix, row 7): SPINAL SHOCK. Below an acute cord lesion the legs are at first flaccid
+  // and areflexic and the sacral reflexes are lost; the release signs come later. A composite-only part (cord|shock),
+  // used only by the shock variants of the anterior and transverse cord (sites.js cordVariants), which need a stated
+  // sensory level.
+  { id: "cord_shock_flaccid", level: "cord", part: "shock", produces: "lmn_weakness", crosses: false,
+    note: "spinal shock — flaccid paralysis below an acute cord lesion" },
+  { id: "cord_shock_tone", level: "cord", part: "shock", produces: "hypotonia", crosses: false,
+    note: "spinal shock — tone lost below the lesion" },
+  { id: "cord_shock_knee", level: "cord", part: "shock", produces: "reflex_knee_loss", crosses: false,
+    note: "spinal shock — knee jerks lost below the lesion" },
+  { id: "cord_shock_ankle", level: "cord", part: "shock", produces: "reflex_ankle_loss", crosses: false,
+    note: "spinal shock — ankle jerks lost below the lesion" },
+  { id: "cord_shock_bulbo", level: "cord", part: "shock", produces: "bulbocavernosus_loss", crosses: false, emit: "midline",
+    note: "spinal shock — bulbocavernosus reflex lost; its return marks the end of shock" },
+  { id: "cord_shock_anal", level: "cord", part: "shock", produces: "anal_wink_loss", crosses: false, emit: "midline",
+    note: "spinal shock — anal wink lost" },
 
   // ---- CAUDA EQUINA (lumbosacral nerve roots, below the conus) ----
   { id: "ls_roots_motor",       level: "cauda", part: "equina", produces: "lmn_weakness",         crosses: false, emit: "bilateral",
@@ -379,6 +412,11 @@ export const STRUCTURES = [
   // site's own phonebook note says. Without it a pure sensory stroke localised to the lateral midbrain.
   { id: "thal_face", level: "subcortex", part: "thalamus", produces: "face_sensory_loss",
     note: "VPM beside VPL — contralateral facial sensory loss (the pure-sensory lacune is face-arm-leg)" },
+  // ADDED 2026-11-01 (content-gap fix, row 12): the thalamogeniculate territory reaches the ventral lateral nucleus — the
+  // cerebellar relay, already crossed in the midbrain (as scp_midbrain), so the hemiataxia is contralateral. The ONE
+  // subcortex row with a crossing override (subcortex.test.js names it).
+  { id: "thal_ataxia", level: "subcortex", part: "thalamus", produces: "limb_ataxia", crosses: true,
+    note: "ventral lateral nucleus beside VPL (thalamogeniculate territory) — the cerebellar relay, already crossed in the midbrain: contralateral hemiataxia" },
   // Other thalamic nuclei — a DEDICATED `thalamus` level (like thalamus_arousal / aphasia_subcortical), so the
   // `subcortex/thalamus` VPL relay is untouched and the subcortex "no gated structure" invariant holds.
   { id: "thal_vpm",  level: "thalamus", part: "vpm", produces: "face_sensory_loss",
@@ -795,6 +833,10 @@ export const STRUCTURES = [
     note: "cervical sympathetic chain in the carotid space — miosis (isolated Horner)" },
   { id: "car_symp_ptosis", level: "skull_base", part: "carotid_space", produces: "ptosis",
     note: "cervical sympathetic (carotid space) — partial ptosis" },
+  // ADDED 2026-11-01 (content-gap fix, row 7): XII crosses the internal carotid below the skull base — the commonest
+  // cranial nerve palsy in carotid dissection. Painful Horner + XII is dissection until shown otherwise.
+  { id: "car_cn12", level: "skull_base", part: "carotid_space", produces: "cn12_palsy",
+    note: "the hypoglossal nerve where it crosses the internal carotid — the commonest cranial nerve palsy in carotid dissection" },
 
   // ---- MOTOR UNIT (pure-motor endings: anterior horn / NMJ / muscle) ----
   // Generalized, symmetric conditions → each part is one BILATERAL site (see composeMotorUnitSites).
@@ -810,6 +852,8 @@ export const STRUCTURES = [
     note: "bulbar motor neurones (progressive bulbar palsy) — dysphagia (LMN)" },
   { id: "ah_bulbar_dysar", level: "motor_unit", part: "anterior_horn", produces: "dysarthria",
     note: "bulbar motor neurones (progressive bulbar palsy) — dysarthria (LMN)" },
+  { id: "ah_bulbar_tongue", level: "motor_unit", part: "anterior_horn", produces: "cn12_palsy",
+    note: "bulbar motor neurones (hypoglossal nuclei) — tongue weakness, wasting and fasciculation (LMN)" }, // content-gap fix, row 6
   { id: "mg_fatig",  level: "motor_unit", part: "nmj_postsynaptic", produces: "fatigable_weakness",
     note: "post-synaptic NMJ (AChR) — fatigable weakness worsening with effort (myasthenia gravis)" },
   { id: "mg_ocular", level: "motor_unit", part: "nmj_postsynaptic", produces: "fatigable_ocular",
@@ -853,6 +897,7 @@ export const STRUCTURES = [
   { id: "root_c6_wristext",level: "root", part: "c6", produces: "weak_wrist_extension", note: "C6 — wrist extensors" },
   { id: "root_c6_sup",    level: "root", part: "c6", produces: "weak_forearm_supination", note: "C6 — supinator" },
   { id: "root_c6_reflex", level: "root", part: "c6", produces: "reflex_brachioradialis_loss", note: "brachioradialis (supinator) jerk (C6)" },
+  { id: "root_c6_biceps", level: "root", part: "c6", produces: "reflex_biceps_loss", note: "biceps jerk (C5/6)" }, // content-gap fix, row 2
   { id: "root_c6_pain", level: "root", part: "c6", produces: "radicular_pain", note: "C6 radicular pain" },
   { id: "root_c7_derm", level: "root", part: "c7", produces: "sensory_c7", note: "C7 dermatome — middle finger" },
   { id: "root_c7_elbext", level: "root", part: "c7", produces: "weak_elbow_extension", note: "C7 — triceps" },
@@ -878,12 +923,13 @@ export const STRUCTURES = [
   { id: "root_l3_hipadd", level: "root", part: "l3", produces: "weak_hip_adduction", note: "L3 — adductors" },
   { id: "root_l3_reflex", level: "root", part: "l3", produces: "reflex_knee_loss", note: "knee jerk (L3/4)" },
   { id: "root_l3_pain", level: "root", part: "l3", produces: "radicular_pain", note: "L3 radicular pain" },
-  { id: "root_l4_derm", level: "root", part: "l4", produces: "sensory_l4", note: "L4 dermatome — medial shin" },
-  { id: "root_l4_kneeext",level: "root", part: "l4", produces: "weak_knee_extension", note: "L4 — quadriceps" },
-  { id: "root_l4_df",     level: "root", part: "l4", produces: "weak_ankle_dorsiflexion", note: "L4 — tibialis anterior" },
-  { id: "root_l4_inv",    level: "root", part: "l4", produces: "weak_foot_inversion", note: "L4 — tibialis posterior" },
-  { id: "root_l4_reflex", level: "root", part: "l4", produces: "reflex_knee_loss", note: "knee jerk (L3/4)" },
-  { id: "root_l4_pain", level: "root", part: "l4", produces: "radicular_pain", note: "L4 radicular pain" },
+  { id: "root_l4_derm", level: "root", part: "l4", produces: "sensory_l4", plexus: ["lumbar_plexus"], note: "L4 dermatome — medial shin" },
+  { id: "root_l4_kneeext",level: "root", part: "l4", produces: "weak_knee_extension", plexus: ["lumbar_plexus"], note: "L4 — quadriceps" },
+  { id: "root_l4_df",     level: "root", part: "l4", produces: "weak_ankle_dorsiflexion", plexus: ["sacral_plexus"], note: "L4 — tibialis anterior" },
+  { id: "root_l4_inv",    level: "root", part: "l4", produces: "weak_foot_inversion", plexus: ["sacral_plexus"], note: "L4 — tibialis posterior" },
+  { id: "root_l4_hipadd", level: "root", part: "l4", produces: "weak_hip_adduction", plexus: ["lumbar_plexus"], note: "L4 — adductors (obturator, L2–4)" }, // content-gap fix, row 3
+  { id: "root_l4_reflex", level: "root", part: "l4", produces: "reflex_knee_loss", plexus: ["lumbar_plexus"], note: "knee jerk (L3/4)" },
+  { id: "root_l4_pain", level: "root", part: "l4", produces: "radicular_pain", plexus: ["lumbar_plexus", "sacral_plexus"], note: "L4 radicular pain" },
   { id: "root_l5_derm", level: "root", part: "l5", produces: "sensory_l5", note: "L5 dermatome — dorsum of foot / great toe" },
   { id: "root_l5_df",    level: "root", part: "l5", produces: "weak_ankle_dorsiflexion", note: "L5 — tibialis anterior (shared → foot drop)" },
   { id: "root_l5_gte",   level: "root", part: "l5", produces: "weak_great_toe_extension", note: "L5 — EHL" },
@@ -1006,6 +1052,10 @@ export const STRUCTURES = [
   { id: "uln_el_wf",     level: "nerve", part: "ulnar_elbow", produces: "weak_wrist_flexion", note: "ulnar (elbow) — FCU" },
   { id: "uln_el_sens",   level: "nerve", part: "ulnar_elbow", produces: "ulnar_sensory", note: "ulnar (elbow) — palmar little finger + medial hand" },
   { id: "uln_el_dsens",  level: "nerve", part: "ulnar_elbow", produces: "ulnar_dorsal_sensory", note: "ulnar (elbow) — dorsal ulnar cutaneous" },
+  // ADDED 2026-11-01 (content-gap fix, row 1, owner-approved): the ulnar paradox is about DEGREE — the claw is milder
+  // at the elbow because FDP 4/5 is weak too, but it is there. Dorsal-hand sensation and FDP/FCU weakness are what
+  // separate elbow from wrist.
+  { id: "uln_el_claw",   level: "nerve", part: "ulnar_elbow", produces: "ulnar_claw", note: "ulnar (elbow) — claw, usually milder than at the wrist because FDP 4/5 is weak too (the ulnar paradox)" },
   { id: "uln_el_wast",   level: "nerve", part: "ulnar_elbow", produces: "wasting", note: "ulnar (elbow) — intrinsic + forearm wasting" },
   { id: "uln_wr_fab",    level: "nerve", part: "ulnar_wrist", produces: "weak_finger_abduction", note: "ulnar (wrist/Guyon) — interossei" },
   { id: "uln_wr_tad",    level: "nerve", part: "ulnar_wrist", produces: "weak_thumb_adduction", note: "ulnar (wrist/Guyon) — adductor pollicis (Froment)" },
@@ -1115,7 +1165,7 @@ export const STRUCTURES = [
 
   // wasting: muscle atrophy — the broad LMN set. Requires innervated muscle, so it EXCLUDES pure-sensory
   // lat_fem_cutaneous, and (already LMN-excluded) NMJ + muscle. Non-localising, like fasciculations.
-  { id: "ah_wasting", level: "motor_unit", part: "anterior_horn", produces: "wasting", note: "anterior horn — denervation wasting (generalised LMN)" },
+  { id: "ah_wasting", level: "motor_unit", part: "anterior_horn", produces: "wasting", note: "anterior horn cells — denervation wasting (LMN)" },
   { id: "cauda_wasting", level: "cauda", part: "equina", produces: "wasting", crosses: false, emit: "bilateral", note: "cauda equina — denervation wasting, both legs" },
   { id: "poly_wasting", level: "polyneuropathy", part: "length_dependent", produces: "wasting", note: "polyneuropathy — distal denervation wasting" },
   { id: "root_c5_wasting", level: "root", part: "c5", produces: "wasting", note: "C5 — segmental wasting (deltoid/biceps)" },
@@ -1125,7 +1175,7 @@ export const STRUCTURES = [
   { id: "root_t1_wasting", level: "root", part: "t1", produces: "wasting", note: "T1 — segmental wasting (intrinsic hand)" },
   { id: "root_l2_wasting", level: "root", part: "l2", produces: "wasting", note: "L2 — segmental wasting (hip flexors)" },
   { id: "root_l3_wasting", level: "root", part: "l3", produces: "wasting", note: "L3 — segmental wasting (quadriceps)" },
-  { id: "root_l4_wasting", level: "root", part: "l4", produces: "wasting", note: "L4 — segmental wasting (quadriceps/TA)" },
+  { id: "root_l4_wasting", level: "root", part: "l4", produces: "wasting", plexus: ["lumbar_plexus", "sacral_plexus"], note: "L4 — segmental wasting (quadriceps/TA)" },
   { id: "root_l5_wasting", level: "root", part: "l5", produces: "wasting", note: "L5 — segmental wasting (TA/EHL)" },
   { id: "root_s1_wasting", level: "root", part: "s1", produces: "wasting", note: "S1 — segmental wasting (calf)" },
   { id: "axil_wasting", level: "nerve", part: "axillary", produces: "wasting", note: "axillary — deltoid wasting" },

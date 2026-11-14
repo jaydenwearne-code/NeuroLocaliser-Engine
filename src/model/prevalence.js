@@ -2,17 +2,24 @@
 // displayed differential (never to override coverage). The tier reflects the prevalence of the PATHOLOGIES
 // that affect the site: cortical/subcortical strokes and peripheral (root / nerve / polyneuropathy)
 // pathologies are common; thalamic and brainstem strokes and cord / cerebellar / plexus lesions are less
-// common; bilateral / composite and eponymous-rarity localisations are rare. Clinician-tunable — edit the
+// common; bilateral / composite and eponymous-rarity localisations are rare — except a bilateral CORD lesion,
+// which takes the cord's own tier (a paraparesis is the common myelopathy picture). Clinician-tunable — edit the
 // sets below. Precedence: rare wins → explicit (level,part) → level default → global default (uncommon).
 
 export const COMMON = 2, UNCOMMON = 1, RARE = 0; // higher sorts first
 
-// Rare by level — bilateral / composite / eponymous-rarity localisations.
+// Rare by level — bilateral / composite / eponymous-rarity localisations. The conus joined 2026-10-22 (spinal cord
+// fix, row 4): an isolated conus lesion is far rarer than a myelopathy, and it escaped "bilateral = rare" only because
+// its side is "midline" — so it outranked the cord for a spastic paraparesis.
 const RARE_LEVELS = new Set([
   "locked_in", "combined_degeneration", "guillain_mollaret", "pseudobulbar", "brainstem_aras",
   "thalamus_arousal", "corpus_callosum", "hypothalamus", "pontomesencephalic", "dorsal_midbrain",
-  "craniocervical_junction", "central_vestibular", "polyradiculoneuropathy",
+  "craniocervical_junction", "central_vestibular", "polyradiculoneuropathy", "conus",
 ]);
+// Bilateral sites that take their level's own tier instead of RARE. A bilateral cord lesion IS the common myelopathy
+// picture, so the blanket rule made every cord pattern rare (spinal cord fix, row 4). The transverse cord stays RARE
+// through RARE_PARTS.
+const OWN_TIER_BILATERAL_LEVELS = new Set(["cord"]);
 // Common by level — default for the whole level unless a rare rule fires.
 const COMMON_LEVELS = new Set(["cortex", "basal_ganglia", "root", "nerve", "polyneuropathy"]);
 // Bilateral sites that are nonetheless COMMON — see the bilateral rule in prevalenceOf().
@@ -39,7 +46,7 @@ export function prevalenceOf(site) {
   // Bilateral sites are rare EXCEPT where the bilateral picture IS the common disease. A length-dependent
   // polyneuropathy is bilateral by definition and the commonest neurological condition there is; listing it
   // in COMMON_LEVELS did nothing while this rule ran first (accuracy round 1, A6).
-  if (site.side === "bilateral") return COMMON_BILATERAL_LEVELS.has(site.level) ? COMMON : RARE;
+  if (site.side === "bilateral" && !OWN_TIER_BILATERAL_LEVELS.has(site.level)) return COMMON_BILATERAL_LEVELS.has(site.level) ? COMMON : RARE;
   if (RARE_LEVELS.has(site.level)) return RARE;
   if (RARE_PARTS.has(lp)) return RARE;
   if (COMMON_PARTS.has(lp)) return COMMON;      // explicit (level,part) before level default

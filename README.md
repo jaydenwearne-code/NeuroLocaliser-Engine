@@ -14,7 +14,7 @@ be causing it — then **what to do next**.
 | Pathology | **1294 causes** across 202 sites, tempo-aware, every one with a discriminating feature |
 | Workup | **1294 / 1294 causes carry an authored, pathology-specific plan** (816 plans, 71 families) |
 | Cross-site | **13 diseases** that explain a multifocal picture as one illness |
-| Tests | 76 suites, **6907 assertions**, zero dependencies, no build step |
+| Tests | 84 suites, **7209 assertions**, zero dependencies, no build step |
 
 ## The idea
 
@@ -90,8 +90,12 @@ node app/serve.mjs
 ```
 
 then <http://localhost:8137/app/>. Each test file is a standalone Node script that asserts with a local
-`ok()` helper and exits non-zero on failure; `npm test` runs all 76 in sequence. A new suite goes in
+`ok()` helper and exits non-zero on failure; `npm test` runs all 85 in sequence. A new suite goes in
 `test/` and into the `test` script in `package.json`.
+
+`npm run test:audit` is the exception: the clinical audit suite (`test/clinical-audit.test.js`) is an external
+accuracy baseline that is expected to fail until the audit's defects are fixed, so it is kept out of `npm test`.
+See `docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
 
 > On the original development Mac there is no system Node — see the runtime note at the top of
 > `CLAUDE.md`. In a fresh clone anywhere else, `npm` and `node` work as normal.
@@ -117,7 +121,7 @@ notes and the roadmap. Every increment has a dated spec and plan under `docs/sup
 
 ## Status
 
-**Beta (v0.10.2), deployed, and in clinician stress-testing.** The engine is complete across the
+**Beta (v0.11.0), deployed, and in clinician stress-testing.** The engine is complete across the
 neuraxis and the clinical layers are complete and reviewed:
 
 - ✅ **The anatomy model is clinically reviewed** — all 528 structures, 16 regions (2026-08-21). This was

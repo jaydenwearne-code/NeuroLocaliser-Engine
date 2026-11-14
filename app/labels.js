@@ -3,6 +3,7 @@
 // them into words a clinician reads. Ids still travel in the case URL and the feedback payload untouched.
 import { BY_SITE, nameForSite } from "../src/data/syndromes.js";
 import { FINDINGS } from "../src/model/findings.js";
+import { spanName } from "../src/model/levels.js";
 
 // Word-level expansions applied to every underscore-separated token of a part id. Keys are lowercase and
 // contain no underscore (asserted in test/app-naming.test.js) — they are matched per WORD, not per id.
@@ -96,6 +97,7 @@ export const PART_LABEL = {
   "thalamus|limbic": "anterior + dorsomedial thalamic nuclei",
   "thalamus|pulvinar": "pulvinar",
   "thalamus_arousal|paramedian": "paramedian thalamus",
+  "thalamus_arousal|basilar_apex": "thalami and occipital lobes (top of the basilar)",
   // Every hypothalamic key is a PORTION of the hypothalamus — a nucleus or a named area — so none of them
   // may be labelled "<something> hypothalamus", which names the whole structure. Terms follow the site's
   // own territory string.
@@ -227,8 +229,19 @@ const LEVEL_IMPLIED = new Set(["cortex", "subcortex", "cerebrum", "motor_unit", 
 
 const humaniseLevel = level => humanisePart(level);
 
-export function siteLabel(site) {
+// Broca's and Wernicke's areas are the DOMINANT hemisphere's language areas: the same gyrus in the other hemisphere is
+// not one (owner, 2026-11-12). PART_LABEL is keyed by place, never by hemisphere, so a one-sided site in the non-dominant
+// hemisphere reads its label here — the PART_LABEL entry without the eponym (asserted in test/hemisphere-names.test.js).
+export const NONDOMINANT_PART_LABEL = {
+  "cortex|operculum": "frontal operculum",
+  "cortex|temporoparietal": "posterior superior temporal gyrus",
+};
+
+export function siteLabel(site, opts = {}) {
   const key = `${site.level}|${site.part}`;
+  // nameForSite()'s rule: a one-sided site is in the dominant hemisphere when its side is the dominant side.
+  const nondominant = (site.side === "left" || site.side === "right") && site.side !== (opts.dominantSide || "left");
+  if (nondominant && NONDOMINANT_PART_LABEL[key]) return NONDOMINANT_PART_LABEL[key];
   if (PART_LABEL[key]) return PART_LABEL[key];
   const part = humanisePart(site.part);
   if (LEVEL_IMPLIED.has(site.level)) return part;
@@ -259,8 +272,18 @@ function territoryAdds(terr, alreadySaid) {
   return novel / t.size > 0.4;   // it must be substantially new, not a reworded echo
 }
 
+// A cord READING (spinal cord fix; owner, 2026-10-22, content round A1–A2): the same lesion read at another segment or
+// in spinal shock, said in brackets after the ANSWER's place only — the places that also fit stay plain. Never
+// "thoracic": a legs-only myelopathy can be cervical, and the plans keep the imaging at the whole spine.
+export function readingLabel(site) {
+  const v = site && site.variant;
+  if (!v) return "";
+  if (site.segments) return ` (at about ${spanName(site.segments, "–")}, root signs ${site.atLevel.sides.length > 1 ? "on both sides" : "on the " + site.atLevel.sides[0]})`;
+  return { "arms-spared": " (arms spared)", shock: " (spinal shock)", "shock:arms-spared": " (spinal shock, arms spared)", uncal: " — uncal herniation", basis: " — with the basis pontis", syrinx: " (reaching the corticospinal tracts)" }[v] || "";
+}
+
 export function plainSiteName(site, opts = {}) {
-  const label = siteLabel(site);
+  const label = siteLabel(site, opts);
   const plain = [sideWord(site.side), label].filter(Boolean).join(" ");
   const raw = `${site.side} · ${site.level} · ${site.part}`;
   const terr = site.territory || "";
