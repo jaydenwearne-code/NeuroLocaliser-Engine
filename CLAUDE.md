@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**94 test suites / 7814 assertions green** (`fix/card-follows-cause`: the integration branch `integrate/all-open-fixes` with the owner's two rulings of 2026-11-11, plus the duplicate-keys round, the card follows its cause and the non-dominant hemisphere content, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names", "The card follows its cause" and "Non-dominant hemisphere content") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**94 test suites / 7814 assertions green** (v0.11.0, released 2026-11-14 by merging PR #26 into `main`: the integration of the open fixes with the owner's two rulings of 2026-11-11, plus the duplicate-keys round, the card follows its cause and the non-dominant hemisphere content, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names", "The card follows its cause" and "Non-dominant hemisphere content") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1590,7 +1590,7 @@ See "Integration of the open fixes" below.
 
 Spec/plan: `docs/superpowers/specs/2026-11-09-pressure-follows-cause-design.md`, `docs/superpowers/plans/2026-11-09-pressure-follows-cause.md`.
 
-## Integration of the open fixes (2026-11-10, rulings 2026-11-11) — LOCAL branch `integrate/all-open-fixes`, NOT pushed, NOT merged
+## Integration of the open fixes (2026-11-10, rulings 2026-11-11) — released in v0.11.0 (PR #26, 2026-11-14)
 
 Every open engine fix in one tree, measured before they land as one release. It starts at PR #25's tip (`bda1113`, which
 already holds #18 → #20 → #21 → #19 → #24) and merges #23 composite sites (`a24453e`), #22 plexus round (`39b4957`) and
@@ -1664,7 +1664,7 @@ The storage guard's code applied cleanly; only the status counter line conflicte
 
 ## Duplicate keys and the non-dominant names (DONE 2026-11-12) — ✅ owner-approved rulings (every row)
 
-On `fix/card-follows-cause` (`56aff33`, `3d195f0`, `b173e7e`), landed BEFORE that round is built (row D8). Not pushed.
+On `fix/card-follows-cause` (`56aff33`, `3d195f0`, `b173e7e`), landed BEFORE that round is built (row D8). Released in v0.11.0 (PR #26, 2026-11-14).
 
 **The defect: a JS object literal keeps the LAST definition of a repeated key, without a word.** The earlier one is dead
 content that still reads as reviewed. A scan of all 138 object tables in `src/` and `app/` found four, all on `main`:
@@ -1725,7 +1725,7 @@ Spec: `docs/superpowers/specs/2026-11-12-duplicate-keys-design.md`.
 
 ## The card follows its cause (DONE 2026-11-12, round 1) — ✅ owner-approved rulings (every row)
 
-On `fix/card-follows-cause`, built on the duplicate-keys round (the plan was amended for it, row D8). Not pushed.
+On `fix/card-follows-cause`, built on the duplicate-keys round (the plan was amended for it, row D8). Released in v0.11.0 (PR #26, 2026-11-14).
 
 **The defect.** What, Next and the badge follow one `leadingCause`, which onset, papilloedema and the reader's selection all
 move. The red flag and the title did not: they were written per PLACE. On every axis that moves the card's cause, the place's
@@ -1779,7 +1779,7 @@ Spec/plan: `docs/superpowers/specs/2026-11-11-card-follows-cause-design.md`, `do
 
 ## Non-dominant hemisphere content (DONE 2026-11-12) — ✅ owner-approved rulings (every row)
 
-On `fix/card-follows-cause`, after "the card follows its cause" (row K5). Not pushed.
+On `fix/card-follows-cause`, after "the card follows its cause" (row K5). Released in v0.11.0 (PR #26, 2026-11-14).
 
 **The defect.** The duplicate-keys round fixed every card FACE for the non-dominant hemisphere. Beneath it, the cause lists
 (`CAUSES`), site workups (`NEXT`) and plans' per-place wording (`bySite`) are keyed by PLACE, so both hemispheres shared them.
