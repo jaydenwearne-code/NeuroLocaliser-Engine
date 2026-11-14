@@ -19,13 +19,45 @@ numbers hold with one exception, the plan's decision 1: at chronic onset the pre
 retina never follows the pressure. Browser-checked on port 8144: every case in the plan's Task 7, the no-papilloedema guard,
 no console errors, 375 px and dark mode.
 
-**Found in the browser check, for a later ruling (nothing changed):**
+**Found in the browser check, for a later ruling — both now closed:**
 - At the IV, the Next card's note reads *"Papilloedema sets aside Head trauma, which cannot raise the intracranial
   pressure …"*. That is row 17's template with Appendix A's ruling filled in (a traumatic IV palsy does not explain the
-  papilloedema), but read alone the sentence says that head trauma cannot raise the pressure.
+  papilloedema), but read alone the sentence says that head trauma cannot raise the pressure. **Re-ruled 2026-11-14, below.**
 - The answer card's title is the place's phonebook name, so *"Corona radiata lacune (pure motor)"* heads a card whose What
   line now leads with *"Hypertensive deep haemorrhage"*. This has the same shape as O6 (the site's red flag stays), and the onset
-  rule already does it at a slow onset.
+  rule already does it at a slow onset. **Closed by the card-follows-its-cause round (2026-11-12):** no title names a pathology,
+  and this one reads *"Pure motor hemiparesis (corona radiata)"*.
+
+**Re-ruled by the owner 2026-11-14 (rows 16–18, wording only; `fix/pressure-wording`).** The same claim stood in four places
+on the card: the row-17 note, the band's note (*"These causes do not raise it"*), the tag on each demoted cause (*"does not
+raise the pressure"*, beside 274 names) and the row-18 note (*"No cause usually found here raises the intracranial pressure"*).
+Read alone it is false for about a dozen of those names: a head injury, a large MCA or carotid-T infarct, hypoxic-ischaemic
+injury, cardiac arrest and a metabolic encephalopathy can all raise the pressure. A first proposal, *"can explain the deficit
+but not the papilloedema"*, was rejected by the owner: *"traumatic head injury can lead to raised intracranial pressure, in
+which there would be papilloedema"*. Of the two ways to make the card true, the owner chose B:
+- **B (ruled): keep the judgement, stop overstating it.** A demoted cause *rarely causes papilloedema*, which is what Appendix A
+  records — papilloedema is uncommon after an acute head injury, even with a high pressure. The classification is unchanged, so
+  the IV + papilloedema card keeps its pressure plan (neurosurgery, emergency), which is also the plan for a head injury that has
+  raised the pressure.
+- **A (not chosen): head trauma can raise the pressure.** The three acute head-injury rows would move to "can": 55 cards change,
+  the IV card would lead with head trauma on the IV's own orthoptics plan (8 cards emergency → urgent), and the IV and
+  olfactory-groove plans would need a raised-pressure clause.
+
+The wording, word for word:
+
+| Row | Was | Now |
+|---|---|---|
+| 16 — band note | *Papilloedema means the intracranial pressure is raised. These causes do not raise it: they can explain the deficit, but not the papilloedema.* | *Papilloedema means the intracranial pressure is raised. These causes can explain the deficit, but rarely cause papilloedema.* |
+| 16 — tag | *does not raise the pressure* | *rarely causes papilloedema* |
+| 17 — pressure note | *…Papilloedema sets aside {set-aside}, which cannot raise the intracranial pressure and is what this site's usual plan is written for.* | *…Papilloedema sets aside {set-aside}, which rarely causes papilloedema and is what this site's usual plan is written for.* |
+| 18 | *No cause usually found here raises the intracranial pressure, so the plan follows the papilloedema itself.* | *The causes usually found here rarely cause papilloedema, so the plan follows the papilloedema itself.* |
+
+Also fixed (grammar, not a ruling): both onset sentences read *"A acute onset …"* on 32 cards; they read *"An acute onset …"*.
+
+Measured: npm 94 suites / 7815 green (rows 16–18 re-pinned, one new check); audit 127/127, 1093/0. On 6,220 cards (every
+site's own picture, with and without papilloedema, every onset, both dominances) the answer card's place, lines and badge
+differ on 0; the Next note's wording changes on 1,260. Browser-checked on port 8147: the IV, coma and acute-onset cards; no
+console errors.
 
 > *"Approve as written"* — the owner, on round 1 of the pressure-follows-the-cause design
 
