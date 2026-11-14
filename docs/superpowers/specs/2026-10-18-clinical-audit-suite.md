@@ -352,3 +352,20 @@ The local branch `integrate/all-open-fixes` merges every open fix: PR #25 (which
 **Measured on the integration:** probes **127 / 127**; counted checks 1097 passed, **0 failed**, 0 pending. Synonym swaps
 272 / 272; background 292 / 292; mirror 290 / 290. Each round's remaining failures were exactly another round's probes: the
 composite tip's 4 (raised pressure), the pressure tip's 9 (composite sites), the plexus tip's 13 (both).
+
+## Non-dominant content round, rows J3 and J4: two yardstick rulings, no probe added (2026-11-12)
+
+On `fix/card-follows-cause`. The non-dominant content round made the four aphasia composites dominant-only (row J1): their
+non-dominant copy was exactly a real place without its aphasia (the VPL thalamus; the capsule and corona radiata), and the
+solver no longer offers it. Two checks were asking about that copy, and the owner ruled both ("approve as proposed"):
+
+- **J3, synonym swaps:** "site stays in the top 3" is asserted only for a site the solver OFFERS (the audit asks the engine,
+  `solverSites`, rather than restating the rule). The 4 such checks on the two removed copies go. The "no multifocal claim"
+  checks are about the picture, so they still run for every site, the copies included. Swaps tried: 162, unchanged.
+- **J4, mirror:** for a picture with NO localising claim (papilloedema alone), the check compares the claim (no place on
+  either side) rather than the hidden first place of a full tie. Every place explains nothing there, so all tie, and the last
+  tie-break is the site id, which is not mirror-symmetric: sides are a prefix in most ids and a suffix in the composites'. The
+  check had passed only because both sides' tie-break first was an aphasia composite.
+
+**Measured:** probes **127 / 127**; counted checks **1093** passed (1097 − the 4 J3 checks), **0 failed**, 0 pending. Swaps
+162 tried, 6 lost from the top 3 (unchanged); mirror 290 / 290.

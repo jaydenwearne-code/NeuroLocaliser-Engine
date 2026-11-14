@@ -1,8 +1,11 @@
 # Non-dominant hemisphere content — design (2026-11-12)
 
-**Status: RULED 2026-11-12 — "approve as proposed"** (rows K1–K5 and J1–J5, §2). **Content round 1 (§5) is PROPOSED,
-awaiting the owner's ruling.** Nothing is built: by K5 and item 2's order, both builds come after "the card follows its
-cause" round is built on `fix/card-follows-cause`.
+**Status: IMPLEMENTED (2026-11-12) on `fix/card-follows-cause`**, after "the card follows its cause" was built:
+- item 2 (J1–J5): `a175405`;
+- item 1 (K1, content round 1): `c563fca`.
+
+The rulings, both "approve as proposed": rows K1–K5 and J1–J5 (§2); content round 1 (§5), with F2 as the dyslexia cause.
+§7 records what was built and measured. Not pushed.
 
 ## 1. The defect
 
@@ -129,3 +132,33 @@ list must keep at least 6 causes on EACH side (the depth bar), so three rows add
   - Each side keeps at least 6 causes.
   - The pathology gates (every cause has a plan, per-place plans differ, every `bySite` key is reachable) see both sides.
 - **Item 2 (J1–J5)** as measured in §3, re-measured on the built round.
+
+## 7. Implemented (2026-11-12)
+
+**Item 2 (J1–J5), `a175405`.**
+- The four aphasia composites are `dominantOnly`, and `solverSites` skips them in the non-dominant hemisphere.
+- The accuracy invariant runs over offered sites.
+- The audit's two yardstick changes are as ruled. J3 skips only "site stays in the top 3": a first attempt that skipped whole
+  swaps also dropped 6 passing "no multifocal claim" checks, which are about the picture, and was corrected to the ruled count.
+- `test/hemisphere-names.test.js` closes its OPEN list.
+
+**Measured:**
+- 135 Where lines lose the duplicate, and the copies' 32 cards go. Nothing else on any card moves.
+- npm 93 suites / 7794; audit 127/127, 1093/0, mirror 290/290.
+
+**Item 1 (K1, content round 1), `c563fca`.**
+- `src/model/hemisphere.js` holds the hemisphere rule.
+- `causesFor`, `sitePlan` / `nextStepsFor`, `pathologyPlanFor` / `pathologyNextStepsFor` and the combined views resolve
+  hemisphere tags and two-version texts.
+- The card's dominance flows through their `opts`, from `answer.js` and `app.js`.
+- The content is applied word for word as ruled.
+- `test/nondominant-content.test.js` guards it, with a reviewed snapshot as the gate.
+- Two suites that read raw text now hold BOTH versions to the same bar.
+- `pressure-follows` row 21 is re-pinned: 3 ruled rows, none can raise the pressure.
+
+**Measured:**
+- npm 94 suites / 7814, all green; audit 127/127, 1093/0.
+- Answer cards: 0 field changes on any existing card. Only the selectable causes change per side, as ruled.
+- What/Next text over every site and both dominances: 46 changed, 20 added, 16 gone, all at the four places. The
+  dominant side is unchanged except for the both-sides Todd's paresis at the operculum and the dyslexia at the fusiform.
+- Browser-checked under both dominances.

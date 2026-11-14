@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**93 test suites / 7793 assertions green** (`fix/card-follows-cause`: the integration branch `integrate/all-open-fixes` with the owner's two rulings of 2026-11-11, plus the duplicate-keys round and the card follows its cause, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names" and "The card follows its cause") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**94 test suites / 7814 assertions green** (`fix/card-follows-cause`: the integration branch `integrate/all-open-fixes` with the owner's two rulings of 2026-11-11, plus the duplicate-keys round, the card follows its cause and the non-dominant hemisphere content, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names", "The card follows its cause" and "Non-dominant hemisphere content") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1777,6 +1777,72 @@ if not, it goes on the cause (`flagged`).
 
 Spec/plan: `docs/superpowers/specs/2026-11-11-card-follows-cause-design.md`, `docs/superpowers/plans/2026-11-11-card-follows-cause.md`.
 
+## Non-dominant hemisphere content (DONE 2026-11-12) — ✅ owner-approved rulings (every row)
+
+On `fix/card-follows-cause`, after "the card follows its cause" (row K5). Not pushed.
+
+**The defect.** The duplicate-keys round fixed every card FACE for the non-dominant hemisphere. Beneath it, the cause lists
+(`CAUSES`), site workups (`NEXT`) and plans' per-place wording (`bySite`) are keyed by PLACE, so both hemispheres shared them.
+- A non-dominant operculum's What and Next cards still described the aphasia: *"Characterise the aphasia…"*, *"…especially
+  common in Broca's aphasia"*, *"this is dominant-hemisphere language cortex"*.
+- A word list over the 11 dominance-dependent places flagged ~100 lines. Read by hand, 25 are real errors (28 lines), at the
+  operculum, the temporoparietal cortex, the MCA inferior division and the fusiform gyrus.
+- The thalamic and striatocapsular aphasia composites' non-dominant copies were exact duplicates of real places, listed as
+  "Right thalamus (language)".
+
+**Mechanics:**
+- **Item 2 (rows J1–J5, `a175405`).** The four aphasia composites are `dominantOnly`, and `solverSites` skips them in the
+  non-dominant hemisphere. `test/hemisphere-names.test.js` closes its OPEN list. Two audit yardstick rulings (J3, J4) are
+  recorded in the audit spec.
+- **Item 1 (K1).** `src/model/hemisphere.js` (`hemisphereOf`, `sideText`, `onItsSide`, `allText`):
+  - a cause may carry `hemisphere` (`onSide(hemi, c(...))`, `causes.js`), listed on that side only;
+  - any text may be `{ dominant, nondominant }`: a cause's feature, a workup line, a plan's slot;
+  - `causesFor`, `sitePlan` / `nextStepsFor`, `pathologyPlanFor` / `pathologyNextStepsFor`, `combinedCauses` and
+    `combinedNextSteps` resolve them by `nameForSite()`'s rule. The dominance travels in their `opts`, default left;
+    `answer.js` and `app.js` pass the card's (`dom` / `domView()`, assumed when the dominance fallback applied);
+  - a bilateral site sits in neither hemisphere, so it keeps both tagged causes and reads the dominant text.
+- **Content round 1 (rows O1–O13, T1–T11, M1–M3, F1–F2), word for word as ruled:**
+  - 21 two-version lines;
+  - 6 tagged causes (the speech-arrest seizure and both postictal-aphasia causes are dominant-only; developmental
+    prosopagnosia is non-dominant-only);
+  - Todd's paresis at the operculum (both sides);
+  - a focal seizure at the non-dominant MCA inferior division;
+  - developmental dyslexia, with a new plan, at the dominant fusiform.
+
+  Each side keeps at least 6 causes.
+
+**Guards (`test/nondominant-content.test.js`):**
+- a reviewed SNAPSHOT of the 6 tags and 21 two-version lines, word for word (the gate);
+- tags only where the picture depends on dominance;
+- at least 6 causes and an authored plan for every cause, on each side;
+- every two-version line shows its own side's text, with either hemisphere dominant;
+- a non-dominant card at the language places names the aphasia only in a line that names both sides.
+
+**Traps worth knowing:**
+- A test that reads raw `CAUSES` / `NEXT` text must read BOTH versions (`causes-depth` and `causes` do; `raisesPapilloedema`
+  scans `allText`).
+- J3 first removed whole swaps, which also dropped 6 passing "no multifocal claim" checks. The ruled change skips only "stays in
+  the top 3".
+- A provenance line that repeats the round's own name trips an "already noted" check: write the header note first.
+
+**Measured:**
+- npm 93 suites / 7794 -> 94 / 7814, all green.
+- Audit 127/127 probes, 1093/0 (the J3 count), mirror 290/290.
+- **Answer cards:** 0 changes from item 1. Features and workup lines live in the What and Next cards.
+- **What/Next text** (every site, both dominances, 14,468 units): 46 changed, 20 added, 16 gone, all at the four places:
+  - the non-dominant side;
+  - the dominant operculum's Todd's paresis;
+  - the dominant fusiform's dyslexia;
+  - the bilateral fusiform, which keeps both tags.
+- **Browser-checked on port 8146:**
+  - the non-dominant operculum and temporoparietal What/Next cards;
+  - the dominant operculum, unchanged plus Todd's;
+  - right dominance, where the left operculum reads the non-dominant content;
+  - no console errors.
+
+Spec: `docs/superpowers/specs/2026-11-12-nondominant-content-design.md`; audit rulings:
+`docs/superpowers/specs/2026-10-18-clinical-audit-suite.md`.
+
 ## Commands
 
 - **All tests:** `PATH="$HOME/.local/node-v24.18.0-darwin-arm64/bin:$PATH" npm test`
@@ -1833,6 +1899,8 @@ src/model/     the declarative anatomy tables (edit these to add coverage)
                  inverse.js DERIVES from this table (single source of truth for "inside the skull"); plus
                  PRESSURE_REACHES and FALSE_LOCALISING_SIGNS (the raised-pressure round, 2026-11-09; the IV's cisternal
                  course joined PRESSURE_REACHES in the pressure-follows round, 2026-11-10)
+  hemisphere.js  content written per hemisphere: hemisphereOf(site, dominantSide) by nameForSite's rule; sideText() reads a
+                 `{ dominant, nondominant }` text; onItsSide() lists a `hemisphere`-tagged cause on its side only (2026-11-12)
   course.js      COURSES vocabulary (single/simultaneous/stepwise/relapsing/progressive) — HOW an illness
                  unfolded, orthogonal to onset tempo. Annotates/demotes only, like the sensory level
 src/engine/    generic solver code (rarely changes when adding a region)
