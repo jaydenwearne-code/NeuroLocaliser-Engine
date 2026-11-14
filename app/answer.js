@@ -127,21 +127,26 @@ export const PRESSURE_ONLY = {
 };
 // ---- the pressure follow's wording (pressure follows the cause, rows 16–18, owner-approved 2026-11-10) ----
 // The What card's band for the causes papilloedema demotes, and the Next card's notes. Plain text: app.js escapes it.
+// RE-RULED 2026-11-14: a demoted cause RARELY CAUSES papilloedema. "Cannot raise the pressure" was false read alone — a head
+// injury, a large MCA infarct or a hypoxic brain can raise it — while papilloedema beside them is uncommon, which is the
+// judgement CAN_RAISE_PRESSURE records. The classification is unchanged.
 export const PRESSURE_BAND = {
   title: "less likely with papilloedema",
-  note: "Papilloedema means the intracranial pressure is raised. These causes do not raise it: they can explain the deficit, but not the papilloedema.",
-  tag: "does not raise the pressure",
+  note: "Papilloedema means the intracranial pressure is raised. These causes can explain the deficit, but rarely cause papilloedema.",
+  tag: "rarely causes papilloedema",
 };
-export const PRESSURE_LEADS_NOTE = "No cause usually found here raises the intracranial pressure, so the plan follows the papilloedema itself.";
+export const PRESSURE_LEADS_NOTE = "The causes usually found here rarely cause papilloedema, so the plan follows the papilloedema itself.";
+// "An acute onset", "A chronic onset" (it read "A acute onset", 2026-11-14).
+const anOnset = onset => `${/^[aeiou]/i.test(onset) ? "An" : "A"} ${onset} onset`;
 // Why the plan follows a cause nobody selected: the pressure's sentence, or the approved onset sentence (2026-09-29).
 export function followNote(f) {
   if (!f) return "";
   if (f.pressure && f.by && f.by.pressure) return f.by.onset
-    ? `Following the most likely cause, ${f.cause}. A ${f.onset} onset and papilloedema set aside ${f.setAside}, which this site's usual plan is written for.`
-    : `Following the most likely cause, ${f.cause}. Papilloedema sets aside ${f.setAside}, which cannot raise the intracranial pressure and is what this site's usual plan is written for.`;
-  return `Following the most likely cause, ${f.cause}. A ${f.onset} onset rules out ${f.setAside}, which this site's usual plan is written for.`;
+    ? `Following the most likely cause, ${f.cause}. ${anOnset(f.onset)} and papilloedema set aside ${f.setAside}, which this site's usual plan is written for.`
+    : `Following the most likely cause, ${f.cause}. Papilloedema sets aside ${f.setAside}, which rarely causes papilloedema and is what this site's usual plan is written for.`;
+  return `Following the most likely cause, ${f.cause}. ${anOnset(f.onset)} rules out ${f.setAside}, which this site's usual plan is written for.`;
 }
-// A demoted cause's reason as its row shows it: the tempo it usually has, that it does not raise the pressure, or both.
+// A demoted cause's reason as its row shows it: the tempo it usually has, that it rarely causes papilloedema, or both.
 export function demotionReason(d) {
   return [d.axis === "tempo" ? `usually ${d.expected.join(" / ")}` : "", d.axis === "pressure" || d.pressure ? PRESSURE_BAND.tag : ""]
     .filter(Boolean).join(" · ");

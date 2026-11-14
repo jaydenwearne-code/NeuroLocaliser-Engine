@@ -28,7 +28,7 @@ teaching web app in `app/`.
 
 **Status (current):** the full neuraxis engine is complete and the app has been reworked into a
 clinician-grade teaching tool (localise → *where · why · what*), and packaged for ED stress-testing.
-**94 test suites / 7814 assertions green** (v0.11.0, released 2026-11-14 by merging PR #26 into `main`: the integration of the open fixes with the owner's two rulings of 2026-11-11, plus the duplicate-keys round, the card follows its cause and the non-dominant hemisphere content, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names", "The card follows its cause" and "Non-dominant hemisphere content") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
+**94 test suites / 7815 assertions green** (7814 in v0.11.0; +1 for the pressure wording re-ruling of 2026-11-14 on `fix/pressure-wording`. v0.11.0, released 2026-11-14 by merging PR #26 into `main`: the integration of the open fixes with the owner's two rulings of 2026-11-11, plus the duplicate-keys round, the card follows its cause and the non-dominant hemisphere content, 2026-11-12 — see "Integration of the open fixes", "Duplicate keys and the non-dominant names", "The card follows its cause" and "Non-dominant hemisphere content") — always run `npm test` first to confirm before building on it. Milestones, newest last, with the design/plan
 docs (in `docs/superpowers/`) that record every decision:
 
 - **Raw-observations refactor (done)** — every finding is a *raw bedside observation*; syndromes emerge from
@@ -1579,7 +1579,14 @@ row 20's four probes and the new `lead` check, 1063/9 (probes 112/119); swaps 27
 Browser-checked on port 8144.
 
 **Not fixed (spec §7, for later):** the place ranking and the Together card's disease still ignore the pressure (O1, O2), and
-the cover still ignores the compartment filter (O4). Two wording points from the browser check await a ruling (spec status).
+the cover still ignores the compartment filter (O4). Both wording points from the browser check are closed (spec status).
+
+**Re-ruled 2026-11-14 (rows 16–18, wording only, `fix/pressure-wording`):** a demoted cause *rarely causes papilloedema*.
+"Cannot raise the pressure" (the row-17 note, the band, every demoted cause's tag, the row-18 note) was false read alone — a
+head injury, a large MCA infarct or a hypoxic brain can raise it (the owner: *"traumatic head injury can lead to raised
+intracranial pressure, in which there would be papilloedema"*). `CAN_RAISE_PRESSURE` is unchanged: re-classing head trauma as
+"can" was measured and NOT chosen (the IV card would lead with head trauma on its orthoptics plan). Both onset sentences now read
+"An acute onset". 0 of 6,220 answer cards change; the Next note's wording changes on 1,260.
 
 **Re-ruled 2026-11-11, in the integration of the open fixes (`integrate/all-open-fixes` only):**
 - PRES cannot raise the pressure (row 4).
