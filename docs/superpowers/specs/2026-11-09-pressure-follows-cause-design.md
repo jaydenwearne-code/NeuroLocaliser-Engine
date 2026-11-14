@@ -28,7 +28,7 @@ no console errors, 375 px and dark mode.
   rule already does it at a slow onset. **Closed by the card-follows-its-cause round (2026-11-12):** no title names a pathology,
   and this one reads *"Pure motor hemiparesis (corona radiata)"*.
 
-**Re-ruled by the owner 2026-11-14 (rows 16–18, wording only; `fix/pressure-wording`).** The same claim stood in four places
+**Re-ruled by the owner 2026-11-14 (rows 16–18, wording only; released in v0.11.1, PR #27).** The same claim stood in four places
 on the card: the row-17 note, the band's note (*"These causes do not raise it"*), the tag on each demoted cause (*"does not
 raise the pressure"*, beside 274 names) and the row-18 note (*"No cause usually found here raises the intracranial pressure"*).
 Read alone it is false for about a dozen of those names: a head injury, a large MCA or carotid-T infarct, hypoxic-ischaemic
