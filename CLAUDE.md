@@ -1658,9 +1658,17 @@ sites bring three places into play under papilloedema.
   its stroke card plus the pressure line, and the What card agrees (the embolism first, no papilloedema band). At chronic
   onset it reads the pressure itself.
 
-**Still open (PR #25's, not the integration's):** where the plan follows a pressure-raising cause, the place's own red flag
-still shows (288 of 575 cards). 101 of those flags name a stroke or occlusion: some agree with the followed cause, some do
-not. It is the same class as #25's two unruled wording points.
+**Still open (PR #25's, not the integration's):** ~~where the plan follows a pressure-raising cause, the place's own red
+flag still shows (288 of 575 cards). 101 of those flags name a stroke or occlusion: some agree with the followed cause, some
+do not. It is the same class as #25's two unruled wording points.~~ — **CLOSED by the card-follows-cause round (v0.11.0).**
+Re-measured on v0.11.1 (2026-11-15) with the same count:
+- 555 cards. The 20 fewer are the four aphasia composites' non-dominant copies, no longer offered (4 places × 5 onsets).
+- On 341 the plan follows a pressure-raising cause, and that cause leads the What line on all 341.
+- None shows another cause's flag. None of those causes carries a flag of its own here, so each of the 165 red lines is the
+  place's own flag, true whatever the cause.
+- 28 of those mention a stroke, all from six place flags kept in that round's reviewed snapshot (e.g. *"…image before
+  assuming stroke"*).
+- #25's two wording points are closed too (the pressure-follows-cause section, above).
 
 **Superseded, not failing:** an assertion one branch re-pinned under its own ruling runs in its new form:
 - plexus: four foot-drop candidates, the upper trunk's musculocutaneous row;
@@ -1703,7 +1711,7 @@ the non-dominant operculum (motor aprosodia alone) read "Broca's aphasia", "(Bro
 - **`test/hemisphere-names.test.js`:**
   - a place whose picture depends on dominance names each hemisphere, or has a reviewed neutral name (the temporal lobe);
   - no non-dominant title, place, subtitle or red flag names Broca's or Wernicke's area or aphasia, under either dominance;
-  - two OPEN items are printed, not allowed silently.
+  - two OPEN items were printed, not allowed silently (the non-dominant content round closed both, below).
 
 **Traps worth knowing:**
 - "Wernicke" alone is also the encephalopathy (the thiamine warning), which is right on either side. Match "Wernicke's
@@ -1723,10 +1731,11 @@ the non-dominant operculum (motor aprosodia alone) read "Broca's aphasia", "(Bro
 - Browser-checked on port 8146 (launch entry "NeuroLocaliser card-cause worktree").
 
 **Still open:**
-- **The shared lists.** The cause features and workups at those two places are keyed by place, so the non-dominant What and
-  Next cards still describe the aphasia ("…especially common in Broca's aphasia").
-- **The aphasia composites.** The thalamic and striatocapsular composites' non-dominant copies need a ruling: name them, or
-  stop offering them.
+- ~~**The shared lists.** The cause features and workups at those two places are keyed by place, so the non-dominant What
+  and Next cards still describe the aphasia ("…especially common in Broca's aphasia").~~ — **CLOSED 2026-11-12** by the
+  non-dominant content round below (item 1 and content round 1).
+- ~~**The aphasia composites.** The thalamic and striatocapsular composites' non-dominant copies need a ruling: name them,
+  or stop offering them.~~ — **CLOSED 2026-11-12:** no longer offered (`dominantOnly`, rows J1–J5, in the round below).
 
 Spec: `docs/superpowers/specs/2026-11-12-duplicate-keys-design.md`.
 
